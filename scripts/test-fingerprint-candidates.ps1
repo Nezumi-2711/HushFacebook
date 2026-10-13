@@ -254,6 +254,16 @@ try {
         $highParsed.outlinedStrings[0].origin -ceq 'LX/002;->A00(I)Ljava/lang/String; case 4660' -and
         @($highParsed.literals) -notcontains 'N:4660' -and @($highParsed.literals) -contains 'N:4661') `
         "The sparse table's case 4660 was not read back, or its index still counted as a literal: $(@($highParsed.literals) -join ', ')"
+    # Past the 64 strings a signature keeps, a call's index stays a number, so neither is lost.
+    $fullSignature = Join-Path $caseRoot 'full.json'
+    $full = Invoke-Tool @('capture', (New-DexApk 'outlined-full'), 'LX/Zz4;->A00()V', $fullSignature)
+    Assert-True ($full.ExitCode -eq 0) "The capture of the full table's caller failed.`n$($full.Text)"
+    $fullParsed = [System.IO.File]::ReadAllText($fullSignature) | ConvertFrom-Json
+    $fullNumbers = @(@($fullParsed.literals) | Where-Object { $_ -like 'N:50*' })
+    Assert-True (@($fullParsed.outlinedStrings).Count -eq 64 -and
+        @($fullParsed.outlinedStrings | Where-Object { $_.string -ceq 'fingerprint_fixture_full_64' }).Count -eq 0 -and
+        $fullNumbers.Count -eq 1 -and $fullNumbers[0] -ceq 'N:5064') `
+        "The case past the limit lost both its string and its number, or a kept one kept its number: $($fullNumbers -join ', ')"
     # Calls that prove no string add none.
     $unprovable = [ordered]@{
         'LX/Ng1;' = 'asks for a case the table lacks'

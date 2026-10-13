@@ -155,21 +155,49 @@ public class CrashFileTest {
     @Test
     public void aSwallowedExceptionOffTheMainThreadTakesItsFileBack() {
         Thread worker = new Thread("CombinedTP3");
-        String before = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        JavaCrashReport.Saved before = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
         assertEquals(1, downloads.ids().size());
         JavaCrashReport.survived(worker, before);
         assertTrue("the swallowed exception's file stayed", downloads.ids().isEmpty());
 
-        String main = JavaCrashReport.save(Thread.currentThread(), new IllegalStateException("on the main thread"));
+        JavaCrashReport.Saved main = JavaCrashReport.save(Thread.currentThread(), new IllegalStateException("on the main thread"));
         assertEquals(1, downloads.ids().size());
         JavaCrashReport.survived(Thread.currentThread(), main);
         assertEquals("the control: on the main thread the file stays", 1, downloads.ids().size());
 
         // A later swallowed exception that wrote no file has nothing to take back.
         Settings.SAVE_CRASH_FILE.save(false);
-        String quiet = JavaCrashReport.save(worker, new IllegalStateException("swallowed with the switch off"));
+        JavaCrashReport.Saved quiet = JavaCrashReport.save(worker, new IllegalStateException("swallowed with the switch off"));
         JavaCrashReport.survived(worker, quiet);
         assertEquals("a swallowed exception with no file of its own took another's", 1, downloads.ids().size());
+    }
+
+    /**
+     * A swallowed exception takes back only its own file: another thread's crash written after it
+     * keeps its file, and two that both end nothing leave neither.
+     */
+    @Test
+    public void aSwallowedExceptionTakesBackOnlyItsOwnFile() throws Exception {
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        Throwable fatal = new IllegalArgumentException("the fatal one");
+        JavaCrashReport.save(new Thread("Background"), fatal);
+        assertEquals(java.util.Arrays.asList(1L, 2L), downloads.ids());
+        JavaCrashReport.survived(worker, swallowed);
+        assertEquals("the newer crash's file went with the swallowed one", java.util.Collections.singletonList(2L), downloads.ids());
+        assertTrue(body(2), body(2).contains("the fatal one"));
+        JavaCrashReport.save(new Thread("Background"), fatal);
+        assertEquals("the same crash handed back got a second file", java.util.Collections.singletonList(2L), downloads.ids());
+
+        JavaCrashReport.resetForTests();
+        Thread one = new Thread("CombinedTP4");
+        Thread two = new Thread("CombinedTP5");
+        JavaCrashReport.Saved first = JavaCrashReport.save(one, new IllegalStateException("first swallowed"));
+        JavaCrashReport.Saved second = JavaCrashReport.save(two, new IllegalStateException("second swallowed"));
+        assertEquals(java.util.Arrays.asList(2L, 3L, 4L), downloads.ids());
+        JavaCrashReport.survived(one, first);
+        JavaCrashReport.survived(two, second);
+        assertEquals("a swallowed exception's file stayed", java.util.Collections.singletonList(2L), downloads.ids());
     }
 
     @Test

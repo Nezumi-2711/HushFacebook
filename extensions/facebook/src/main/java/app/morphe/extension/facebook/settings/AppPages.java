@@ -13,6 +13,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.toggle;
 
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Context;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
@@ -328,7 +329,10 @@ final class AppPages {
         return L10n.f("Hidden: %s", L10n.join(names));
     }
 
-    /** The list: every item it knows, ticked when it's kept out. Save keeps the ticks. */
+    /**
+     * The list: every item it knows, ticked when it's kept out. Save keeps the ticks, or, when they
+     * need more room than the setting has, keeps the list open and saves nothing.
+     */
     private static void showShareItems(HushfacebookPreferenceFragment page, Context context, Preference row) {
         List<String> types = ShareSheetItems.choices();
         Set<String> hidden = ShareSheetItems.hidden();
@@ -339,18 +343,24 @@ final class AppPages {
             ticked[i] = hidden.contains(types.get(i));
         }
         // Through the page, so it closes with the page's view and takes the screen's colors.
-        page.show(new AlertDialog.Builder(context)
+        AlertDialog list = page.show(new AlertDialog.Builder(context)
                 .setTitle(L10n.t("Hide from the share sheet"))
                 .setMultiChoiceItems(names, ticked, (shown, which, isTicked) -> ticked[which] = isTicked)
-                .setPositiveButton(L10n.t("Save"), (shown, which) -> {
-                    List<String> picked = new ArrayList<>();
-                    for (int i = 0; i < ticked.length; i++) {
-                        if (ticked[i]) picked.add(types.get(i));
-                    }
-                    ShareSheetItems.hide(picked);
-                    row.setSummary(shareItemsSummary(ShareSheetItems.hidden()));
-                })
+                .setPositiveButton(L10n.t("Save"), null)
                 .setNegativeButton(L10n.t("Cancel"), null));
+        if (list == null) return;
+        list.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(button -> {
+            List<String> picked = new ArrayList<>();
+            for (int i = 0; i < ticked.length; i++) {
+                if (ticked[i]) picked.add(types.get(i));
+            }
+            if (!ShareSheetItems.hide(picked)) {
+                Utils.showToastLong(L10n.t("This list needs more room than it has. Shorten it, then save again."));
+                return;
+            }
+            row.setSummary(shareItemsSummary(ShareSheetItems.hidden()));
+            list.dismiss();
+        });
     }
 
     /**

@@ -660,14 +660,17 @@ public final class FingerprintCandidates {
             address += i.getCodeUnits();
             Instruction before = previous;
             previous = i;
-            boolean proven = false;
+            // The index goes only where its string is kept: past the limit a call counts by its number.
+            boolean kept = false;
             if (tables != null && Tables.isTableCall(i)) {
                 if (landings == null) landings = landings(impl);
                 String[] hit = tables.outlined(before, i, at, landings);
-                proven = hit != null;
-                if (proven && f.outlined.size() < MAX_OUTLINED) f.outlined.putIfAbsent(hit[0], hit[1]);
+                if (hit != null && (f.outlined.size() < MAX_OUTLINED || f.outlined.containsKey(hit[0]))) {
+                    f.outlined.putIfAbsent(hit[0], hit[1]);
+                    kept = true;
+                }
             }
-            if (!proven) f.literals.addAll(pending);
+            if (!kept) f.literals.addAll(pending);
             pending.clear();
             f.instructions++;
             Opcode opcode = i.getOpcode();

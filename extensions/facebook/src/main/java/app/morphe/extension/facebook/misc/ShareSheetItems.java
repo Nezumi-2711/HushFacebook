@@ -131,9 +131,17 @@ public final class ShareSheetItems {
         return parse(Settings.HIDDEN_SHARE_ITEMS.savedValue());
     }
 
-    /** Saves [types] as the ones to keep out, dropping anything that isn't a type. */
-    public static void hide(Collection<String> types) {
-        Settings.HIDDEN_SHARE_ITEMS.save(clean(join(types)));
+    /**
+     * Saves [types] as the ones to keep out, dropping anything that isn't a type. When the types
+     * need more than {@link #MAX_HIDDEN_CHARS}, it saves nothing and answers false, so a picked
+     * type is never lost in silence. An imported list can hold long types this build doesn't name.
+     */
+    public static boolean hide(Collection<String> types) {
+        String picked = join(types);
+        String kept = clean(picked);
+        if (count(kept) < count(picked)) return false;
+        Settings.HIDDEN_SHARE_ITEMS.save(kept);
+        return true;
     }
 
     /**

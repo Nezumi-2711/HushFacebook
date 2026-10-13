@@ -69,6 +69,18 @@ public class SettingsSearchIndexTest {
         assertFalse(containsRow());
     }
 
+    /** Search can list No time limit without the switch it works under above it, so the row names it (#130). */
+    @Test public void aGreyedChildNamesItsSwitchInSearch() {
+        Preference noLimit = page.findPreference(Settings.RETURN_REFRESH_NO_LIMIT.key);
+        assertNotNull(noLimit);
+        row = noLimit;
+        page.navigation.search("no time limit");
+        assertTrue(containsRow());
+        assertFalse("No time limit is open in search with its switch off", noLimit.isEnabled());
+        assertTrue("the search result doesn't name the switch: " + noLimit.getSummary(),
+                String.valueOf(noLimit.getSummary()).contains(SwitchLabels.title(Settings.BLOCK_RETURN_REFRESH)));
+    }
+
     private boolean containsRow() {
         for (int i = 0; i < page.navigation.getCount(); i++) {
             if (page.navigation.getItem(i) == row) return true;

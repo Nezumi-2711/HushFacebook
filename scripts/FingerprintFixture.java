@@ -228,6 +228,42 @@ public class FingerprintFixture {
                 op(Opcode.RETURN_VOID)));
     }
 
+    static final ImmutableMethodReference FULL_TABLE = new ImmutableMethodReference("LX/003;", "A00",
+            Collections.singletonList("I"), STRING);
+
+    /** How many cases the full table has: one more than a signature keeps outlined strings. */
+    static final int FULL_CASES = 65;
+
+    /** A sparse string table with cases 5000 to 5064, each three code units after the last. */
+    static ClassDef fullTable() {
+        List<Instruction> body = new ArrayList<>();
+        List<ImmutableSwitchElement> cases = new ArrayList<>();
+        int payload = 5 + 3 * FULL_CASES;
+        body.add(new ImmutableInstruction31t(Opcode.SPARSE_SWITCH, 1, payload));
+        body.add(new ImmutableInstruction11n(Opcode.CONST_4, 0, 0));
+        body.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        for (int k = 0; k < FULL_CASES; k++) {
+            cases.add(new ImmutableSwitchElement(5000 + k, 5 + 3 * k));
+            body.add(string(0, "fingerprint_fixture_full_" + k));
+            body.add(new ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0));
+        }
+        body.add(new ImmutableSparseSwitchPayload(cases));
+        return type("LX/003;", method("LX/003;", "A00", STRING, Collections.singletonList("I"), 2,
+                body.toArray(new Instruction[0])));
+    }
+
+    /** Asks the full table for every case, so the last one's string is past the limit. */
+    static ClassDef fullCaller() {
+        List<Instruction> body = new ArrayList<>();
+        for (int k = 0; k < FULL_CASES; k++) {
+            body.add(index(0, 5000 + k));
+            body.add(invoke(FULL_TABLE, 0));
+            body.add(new ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+        }
+        body.add(op(Opcode.RETURN_VOID));
+        return type("LX/Zz4;", method("LX/Zz4;", "A00", "V", Collections.emptyList(), 1, body.toArray(new Instruction[0])));
+    }
+
     /** A helper of the table's prototype that answers its int as text: no switch, so no table. */
     static ClassDef notATable() {
         return type("LX/001;", method("LX/001;", "A00", STRING, Collections.singletonList("I"), 1,
@@ -363,6 +399,9 @@ public class FingerprintFixture {
         alone.add(highTable());
         alone.add(highCaller());
         dexes.put("outlined-alone", alone);
+
+        // A caller asking for more strings than a signature keeps: the one past the limit keeps its number.
+        dexes.put("outlined-full", Arrays.asList(fullTable(), fullCaller()));
 
         for (Map.Entry<String, List<ClassDef>> e : dexes.entrySet()) {
             DexPool.writeTo(new File(out, e.getKey() + ".dex").getPath(), new ImmutableDexFile(Opcodes.forApi(30), e.getValue()));

@@ -32,6 +32,7 @@ import androidx.annotation.Nullable;
 
 import app.morphe.extension.facebook.download.SaveControl;
 import app.morphe.extension.shared.L10n;
+import app.morphe.extension.shared.settings.BooleanSetting;
 import app.morphe.extension.shared.settings.preference.ClearLogBufferPreference;
 import app.morphe.extension.shared.settings.preference.ExportDiagnosticReportPreference;
 import app.morphe.extension.shared.settings.preference.ImmediateAction;
@@ -171,8 +172,35 @@ final class SettingsRows {
 
     /** A switch row, which a screen reader calls a switch and reads as on or off. */
     static final class Toggle extends SwitchPreference {
+        /** The switch this one works under, if any, and the summary it shows while that switch is on. */
+        @Nullable private BooleanSetting needs;
+        @Nullable private CharSequence plain;
+
         Toggle(Context context) {
             super(context);
+        }
+
+        /**
+         * It's greyed out while [parent] is off, as the shared page works out from the setting, and its
+         * summary then names the switch to turn on. Search lists this same row, so it says so there too.
+         */
+        Toggle needs(BooleanSetting parent) {
+            needs = parent;
+            plain = getSummary();
+            showSummary();
+            return this;
+        }
+
+        @Override
+        public void setEnabled(boolean enabled) {
+            super.setEnabled(enabled);
+            showSummary();
+        }
+
+        private void showSummary() {
+            if (needs == null) return;
+            String note = L10n.f("Turn on %1$s to use this.", L10n.isolate(SwitchLabels.title(needs)));
+            setSummary(isEnabled() ? plain : plain + " " + note);
         }
 
         @Override

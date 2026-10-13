@@ -50,10 +50,6 @@ public final class CrashFile {
     /** How many crash files are kept, the new one included. */
     static final int KEEP = 5;
 
-    /** The file written last, so a crash the process lived through can take its file back. */
-    @Nullable
-    private static volatile Uri lastWritten;
-
     /** The app's switch for the file, handed over as its settings load. None yet means no file. */
     @Nullable
     private static volatile BooleanSetting toggle;
@@ -77,11 +73,11 @@ public final class CrashFile {
 
     /**
      * Writes [report] as a new crash file named for [now], after removing the oldest past the
-     * limit. Answers the new file's address, or null when it couldn't be written. Never throws.
+     * limit. Answers the new file's address, for a crash the process lives through to take back
+     * ({@link #takeBack}), or null when it couldn't be written. Never throws.
      */
     @Nullable
     static Uri write(Context context, String report, long now) {
-        lastWritten = null;
         Uri uri = null;
         try {
             ContentResolver resolver = context.getContentResolver();
@@ -96,7 +92,6 @@ public final class CrashFile {
                 if (output == null) throw new IOException("No stream for the crash file");
                 output.write(report.getBytes(StandardCharsets.UTF_8));
             }
-            lastWritten = uri;
             return uri;
         } catch (Throwable failure) {
             // Crash-time code must never get in the way of the handlers after this one.
@@ -105,11 +100,9 @@ public final class CrashFile {
         }
     }
 
-    /** Removes the file {@link #write} made last, for a crash the process lived through. Never throws. */
-    static void takeBackLast(Context context) {
-        Uri last = lastWritten;
-        lastWritten = null;
-        if (last != null) delete(context, last);
+    /** Removes [file], one {@link #write} made, for a crash the process lived through. Never throws. */
+    static void takeBack(Context context, Uri file) {
+        delete(context, file);
     }
 
     /** The name a crash at [now] gets, in the phone's time: crash-2026-10-11-1405.txt. */
@@ -141,10 +134,5 @@ public final class CrashFile {
         } catch (Throwable ignored) {
             // The file stays, and the next write's limit counts it like any other.
         }
-    }
-
-    /** Forgets the file written last, for a crash that wrote none, or as in a new process. */
-    static void forgetLast() {
-        lastWritten = null;
     }
 }

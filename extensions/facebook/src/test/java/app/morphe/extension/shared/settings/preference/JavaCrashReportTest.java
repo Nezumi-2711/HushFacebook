@@ -73,7 +73,7 @@ public class JavaCrashReportTest {
     @Test
     public void theSameCrashHandedBackIsKeptOnceAndALaterOneReplacesIt() {
         Throwable first = new IllegalStateException("the first");
-        assertEquals("nothing was kept before it", "", JavaCrashReport.save(Thread.currentThread(), first));
+        assertEquals("nothing was kept before it", "", JavaCrashReport.save(Thread.currentThread(), first).before);
         // A handler Facebook put in front of ours can hand the same crash back to the one under it.
         assertNull("the same crash was written again", JavaCrashReport.save(Thread.currentThread(), first));
         assertTrue(LogBufferManager.readCrashReport(context).contains("java.lang.IllegalStateException: the first"));
@@ -92,17 +92,58 @@ public class JavaCrashReportTest {
     public void aSwallowedExceptionOffTheMainThreadPutsTheEarlierCrashBack() throws Exception {
         LogBufferManager.persistCrashReport(context, "an earlier start's crash");
         Thread worker = new Thread("CombinedTP3");
-        String before = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        JavaCrashReport.Saved before = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
         assertTrue("the exception wasn't written first", LogBufferManager.readCrashReport(context).contains("swallowed"));
         JavaCrashReport.survived(worker, before);
         String kept = LogBufferManager.readCrashReport(context);
         assertTrue(kept, kept.contains("an earlier start's crash"));
         assertFalse(kept, kept.contains("swallowed"));
 
-        String main = JavaCrashReport.save(Thread.currentThread(), new IllegalStateException("on the main thread"));
+        JavaCrashReport.Saved main = JavaCrashReport.save(Thread.currentThread(), new IllegalStateException("on the main thread"));
         JavaCrashReport.survived(Thread.currentThread(), main);
         assertTrue("the control: on the main thread the trace stays",
                 LogBufferManager.readCrashReport(context).contains("java.lang.IllegalStateException: on the main thread"));
+    }
+
+    /**
+     * Another thread's crash saved while a worker's exception waits on its handlers is the one that
+     * ends the app, so the worker living on leaves that crash in the report.
+     */
+    @Test
+    public void aSwallowedWorkerLeavesANewerCrashInPlace() throws Exception {
+        LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        Throwable fatal = new IllegalArgumentException("the fatal one");
+        JavaCrashReport.save(new Thread("Background"), fatal);
+        JavaCrashReport.survived(worker, swallowed);
+        String kept = LogBufferManager.readCrashReport(context);
+        assertTrue("the newer crash was pushed out: " + kept, kept.contains("java.lang.IllegalArgumentException: the fatal one"));
+        assertFalse(kept, kept.contains("an earlier start's crash"));
+        assertNull("the same crash handed back was written again", JavaCrashReport.save(new Thread("Background"), fatal));
+    }
+
+    /** Two workers' exceptions that both end nothing leave the report as it was, whichever lives on first. */
+    @Test
+    public void twoSwallowedWorkersLeaveTheEarlierCrash() throws Exception {
+        for (boolean newerFirst : new boolean[]{false, true}) {
+            JavaCrashReport.resetForTests();
+            LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+            Thread one = new Thread("CombinedTP3");
+            Thread two = new Thread("CombinedTP4");
+            JavaCrashReport.Saved first = JavaCrashReport.save(one, new IllegalStateException("first swallowed"));
+            JavaCrashReport.Saved second = JavaCrashReport.save(two, new IllegalStateException("second swallowed"));
+            if (newerFirst) {
+                JavaCrashReport.survived(two, second);
+                JavaCrashReport.survived(one, first);
+            } else {
+                JavaCrashReport.survived(one, first);
+                JavaCrashReport.survived(two, second);
+            }
+            String kept = LogBufferManager.readCrashReport(context);
+            assertTrue("newer first " + newerFirst + ": " + kept, kept.contains("an earlier start's crash"));
+            assertFalse("newer first " + newerFirst + ": " + kept, kept.contains("swallowed"));
+        }
     }
 
     @Test

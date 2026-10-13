@@ -137,9 +137,12 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting BLOCK_RETURN_REFRESH =
             new BooleanSetting("hushfacebook_block_return_refresh", FALSE);
 
-    /** With the switch above, keep the feed however long Facebook stayed in the background (#23). */
+    /**
+     * With the switch above, keep the feed however long Facebook stayed in the background (#23). It's
+     * greyed out while that switch is off, and keeps its saved value (#130).
+     */
     public static final BooleanSetting RETURN_REFRESH_NO_LIMIT =
-            new BooleanSetting("hushfacebook_return_refresh_no_limit", FALSE);
+            new BooleanSetting("hushfacebook_return_refresh_no_limit", FALSE, Setting.parent(BLOCK_RETURN_REFRESH));
 
     /**
      * Feed posts Facebook's own detection marked as made with AI. Off until one AI-labeled and one

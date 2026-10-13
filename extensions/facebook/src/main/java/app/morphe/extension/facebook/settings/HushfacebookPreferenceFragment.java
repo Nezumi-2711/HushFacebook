@@ -419,13 +419,15 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
      * shows once the view is gone or the activity is finishing: a word list's Save can land as the
      * activity goes, and its note would come up over a window that's gone.
      */
-    void show(AlertDialog.Builder builder) {
+    @Nullable
+    AlertDialog show(AlertDialog.Builder builder) {
         Activity activity = getActivity();
-        if (getView() == null || activity == null || activity.isFinishing() || activity.isDestroyed()) return;
+        if (getView() == null || activity == null || activity.isFinishing() || activity.isDestroyed()) return null;
         AlertDialog dialog = builder.show();
         ScreenColors.dialog(dialog);
         shownDialogs.add(dialog);
         dialog.setOnDismissListener(shownDialogs::remove);
+        return dialog;
     }
 
     /** The section headings on the page, in order. */
@@ -922,12 +924,12 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         return category;
     }
 
-    static SwitchPreference toggle(Context context, BooleanSetting setting, String summary) {
+    static Toggle toggle(Context context, BooleanSetting setting, String summary) {
         return toggle(context, setting, SwitchLabels.title(setting), summary);
     }
 
-    static SwitchPreference toggle(Context context, BooleanSetting setting, String title, String summary) {
-        SwitchPreference preference = new Toggle(context);
+    static Toggle toggle(Context context, BooleanSetting setting, String title, String summary) {
+        Toggle preference = new Toggle(context);
         preference.setKey(setting.key);
         preference.setTitle(title);
         preference.setSummary(summary);

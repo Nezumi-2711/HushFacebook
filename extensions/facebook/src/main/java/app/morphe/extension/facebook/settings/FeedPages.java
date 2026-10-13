@@ -214,7 +214,8 @@ final class FeedPages {
                         L10n.t("Returning to Facebook within ten minutes, or switching back to Home, keeps your place. "
                                 + "Pull to refresh still works.")));
                 feed.addPreference(toggle(context, Settings.RETURN_REFRESH_NO_LIMIT,
-                        L10n.t("With the switch above on, your place stays however long you're away. Pull to refresh and a fresh start still load new posts.")));
+                        L10n.t("With the switch above on, your place stays however long you're away. Pull to refresh and a fresh start still load new posts."))
+                        .needs(Settings.BLOCK_RETURN_REFRESH));
             }
             if (build.contains(PatchFamily.AI_DETECTED_POSTS)) {
                 feed.addPreference(toggle(context, Settings.HIDE_AI_DETECTED_POSTS,
