@@ -15,6 +15,8 @@ import android.content.IntentFilter;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.service.notification.StatusBarNotification;
 
 import androidx.annotation.Nullable;
@@ -52,7 +54,11 @@ import app.morphe.extension.shared.L10n;
  * <p>With Facebook's notifications off, or this channel switched off, a save shows a toast at each
  * end and no notification, and the first toast says where to cancel it. Hushfacebook's settings
  * list every running save under Downloads, with what it's doing and a Cancel of its own
- * ({@link #running}, {@link #watch}), so a save can be stopped either way. Nothing of a save outlives it there: no address, no name, no history.
+ * ({@link #running}, {@link #watch}), so a save can be stopped either way. Only the last generic outcome remains in memory: no address, name or saved history.
+ *
+ * <p>Both say how long the save has run and, while it downloads, how fast ({@link TransferRate}),
+ * from the same clock and the same measurement. A tick once a second keeps the time going while
+ * nothing arrives, through a join or a stalled read, and the save's end takes it away.
  */
 public final class SaveControl {
 
@@ -84,6 +90,15 @@ public final class SaveControl {
 
     /** The shortest gap between two updates of a notification. The system drops faster ones anyway. */
     private static final long UPDATE_GAP_NANOS = 500_000_000L;
+    /** How often a running save's time moves on when no bytes come to move it. */
+    static final long TICK_MILLIS = 1_000L;
+
+    /** A monotonic clock in nanoseconds. Tests set their own. */
+    interface Clock {
+        long nanoTime();
+    }
+
+    static volatile Clock clock = System::nanoTime;
 
     private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
     private static final Map<Integer, Save> RUNNING = new ConcurrentHashMap<>();
@@ -94,9 +109,26 @@ public final class SaveControl {
 
     enum State { ACTIVE, PUBLISHING, SUCCEEDED, FAILED, CANCELLED }
 
+    /** Only the last generic result, in memory for this process. No save identity is retained. */
+    public enum Outcome { VIDEO_SAVED, PHOTO_SAVED, VIDEO_FAILED, PHOTO_FAILED, CANCELLED }
+    private static volatile Outcome lastOutcome;
+
+    @Nullable public static Outcome lastOutcome() { return lastOutcome; }
+
+    public static String outcomeText(Outcome outcome) {
+        switch (outcome) {
+            case VIDEO_SAVED: return L10n.t("Video saved");
+            case PHOTO_SAVED: return L10n.t("Photo saved");
+            case CANCELLED: return L10n.t("Save canceled");
+            case VIDEO_FAILED: return L10n.t("The video wasn't saved. Try again.");
+            default: return L10n.t("The photo wasn't saved. Try again.");
+        }
+    }
+
     /**
      * Told when a save starts, moves on to its next phase or ends, and at most twice a second while
-     * it downloads. On the save's own thread, or the one that cancelled it.
+     * it runs. On the save's own thread, the one that cancelled it, or the main thread for the
+     * once-a-second tick that moves the time on.
      */
     public interface Watcher {
         void savesChanged();
@@ -120,7 +152,10 @@ public final class SaveControl {
         }
     }
 
-    /** One running save as the settings list it: its number, kind, phase and bytes so far. */
+    /**
+     * One running save as the settings list it: its number, kind, phase, bytes so far, how long it
+     * has run and its rate (-1 when there's none to give).
+     */
     public static final class Running {
         public final int id;
         public final boolean video;
@@ -128,14 +163,19 @@ public final class SaveControl {
         public final long done;
         public final long total;
         public final boolean canCancel;
+        public final long elapsedMillis;
+        public final long bytesPerSecond;
 
         Running(Save save) {
+            long now = clock.nanoTime();
             id = save.id;
             video = save.video;
             phase = save.phase;
             done = save.done;
             total = save.total;
             canCancel = save.state() == State.ACTIVE;
+            elapsedMillis = save.rate.elapsedMillis(now);
+            bytesPerSecond = phase == Phase.DOWNLOADING ? save.rate.bytesPerSecond(now) : -1;
         }
     }
 
@@ -147,10 +187,17 @@ public final class SaveControl {
         return running;
     }
 
-    /** What [save] is doing, and how far it has got while it downloads, in the phone's language. */
+    /**
+     * What [save] is doing, how far it has got and how fast while it downloads, and how long it has
+     * run, in the phone's language.
+     */
     public static String status(Running save) {
+        return status(save.phase, save.done, save.total, save.elapsedMillis, save.bytesPerSecond);
+    }
+
+    static String status(Phase current, long done, long total, long elapsedMillis, long bytesPerSecond) {
         String phase;
-        switch (save.phase) {
+        switch (current) {
             case JOINING:
                 phase = L10n.t("Joining the picture and sound");
                 break;
@@ -161,8 +208,33 @@ public final class SaveControl {
             default:
                 phase = L10n.t("Downloading");
         }
-        String progress = save.phase == Phase.DOWNLOADING ? progressText(save.done, save.total) : null;
-        return progress == null ? phase : phase + "\n" + progress;
+        StringBuilder text = new StringBuilder(phase);
+        String progress = current == Phase.DOWNLOADING ? progressText(done, total) : null;
+        if (progress != null) text.append('\n').append(progress);
+        text.append('\n');
+        // Only a download has a rate: joining and copying move no bytes over the line.
+        if (current == Phase.DOWNLOADING && bytesPerSecond > 0) text.append(rateText(bytesPerSecond)).append(", ");
+        return text.append(elapsedText(elapsedMillis)).toString();
+    }
+
+    /** "1.3 MB a second", or KB below a megabyte, in the phone's language and its numbers. */
+    static String rateText(long bytesPerSecond) {
+        // The unit after rounding: just under a megabyte rounds to 1024 KB, which reads as 1.0 MB.
+        long kilobytes = Math.max(1L, Math.round(bytesPerSecond / 1024.0));
+        String amount = kilobytes < 1024L
+            ? String.format(L10n.locale(), "%d KB", kilobytes)
+            : megabytes(bytesPerSecond);
+        return L10n.f("%1$s a second", amount);
+    }
+
+    /** "0:42 elapsed", "1:02:03 elapsed": minutes and seconds, and hours once there are any. */
+    static String elapsedText(long millis) {
+        long seconds = Math.max(0L, millis) / 1000L;
+        Locale locale = L10n.locale();
+        String clock = seconds >= 3600
+            ? String.format(locale, "%d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+            : String.format(locale, "%d:%02d", seconds / 60, seconds % 60);
+        return L10n.f("%1$s elapsed", clock);
     }
     /** The application the receiver is registered on: one per process, and one per test. */
     private static Context listeningOn;
@@ -175,6 +247,7 @@ public final class SaveControl {
         if (save.manager != null) listen(application);
         save.show(-1, 0, -1);
         tell();
+        save.startTicking();
         return save;
     }
 
@@ -392,12 +465,16 @@ public final class SaveControl {
         private volatile Phase phase = Phase.DOWNLOADING;
         private volatile long done;
         private volatile long total = -1;
-        /** When the watchers were last told how far this save has got. */
-        private long toldAt;
+        /** How long this save has run and how fast it downloads, for the notification and the list. */
+        final TransferRate rate = new TransferRate(clock.nanoTime());
+        final Handler ticks = new Handler(Looper.getMainLooper());
+        final Runnable tick = this::tick;
+        /** When the watchers were last told how far this save has got, by the download or the tick. */
+        private volatile long toldAt;
         /** Closes the connection the save is reading, handed over by Downloader. */
         private volatile Runnable closeReading;
         /** When the notification last changed; set by the first show, which begin() makes. */
-        private long shownAt;
+        private volatile long shownAt;
         private int shownPercent = -2;
         private boolean ended;
 
@@ -423,7 +500,8 @@ public final class SaveControl {
         public void transferred(long done, long total) {
             this.done = done;
             this.total = total;
-            long now = System.nanoTime();
+            long now = clock.nanoTime();
+            rate.sample(now, done);
             // A download after a failed join is the single file, fetched from the start.
             if (phase != Phase.DOWNLOADING || now - toldAt >= UPDATE_GAP_NANOS) {
                 phase = Phase.DOWNLOADING;
@@ -431,10 +509,55 @@ public final class SaveControl {
                 tell();
             }
             if (manager == null) return;
-            int percent = total > 0 ? (int) Math.min(100L, done * 100L / total) : -1;
-            if (System.nanoTime() - shownAt < UPDATE_GAP_NANOS) return;
-            if (percent >= 0 && percent == shownPercent) return;
+            showIfDue(percent(done, total), done, total, true);
+        }
+
+        /**
+         * Shows the save again unless it was shown less than the update gap ago, checked under the
+         * same lock as the show, since the tick and the download run on two threads. With
+         * [newPercentOnly], a known length's percentage has to have moved too.
+         */
+        private synchronized void showIfDue(int percent, long done, long total, boolean newPercentOnly) {
+            if (clock.nanoTime() - shownAt < UPDATE_GAP_NANOS) return;
+            if (newPercentOnly && percent >= 0 && percent == shownPercent) return;
             show(percent, done, total);
+        }
+
+        private static int percent(long done, long total) {
+            return total > 0 ? (int) Math.min(100L, done * 100L / total) : -1;
+        }
+
+        /** Starts the once-a-second tick; begin() calls it once the save is listed. */
+        void startTicking() {
+            ticks.postDelayed(tick, TICK_MILLIS);
+        }
+
+        /**
+         * Moves the time on in the list and the notification while no bytes do, never faster than
+         * the notification takes updates, and again a second later until the save ends.
+         */
+        private void tick() {
+            synchronized (this) {
+                if (ended) return;
+            }
+            // Held to the same gap as a download's own tells, so the two never land back to back.
+            long now = clock.nanoTime();
+            if (now - toldAt >= UPDATE_GAP_NANOS) {
+                toldAt = now;
+                tell();
+            }
+            if (manager != null) {
+                boolean downloading = phase == Phase.DOWNLOADING;
+                showIfDue(downloading ? percent(done, total) : -1, downloading ? done : 0, downloading ? total : -1, false);
+            }
+            synchronized (this) {
+                if (!ended) ticks.postDelayed(tick, TICK_MILLIS);
+            }
+        }
+
+        /** Bytes a second for the notification, or -1 outside a download. */
+        private long bytesPerSecond(long now) {
+            return phase == Phase.DOWNLOADING ? rate.bytesPerSecond(now) : -1;
         }
 
         @Override
@@ -456,19 +579,24 @@ public final class SaveControl {
         @Override
         public void joining() {
             phase = Phase.JOINING;
+            rate.pause();
             tell();
+            show(-1, 0, -1);
         }
 
         @Override
         public void saving() {
             phase = Phase.SAVING;
+            rate.pause();
             tell();
+            show(-1, 0, -1);
         }
 
         @Override
         public boolean publishing() {
             if (!state.compareAndSet(State.ACTIVE, State.PUBLISHING)) return false;
             phase = Phase.PUBLISHING;
+            rate.pause();
             tell();
             show(-1, 0, -1);
             return true;
@@ -502,10 +630,19 @@ public final class SaveControl {
         /** The save is over, however it ended, and its notification goes. */
         void end() {
             state.compareAndSet(State.ACTIVE, State.FAILED);
+            state.compareAndSet(State.PUBLISHING, State.FAILED);
             synchronized (this) {
+                if (ended) return;
                 ended = true;
             }
-            if (RUNNING.remove(id) != null) tell();
+            ticks.removeCallbacks(tick);
+            if (RUNNING.remove(id, this)) {
+                State result = state();
+                lastOutcome = result == State.CANCELLED ? Outcome.CANCELLED
+                        : result == State.SUCCEEDED ? (video ? Outcome.VIDEO_SAVED : Outcome.PHOTO_SAVED)
+                        : (video ? Outcome.VIDEO_FAILED : Outcome.PHOTO_FAILED);
+                tell();
+            }
             if (manager == null) return;
             try {
                 manager.cancel(TAG, id);
@@ -516,7 +653,8 @@ public final class SaveControl {
 
         synchronized void show(int percent, long done, long total) {
             if (manager == null || ended) return;
-            shownAt = System.nanoTime();
+            long now = clock.nanoTime();
+            shownAt = now;
             shownPercent = percent;
             try {
                 Notification.Builder builder = new Notification.Builder(application, CHANNEL)
@@ -533,9 +671,8 @@ public final class SaveControl {
                     builder.addAction(new Notification.Action.Builder((Icon) null,
                         L10n.t(application, "Cancel"), cancel).build());
                 }
-                String text = phase == Phase.PUBLISHING ? L10n.t(application, "Copying to the gallery")
-                    : progressText(done, total);
-                if (text != null) builder.setContentText(text);
+                String text = status(phase, done, total, rate.elapsedMillis(now), bytesPerSecond(now));
+                builder.setContentText(text);
                 manager.notify(TAG, id, builder.build());
             } catch (Throwable t) {
                 MediaDownload.failure(() -> "could not show the save's progress", t);

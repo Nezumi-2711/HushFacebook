@@ -344,6 +344,14 @@ class TranslationsTest(unittest.TestCase):
         self.generate()
         self.assertIn("translate the same 3 strings", release_text.check_translations(self.root))
 
+    def test_a_plural_variant_without_its_other_form_fails(self):
+        tables = self.root / "extensions/shared/library/src/main/l10n"
+        write(tables / "de.tsv", self.TABLES["de"] + "%1$d items\t%1$d Einträge\n")
+        write(tables / "tr.tsv", self.TABLES["tr"] + "%1$d items|few\t%1$d öge\n")
+        with self.assertRaises(SystemExit) as stop:
+            release_text.check_translations(self.root)
+        self.assertIn("%1$d items|few has no row for its other form: %1$d items", str(stop.exception))
+
     def test_a_table_edited_without_the_generator_fails(self):
         write(self.root / "extensions/shared/library/src/main/l10n/de.tsv", self.TABLES["de"].replace("ausblenden", "verbergen"))
         with self.assertRaises(SystemExit) as stop:

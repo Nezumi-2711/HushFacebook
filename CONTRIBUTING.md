@@ -428,16 +428,32 @@ For a patch change, say which Facebook build you tested against and what you che
 `scripts/fingerprint-candidates.ps1` ranks the methods of the new build by how much each one looks like the method the patch found on the old one. Give it the method as the old build names it and both builds, as a path or as a version your fixture folder has:
 
 ```powershell
-scripts/fingerprint-candidates.ps1 -OldApk 580 -Method 'LX/7z9;->A0a(LX/6uh;I)J' -NewApk <new .apkm>
+scripts/fingerprint-candidates.ps1 -OldApk 582.0.0.50.54-arm64 -Method 'LX/8F3;->A0b(LX/8Eh;I)J' -NewApk <new .apkm>
 ```
 
 It only compares what survives a rebuild. That means the strings a method loads, its literals, the framework and kept-class calls it makes, an opcode sketch, its prototype, its class and who calls it. Facebook's config ids change a few bytes every build, so those bytes are masked before literals are compared. A shared string or call counts for more the rarer it is in the new build. The report lists the five closest methods, and for each one it sets the old method's prototype, strings and literals, opcode sketch, references and callers beside the candidate's.
 
+Redex also moves strings that many methods share into tables. A table is a static method that takes an int and switches on it, and each case returns one string, so the method that used the string now loads a number and calls the table. Facebook moves strings in and out of these between releases. The 582 armeabi-v7a build's story save action only has its event name that way. The tool reads a case back as one of the method's strings, but only where nothing else could reach the call. The number has to be loaded straight before it, into the register the call passes, with no branch or handler landing on the call, and that case has to return its string at once. The report lists each string it read back with the table and case it came from.
+
 The tool changes nothing. When one candidate is clearly ahead it says so and still leaves the patch to you. When two are close, or none scores well enough, it exits 1 and names no candidate on the console. The report still lists the closest ones, and a near tie tells you the fingerprint needs something that sets them apart. Comparing callers is the slow part, so it does that for the closest 200 or so methods first. While a method it left out could still catch the leader once its callers count, it takes in four times as many and tries again, and if one still could after 51,200 it fails closed too.
 
-`-SignaturePath` saves what the tool captured about a method, and `-Signature` ranks a later build against a saved one, so you can capture a patch's targets while today's build is still in your fixture folder. `scripts/fingerprint-signature.schema.json` describes that file.
+`-SignaturePath` saves what the tool captured about a method, and `-Signature` ranks a later build against a saved one, so you can capture a patch's targets while today's build is still in your fixture folder. `scripts/fingerprint-signature.schema.json` describes that file. A signature saved before table strings counted is version 1, and the tool won't read it as if it had none, so capture it again.
 
-`scripts/fingerprint-calibration.txt` holds 36 transitions from 577 to 580 that the patches resolve on both builds, among them the ones that broke when 580 came out. The Reels ad-break state lost its naming method to the abstract base class and the AMOLED colour resolver split in two, while the reel button factory gained a parameter. `scripts/test-fingerprint-candidates.ps1` fails unless every one ranks its known 580 method in the top five, so it needs both bundles in `HUSHFACEBOOK_FIXTURE_DIR`. `-Calibrate` runs the same check by hand. With `-CalibrationPath` it runs a list of your own instead, and `-OldApk` and `-NewApk` name the two builds that list describes, so once you've confirmed where a few methods went on a newer build you can hold the ranker to those too.
+`scripts/fingerprint-calibration.txt` holds 36 transitions from 577 to 580 that the patches resolve on both builds, among them the ones that broke when 580 came out. The Reels ad-break state lost its naming method to the abstract base class and the AMOLED colour resolver split in two, while the reel button factory gained a parameter. `scripts/test-fingerprint-candidates.ps1` fails unless every one ranks its known 580 method in the top five. `-Calibrate` runs the same check by hand. With `-CalibrationPath` it runs a list of your own instead, and `-OldApk` and `-NewApk` name the two builds that list describes, so once you've confirmed where a few methods went on a newer build you can hold the ranker to those too.
+
+`scripts/fingerprint-calibration-582-arm64.txt` and `-582-armv7.txt` are two such lists: nine feed, Reels and story menu targets each, from 580 to both 582 fixtures, found by reading each method on the stock build and on the patched one. The armeabi-v7a 582 is a separate rebuild whose names share nothing with the arm64 one apart from kept names, so its list is real transitions too, and it crosses ABIs because the history keeps only the arm64 580. The suite runs both against the 582 bundles in `HUSHFACEBOOK_FIXTURE_DIR`.
+
+#### The fingerprint history
+
+577 and 580 aren't in the fixture folder any more, since it only keeps the builds the patches target. The calibration reads them from a folder of their own that `HUSHFACEBOOK_FINGERPRINT_HISTORY_DIR` names. Keep it outside the fixture folder and outside your clone. The scripts refuse a folder that overlaps either one. Never commit or share the bundles.
+
+Set it up once:
+
+1. Download both arm64-v8a bundles from APKMirror: Facebook 577.0.0.50.72 and 580.0.0.51.74.
+2. Put them in the folder under the exact names `scripts/fingerprint-history.txt` lists, and mark them read-only.
+3. Set `HUSHFACEBOOK_FINGERPRINT_HISTORY_DIR` to that folder in your user environment.
+
+Every run checks each bundle's SHA-256 against `scripts/fingerprint-history.txt` and then reads its base APK, which has to be `com.facebook.katana` with the pinned version name, version code and ABI, signed only with Meta's certificates. If the folder isn't set, a bundle is missing or anything differs, the calibration stops and says what, before it ranks anything. It never skips.
 
 ## Android 17, checked October 11, 2026
 
@@ -473,14 +489,32 @@ A release goes out in two commits. The first carries the new version with `patch
 
 `scripts/release/release.ps1` walks through all of that one stage at a time: `source` (with `-Summary`, a file holding the release's one-paragraph summary), `preflight`, `bundle`, `publish` (with `-Checked`, the What was checked paragraph) and `index` (with `-ReadmeSummary` and `-BundleSummary`). Commit after `source`, push after `preflight` so the full gate runs, and commit and push again after `index`. Each stage refuses to run until the one before it is done, so you can fix a failure and run just that stage again. The text steps run `tools/release_text.py`, and `py -3.13 -I -m unittest discover -s tools -p "test_*.py"` runs its tests.
 
+### Fuzzing the download parsers
+
+`DashManifest` reads what Facebook's servers send and `Mp4Join` reads two downloaded files, so they're the code most worth throwing junk at. `scripts/fuzz-parsers.ps1` runs [Jazzer](https://github.com/CodeIntelligenceTesting/jazzer) over both, on this machine only. Nothing else calls it, and Jazzer stays out of Gradle and the extension. Get the standalone Windows release from Jazzer's releases page, unpack it, and point `-Jazzer` or `HUSHFACEBOOK_JAZZER_HOME` at the folder. It compiles with a JDK 21, and the one Android Studio ships is fine.
+
+```powershell
+scripts/fuzz-parsers.ps1 -Seconds 600              # both targets, ten minutes each
+scripts/fuzz-parsers.ps1 -Target mp4 -Seconds 3600 # one target for an hour
+```
+
+It compiles the two parsers with plain javac, no Android needed. The three small pieces they borrow from Android-side classes (`Downloader.Progress`, `VideoTranscode.sourceType` and `AacReencode.isXhe`) get copied out of the real sources each run, so if one of them changes shape the run stops and tells you, rather than fuzzing an old copy. The targets and seeds are test sources: `DashManifestFuzz`, `Mp4JoinFuzz` and `ParserFuzzSeeds`, which builds small valid manifests and fragmented MP4 pairs plus damaged ones (cut short, a sample count far too big, box lengths that lie, a time scale of zero).
+
+Before any real target it fuzzes `FaultyBoxFuzz`, a box reader with a bug planted on purpose, and gives up if Jazzer can't find that bug, since a clean run from a harness that can't find anything means nothing. Each target then runs in one idle-priority process with set limits: `-MaxInputBytes`, `-MaxOutputMB` for a join's output, `-HeapMB`, `-TimeoutSeconds` an input and `-Seconds` a target.
+
+A refusal is fine (an `IOException` from the join, no tracks from the manifest). An unchecked exception, a hang, running out of heap, or a join that stops by itself or writes too much is a finding. The run minimizes it, leaves it under `build/fuzz/<time>/<target>/` and exits 1, with 2 meaning the harness itself broke. Fix the parser, then copy the `minimized-*` file into `tools/fuzz/regressions/<target>/`. `ParserFuzzSeedsTest` runs every seed and every file in there with the ordinary unit tests. Each input's files are deleted before the next one, and a run that gets killed leaves its work folder for the next run to clear.
+
 ## Settings for your machine
 
 Nothing in the repository points at a folder or a phone on anybody's machine. These variables do that instead, and none of them has a default:
 
 - `HUSHFACEBOOK_FIXTURE_DIR` is the folder holding the Facebook bundles the fixture tests and scripts read. They're hundreds of megabytes each, so they aren't in the repository.
 - `HUSHFACEBOOK_DESKTOP_JAR` is the Morphe desktop CLI jar. `HUSHFACEBOOK_WORKDIR` or a jar under `build/morphe-tools` works too.
+- `HUSHFACEBOOK_FINGERPRINT_HISTORY_DIR` is the folder holding the retired 577 and 580 bundles the fingerprint calibration reads. [The fingerprint history](#the-fingerprint-history) says how to set it up.
 - `HUSHFACEBOOK_BUILD_WRAPPER` names a PowerShell script the pre-push hook runs Gradle through, called as `<wrapper> -ProjectDir <repository> -Tasks <task>...`. Unset, the hook runs `gradlew.bat` itself.
 - `HUSHFACEBOOK_DEVICE_SERIAL` is the adb serial of a test phone for `scripts/patch-for-device.ps1` and `scripts/phone-smoke.ps1`. Keep your own phone out of it: a re-signed Facebook can't install over the Play Store copy without uninstalling it, which signs you out.
+
+`scripts/patch-for-device.ps1 -PatchOptions` sets patch options for that build, keyed by patch name, for example `-PatchOptions @{ 'Hushfacebook settings' = @('appName=HushBook') }` to check the App name option on a phone. The desktop CLI reads a value like `2026` or `true` as a number or a yes/no, so quote a name that looks like one: `@('appName="2026"')`.
 
 ## Source notices
 

@@ -593,7 +593,8 @@ function Resolve-Aapt2 {
     if ($localProperties -and (Test-Path -LiteralPath $localProperties -PathType Leaf)) {
         $line = @(Get-Content -LiteralPath $localProperties |
             Where-Object { $_ -match '^\s*sdk\.dir\s*=' }) | Select-Object -First 1
-        if ($line) { $sdk = ($line -replace '^\s*sdk\.dir\s*=\s*', '') -replace '\\\\', '\' }
+        # A properties file escapes with a backslash; Android Studio writes C\:\\Users\\...
+        if ($line) { $sdk = ($line -replace '^\s*sdk\.dir\s*=\s*', '') -replace '\\(.)', '$1' }
     }
     if (-not $sdk) { throw 'No Android SDK: set ANDROID_HOME, sdk.dir or HUSHFACEBOOK_AAPT2.' }
 

@@ -93,6 +93,7 @@ import app.morphe.extension.facebook.media.ReelSpeedForTests;
 import app.morphe.extension.facebook.media.ResumePlaybackForTests;
 import app.morphe.extension.facebook.media.TapToPlay;
 import app.morphe.extension.facebook.media.TapToPlayForTests;
+import app.morphe.extension.facebook.media.TapToSeek;
 import app.morphe.extension.facebook.menu.MenuSectionsForTests;
 import app.morphe.extension.facebook.misc.MetaUpsells;
 import app.morphe.extension.facebook.misc.AnalyticsUploads;
@@ -569,10 +570,13 @@ public class PausedHooksTest {
         // The Friends tab comes off the bar.
         probes.put(PatchFamily.HIDDEN_TABS, Collections.singletonList(HiddenTabsForTests::hidesTheTab));
         // Facebook's own override of where the tab bar goes reads YES, for the bottom, where it read NO.
-        // With the bar at the bottom, Facebook's check of whether it slides away answers yes.
+        // With the bar at the bottom, Facebook's check of whether it slides away answers yes. The top
+        // bar's entry is told to move 0. (A kept bottom bar has its own test: with every switch on,
+        // the slide wins over it.)
         probes.put(PatchFamily.BOTTOM_TAB_BAR, Arrays.asList(
                 () -> BottomTabBar.override(TriState.NO.ordinal()) == TriState.YES.ordinal(),
-                TabBarScrollAway::slidesAway));
+                TabBarScrollAway::slidesAway,
+                () -> TabBarScrollAway.topBarOffset("app_header_container", -120) == 0));
         // Facebook's dark mode controller answers dark where it answered light.
         probes.put(PatchFamily.FORCE_DARK_MODE, Collections.singletonList(ForceDarkModeForTests::forcesDark));
         // A request for a post's comments that names no order asks for the chosen one, and with
@@ -667,9 +671,10 @@ public class PausedHooksTest {
         probes.put(PatchFamily.HDR_BRIGHTNESS, Arrays.asList(
                 HdrBrightnessForTests::keepsAnHdrWindowInTheUsualRange, HdrBrightnessForTests::holdsTheHeadroom,
                 HdrBrightnessForTests::answersTheScreenAsShowingNoHdr));
-        // A reel's bar is kept full size, and a full-screen video sets no fade timer.
+        // A reel's bar is kept full size, a full-screen video sets no fade timer, and a press off the
+        // bar's thumb is held as a tap to seek.
         probes.put(PatchFamily.PROGRESS_BAR, Arrays.asList(ProgressBar::keepsReelBar, ProgressBar::keepsControls,
-                ProgressBar::liftsFooter, ProgressBar::noFadedBar));
+                ProgressBar::liftsFooter, ProgressBar::noFadedBar, PausedHooksTest::holdsATapOnTheBar));
         // A tab asked for shows without its slide.
         probes.put(PatchFamily.SCREEN_TRANSITIONS, Collections.singletonList(() -> !ScreenTransitionsForTests.slides()));
         // The app icon benefit is answered yes, at the provider's check and at the picker's own look,
@@ -744,6 +749,29 @@ public class PausedHooksTest {
             if (!family.switches.isEmpty()) switched.add(family);
         }
         return switched;
+    }
+
+    /** A press at the far end of a bar whose thumb sits at its start, then a cancel to end it. */
+    private static boolean holdsATapOnTheBar() {
+        android.widget.SeekBar bar = new android.widget.SeekBar(RuntimeEnvironment.getApplication());
+        android.graphics.drawable.ShapeDrawable thumb = new android.graphics.drawable.ShapeDrawable();
+        thumb.setIntrinsicWidth(40);
+        thumb.setIntrinsicHeight(40);
+        bar.setThumb(thumb);
+        bar.setMax(1000);
+        bar.measure(android.view.View.MeasureSpec.makeMeasureSpec(1000, android.view.View.MeasureSpec.EXACTLY),
+                android.view.View.MeasureSpec.makeMeasureSpec(60, android.view.View.MeasureSpec.EXACTLY));
+        bar.layout(0, 0, 1000, 60);
+        android.view.MotionEvent down = android.view.MotionEvent.obtain(0, 0, android.view.MotionEvent.ACTION_DOWN, 900, 30, 0);
+        android.view.MotionEvent cancel = android.view.MotionEvent.obtain(0, 10, android.view.MotionEvent.ACTION_CANCEL, 900, 30, 0);
+        try {
+            boolean held = TapToSeek.takesTouch(bar, down);
+            TapToSeek.takesTouch(bar, cancel);
+            return held;
+        } finally {
+            down.recycle();
+            cancel.recycle();
+        }
     }
 
     /** Adds a line to [wrong] for every probe that didn't answer [changes]. */

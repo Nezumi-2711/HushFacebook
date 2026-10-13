@@ -132,6 +132,7 @@ final class SwitchLabels {
         if (setting == Settings.TURN_OFF_HDR_BRIGHTNESS) return L10n.t("Turn off HDR brightness");
         if (setting == Settings.KEEP_PROGRESS_BAR) return L10n.t("Keep the progress bar");
         if (setting == Settings.KEEP_PROGRESS_BAR_TIME) return L10n.t("Show a reel's time");
+        if (setting == Settings.TAP_TO_SEEK) return L10n.t("Tap the bar to seek");
         if (setting == Settings.DOWNLOAD_VIDEOS) return L10n.t("Download feed and Watch videos");
         if (setting == Settings.CLIPBOARD_DOWNLOAD) return L10n.t("Offer to download copied links");
         if (setting == Settings.DOWNLOAD_PHOTOS) return L10n.t("Save any photo");
@@ -184,6 +185,8 @@ final class SwitchLabels {
         if (setting == Settings.USE_SYSTEM_EMOJI) return L10n.t("Use the phone's emoji");
         if (setting == Settings.BOTTOM_TAB_BAR) return L10n.t("Tab bar at the bottom");
         if (setting == Settings.TAB_BAR_SCROLL_AWAY) return L10n.t("Hide the tab bar while scrolling");
+        if (setting == Settings.KEEP_TAB_BAR) return L10n.t("Keep the tab bar on screen");
+        if (setting == Settings.KEEP_TOP_BAR) return L10n.t("Keep the top bar on screen");
         if (setting == Settings.FORCE_DARK_MODE) return L10n.t("Force dark mode");
         throw new IllegalArgumentException("No individual switch label: " + setting.key);
     }

@@ -84,7 +84,12 @@ public class RowChevronTest {
     private ActivityController<Activity> controller;
 
     @Before
-    public void everyPatchIn() {
+    public void everyPatchIn() throws Exception {
+        // A retained export result is intentional. This layout fixture needs the original long summary.
+        java.lang.reflect.Field exportState = app.morphe.extension.shared.settings.preference.
+                ExportDiagnosticReportPreference.class.getDeclaredField("state");
+        exportState.setAccessible(true);
+        exportState.set(null, exportState.getType().getEnumConstants()[0]);
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
         // Meta App Manager, Messenger and Instagram on the phone put their rows under Supported links,
         // each opening its own page.

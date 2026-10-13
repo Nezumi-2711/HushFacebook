@@ -374,7 +374,7 @@ public class SettingsBackupPreference extends Preference {
         int switches = snapshot.switchChanges();
         String message;
         if (changes == 0) {
-            message = L10n.t("Your switches already match that file, so nothing will change.");
+            message = L10n.t("Your settings already match that file, so nothing will change.");
         } else {
             List<String> parts = new ArrayList<>();
             if (switches > 0) {

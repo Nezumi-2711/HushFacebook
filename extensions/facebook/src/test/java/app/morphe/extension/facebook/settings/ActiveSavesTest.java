@@ -63,8 +63,10 @@ public class ActiveSavesTest {
     private ActivityController<Activity> controller;
     private SettingsDialog dialog;
     private HushfacebookPreferenceFragment page;
+    private SavesForTests.FakeClock clock;
 
     @Before public void open() {
+        clock = SavesForTests.fakeClock();
         PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
         PatchFamily.inBuildForTests.remove(PatchFamily.MATERIAL_YOU_THEME);
         PauseForTests.resume();
@@ -157,7 +159,7 @@ public class ActiveSavesTest {
         assertEquals("the save isn't listed first", "running_save_" + id,
                 ((Preference) list().getItemAtPosition(0)).getKey());
         assertEquals("Saving a video", String.valueOf(((TextView) row.findViewById(android.R.id.title)).getText()));
-        assertEquals("Downloading\n4.2 MB of 100 MB", summaryOf(row));
+        assertEquals("Downloading\n4.2 MB of 100 MB\n0:00 elapsed", summaryOf(row));
         Button cancel = cancelOf(row);
         assertEquals("Cancel", cancel.getText().toString());
         assertEquals("Cancel saving this video", String.valueOf(cancel.getContentDescription()));
@@ -175,7 +177,7 @@ public class ActiveSavesTest {
 
     /**
      * Cancel sits on the row with no surface of its own, and a tap on it still shows a ripple, kept
-     * to the button. The page's Back arrow, an icon button, gets one bounded by a disc.
+     * to the button. The page's Back arrow, an icon button, gets the same bounded rectangular feedback.
      */
     @Test public void cancelAnswersATapWithARipple() {
         int id = SavesForTests.begin(RuntimeEnvironment.getApplication(), true);
@@ -191,8 +193,8 @@ public class ActiveSavesTest {
         assertTrue("Back has no press feedback", back.getBackground() instanceof android.graphics.drawable.RippleDrawable);
         android.graphics.drawable.Drawable disc = ((android.graphics.drawable.RippleDrawable) back.getBackground())
                 .findDrawableByLayerId(android.R.id.mask);
-        assertTrue("Back's ripple isn't a disc", disc instanceof android.graphics.drawable.GradientDrawable
-                && ((android.graphics.drawable.GradientDrawable) disc).getShape() == android.graphics.drawable.GradientDrawable.OVAL);
+        assertTrue("Back's ripple must follow the shared corner scale", disc instanceof android.graphics.drawable.GradientDrawable
+                && ((android.graphics.drawable.GradientDrawable) disc).getShape() == android.graphics.drawable.GradientDrawable.RECTANGLE);
     }
 
     private static View withDescription(View root, String description) {
@@ -218,7 +220,7 @@ public class ActiveSavesTest {
         View row = row(id);
         assertNotNull(row);
         assertEquals("Saving a photo", String.valueOf(((TextView) row.findViewById(android.R.id.title)).getText()));
-        assertEquals("Downloading", summaryOf(row));
+        assertEquals("Downloading\n0:00 elapsed", summaryOf(row));
         assertEquals("Cancel saving this photo", String.valueOf(cancelOf(row).getContentDescription()));
         assertTrue(cancelOf(row).performClick());
         assertTrue(SavesForTests.cancelled(id));
@@ -237,22 +239,48 @@ public class ActiveSavesTest {
         SavesForTests.joining(id);
         ShadowLooper.idleMainLooper();
         assertSame("the row was rebuilt", cancel, cancelOf(row(id)));
-        assertEquals("Joining the picture and sound", summaryOf(row));
+        assertEquals("Joining the picture and sound\n0:00 elapsed", summaryOf(row));
         SavesForTests.saving(id);
         ShadowLooper.idleMainLooper();
-        assertEquals("Copying to the gallery", summaryOf(row));
+        assertEquals("Copying to the gallery\n0:00 elapsed", summaryOf(row));
 
         assertTrue(SavesForTests.publishing(id));
         ShadowLooper.idleMainLooper();
         assertSame("the publishing row was rebuilt", cancel, cancelOf(row(id)));
         assertFalse("publishing still offers Cancel", cancel.isEnabled());
-        assertEquals("Copying to the gallery", summaryOf(row));
+        assertEquals("Copying to the gallery\n0:00 elapsed", summaryOf(row));
         assertFalse(app.morphe.extension.facebook.download.SaveControl.cancel(id));
         assertNotNull("a rejected cancel removed the row", row(id));
 
         SavesForTests.end(id);
         layout();
         assertNull("a finished save is still listed", row(id));
+    }
+
+    /**
+     * The row says how fast the save downloads and how long it has run, and the time goes on once
+     * a second while no bytes come, through a stall and a join, which has no rate to give.
+     */
+    @Test public void aSavesRowSaysItsRateAndItsTimeKeepsGoing() {
+        Shadows.shadowOf(notifications()).setNotificationsEnabled(false);
+        int id = SavesForTests.begin(RuntimeEnvironment.getApplication(), true);
+        for (int quarter = 0; quarter <= 8; quarter++) {
+            SavesForTests.transferred(id, quarter * MIB / 4, -1);
+            clock.advanceMillis(250);
+        }
+        show();
+        // Two megabytes in 2.25 s, read up to now: 2.25 s since the first sample.
+        assertEquals("Downloading\n2.0 MB so far\n910 KB a second, 0:02 elapsed", summaryOf(row(id)));
+
+        // A stall: the tick moves the time on, and the rate falls away with nothing arriving.
+        clock.advanceMillis(6_000);
+        ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals("Downloading\n2.0 MB so far\n0:08 elapsed", summaryOf(row(id)));
+
+        SavesForTests.joining(id);
+        clock.advanceMillis(3_000);
+        ShadowLooper.idleMainLooper(1, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals("Joining the picture and sound\n0:11 elapsed", summaryOf(row(id)));
     }
 
     /** Rebuilt for a rotation, the page lists each save once, and goes on following it. */
@@ -272,7 +300,7 @@ public class ActiveSavesTest {
         assertEquals("a rebuilt page listed a save twice", 2, savesListed());
         SavesForTests.joining(first);
         ShadowLooper.idleMainLooper();
-        assertEquals("Joining the picture and sound", summaryOf(row(first)));
+        assertEquals("Joining the picture and sound\n0:00 elapsed", summaryOf(row(first)));
         SavesForTests.end(second);
         layout();
         assertEquals(1, savesListed());
@@ -289,6 +317,28 @@ public class ActiveSavesTest {
         layout();
         TreeSet<String> after = new TreeSet<>(Arrays.asList(prefs.list() == null ? new String[0] : prefs.list()));
         assertEquals("a save stored something", before, after);
+    }
+
+    @Test public void lastGenericResultRemainsReadableWithoutNotifications() {
+        Shadows.shadowOf(notifications()).setNotificationsEnabled(false);
+        int id = SavesForTests.begin(RuntimeEnvironment.getApplication(), true);
+        show();
+        SavesForTests.end(id);
+        layout();
+        Preference result = page.findPreference("last_save_outcome");
+        assertNotNull("failure disappeared with its progress row", result);
+        assertEquals("Last save", result.getTitle().toString());
+        assertEquals("The video wasn't saved. Try again.", result.getSummary().toString());
+        assertFalse(result.isSelectable());
+        assertFalse(result.isPersistent());
+        controller.recreate();
+        ShadowLooper.idleMainLooper();
+        dialog = (SettingsDialog) controller.get().getFragmentManager().findFragmentByTag("hushfacebook_settings");
+        page = SettingsL10nTest.pageOf(dialog);
+        page.navigation.navigate("Downloads");
+        layout();
+        assertEquals("The video wasn't saved. Try again.",
+                page.findPreference("last_save_outcome").getSummary().toString());
     }
 
     /** Two saves on the Downloads page, drawn as a phone draws them. */

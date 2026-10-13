@@ -48,11 +48,11 @@ if ($env:HUSHFACEBOOK_SKIP_PRE_PUSH -eq '1') {
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 # A hook runs with git's own environment. User environment variables set after the shell
-# launched, or set in the user scope only, may be absent. Import the five this script and
+# launched, or set in the user scope only, may be absent. Import the six this script and
 # its suites need from the registry so a gate worktree can find the desktop CLI, the
-# fixture folder, the build governor, the device serial and the machine's build queue, which
-# the fixture applies wait in (Invoke-HeavyJob).
-foreach ($envName in @('HUSHFACEBOOK_DESKTOP_JAR', 'HUSHFACEBOOK_FIXTURE_DIR',
+# fixture folder, the fingerprint history, the build governor, the device serial and the
+# machine's build queue, which the fixture applies wait in (Invoke-HeavyJob).
+foreach ($envName in @('HUSHFACEBOOK_DESKTOP_JAR', 'HUSHFACEBOOK_FIXTURE_DIR', 'HUSHFACEBOOK_FINGERPRINT_HISTORY_DIR',
         'HUSHFACEBOOK_BUILD_WRAPPER', 'HUSHFACEBOOK_DEVICE_SERIAL', 'BUILD_QUEUE_SCRIPT')) {
     if (-not (Test-Path "Env:\$envName")) {
         $regValue = [Environment]::GetEnvironmentVariable($envName, [EnvironmentVariableTarget]::User)
@@ -556,7 +556,11 @@ try {
         'scripts/FingerprintCandidates.java',
         'scripts/FingerprintFixture.java',
         'scripts/fingerprint-calibration.txt',
+        'scripts/fingerprint-calibration-582-arm64.txt',
+        'scripts/fingerprint-calibration-582-armv7.txt',
         'scripts/fingerprint-candidates.ps1',
+        'scripts/fingerprint-history.ps1',
+        'scripts/fingerprint-history.txt',
         'scripts/fingerprint-signature.schema.json',
         'scripts/test-fingerprint-candidates.ps1'
     )

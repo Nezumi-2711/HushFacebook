@@ -1,10 +1,84 @@
 # Changelog
 
-Every Hushfacebook release, newest first.
+Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Added
+
+* **Facebook:** Two new switches under Appearance keep the bars on screen while you scroll, each on its own (issue #132). **Keep the tab bar on screen** stops the bottom tab bar from sliding away on accounts where Facebook does that by itself. It greys out while `Hide the tab bar while scrolling` is on, and needs a restart. With the bar kept, the bottom of every page stays above it, so a reel's progress bar isn't hidden behind the tabs. **Keep the top bar on screen** holds the top bar with search and Messenger in place as you scroll down, with the tabs too when they sit at the top. It works on the next scroll, no restart needed. Both start off.
+* **Facebook:** `Keep the progress bar` has a new switch under Playback, **Tap the bar to seek** (issue #125). Facebook's bar on reels and videos only moves when you drag its dot, and a tap anywhere else on it did nothing. With the switch on, a tap jumps to that spot, and a drag can start anywhere on the bar. It works with or without `Keep the progress bar`, starts off and needs no restart.
+* **Facebook:** `Hushfacebook settings` has an **App name** option (issue #105). Type a name in Morphe Manager when you patch, and it's what shows under the app icon, in App info and on the recent apps screen instead of Facebook, so a patched copy is easy to tell apart. It stays when you pick another app icon. Leave it empty and the labels stay exactly as Facebook ships them. It only changes the name. `Clone app` is still what lets a copy install next to the official Facebook.
+* **Facebook:** The diagnostic report has a Network section with how much Facebook downloaded and uploaded since it finished starting up, and since it last came back on screen. Android already keeps those counts for every app. Hushfacebook just reads them when Facebook starts, when it comes back on screen and when you save the report, and nothing gets sent anywhere. The count covers all of Facebook, Hushfacebook's own saves included. It's there so a copy patched with `Block background ad prefetch` and one patched without it can be compared with real numbers.
+* **Facebook:** A running save now says how fast it's downloading and how long it's been going, in its notification and on the Downloads page, like "1.3 MB a second, 0:42 elapsed". The speed covers about the last five seconds, so it drops when the connection stalls instead of showing the old number. Joining the picture and sound and copying to the gallery show the time only, since nothing's coming over the network then. The time keeps going once a second until the save ends.
+* **Tooling:** `patch-for-device.ps1 -PatchOptions` hands option values to a patch, like `@{ 'Hushfacebook settings' = @('appName=HushBook') }`. It stops before patching when the patch isn't in the build or an entry isn't key=value.
+* **Tooling:** `scripts/fuzz-parsers.ps1` fuzzes the DASH manifest reader and the MP4 joiner with Jazzer, locally and only when you run it. It has to find a bug planted in a test-only reader before it trusts a clean run, keeps every input inside set limits, and minimizes what it finds. The seeds and any saved findings run with the ordinary unit tests. CONTRIBUTING.md has the setup. Its first seeds turned up one thing: a manifest's negative width, height or bitrate went through as a negative number. It reads as unknown now, the same as a missing one.
+
+### Changed
+
+* **Facebook:** A saved diagnostic report now goes in Download/Hushfacebook, the same folder as the crash files, so everything for a bug report is in one place. Reports saved before this stay in Download/Morphe.
+* **Facebook:** `Reels quality` and `Stories quality` say how each choice relates to `Playback quality` (issue #90 asked). Their first choice is now called Same as Playback quality, and a quality of their own reads like "Highest for reels, whatever Playback quality is set to." instead of a bare "Highest".
+* **Facebook:** The `Unlock app icons` summary names the `Pick an app icon` row that opens the App icon page, so it reads right in search results and in every language, and the hint in the list editors writes ID in capitals like the rest of the settings.
+* **Tooling:** The fingerprint calibration reads the retired 577 and 580 from a folder of their own, `HUSHFACEBOOK_FINGERPRINT_HISTORY_DIR`, now that the fixture folder only keeps 582. Each bundle has to match the SHA-256, version, ABI and Meta signers `scripts/fingerprint-history.txt` pins, or the run stops and says what's off. It doesn't skip. Two new lists hold the ranker to nine feed, Reels and story menu targets each from 580 to both 582 builds. CONTRIBUTING.md has the one-time setup.
+* **Tooling:** The fingerprint ranker reads back strings Redex moved into a string table, where the call proves which case it asks for, and counts them as the method's own. The report and the saved signature say which table and case each came from. Signatures saved before this are version 1 and get refused, so capture them again. A build with more tables than the ranker reads makes a signature that counts these strings fail closed, since its true match could be missing them. The case number a proven table call asks for no longer counts as one of the method's numbers too, since Redex renumbers those cases from build to build.
+* **Tooling:** The build moves to Gradle 9.8.1, Kotlin 2.4.21, commons-lang3 3.21.0 and androidx.annotation 1.11.0. They're patch and minor releases, nothing in the patches changes, and the dependency checksums cover the new artifacts.
+
 ### Fixed
+
+* **Facebook:** With `Keep the progress bar` on, every reel in the Reels tab keeps its bar. Reels under a minute showed it on every other reel only (issue #73), because the Reels tab answers Facebook's minimum length check with its own version and the hook that gives a short reel its bar never ran there. A reel could also come up without the bar right after a swipe, when the hide Facebook meant for the reel leaving the screen landed on the next one.
+* **Facebook:** With `Keep the progress bar` on, a reel no longer picks up the last one's "most replayed" graph or chapter marks. Facebook takes the graph away when the bar thins out, and a kept bar never does, so one reel's graph sat over the next one's bar until you dragged it. After a reel with chapters, the next one could also come up with no bar at all. Both get cleared as each new reel loads now, and the graph shows while you drag, the way Facebook shows it.
+* **Facebook:** After you pick an app icon, the long press on the new icon lists Hushfacebook settings again right away. Android takes an app's shortcuts off when its launcher entry changes, and since Facebook keeps running after an icon change, the shortcut stayed gone until Facebook was closed and opened again (issue #119).
+* **Facebook:** With `Debug logging` on, the report's list of screens opened no longer carries the id from a Facebook app link. A link like fb://profile/1234567890 is written as profile/#, since the report's redaction only caught ids of 15 digits or more and older accounts' and most Pages' ids are shorter. Addresses on Instagram, Threads, WhatsApp and m.me are now cut from the whole report the way facebook.com ones already were.
+* **Facebook:** `Default comment order` set to All comments now picks the unfiltered row on posts whose sort menu doesn't list the usual All comments row. A diagnostic report on issue #110 showed menus like that, and those posts stayed on Most relevant. Where a menu has both, the usual row is picked, even if Facebook opened the post on the other one.
+* **Facebook:** With `Use the system font` on, a phone font that draws Bengali or Devanagari itself and hangs the vowel signs past its own line box now gets the extra room too (issue #96). Only Latin letters were measured before, so a font like that could fit y and g and still cut the bottoms off its captions. Text the phone's usual fallback font draws keeps Facebook's layout.
+* **Tooling:** A fixture test follows the top bar's scroll-away name from where Facebook sets it into the field `Keep the top bar on screen` reads. A future build that moves the name now fails the test, where before the switch would have quietly done nothing with every test passing.
+* **Tooling:** The release script's publish step now checks that the receipt was made for the commit it's about to tag. It read the commit from a field the receipt doesn't have, so the check never ran.
+* **Tooling:** The release script's index step stops when it can't read the repository description. It used to leave the description as it was and still say the index was done.
+* **Tooling:** The patch, receipt and register scripts read the Android SDK path the way Android Studio writes it in local.properties, with the drive's colon escaped (`C\:\\Users\\...`). That form used to leave a path Windows couldn't open.
+* **Tooling:** `patch-for-device.ps1 -Replace` and the phone smoke test treat a phone without Facebook as not installed. `pm path` answers that with exit code 1 and no output, which the scripts took for an adb failure, so a replace install on a clean phone stopped before installing.
+* **Tooling:** The translation generator refuses a row for an extra plural form (like "|few") when its table lacks the row that form belongs to. Both checks used to pass, and every other count would have stayed in English.
+* **Tooling:** The two Python harnesses that copy the whole checkout delete the copy after a passing run. A failing run still leaves it in the temp folder to look at.
+
+## 0.11.1 (2026-10-12)
+
+* **Facebook:** Settings share clearer focus and disabled states in every theme. Editors keep rejected drafts, and Downloads and diagnostic export show their current result. This source update also adds bounded push and Reel-sidebar diagnostics and fixes the shared save limit.
+
+### Changed
+
+* **Facebook:** The install guide now points desktop-browser users to HushFacebook Web and its separate userscript instructions.
+
+* **Tooling:** Settings previews are refreshed from both Android SDK capture runs, with focus, disabled, validation and export-result states checked in all three themes.
+
+* **Facebook:** Settings controls have visible focus boundaries and distinct disabled actions in black, Material dark and Material light. Switches and button feedback follow the same small corner scale, and recovery spacing adapts to shorter screens and large text.
+* **Facebook:** Downloads keeps the last generic save result until Facebook closes, including when notifications are off. It contains no filename or media address. Joining and gallery-copy notifications now match the phase shown in settings.
+* **Facebook:** Diagnostic export shows copying or saving in its row, disables repeat actions while working, and leaves a readable result. Reopening the page keeps that state.
+
+* **Tooling:** The source ledger now includes FacebookGoodies, current NexAlloy branches and ten reviewed duplicate ReVanced forks. Pinned source and license records are updated; global GitLab coverage remains incomplete.
+
+* **Tooling:** The release receipt has been checked against retained, unforced patch runs for both supported 582 variants. It read all 88 patch results per input without running the patcher again or changing the retained files.
+
+* **Facebook:** With Debug logging on and Hold back analytics uploads off, reports count when Analytics2 requests a retry or finishes without one. This observes the stored retry flag without changing uploads. A job finishing without a retry is not reported as successful delivery.
+
+* **Facebook:** Diagnostic reports have a PUSH section for server registration outcomes and timing (issue #83). Separate lines cover FBNS transport readiness and FCM receive callbacks. Records survive process restarts, retain no tokens or message contents, and distinguish an unavailable observer from a route not observed in the window.
+
+* **Facebook:** With Debug logging and reel downloads on, a reel missing both known sidebars can add a small layout sample to the report. It keeps actual native view class paths, without reading names, captions or count values, to help identify layouts whose Download button is missing (issue #18). Deeper component paths aren't available.
+
+* **Facebook:** Playback quality has now been checked on a Page video story with anonymous viewing on. The 480p ceiling selected 360p from the available qualities, and Highest selected 1080p on the same story.
+
+* **Facebook:** The known-issues notes now reflect reporter confirmations for Reels saving and ads. The original Xiaomi Gallery reporter also confirmed full-quality saves play with sound with Save videos other apps can open off.
+* **Facebook:** The settings pages have larger headings and blue navigation icons, with more space between category links. Controls stay grouped, and the version and build details sit below the current status with a quieter appearance. Pause, Resume and Undo have outlined buttons.
+* **Tooling:** Settings captures keep separate copies for each Android SDK and include the end of every category, so long pages are checked below the first screen too. Marketplace previews use the current page layout as well.
+
+### Fixed
+
+* **Facebook:** Individual photos, videos and photo chains share one three-save limit. Cancelling a save keeps its slot occupied until cleanup finishes, and a failed worker start gives the slot back.
+
+* **Facebook:** The people, Pages and sites editor keeps rejected drafts open and shows its count and capacity as you type. Single-line editors keep Save and Cancel with the keyboard in landscape, as the word editors do. Search no longer matches the word null for rows without a summary.
+* **Facebook:** Font file feedback distinguishes a selected file from an enabled font override. Replacing or removing a font file also keeps the restart reminder visible, including a replacement with the same name.
+
+* **Facebook:** Push diagnostics keep newer observations when another Facebook process writes while a record update is delayed. The clock is sampled under the shared lock, so the delay is no longer mistaken for a restart.
+
+* **Tooling:** Linux codec checks clean up their tool processes even if the private launcher is terminated. A separate guard keeps ownership of the process group, so cleanup doesn't send a terminating signal through a group number that could have been reused.
 
 * **Facebook:** With `Keep the progress bar` on, a reel goes where you drag it again (issue #120). Keeping the full-size look ran Facebook's time writer, which put the bar back at the player's old spot right before Facebook read it to seek. On reels that show preview frames while you drag, that sent the reel back to where the drag began. The same writer sent the bar to the start when the reel's length wasn't known yet.
 * **Facebook:** With `Show a reel's time` on, the time comes back on its own after a reel ends or after a drag with preview frames (issue #73). Facebook hid it at those moments and only showed it again on the next drag, so a reel could play on with the bar but no time.

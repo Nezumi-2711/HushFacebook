@@ -279,7 +279,11 @@ try {
                 if (-not (Test-Path -LiteralPath (Join-Path $assets $name) -PathType Leaf)) { throw "No $name in $assets. Run -Stage bundle first." }
             }
             $receipt = Get-Content -LiteralPath (Join-Path $assets $receiptName) -Raw | ConvertFrom-Json
-            if ($receipt.source.commit -and $receipt.source.commit -ne $head) { throw "The receipt is for $($receipt.source.commit), and HEAD is $head." }
+            # build-release-receipt writes the commit it saw as release.commit.
+            $receiptCommit = [string]$receipt.release.commit
+            if ($receiptCommit -ne $head) {
+                throw "The receipt is for $(if ($receiptCommit) { $receiptCommit } else { 'no commit' }), and HEAD is $head."
+            }
 
             $notes = Join-Path $assets 'notes.md'
             Invoke-ReleaseText 'The release notes' @('github-notes', '--version', $Version, '--checked', $Checked, '--out', $notes)
@@ -325,6 +329,8 @@ try {
             Copy-Item -LiteralPath (Join-Path $assets $receiptName) -Destination (Join-Path $root $receiptName) -Force
 
             $description = [string](& gh repo view $Repository --json description --jq .description)
+            # An unread description would compare equal to its own update and be left as it was.
+            if ($LASTEXITCODE -ne 0) { throw "gh couldn't read $Repository's description (exit $LASTEXITCODE)." }
             $catalog = Get-Content -LiteralPath (Join-Path $root 'patches-list.json') -Raw | ConvertFrom-Json
             $count = @($catalog.patches).Count
             # The build moves with the catalog too, or a port leaves the description on the old one.

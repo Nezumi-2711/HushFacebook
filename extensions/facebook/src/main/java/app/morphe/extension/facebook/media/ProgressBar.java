@@ -24,7 +24,10 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * <p>The Reels viewer's bar on 581 is the unified video scrubber (VDDScrubberPlugin). It has an
  * active look and a passive one, a thin line, and the patch asks {@link #keepsReelBar} first in the
  * passive one: a yes runs the active look instead, then {@link #hideTimeLabel} hides the elapsed
- * and total time the active look shows, so it appears only while you drag, as stock. Older builds' viewer used a bottom bar
+ * and total time the active look shows, so it appears only while you drag, as stock. The patch hides
+ * the "most replayed" graph over the bar there too, as the passive look does, and {@link
+ * #clearsLastReel} has it clear the graph and the chapter marks as the scrubber takes the next reel,
+ * so one reel's doesn't stay over the next. Older builds' viewer used a bottom bar
  * (FbShortsViewerBottomSeekBarPlugin), which has two sizes. Facebook
  * makes it full size, with the thumb showing and the bar taking drags, when it shows a reel's
  * controls or while you scrub, and shrinks it to a line 2 dp high with the thumb hidden and drags
@@ -42,12 +45,16 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * hides them about 3 seconds after a tap. The patch asks {@link #keepsControls} first in that
  * extension's timer and in that runnable, and a yes hides nothing. A tap still hides them.
  *
+ * <p>Tap the bar to seek, in the same family, is {@link TapToSeek}.
+ *
  * <p>Off, paused, before the settings are ready, or when anything here fails, both answer no and
  * Facebook carries on with its own code.
  */
 public final class ProgressBar {
     /** Counted under the patch's name each time the reel's bar is kept full size. */
     static final String REEL_BAR_KEPT = "Reel progress bar kept";
+    /** Counted each time the kept bar drops the last reel's graph and chapter marks for the next reel. */
+    static final String NEXT_REEL_CLEARED = "Reel bar cleared for the next reel";
     /** Counted each time a full-screen video's fade timer isn't set. */
     static final String CONTROLS_KEPT = "Video controls kept";
 
@@ -81,6 +88,9 @@ public final class ProgressBar {
     /** Counted each time the bar, while kept, is still set to the look that hides it. */
     static final String INVISIBLE_LOOK = "Reel bar set to the invisible look";
 
+    /** Counted each time the bar, while kept, takes back the place of a look Facebook parked to hide it. */
+    static final String PARKED_HIDE_REPLACED = "Reel bar kept over a parked hide";
+
     /** The scrubber's looks that leave no bar on screen: 2 fades it out, 4 hides it. */
     static final int FADED = 2;
     static final int INVISIBLE = 4;
@@ -109,6 +119,18 @@ public final class ProgressBar {
      */
     public static boolean keepsReelBar() {
         return keeps("reel progress bar", REEL_BAR_KEPT);
+    }
+
+    /**
+     * The hook, as the scrubber takes another video. Facebook keeps one scrubber for the Reels
+     * viewer and hands it reel after reel without asking for a look again, and the passive
+     * look, which the kept bar never takes, is what took the last reel's "most replayed" graph and
+     * chapter marks away. True has the patch hide the graph and run Facebook's own reset of the
+     * chapter marks, which also brings back a bar the marks drew over; a reel with its own marks gets
+     * them again from Facebook. False loads the reel as Facebook does.
+     */
+    public static boolean clearsLastReel() {
+        return keeps("reel bar reset", NEXT_REEL_CLEARED);
     }
 
     /**
@@ -248,6 +270,20 @@ public final class ProgressBar {
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reel bar look", failure);
         }
+    }
+
+    /**
+     * The hook in the scrubber's look selector, when the look asked for is the one the bar already
+     * has, with the look Facebook parked to apply once a reel's player change ends. Facebook skips a
+     * look the bar has, so a hide parked as one reel left the screen still landed on the next reel to
+     * use the same scrubber, after that reel's own look had been skipped, and it played with no bar
+     * (#73). True, while the bar is kept, for a look that shows the bar over a parked hide: the
+     * selector goes on as for a new look and parks it in the hide's place. False keeps the skip.
+     */
+    public static boolean replacesParkedLook(@Nullable Integer look, @Nullable Integer parked) {
+        if (look == null || parked == null) return false;
+        if (look == FADED || look == INVISIBLE || (parked != FADED && parked != INVISIBLE)) return false;
+        return keeps("reel bar parked hide", PARKED_HIDE_REPLACED);
     }
 
     /** Whether the reel's time label stays up: the bar is kept and the time switch is on. */

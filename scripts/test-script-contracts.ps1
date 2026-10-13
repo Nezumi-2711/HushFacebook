@@ -298,6 +298,9 @@ if "%3"=="uninstall" goto uninstall
 exit /b 0
 :package_path
 if "%FAKE_ADB_MODE%"=="check-fail" goto check_fail
+if "%FAKE_ADB_MODE%"=="offline" goto offline
+rem pm path answers a package that isn't installed with exit 1 and nothing printed (Android 16).
+if "%FAKE_ADB_MODE%"=="absent" exit /b 1
 if "%FAKE_ADB_MODE%"=="present" echo package:/data/app/example/base.apk
 if "%FAKE_ADB_MODE%"=="uninstall-fail" echo package:/data/app/example/base.apk
 exit /b 0
@@ -307,6 +310,9 @@ echo Success
 exit /b 0
 :check_fail
 exit /b 17
+:offline
+echo adb.exe: device 'BROKEN' not found 1>&2
+exit /b 1
 :uninstall_fail
 exit /b 19
 '@
@@ -334,6 +340,19 @@ exit /b 19
     } '*could not check*' 'An ADB transport failure was treated as an absent package.'
     $calls = @(Get-Content -LiteralPath $log)
     Assert-True ($calls.Count -eq 1) 'The check-failure path continued after ADB failed.'
+
+    # adb's own failure also exits 1, but says why, so it isn't read as pm's "not installed".
+    Remove-Item -LiteralPath $log -Force
+    [System.IO.File]::WriteAllText($mode, 'offline', [System.Text.Encoding]::ASCII)
+    Assert-Throws {
+        Remove-AndroidPackageIfInstalled -Adb $fakeAdb -Serial 'BROKEN' -PackageName 'com.example.app'
+    } "*could not check*device 'BROKEN' not found*" 'adb failing with exit 1 was treated as an absent package.'
+    [System.IO.File]::WriteAllText($mode, 'absent', [System.Text.Encoding]::ASCII)
+    Assert-True (@(Get-AndroidPackagePaths -Adb $fakeAdb -Serial 'CLEAN' -PackageName 'com.example.app').Count -eq 0) `
+        'pm path exiting 1 with nothing printed was not read as not installed.'
+    [System.IO.File]::WriteAllText($mode, 'present', [System.Text.Encoding]::ASCII)
+    Assert-True ((@(Get-AndroidPackagePaths -Adb $fakeAdb -Serial 'READY' -PackageName 'com.example.app') -join ',') -eq
+        'package:/data/app/example/base.apk') 'An installed package gave no path.'
 
     Remove-Item -LiteralPath $log -Force
     [System.IO.File]::WriteAllText($mode, 'uninstall-fail', [System.Text.Encoding]::ASCII)
@@ -2691,8 +2710,9 @@ try {
         'scripts/test-injected-register-device.ps1' = @('injected-register-device.ps1', 'script-wiring.ps1',
             'test-injected-register-device.ps1', 'verify-injected-registers.ps1')
         'scripts/test-fingerprint-candidates.ps1' = @('FingerprintCandidates.java', 'FingerprintFixture.java',
-            'fingerprint-calibration.txt', 'fingerprint-candidates.ps1', 'fingerprint-signature.schema.json',
-            'test-fingerprint-candidates.ps1')
+            'fingerprint-calibration.txt', 'fingerprint-calibration-582-arm64.txt', 'fingerprint-calibration-582-armv7.txt',
+            'fingerprint-candidates.ps1', 'fingerprint-history.ps1', 'fingerprint-history.txt',
+            'fingerprint-signature.schema.json', 'test-fingerprint-candidates.ps1')
         'scripts/test-facebook-sources.ps1' = @('audit-facebook-sources.ps1', 'facebook-sources.ps1', 'patch-target.ps1',
             'test-facebook-sources.ps1')
         'scripts/test-release-text.ps1' = @('release/release.ps1', 'test-release-text.ps1')
@@ -3922,6 +3942,22 @@ try {
     $chosen = Resolve-D8 -Root $checkout
     Assert-True ($chosen -like '*37.0.0*d8.bat') "Resolve-D8 chose $chosen over 37.0.0; 9.0.0 sorts above it as text."
 
+    # Android Studio escapes the drive's colon as well as each backslash.
+    Set-Content -LiteralPath (Join-Path $checkout 'local.properties') -Encoding ASCII `
+        -Value ('sdk.dir=' + (($sdk -replace '\\', '\\') -replace ':', '\:'))
+    $chosen = Resolve-D8 -Root $checkout
+    Assert-True ($chosen -like '*37.0.0*d8.bat') "Resolve-D8 chose $chosen from Android Studio's escaped sdk.dir."
+    # Resolve-Aapt2 reads the same line, and takes the newest build-tools whatever it carries.
+    Set-Content -LiteralPath (Join-Path (Join-Path (Join-Path $sdk 'build-tools') '38.0.0') 'aapt2.exe') -Value '' -Encoding ASCII
+    $keptAapt2 = $env:HUSHFACEBOOK_AAPT2
+    try {
+        $env:HUSHFACEBOOK_AAPT2 = $null
+        $chosen = Resolve-Aapt2 -Root $checkout
+        Assert-True ($chosen -like '*38.0.0*aapt2.exe') "Resolve-Aapt2 chose $chosen from Android Studio's escaped sdk.dir."
+    } finally {
+        $env:HUSHFACEBOOK_AAPT2 = $keptAapt2
+    }
+
     $explicit = Join-Path (Join-Path (Join-Path $sdk 'build-tools') '9.0.0') 'd8.bat'
     Assert-True ((Resolve-D8 -Explicit $explicit -Root $checkout) -eq $explicit) `
         'An explicit d8 path was not honoured.'
@@ -4573,6 +4609,9 @@ try {
         'shift',
         'goto next',
         ':take',
+        'rem Each -O with the -e before it, the patch the CLI gives that option to.',
+        'if "!PREV!"=="-O" >>"!HERE!options.log" echo !ENABLED! !V!',
+        'if "!PREV!"=="-e" set "ENABLED=!V!"',
         'if "!PREV!"=="-o" set "OUT=!V!"',
         'if "!PREV!"=="-r" set "RESULT=!V!"',
         'if "!V!"=="-f" set "FORCED=1"',
@@ -5222,6 +5261,31 @@ try {
     Assert-Throws { Invoke-DeviceBuild -Apk $variantApkm } "*$variantBuild, which the bundle does not declare, at version code $variantCode*" `
         'patch-for-device.ps1 took another build of a declared version.'
     Assert-True (-not (Test-Path -LiteralPath $javaLog)) 'patch-for-device.ps1 started the CLI on another build of a declared version.'
+    # -PatchOptions only takes key=value options for a patch this build has, checked before the CLI starts.
+    $firstPatchHere = @((Get-Content -LiteralPath (Join-Path $releaseRepo 'patches-list.json') -Raw | ConvertFrom-Json).patches)[0].name
+    foreach ($badOptions in @(
+            @{ Options = @{ 'No such patch' = @('appName=HushBook') }; Pattern = "*No patch named 'No such patch' in this build to give options to*" },
+            @{ Options = @{ $firstPatchHere = @('no equals sign') }; Pattern = "*The option 'no equals sign' for*isn't key=value*" })) {
+        Remove-Item -LiteralPath $javaLog -Force -ErrorAction SilentlyContinue
+        Assert-Throws {
+            & (Join-Path $PSScriptRoot 'patch-for-device.ps1') -Root $releaseRepo -DesktopJar $stubJar -Java $stubJava `
+                -Aapt2 $stubAapt2 -OutDir $deviceOut -Apk $fixturePaths[$releaseTarget.PackageVersion] `
+                -PatchOptions $badOptions.Options 6> $null
+        } $badOptions.Pattern 'patch-for-device.ps1 took patch options it should have refused.'
+        Assert-True (-not (Test-Path -LiteralPath $javaLog)) 'patch-for-device.ps1 started the CLI with patch options it should have refused.'
+    }
+    # An option goes after its own patch's -e. The CLI gives an -O to the -e before it, so one put
+    # in front landed on the patch listed before, and App name never reached Hushfacebook settings.
+    $optionedHere = @((Get-Content -LiteralPath (Join-Path $releaseRepo 'patches-list.json') -Raw | ConvertFrom-Json).patches)[1].name
+    $optionsLog = Join-Path $tools 'options.log'
+    Remove-Item -LiteralPath $javaLog, $optionsLog -Force -ErrorAction SilentlyContinue
+    & (Join-Path $PSScriptRoot 'patch-for-device.ps1') -Root $releaseRepo -DesktopJar $stubJar -Java $stubJava `
+        -Aapt2 $stubAapt2 -OutDir $deviceOut -Apk $fixturePaths[$releaseTarget.PackageVersion] `
+        -PatchOptions @{ $optionedHere = @('appName=HushBook') } 6> $null
+    $null = @(Read-QueueLog)
+    $optionsSeen =@(Get-Content -LiteralPath $optionsLog -ErrorAction SilentlyContinue) -join '; '
+    Assert-True ($optionsSeen -eq "$optionedHere appName=HushBook") `
+        "patch-for-device.ps1 gave the option to the wrong patch: '$optionsSeen'"
 
     # Another Meta app at a build the catalog declares. Neither script may hand it to the CLI: each
     # refuses it by name before anything is patched. The builder gets it beside the newest declared
@@ -5996,7 +6060,7 @@ try {
         "    "" bundle="" + (Split-Path -Leaf `$Bundle) + "" applied="" + `$AppliedDir.Replace('\', '/'))",
         "if ((Get-Content -LiteralPath '$failLiteral' -ErrorAction SilentlyContinue) -eq 'receipt') { exit 1 }",
         '$commit = (git -C $Root rev-parse HEAD).Trim()',
-        'Set-Content -LiteralPath (Join-Path $Root ''release-receipt-1.2.3.json'') -Value (''{"source":{"commit":"'' + $commit + ''"}}'') -Encoding ASCII',
+        'Set-Content -LiteralPath (Join-Path $Root ''release-receipt-1.2.3.json'') -Value (''{"release":{"commit":"'' + $commit + ''"}}'') -Encoding ASCII',
         'exit 0')
     # Each stand-in fails when fail.txt names it, so a case can stop the run at any step.
     Set-Content -LiteralPath (Join-Path $flowRepo 'scripts/test-script-contracts.ps1') -Encoding UTF8 -Value @(
@@ -6187,6 +6251,18 @@ try {
     Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 6> $null } '*-Checked*' 'Publish ran without a checked paragraph.'
     $flowChecked = Join-Path $releaseFlow 'checked.txt'
     Set-Content -LiteralPath $flowChecked -Value 'Checked.' -Encoding ASCII
+    # A receipt for another commit, or one naming none, is refused before anything is tagged: the
+    # assets would go out under a tag on a commit they weren't built from.
+    $flowReceipt = Join-Path $flowAssets 'release-receipt-1.2.3.json'
+    $keptReceipt = Get-Content -LiteralPath $flowReceipt -Raw
+    foreach ($other in @(('{"release":{"commit":"' + ('b' * 40) + '"}}'), '{"release":{}}')) {
+        Set-Content -LiteralPath $flowReceipt -Value $other -Encoding ASCII -NoNewline
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*The receipt is for*' `
+            "Publish went ahead with a receipt that isn't for HEAD: $other"
+    }
+    Set-Content -LiteralPath $flowReceipt -Value $keptReceipt -Encoding ASCII -NoNewline
+    Assert-True (@(Read-FlowLog).Count -eq 0) 'Publish ran a step before refusing the receipt.'
+    Assert-True (-not (& git -C $flowRepo tag --list v1.2.3)) 'Publish tagged the commit before refusing the receipt.'
     & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null
     $flow = @(Read-FlowLog)
     Assert-True ($flow.Count -eq 3 -and $flow[0] -like "py * github-notes --version 1.2.3 --checked $flowChecked --out *notes.md" -and
@@ -6213,6 +6289,14 @@ try {
             -Value ('<testsuite>' + ('<testcase/>' * $results.Cases) + '</testsuite>')
     }
     Remove-Item -LiteralPath (Join-Path $flowRepo 'release-receipt-1.2.3.json') -Force
+    # A description gh couldn't read stops the stage. Read as empty, it matched its own update, so
+    # nothing was edited and the stage still said the index was done.
+    Set-Content -LiteralPath $flowFails -Value 'repo view' -Encoding ASCII
+    Assert-Throws { & $flowScript -Stage index -Version 1.2.3 -ReadmeSummary $flowSummary -BundleSummary $flowSummary 6> $null 3> $null } `
+        "*couldn't read*description*" 'Index went on after gh could not read the repository description.'
+    Remove-Item -LiteralPath $flowFails -Force
+    Assert-True (-not (@(Read-FlowLog) -like 'gh repo edit*')) 'Index edited a description it could not read.'
+    Remove-Item -LiteralPath (Join-Path $flowRepo 'release-receipt-1.2.3.json') -Force -ErrorAction SilentlyContinue
     & $flowScript -Stage index -Version 1.2.3 -ReadmeSummary $flowSummary -BundleSummary $flowSummary 6> $null 3> $null
     $flow = @(Read-FlowLog)
     Assert-True ($flow.Count -eq 4 -and $flow[0] -eq 'gh release view v1.2.3 -R SysAdminDoc/HushFacebook --json publishedAt --jq .publishedAt' -and

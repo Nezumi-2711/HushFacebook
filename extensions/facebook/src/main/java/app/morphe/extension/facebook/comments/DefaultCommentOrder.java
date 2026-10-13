@@ -51,8 +51,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * <p>All comments is the exception (#110). Asked for up front on a friend's post whose sheet has no
  * sort menu, Facebook's answer drew no comment at all, while Newest and Most relevant drew them.
  * So a request for All comments goes out with Facebook's own choice, and when the answer's sort
- * menu offers All comments, {@link #sortMenu} picks it there the way a tap on that row does. A post
- * whose menu doesn't offer it, or that has no menu, stays in Facebook's order.
+ * menu offers All comments, {@link #sortMenu} picks it there the way a tap on that row does, by
+ * whichever token that menu names the row by ({@link CommentOrder#rowIn}). A post whose menu
+ * doesn't offer it, or that has no menu, stays in Facebook's order.
  *
  * <p>It fails open: with the patch not in the build, the switch off, Hushfacebook paused, the
  * settings not ready yet, Facebook's order chosen, or a failure in here, the request is Facebook's
@@ -302,22 +303,25 @@ public final class DefaultCommentOrder {
                         feedback.getClass().getName(), "comment_rendering_instance");
                 return;
             }
-            if (order.token.equals(string(tree(rendering, SELECTED), TOKEN))) {
+            String selected = string(tree(rendering, SELECTED), TOKEN);
+            List<String> offered = tokens(rendering);
+            String token = order.rowIn(offered);
+            // Answered when Facebook is on the row this menu would be picked at. On another of the
+            // order's rows while the usual one is offered, the usual one is picked.
+            if (token != null ? token.equals(selected) : order.isNamedBy(selected)) {
                 HookStatus.counted(FamilyNames.DEFAULT_COMMENT_ORDER, ANSWERED);
-                log("Facebook answered " + describe(order.token) + " already.");
+                log("Facebook answered " + describe(selected) + " already.");
                 return;
             }
-            List<String> offered = tokens(rendering);
-            if (!offered.contains(order.token)) {
+            if (token == null) {
                 HookStatus.counted(FamilyNames.DEFAULT_COMMENT_ORDER, NOT_OFFERED);
                 log("left a post whose menu offers " + offered + " in Facebook's order.");
                 return;
             }
             HookStatus.counted(FamilyNames.DEFAULT_COMMENT_ORDER, PICKED_IN_MENU);
-            log("picked " + describe(order.token) + " in the post's menu.");
+            log("picked " + describe(token) + " in the post's menu.");
             @SuppressWarnings("unchecked")
             Function1<Object, Object> menu = (Function1<Object, Object>) pick;
-            String token = order.token;
             Runnable tap = () -> {
                 picking.set(Boolean.TRUE);
                 try {

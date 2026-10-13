@@ -56,6 +56,11 @@ public class DefaultCommentOrderTest {
     private static final String NEWEST = "RECENT_ACTIVITY_INTENT_V1";
     private static final String ALL = "RANKED_UNFILTERED_CHRONOLOGICAL_REPLIES_INTENT_V1";
 
+    // The rows other posts' menus offer, as r7c7d7's diagnostic report on #110 listed them.
+    private static final String RELEVANT_ROW = "CHRONOLOGICAL_FILTERED_INTENT_V1";
+    private static final String NEWEST_ROW = "REVERSE_CHRONOLOGICAL_UNFILTERED_INTENT_V1";
+    private static final String ALL_ROW = "CHRONOLOGICAL_UNFILTERED_INTENT_V1";
+
     @Before
     public void inBuild() {
         DefaultCommentOrderForTests.inBuild(Boolean.TRUE);
@@ -114,6 +119,10 @@ public class DefaultCommentOrderTest {
         assertNull(CommentOrder.fromFile(2));
         assertNull(CommentOrder.ofToken("STARS_INTENT_V1"));
         assertNull(CommentOrder.ofToken(null));
+        assertSame("All comments' row in other menus", CommentOrder.ALL_COMMENTS, CommentOrder.ofToken(ALL_ROW));
+        assertNull(CommentOrder.ofToken(NEWEST_ROW));
+        assertNull(CommentOrder.ofToken(RELEVANT_ROW));
+        assertFalse(CommentOrder.FACEBOOK.isNamedBy(null));
     }
 
     /** The switch starts off, and turned on with the order still Facebook's, nothing changes. */
@@ -239,6 +248,60 @@ public class DefaultCommentOrderTest {
         assertEquals(report, 1, occurrences(report, "Default comment order: left a post whose menu offers ["
                 + RELEVANT + ", " + NEWEST + "] in Facebook's order."));
         assertEquals(report, 0, occurrences(report, POST));
+    }
+
+    /**
+     * #110: r7c7d7's report counted 8 menus "without All comments" that offered [RANKED_FILTERED,
+     * REVERSE_CHRONOLOGICAL_UNFILTERED, CHRONOLOGICAL_UNFILTERED] or [CHRONOLOGICAL_FILTERED,
+     * CHRONOLOGICAL_UNFILTERED], so those posts stayed on Most relevant. Their unfiltered row in All
+     * comments' place is picked now, the usual token still wins where a menu has both, and a menu
+     * with neither stays Facebook's.
+     */
+    @Test
+    public void allCommentsIsPickedByTheTokenAPostsMenuNamesItsRowBy() {
+        Settings.COMMENT_ORDER.save(CommentOrder.ALL_COMMENTS);
+        DefaultCommentOrder.mainForTests = Runnable::run;
+        BaseSettings.DEBUG.save(true);
+        LogBufferManager.clearLogBuffer();
+
+        DefaultCommentOrder.requestedOrder(null, POST, null);
+        assertEquals(Collections.singletonList(ALL_ROW), openMenu(POST, RELEVANT, RELEVANT, NEWEST_ROW, ALL_ROW));
+        DefaultCommentOrder.requestedOrder(null, OTHER_POST, null);
+        assertEquals(Collections.singletonList(ALL_ROW), openMenu(OTHER_POST, RELEVANT_ROW, RELEVANT_ROW, ALL_ROW));
+
+        DefaultCommentOrder.forget();
+        DefaultCommentOrder.requestedOrder(null, POST, null);
+        assertEquals("the usual token first", Collections.singletonList(ALL), openMenu(POST, RELEVANT, RELEVANT, ALL_ROW, ALL));
+        DefaultCommentOrder.requestedOrder(null, OTHER_POST, null);
+        assertTrue("already on that row", openMenu(OTHER_POST, ALL_ROW, RELEVANT_ROW, ALL_ROW).isEmpty());
+        DefaultCommentOrder.requestedOrder(null, OTHER_POST, null);
+        assertEquals("on the other row while the usual one is offered", Collections.singletonList(ALL),
+                openMenu(OTHER_POST, ALL_ROW, RELEVANT, ALL_ROW, ALL));
+        DefaultCommentOrder.requestedOrder(null, POST, null);
+        assertTrue("Newest isn't All comments", openMenu(POST, RELEVANT_ROW, RELEVANT_ROW, NEWEST_ROW).isEmpty());
+
+        // The pick's own request names that row, and the post keeps it like a tap's.
+        DefaultCommentOrder.forget();
+        DefaultCommentOrder.requestedOrder(null, POST, null);
+        List<Object> sent = new ArrayList<>();
+        DefaultCommentOrder.sortMenu(DefaultCommentOrderForTests.feedback(POST, RELEVANT_ROW, RELEVANT_ROW, ALL_ROW),
+                (Function1<Object, Unit>) token -> {
+                    DefaultCommentOrder.picked((String) token);
+                    sent.add(DefaultCommentOrder.requestedOrder((String) token, POST, null));
+                    return Unit.INSTANCE;
+                });
+        assertEquals(Collections.singletonList(ALL_ROW), sent);
+        assertEquals("a refresh asks for that row", ALL_ROW, DefaultCommentOrder.requestedOrder(null, POST, null));
+
+        String report = LogBufferManager.buildExportText();
+        assertEquals(report, 3, occurrences(report, "Default comment order: picked all_comments (" + ALL_ROW
+                + ") in the post's menu."));
+        assertEquals(report, 1, occurrences(report, "Default comment order: kept all_comments (" + ALL_ROW
+                + "), which its menu offered, for that post until Facebook restarts."));
+        assertEquals(report, 1, occurrences(report, "Default comment order: Facebook answered all_comments (" + ALL_ROW
+                + ") already."));
+        assertEquals(report, 1, occurrences(report, "Default comment order: left a post whose menu offers ["
+                + RELEVANT_ROW + ", " + NEWEST_ROW + "] in Facebook's order."));
     }
 
     /** With another order chosen, the switch off, paused or not in the build, a menu is never picked in. */

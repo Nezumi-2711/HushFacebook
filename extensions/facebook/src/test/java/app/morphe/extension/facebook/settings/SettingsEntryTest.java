@@ -216,6 +216,41 @@ public class SettingsEntryTest {
                 SettingsEntry.settingIntent(context, Settings.DOWNLOAD_COMPATIBLE.key).getComponent());
     }
 
+    /**
+     * Android disables the shortcuts tied to the launcher entry an icon change turns off, and
+     * Facebook keeps running, so the Hushfacebook one stayed gone until the next cold start (#119).
+     * Facebook's own PACKAGE_CHANGED naming the launcher entry puts it back after Android has had
+     * its turn; one naming another component, or another app, leaves the shortcuts alone.
+     */
+    @Test public void aLauncherChangePublishesTheShortcutAgainWithoutARestart() throws Exception {
+        android.content.Context context = RuntimeEnvironment.getApplication();
+        android.content.pm.ShortcutManager manager = context.getSystemService(android.content.pm.ShortcutManager.class);
+        String pkg = context.getPackageName();
+        SettingsEntry.watchLauncherChanges(context);
+        manager.removeAllDynamicShortcuts();
+
+        context.sendBroadcast(packageChanged("package:" + pkg, pkg + ".SomeService"));
+        context.sendBroadcast(packageChanged("package:com.example.other", app.morphe.extension.facebook.misc.AppIcons.LAUNCHER));
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(SettingsEntry.LAUNCHER_CHANGE_DELAY_MS));
+        app.morphe.extension.shared.Utils.awaitBackgroundTasksForTests();
+        assertNull("another component's change", shortcut(manager, SettingsEntry.SHORTCUT_ID));
+
+        context.sendBroadcast(packageChanged("package:" + pkg, app.morphe.extension.facebook.misc.AppIcons.LAUNCHER,
+                app.morphe.extension.facebook.misc.AppIcons.LAUNCHER + ".vaporwave_ic"));
+        ShadowLooper.idleMainLooper();
+        app.morphe.extension.shared.Utils.awaitBackgroundTasksForTests();
+        assertNull("not before Android has disabled the old ones", shortcut(manager, SettingsEntry.SHORTCUT_ID));
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(SettingsEntry.LAUNCHER_CHANGE_DELAY_MS));
+        app.morphe.extension.shared.Utils.awaitBackgroundTasksForTests();
+        assertNotNull("published again on the launcher change", shortcut(manager, SettingsEntry.SHORTCUT_ID));
+        assertTrue("the whole package", SettingsEntry.namesLauncher(pkg, packageChanged("package:" + pkg, pkg)));
+    }
+
+    private static Intent packageChanged(String data, String... components) {
+        return new Intent(Intent.ACTION_PACKAGE_CHANGED, android.net.Uri.parse(data))
+                .putExtra(Intent.EXTRA_CHANGED_COMPONENT_NAME_LIST, components);
+    }
+
     /** What the platform leaves after Facebook's pushes rank ahead of the Hushfacebook shortcut. */
     private static void demote(android.content.Context context, android.content.pm.ShortcutManager manager,
                                int rank, String label) {

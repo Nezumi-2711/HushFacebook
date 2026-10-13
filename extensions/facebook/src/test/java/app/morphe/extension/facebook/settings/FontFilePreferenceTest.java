@@ -18,6 +18,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.preference.Preference;
 import android.preference.PreferenceGroup;
@@ -33,6 +34,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implementation;
+import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.shadows.ShadowToast;
@@ -45,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import app.morphe.extension.facebook.font.FontFile;
 import app.morphe.extension.facebook.font.FontFileTest;
@@ -54,6 +58,7 @@ import app.morphe.extension.shared.SettingsContextRule;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.WorkerPoolForTests;
 import app.morphe.extension.shared.settings.Setting;
+import app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment;
 
 /**
  * Font file and Use your phone's font under the Use the system font switch: the picker a tap opens,
@@ -95,8 +100,8 @@ public class FontFilePreferenceTest {
             assertEquals("Use the system font", String.valueOf(toggle.getTitle()));
             Preference choose = page.findPreference(FontFilePreference.CHOOSE_KEY);
             assertEquals("Font file", String.valueOf(choose.getTitle()));
-            assertEquals("None chosen, so your phone's font is used. Choose a .ttf or .otf font file of up to "
-                    + "20 MB.", String.valueOf(choose.getSummary()));
+            assertEquals("No file chosen. Choose a .ttf or .otf font file of up to 20 MB.",
+                    String.valueOf(choose.getSummary()));
             assertTrue(choose.isEnabled());
             assertNull("a way back to the phone's font with nothing picked",
                     page.findPreference(FontFilePreference.PHONE_FONT_KEY));
@@ -114,7 +119,7 @@ public class FontFilePreferenceTest {
             Preference phone = page.findPreference(FontFilePreference.PHONE_FONT_KEY);
             assertNotNull(phone);
             assertEquals("Use your phone's font", String.valueOf(phone.getTitle()));
-            assertEquals("Stops using the font file and goes back to your phone's font.", String.valueOf(phone.getSummary()));
+            assertEquals("Removes the saved font file. Use the system font stays off.", String.valueOf(phone.getSummary()));
             assertTrue(phone.isEnabled());
             assertEquals(choose.getParent(), phone.getParent());
             assertTrue("the way back comes before Font file", phone.getOrder() > choose.getOrder());
@@ -175,13 +180,97 @@ public class FontFilePreferenceTest {
 
             assertEquals("Rubik-Regular.ttf", Settings.FONT_SOURCE.savedValue());
             assertArrayEquals(rubik, Files.readAllBytes(copy().toPath()));
-            assertEquals("Font set to " + L10n.isolate("Rubik-Regular.ttf") + ". Restart Facebook to see it.",
+            assertFalse("picking a font enabled the override", Settings.USE_SYSTEM_FONT.savedValue());
+            assertEquals("Selected " + L10n.isolate("Rubik-Regular.ttf")
+                            + ". Turn on Use the system font and restart Facebook to use it.",
                     ShadowToast.getTextOfLatestToast());
             Preference choose = page.findPreference(FontFilePreference.CHOOSE_KEY);
-            assertEquals("Using " + L10n.isolate("Rubik-Regular.ttf") + ". Choose another file to replace it.",
+            assertEquals("Selected " + L10n.isolate("Rubik-Regular.ttf")
+                            + ". Use the system font is off. Turn it on and restart Facebook to use this file.",
                     String.valueOf(choose.getSummary()));
             assertTrue(choose.isEnabled());
             assertTrue(page.findPreference(FontFilePreference.PHONE_FONT_KEY).isEnabled());
+            assertTrue(AbstractPreferenceFragment.restartPending.contains(FontFilePreference.CHOOSE_KEY));
+        }
+    }
+
+    /** A saved file is a selection, and binding reads the current override switch. */
+    @Test
+    public void aSelectedFilesFeedbackFollowsTheOverrideSwitch() throws Exception {
+        Settings.USE_SYSTEM_FONT.save(true);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            deliver(activity, tap(activity, page), "content://font-test/Rubik-Regular.ttf",
+                    FontFileTest.font(FontFileTest.STATIC_FONT));
+            Preference choose = page.findPreference(FontFilePreference.CHOOSE_KEY);
+            assertEquals("Selected " + L10n.isolate("Rubik-Regular.ttf")
+                            + ". Restart Facebook to apply the font change.",
+                    ShadowToast.getTextOfLatestToast());
+            assertEquals("Selected " + L10n.isolate("Rubik-Regular.ttf")
+                            + ". Font changes apply after restarting Facebook.", String.valueOf(choose.getSummary()));
+            assertEquals("Removes the saved font file. Restart Facebook to use your phone's font.",
+                    String.valueOf(page.findPreference(FontFilePreference.PHONE_FONT_KEY).getSummary()));
+
+            Settings.USE_SYSTEM_FONT.save(false);
+            ShadowLooper.idleMainLooper();
+            choose.getView(null, null);
+            assertEquals("Selected " + L10n.isolate("Rubik-Regular.ttf")
+                            + ". Use the system font is off. Turn it on and restart Facebook to use this file.",
+                    String.valueOf(choose.getSummary()));
+            assertFalse(Settings.USE_SYSTEM_FONT.savedValue());
+        }
+    }
+
+    /** The file's bytes can change while its name stays the same, and the notice survives reopening. */
+    @Test
+    @Config(shadows = NonMappingTypefaceBuilder.class)
+    public void replacingTheSameNamedFileStillLeavesARestartReminder() throws Exception {
+        byte[] first = FontFileTest.font(FontFileTest.STATIC_FONT);
+        byte[] replacement = FontFileTest.font(FontFileTest.VARIABLE_FONT);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            SettingsDialog dialog = SettingsL10nTest.show(activity);
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(dialog);
+            deliver(activity, tap(activity, page), "content://font-test/first/font.ttf", first);
+            AbstractPreferenceFragment.restartPending.clear();
+            deliver(activity, tap(activity, page), "content://font-test/second/font.ttf", replacement);
+            assertEquals("The replacement was refused after the picker result reached its worker",
+                    "Selected " + L10n.isolate("font.ttf")
+                            + ". Turn on Use the system font and restart Facebook to use it.",
+                    ShadowToast.getTextOfLatestToast());
+            assertEquals("font.ttf", Settings.FONT_SOURCE.savedValue());
+            assertArrayEquals(replacement, Files.readAllBytes(copy().toPath()));
+            assertTrue(AbstractPreferenceFragment.restartPending.contains(FontFilePreference.CHOOSE_KEY));
+            page.navigation.navigate("Appearance");
+            ShadowLooper.idleMainLooper();
+            android.widget.ListView list = dialog.getView().findViewById(android.R.id.list);
+            assertEquals("A change here applies after Facebook restarts.",
+                    String.valueOf(((Preference) list.getItemAtPosition(0)).getTitle()));
+
+            dialog.dismissAllowingStateLoss();
+            ShadowLooper.idleMainLooper();
+            dialog = SettingsL10nTest.show(activity);
+            page = SettingsL10nTest.pageOf(dialog);
+            page.navigation.navigate("Appearance");
+            ShadowLooper.idleMainLooper();
+            list = dialog.getView().findViewById(android.R.id.list);
+            assertEquals("A change here applies after Facebook restarts.",
+                    String.valueOf(((Preference) list.getItemAtPosition(0)).getTitle()));
+        }
+    }
+
+    /** Windows cannot replace the first copy while the real builder's mmap survives until GC. */
+    @Implements(Typeface.Builder.class)
+    public static class NonMappingTypefaceBuilder {
+        @Implementation
+        protected void __constructor__(File file) {
+            // This UI test covers copying and its reminder. OwnFontFileTest covers native loading.
+        }
+
+        @Implementation
+        protected Typeface build() {
+            return Typeface.DEFAULT;
         }
     }
 
@@ -247,6 +336,7 @@ public class FontFilePreferenceTest {
                     ShadowToast.getTextOfLatestToast());
             assertEquals("", Settings.FONT_SOURCE.savedValue());
             assertFalse(copy().exists());
+            assertFalse(AbstractPreferenceFragment.restartPending.contains(FontFilePreference.CHOOSE_KEY));
             assertTrue(page.findPreference(FontFilePreference.CHOOSE_KEY).isEnabled());
             assertNull(page.findPreference(FontFilePreference.PHONE_FONT_KEY));
         }
@@ -269,6 +359,7 @@ public class FontFilePreferenceTest {
             deliver(activity, tap(activity, page), "content://font-test/Rubik-Regular.ttf",
                     FontFileTest.font(FontFileTest.STATIC_FONT));
             assertTrue(copy().exists());
+            AbstractPreferenceFragment.restartPending.clear();
 
             Preference phone = page.findPreference(FontFilePreference.PHONE_FONT_KEY);
             assertTrue(((FontFilePreference) phone).actsOnTap());
@@ -277,7 +368,9 @@ public class FontFilePreferenceTest {
             assertNull("going back to the phone's font opened something", shadowOf(activity).getNextStartedActivityForResult());
             assertEquals("", Settings.FONT_SOURCE.savedValue());
             assertFalse(copy().exists());
-            assertEquals("Back to your phone's font. Restart Facebook to see it.", ShadowToast.getTextOfLatestToast());
+            assertEquals("Font file cleared. Restart Facebook to apply the font change.", ShadowToast.getTextOfLatestToast());
+            assertTrue(AbstractPreferenceFragment.restartPending.contains(FontFilePreference.CHOOSE_KEY));
+            assertFalse("clearing a file enabled the override", Settings.USE_SYSTEM_FONT.savedValue());
             assertNull("the way back stayed with nothing to go back from",
                     page.findPreference(FontFilePreference.PHONE_FONT_KEY));
             assertEquals(FontFilePreference.chosenSummary("", false),
@@ -299,6 +392,7 @@ public class FontFilePreferenceTest {
             HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
             deliver(activity, tap(activity, page), "content://font-test/documents/Rubik-Regular.ttf", rubik);
             assertEquals("Rubik-Regular.ttf", Settings.FONT_SOURCE.savedValue());
+            AbstractPreferenceFragment.restartPending.clear();
 
             File stored = ReflectionHelpers.getField(Setting.preferences.preferences, "mFile");
             File folder = stored.getParentFile();
@@ -316,8 +410,10 @@ public class FontFilePreferenceTest {
                     ShadowToast.getTextOfLatestToast());
             assertEquals("Rubik-Regular.ttf", Settings.FONT_SOURCE.savedValue());
             assertArrayEquals("the copy moved on without its name", rubik, Files.readAllBytes(copy().toPath()));
-            assertEquals("Using " + L10n.isolate("Rubik-Regular.ttf") + ". Choose another file to replace it.",
+            assertEquals("Selected " + L10n.isolate("Rubik-Regular.ttf")
+                            + ". Use the system font is off. Turn it on and restart Facebook to use this file.",
                     String.valueOf(page.findPreference(FontFilePreference.CHOOSE_KEY).getSummary()));
+            assertFalse(AbstractPreferenceFragment.restartPending.contains(FontFilePreference.CHOOSE_KEY));
             assertTrue(page.findPreference(FontFilePreference.PHONE_FONT_KEY).isEnabled());
         }
     }
@@ -339,7 +435,8 @@ public class FontFilePreferenceTest {
             settle();
             assertFalse(copy.exists());
             assertEquals("", Settings.FONT_SOURCE.savedValue());
-            assertEquals("Back to your phone's font. Restart Facebook to see it.", ShadowToast.getTextOfLatestToast());
+            assertEquals("Font file cleared. Restart Facebook to apply the font change.", ShadowToast.getTextOfLatestToast());
+            assertTrue(AbstractPreferenceFragment.restartPending.contains(FontFilePreference.CHOOSE_KEY));
             assertNull(page.findPreference(FontFilePreference.PHONE_FONT_KEY));
         }
     }
@@ -350,8 +447,8 @@ public class FontFilePreferenceTest {
         Settings.FONT_SOURCE.save("Inter.ttf");
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(controller.get()));
-            assertEquals("Hushfacebook's copy of " + L10n.isolate("Inter.ttf")
-                            + " is gone, so your phone's font is used. Choose the file again.",
+            assertEquals("The saved copy of " + L10n.isolate("Inter.ttf")
+                            + " is missing. Choose the file again.",
                     String.valueOf(page.findPreference(FontFilePreference.CHOOSE_KEY).getSummary()));
             assertTrue("the way back is out of reach", page.findPreference(FontFilePreference.PHONE_FONT_KEY).isEnabled());
         }
@@ -425,10 +522,16 @@ public class FontFilePreferenceTest {
     private static void deliver(Activity activity, ShadowActivity.IntentForResult started, String address,
                                 byte[] bytes) throws Exception {
         Uri uri = Uri.parse(address);
+        AtomicInteger opened = new AtomicInteger();
         shadowOf(RuntimeEnvironment.getApplication().getContentResolver())
-                .registerInputStreamSupplier(uri, () -> new ByteArrayInputStream(bytes));
+                .registerInputStreamSupplier(uri, () -> {
+                    opened.incrementAndGet();
+                    return new ByteArrayInputStream(bytes);
+                });
         shadowOf(activity).receiveResult(started.intent, Activity.RESULT_OK, new Intent().setData(uri));
         settle();
+        assertEquals("The picker result did not open exactly its registered document: " + address,
+                1, opened.get());
     }
 
     private static void settle() throws Exception {

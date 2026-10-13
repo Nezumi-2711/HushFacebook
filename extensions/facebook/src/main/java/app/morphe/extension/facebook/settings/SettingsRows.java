@@ -197,7 +197,7 @@ final class SettingsRows {
                     new CharSequence[]{L10n.t(getContext(), "Copy quick report"),
                             L10n.t(getContext(), "Save full report")},
                     new CharSequence[]{L10n.t(getContext(), "Copy a short report to the clipboard."),
-                            L10n.t(getContext(), "Save the full report in Download/Morphe.")});
+                            L10n.t(getContext(), "Save the full report in Download/Hushfacebook.")});
         }
 
         /**

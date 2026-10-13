@@ -1839,7 +1839,7 @@ public class SettingsBackupTest {
         String file = SettingsBackup.create();
         Map<String, ?> before = store();
         for (String key : new String[]{SettingsBackup.REELS_QUALITY.key, SettingsBackup.STORIES_QUALITY.key}) {
-            for (Object refused : new Object[]{"SAME", "Same as videos", "DATA_SAVER", "480", " 720p", "", "1080p", 720,
+            for (Object refused : new Object[]{"SAME", "Same as Playback quality", "DATA_SAVER", "480", " 720p", "", "1080p", 720,
                     true, JSONObject.NULL, new JSONObject(), new org.json.JSONArray()}) {
                 JSONObject hostile = new JSONObject(file);
                 hostile.getJSONObject("settings").put(key, refused);
@@ -2843,7 +2843,7 @@ public class SettingsBackupTest {
             HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
             deliver(activity, tap(activity, page, IMPORT_ROW), SettingsBackup.create());
             AlertDialog preview = shownPreview();
-            assertEquals("Your switches already match that file, so nothing will change.",
+            assertEquals("Your settings already match that file, so nothing will change.",
                     String.valueOf(shadowOf(preview).getMessage()));
             assertEquals("OK", String.valueOf(preview.getButton(AlertDialog.BUTTON_POSITIVE).getText()));
             assertFalse(preview.getButton(AlertDialog.BUTTON_NEGATIVE).isShown());

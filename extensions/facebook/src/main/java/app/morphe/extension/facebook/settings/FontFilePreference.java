@@ -42,10 +42,9 @@ import app.morphe.extension.shared.settings.preference.ImmediateAction;
  * file's address comes with the answer. The file is copied into Facebook's own files on a worker
  * ({@link FontFile#copy}), and the setting names it only once the copy has passed its checks.
  *
- * <p>Use your phone's font takes the copy away and goes back to the phone's font. It acts the
- * moment it's tapped, so it goes without a chevron, and it's on the page only while a file is
- * picked: with the phone's font in use there's nothing for it to go back from, and a row that
- * can never be tapped read to a screen reader as a button that doesn't work.
+ * <p>Use your phone's font takes the copy away. Font changes apply after a restart and only while
+ * Use the system font is on. The file is removed when the row is tapped, so it goes without a
+ * chevron, and it's on the page only while a file is picked or a copy is left to remove.
  */
 @SuppressWarnings("deprecation") // Framework preferences are what the shared settings page builds on.
 public class FontFilePreference extends Preference implements ImmediateAction {
@@ -131,7 +130,9 @@ public class FontFilePreference extends Preference implements ImmediateAction {
             showWayBack(wayBack);
         } else {
             setEnabled(!running && wayBack);
-            setSummary(L10n.t("Stops using the font file and goes back to your phone's font."));
+            setSummary(Settings.USE_SYSTEM_FONT.savedValue()
+                    ? L10n.t("Removes the saved font file. Restart Facebook to use your phone's font.")
+                    : L10n.t("Removes the saved font file. Use the system font stays off."));
         }
     }
 
@@ -150,18 +151,21 @@ public class FontFilePreference extends Preference implements ImmediateAction {
     }
 
     /**
-     * What Font file says under its title: that the phone's font is in use and what a file has to
-     * be, the name of the file in use, or that its copy has gone.
+     * The saved choice, rather than a claim about text already drawn. The override can be off,
+     * and a font already on screen keeps its typeface until Facebook restarts.
      */
     static String chosenSummary(String source, boolean copyExists) {
         if (source.isEmpty()) {
-            return L10n.f("None chosen, so your phone's font is used. Choose a .ttf or .otf font file of up to %1$d MB.", FontFile.MAX_MEGABYTES);
+            return L10n.f("No file chosen. Choose a .ttf or .otf font file of up to %1$d MB.", FontFile.MAX_MEGABYTES);
         }
         if (!copyExists) {
-            return L10n.f("Hushfacebook's copy of %1$s is gone, so your phone's font is used. Choose the file again.",
+            return L10n.f("The saved copy of %1$s is missing. Choose the file again.",
                     L10n.isolate(source));
         }
-        return L10n.f("Using %1$s. Choose another file to replace it.", L10n.isolate(source));
+        return Settings.USE_SYSTEM_FONT.savedValue()
+                ? L10n.f("Selected %1$s. Font changes apply after restarting Facebook.", L10n.isolate(source))
+                : L10n.f("Selected %1$s. Use the system font is off. Turn it on and restart Facebook to use this file.",
+                        L10n.isolate(source));
     }
 
     private static boolean copyExists() {
@@ -206,7 +210,7 @@ public class FontFilePreference extends Preference implements ImmediateAction {
                 String name = displayName(context, uri);
                 String before = Settings.FONT_SOURCE.savedValue();
                 // The name is saved before the copy moves in and put back if it can't, so the row,
-                // the message and the copy never disagree about which font is in use.
+                // the message and the copy never disagree about which font is selected.
                 FontFile.copy(open(context, uri), FontFile.file(context), OwnFont::loads, new FontFile.Choice() {
                     @Override
                     public boolean save() {
@@ -219,8 +223,11 @@ public class FontFilePreference extends Preference implements ImmediateAction {
                     }
                 });
                 // Whatever was built from the copy that was there before is stale now.
-                OwnFont.fileChanged();
-                Utils.showToastLong(L10n.f("Font set to %1$s. Restart Facebook to see it.", L10n.isolate(name)));
+                fontChanged();
+                Utils.showToastLong(Settings.USE_SYSTEM_FONT.savedValue()
+                        ? L10n.f("Selected %1$s. Restart Facebook to apply the font change.", L10n.isolate(name))
+                        : L10n.f("Selected %1$s. Turn on Use the system font and restart Facebook to use it.",
+                                L10n.isolate(name)));
             } catch (FontFile.Refused refused) {
                 Logger.printInfo(() -> "Font file refused: " + refused.reason);
                 Utils.showToastLong(refusal(refused.reason));
@@ -307,12 +314,12 @@ public class FontFilePreference extends Preference implements ImmediateAction {
         boolean accepted = Utils.runOnBackgroundThread(() -> {
             try {
                 if (Settings.FONT_SOURCE.save("")) {
-                    OwnFont.fileChanged();
+                    fontChanged();
                     File copy = FontFile.file(context);
                     if (copy.exists() && !copy.delete()) {
                         Logger.printInfo(() -> "The font file copy couldn't be removed");
                     }
-                    Utils.showToastLong(L10n.t("Back to your phone's font. Restart Facebook to see it."));
+                    Utils.showToastLong(L10n.t("Font file cleared. Restart Facebook to apply the font change."));
                 } else {
                     Utils.showToastLong(L10n.t("Couldn't go back to your phone's font. Try again."));
                 }
@@ -321,6 +328,13 @@ public class FontFilePreference extends Preference implements ImmediateAction {
             }
         });
         if (!accepted) notStarted();
+    }
+
+    /** A replacement can keep the same name, so its bytes, not a setting comparison, owe a restart. */
+    private static void fontChanged() {
+        OwnFont.fileChanged();
+        // The existing page reminder follows visible row keys. FONT_SOURCE has no row of its own.
+        HushfacebookPreferenceFragment.restartPending.add(CHOOSE_KEY);
     }
 
     @Nullable
@@ -365,6 +379,8 @@ public class FontFilePreference extends Preference implements ImmediateAction {
 
     @Override
     protected void onBindView(View view) {
+        // The override switch can change without picking a new file or rebuilding this page.
+        show();
         super.onBindView(view);
         // A screen reader hears Font file as unavailable during a copy, and this says why.
         view.setStateDescription(role == CHOOSE ? runningLine : null);

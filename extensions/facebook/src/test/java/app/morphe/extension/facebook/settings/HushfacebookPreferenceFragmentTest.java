@@ -1234,16 +1234,21 @@ public class HushfacebookPreferenceFragmentTest {
             assertEquals("Stories quality", String.valueOf(stories.getTitle()));
             List<String> own = new ArrayList<>();
             for (CharSequence entry : reels.getEntries()) own.add(String.valueOf(entry));
-            assertEquals(Arrays.asList("Same as videos", "Auto", "Data saver", "Up to " + L10n.isolate("480p"),
+            assertEquals(Arrays.asList("Same as Playback quality", "Auto", "Data saver", "Up to " + L10n.isolate("480p"),
                     "Up to " + L10n.isolate("720p"), "Highest"), own);
             assertEquals("SAME", reels.getValue());
-            assertEquals("Reels play at the playback quality above.", String.valueOf(reels.getSummary()));
-            assertEquals("Video stories play at the playback quality above.", String.valueOf(stories.getSummary()));
+            assertEquals("Reels follow the Playback quality row.", String.valueOf(reels.getSummary()));
+            assertEquals("Video stories follow the Playback quality row.", String.valueOf(stories.getSummary()));
+            // #90: a quality of their own says it's separate from Playback quality, not just its name.
             reels.setValue("DATA_SAVER");
             ShadowLooper.idleMainLooper();
             assertEquals(SurfaceQuality.DATA_SAVER, Settings.REELS_PLAYBACK_QUALITY.savedValue());
-            assertEquals("Data saver", String.valueOf(reels.getSummary()));
+            assertEquals("Data saver for reels, whatever Playback quality is set to.", String.valueOf(reels.getSummary()));
             assertEquals(SurfaceQuality.SAME, Settings.STORIES_PLAYBACK_QUALITY.savedValue());
+            stories.setValue("HIGHEST");
+            ShadowLooper.idleMainLooper();
+            assertEquals("Highest for video stories, whatever Playback quality is set to.",
+                    String.valueOf(stories.getSummary()));
         } finally {
             Settings.PLAYBACK_QUALITY.resetToDefault();
             Settings.REELS_PLAYBACK_QUALITY.resetToDefault();
@@ -1299,7 +1304,7 @@ public class HushfacebookPreferenceFragmentTest {
             SwitchPreference qualitySwitch = (SwitchPreference) page.findPreference(Settings.DEFAULT_PLAYBACK_QUALITY.key);
             ListPreference stories = (ListPreference) page.findPreference(Settings.STORIES_PLAYBACK_QUALITY.key);
             pick(stories, "SAME");
-            assertFalse("Same as videos turned the switch on", Settings.DEFAULT_PLAYBACK_QUALITY.savedValue());
+            assertFalse("Same as Playback quality turned the switch on", Settings.DEFAULT_PLAYBACK_QUALITY.savedValue());
             pick(stories, "HIGHEST");
             assertEquals(SurfaceQuality.HIGHEST, Settings.STORIES_PLAYBACK_QUALITY.savedValue());
             assertTrue(Settings.DEFAULT_PLAYBACK_QUALITY.savedValue());

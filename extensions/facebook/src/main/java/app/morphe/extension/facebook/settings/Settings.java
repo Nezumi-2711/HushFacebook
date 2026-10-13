@@ -698,6 +698,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_keep_progress_bar_time", TRUE);
 
     /**
+     * A tap anywhere on a reel's or video's progress bar jumps there, where Facebook's bar only seeks
+     * on a drag from its thumb ({@link app.morphe.extension.facebook.media.TapToSeek}).
+     * Works with {@link #KEEP_PROGRESS_BAR} on or off. Off by default, and asked on every press, so
+     * no restart.
+     */
+    public static final BooleanSetting TAP_TO_SEEK =
+            new BooleanSetting("hushfacebook_tap_to_seek", FALSE);
+
+    /**
      * Facebook's own text, React Native screens' included, drawn in the font {@link #FONT_SOURCE}
      * names instead of Meta's Optimistic, at the same weight and slant. A typeface already on
      * screen keeps its font until Facebook restarts.
@@ -1175,6 +1184,22 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting TAB_BAR_SCROLL_AWAY =
             new BooleanSetting("hushfacebook_tab_bar_scroll_away", FALSE, true);
+
+    /**
+     * The tab bar at the bottom stays on screen while the feed scrolls, on the accounts Facebook's
+     * server settings give scroll-away to. Facebook adds the bar to the views that scroll away as its
+     * main screen starts, so a change waits for a restart. Greyed out while
+     * {@link #TAB_BAR_SCROLL_AWAY} is on, which wins.
+     */
+    public static final BooleanSetting KEEP_TAB_BAR =
+            new BooleanSetting("hushfacebook_keep_tab_bar", FALSE, true, Setting.parentNot(TAB_BAR_SCROLL_AWAY));
+
+    /**
+     * The top bar stays where it rests while the feed scrolls, instead of sliding away. Asked each
+     * time Facebook moves it, so a change shows on the next scroll.
+     */
+    public static final BooleanSetting KEEP_TOP_BAR =
+            new BooleanSetting("hushfacebook_keep_top_bar", FALSE);
 
     /**
      * Facebook's dark mode controller answers dark whatever its own setting says

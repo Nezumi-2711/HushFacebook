@@ -105,6 +105,10 @@ final class SettingsNavigation extends BaseAdapter {
         section("Set when you patched", L10n.t("Set when you patched"), null, SettingsIcons.PATCHED, false);
         section("Pause, backup and diagnostics", L10n.t("Pause, backup and diagnostics"), null, SettingsIcons.TOOLS, false);
         section("About", L10n.t("About"), null, SettingsIcons.ABOUT, false);
+        guideIcon(Settings.HIDE_FEED_REELS, SettingsIcons.FEED);
+        guideIcon(Settings.TAP_TO_PLAY, SettingsIcons.PLAYBACK);
+        guideIcon(Settings.HIDE_REELS_TAB, SettingsIcons.REELS);
+        guideIcon(Settings.MARKETPLACE_ONLY, SettingsIcons.MARKETPLACE);
         browse = new SettingsRows.Heading(context);
         browse.setTitle(L10n.t("Browse settings"));
         more = link(context, L10n.t("More settings"), L10n.t("Additional Facebook preferences"), SettingsIcons.SETTINGS);
@@ -163,9 +167,14 @@ final class SettingsNavigation extends BaseAdapter {
         Preference row = new SettingsRows.Row(context);
         row.setTitle(title);
         row.setSummary(summary);
-        row.setIcon(SettingsIcons.icon(context, icon, palette().summary));
+        row.setIcon(SettingsIcons.icon(context, icon, palette().heading));
         row.setPersistent(false);
         return row;
+    }
+
+    private void guideIcon(Setting<?> setting, String icon) {
+        Preference row = screen.findPreference("action_show_" + setting.key);
+        if (row != null) row.setIcon(SettingsIcons.icon(screen.getContext(), icon, palette().heading));
     }
 
     private Section selected() {
@@ -276,7 +285,7 @@ final class SettingsNavigation extends BaseAdapter {
                 boolean headingAdded = false;
                 for (int i = 0; i < section.category.getPreferenceCount(); i++) {
                     Preference row = section.category.getPreference(i);
-                    String text = normalized(section.category.getTitle() + " " + row.getTitle() + " " + row.getSummary());
+                    String text = searchText(section.category.getTitle(), row.getTitle(), row.getSummary());
                     boolean matches = true;
                     for (String term : terms.split("\\s+")) if (!text.contains(term)) matches = false;
                     if (!matches) continue;
@@ -370,6 +379,12 @@ final class SettingsNavigation extends BaseAdapter {
         return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT);
     }
 
+    private static String searchText(CharSequence... parts) {
+        StringBuilder text = new StringBuilder();
+        for (CharSequence part : parts) if (part != null) text.append(part).append(' ');
+        return normalized(text.toString());
+    }
+
     private int originalPosition(Preference item) {
         for (int i = 0; i < source.getCount(); i++) if (source.getItem(i) == item) return i;
         return -1;
@@ -397,7 +412,7 @@ final class SettingsNavigation extends BaseAdapter {
             boolean first = position == 0 || group(getItem(position - 1)) != group;
             boolean last = position + 1 == getCount() || group(getItem(position + 1)) != group;
             palette().paintSurface(row, item, first, last);
-            if (MORE.equals(route)) {
+            if (MORE.equals(route) && query.isEmpty()) {
                 row.setMinimumHeight(dp(56));
                 row.setPaddingRelative(dp(34), dp(12), dp(34), dp(12));
             }
@@ -410,7 +425,24 @@ final class SettingsNavigation extends BaseAdapter {
         if (item == pageStatus && pageAction) {
             bindAction(row, HushfacebookPause.isPaused(), HushfacebookPause.pausesNextStart(screen.getContext()));
         }
+        if (item == screen.getPreference(0)) styleBuildDetails(row);
         return row;
+    }
+
+    /** Keep provenance visible without giving it the weight of the current running state. */
+    private void styleBuildDetails(View row) {
+        TextView summary = row.findViewById(android.R.id.summary);
+        if (summary == null) return;
+        String value = summary.getText().toString();
+        String detail = HushfacebookPreferenceFragment.overviewBuildDetails();
+        int start = value.indexOf(detail);
+        if (start < 0) return;
+        android.text.SpannableStringBuilder styled = new android.text.SpannableStringBuilder(value);
+        String caption = detail.replace('\n', ' ');
+        styled.replace(start, start + detail.length(), caption);
+        styled.setSpan(new android.text.style.RelativeSizeSpan(12f / 13f), start, start + caption.length(),
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        summary.setText(styled);
     }
 
     private void bindStatus(View row) {
@@ -440,12 +472,11 @@ final class SettingsNavigation extends BaseAdapter {
         action.setAllCaps(false);
         action.setTextSize(14);
         action.setTextColor(palette().heading);
-        ScreenColors.pressFeedback(action, palette().heading, false);
+        palette().outlineAction(action);
         action.setMinWidth(dp(48));
         action.setMinHeight(dp(48));
         action.setMinimumWidth(dp(48));
         action.setMinimumHeight(dp(48));
-        action.setPadding(0, 0, 0, 0);
         action.setOnClickListener(ignored -> {
             if (nextPaused) {
                 page.resumeFromOverview();
@@ -489,6 +520,18 @@ final class SettingsNavigation extends BaseAdapter {
 
     private Object group(Preference item) {
         if (item == more || item == support || item == browse || item == screen.getPreference(0)) return item;
+        for (Section section : sections) if (item == section.link) return item;
+        String key = item.getKey();
+        if (Settings.DEFAULT_COMMENT_ORDER.key.equals(key) || Settings.COMMENT_ORDER.key.equals(key)) {
+            return Settings.COMMENT_ORDER;
+        }
+        // Give the Reels map and these selectors their own surfaces. Other dependent controls stay together.
+        if (key != null && (key.startsWith("action_show_")
+                || Settings.OPEN_ON_CHOSEN_TAB.key.equals(key)
+                || Settings.START_TAB.key.equals(key)
+                || Settings.FEEDS_SUBTAB.key.equals(key)
+                || Settings.PLAYBACK_QUALITY.key.equals(key)
+                || Settings.DOWNLOAD_QUALITY.key.equals(key))) return item;
         if (item.getParent() != null) return item.getParent();
         return sections;
     }

@@ -4,6 +4,7 @@
  */
 package app.morphe.patches.facebook.media.progressbar
 
+import app.morphe.ExtensionDex
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patches.facebook.feed.FixtureDex
@@ -24,6 +25,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
+import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -33,10 +35,12 @@ import java.io.File
 /**
  * Keep the progress bar's Reels hooks on every Facebook build the bundle declares: the scrubber's
  * bar info builder asking the extension whether a reel has a bar at all (issue #73), its
- * minimum length check answering yes while kept, so a short reel gets a bar, its progress update
+ * minimum length check answering yes while kept, so a short reel gets a bar, on the scrubber and on
+ * the Reels tab's subclass overriding it (issue #73), its progress update
  * having Facebook's own time writer refresh the time label once the update has moved the bar (never
  * before its position checks, issue #120), the wait before its next update cut to a frame, the
- * short reel check answering no so the bar isn't faded out, the look selector reporting each look,
+ * short reel check answering no so the bar isn't faded out, the look selector reporting each look
+ * and letting a look that shows the bar take the place of a parked hide (issue #73),
  * and the Reels footer's seek bar status starting and staying VISIBLE, so a playing reel's caption
  * sits above the bar (issue #73). Each hook asks the extension, a no lands on Facebook's code, and
  * nothing of Facebook's code moves. Reads the fixture bundles from HUSHFACEBOOK_FIXTURE_DIR and
@@ -105,6 +109,46 @@ class KeepProgressBarReelsFixtureTest {
         assertEquals("$where: from the same register", register, (patched[4] as OneRegisterInstruction).registerA)
         assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(5).map { it.opcode })
         assertEquals("$where: a no lands on Facebook's first instruction", setOf(3, 5), ControlFlow.of(method).normal[2].toSet())
+    }
+
+    @Test
+    fun `each declared build hooks the length checks a scrubber subclass overrides`() = bundles { bundle ->
+        val name = bundle.name
+        val scrubber = scrubber(bundle).scrubber
+        val minimum = minimumLengthCheck(scrubber)
+        val checks = listOf(minimum, shortReelCheck(scrubber))
+        val superclasses = mutableMapOf<String, String?>()
+        val holders = mutableListOf<ClassDef>()
+        FixtureDex.forEach(bundle) { dex ->
+            for (classDef in dex.classes) {
+                superclasses[classDef.type] = classDef.superclass
+                if (classDef.type != scrubber.type && classDef.methods.any { method -> checks.any { method.sameAs(it) } }) {
+                    holders += ImmutableClassDef.of(classDef)
+                }
+            }
+        }
+        val overrides = lengthCheckOverrides(holders, scrubber.type, checks) { superclasses[it] }
+        // #73: 582's Reels tab scrubber overrides both checks with a minute's minimum, so a reel under it had no
+        // passive look, and the bar showed on every other such reel.
+        assertEquals("$name: the checks a class below ${scrubber.type} overrides", checks.map { it.name }.toSet(),
+            overrides.map { it.second.name }.toSet())
+        val context = PatchContexts.of(holders.filter { holder -> overrides.any { it.first == holder.type } })
+        for ((type, check) in overrides) {
+            val where = "$name: $type->${check.name}"
+            val method = context.mutableClassDefBy(type).methods.single { it.sameAs(check) }
+            val original = method.code()
+            val longEnough = check.sameAs(minimum)
+            if (longEnough) method.longEnoughWhileKept() else method.notShortWhileKept()
+            val patched = method.code()
+            assertEquals("$where: the extension is asked first", if (longEnough) BARS_EVERY_REEL else NO_FADED_BAR,
+                patched[0].reference())
+            val register = (patched[1] as OneRegisterInstruction).registerA
+            assertTrue("$where: the hook writes v$register, which isn't a local", register < method.localRegisterCount())
+            assertEquals("$where: a yes answers ${if (longEnough) 1 else 0}", if (longEnough) 1 else 0,
+                (patched[3] as NarrowLiteralInstruction).narrowLiteral)
+            assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(5).map { it.opcode })
+            assertEquals("$where: a no lands on Facebook's first instruction", setOf(3, 5), ControlFlow.of(method).normal[2].toSet())
+        }
     }
 
     @Test
@@ -304,6 +348,56 @@ class KeepProgressBarReelsFixtureTest {
         val call = patched[0] as RegisterRangeInstruction
         assertEquals("$where: from p1", listOf(method.localRegisterCount() + 1, 1), listOf(call.startRegister, call.registerCount))
         assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(1).map { it.opcode })
+    }
+
+    @Test
+    fun `each declared build lets a look that shows the bar take a parked hide's place`() = bundles { bundle ->
+        val name = bundle.name
+        val found = scrubber(bundle)
+        val base = found.progress.base
+        val selector = lookSelector(base, found.looks)
+        val where = "$name: ${base.type}->${selector.name}"
+        val skip = sameLookSkip(selector) { FixtureDex.classes(bundle, setOf(it))[it] }
+        // #73: the parked look is the state's second Integer, the one the selector stores the look it's asked for in
+        // while a reel's player changes. A hide parked as one reel left landed on the next one after its own look
+        // was skipped as the one the bar had.
+        val state = FixtureDex.classes(bundle, setOf(skip.state)).getValue(skip.state)
+        val init = state.methods.single { method ->
+            method.name == "<init>" && method.parameterTypes.count { it.toString() == "Ljava/lang/Integer;" } == 2
+        }
+        val parameters = init.parameterTypes.map(CharSequence::toString)
+        assertTrue("$where: the state's constructor takes a wide value", parameters.none { it == "J" || it == "D" })
+        val second = init.implementation!!.registerCount - parameters.size + parameters.lastIndexOf("Ljava/lang/Integer;")
+        val stored = init.code().single { it.opcode == Opcode.IPUT_OBJECT && (it as TwoRegisterInstruction).registerA == second }
+        assertEquals("$where: the parked look is the state's second Integer", skip.parked, stored.reference())
+
+        val context = PatchContexts.of(listOf(base))
+        val method = context.mutableClassDefBy(base.type).methods.single { it.sameAs(selector) }
+        val original = method.code()
+        method.replacesParkedLook(skip)
+        val patched = method.code()
+        val hook = patched.subList(skip.branch, skip.branch + 7)
+        assertEquals("$where: the hook's code",
+            listOf(Opcode.INVOKE_INTERFACE, Opcode.MOVE_RESULT_OBJECT, Opcode.CHECK_CAST, Opcode.IGET_OBJECT, Opcode.INVOKE_STATIC,
+                Opcode.MOVE_RESULT, Opcode.IF_NEZ),
+            hook.map { it.opcode })
+        assertEquals("$where: the hook reads the parked look", skip.parked, hook[3].reference())
+        assertEquals("$where: and asks the extension", REPLACES_PARKED, hook[4].reference())
+        val free = (hook[1] as OneRegisterInstruction).registerA
+        assertTrue("$where: the hook writes v$free, which isn't a local", free < method.localRegisterCount())
+        assertTrue("$where: the hook writes v$free, which the selector reads later", free !in RegisterLiveness.of(selector).liveInto(skip.branch))
+        val call = hook[4] as FiveRegisterInstruction
+        assertEquals("$where: with the look asked for and the parked one", listOf(method.implementation!!.registerCount - 1, free),
+            listOf(call.registerC, call.registerD))
+        assertEquals("$where: Facebook's code stays", original.map { it.opcode },
+            (patched.take(skip.branch) + patched.drop(skip.branch + 7)).map { it.opcode })
+        assertEquals("$where: a no reaches the skip and a yes the code past it", setOf(skip.branch + 7, skip.branch + 8),
+            ControlFlow.of(method).normal[skip.branch + 6].toSet())
+
+        val extension = ExtensionDex.classDef(PROGRESS_BAR).methods.singleOrNull {
+            "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}" == REPLACES_PARKED
+        }
+        assertTrue("$where: the extension has no $REPLACES_PARKED", extension != null && AccessFlags.STATIC.isSet(extension.accessFlags))
     }
 
     @Test

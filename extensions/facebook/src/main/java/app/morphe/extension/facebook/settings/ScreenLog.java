@@ -86,6 +86,13 @@ final class ScreenLog {
      * A link that isn't Facebook's own or to a Meta site is written as "(outside link)" and nothing
      * more: Facebook opens outside links in its own browser, and a file or a page someone opened
      * there is theirs, not a report's.
+     *
+     * <p>In Facebook's own links every path part with a digit in it is written as #: the route is
+     * the host there, and the path holds the account, Page or group id ({@code fb://profile/4}).
+     * The redaction only cuts ids of fifteen digits or more, and older accounts' and most Pages'
+     * ids are shorter, so a report pasted on GitHub could say whose profile was opened. A web
+     * link's host and path are cut whole by the redaction's host rule, which knows every site in
+     * {@link #META_SITES}.
      */
     static String describe(String screen, @Nullable String action, @Nullable Uri link) {
         StringBuilder line = new StringBuilder(screen);
@@ -97,6 +104,7 @@ final class ScreenLog {
                 // A host is the same whatever its case, so the report writes it one way.
                 String host = link.getHost();
                 String path = link.getPath();
+                if (path != null && appLink(link)) path = path.replaceAll("[^/]*\\p{Nd}[^/]*", "#");
                 String where = (host == null ? "" : host.toLowerCase(Locale.ROOT)) + (path == null ? "" : path);
                 if (!where.isEmpty()) line.append(' ').append(where);
             }
@@ -105,16 +113,22 @@ final class ScreenLog {
     }
 
     /** The web hosts Meta runs. */
-    private static final String[] META_SITES = {"facebook.com", "fb.com", "fb.me", "fb.watch", "fb.gg", "fbcdn.net",
+    static final String[] META_SITES = {"facebook.com", "fb.com", "fb.me", "fb.watch", "fb.gg", "fbcdn.net",
             "fbsbx.com", "messenger.com", "m.me", "instagram.com", "threads.net", "threads.com", "whatsapp.com",
             "meta.com"};
+
+    /** Whether [link] is one of Facebook's own app links, {@code fb://} and its {@code fb-} siblings. */
+    private static boolean appLink(Uri link) {
+        String scheme = link.getScheme();
+        return scheme != null && scheme.toLowerCase(Locale.ROOT).startsWith("fb");
+    }
 
     /** Whether [link] is one of Facebook's own ({@code fb://} and its {@code fb-} siblings) or a web link to a Meta site. */
     static boolean metaLink(Uri link) {
         String scheme = link.getScheme();
         if (scheme == null) return false;
         scheme = scheme.toLowerCase(Locale.ROOT);
-        if (scheme.startsWith("fb")) return true;
+        if (appLink(link)) return true;
         if (!scheme.equals("http") && !scheme.equals("https")) return false;
         String host = link.getHost();
         if (host == null) return false;

@@ -167,6 +167,21 @@ public class ProgressBarTest {
                 + ProgressBar.FOOTER_LIFTED + " 1, " + ProgressBar.BAR_SMOOTHED + " 1", statusLine());
     }
 
+    /** The next reel starts without the last one's graph and chapter marks only while the bar is kept. */
+    @Test
+    public void theNextReelIsClearedOnlyWhileTheBarIsKept() {
+        assertFalse("off, the last reel's graph was cleared", ProgressBar.clearsLastReel());
+        Settings.KEEP_PROGRESS_BAR.save(true);
+        assertTrue("kept, the last reel's graph stayed for the next", ProgressBar.clearsLastReel());
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertFalse("paused, the last reel's graph was cleared", ProgressBar.clearsLastReel());
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertFalse("cleared before the settings were ready", ProgressBar.clearsLastReel()));
+        String line = statusLine();
+        assertTrue("only the kept reel was counted: " + line, line.endsWith(", 1 found, 0 missing. Counted: "
+                + ProgressBar.NEXT_REEL_CLEARED + " 1"));
+    }
+
     /** The looks that leave no bar are counted while it's kept, and the others aren't. */
     @Test
     public void theLooksThatLeaveNoBarAreCountedWhileItsKept() {
@@ -183,6 +198,24 @@ public class ProgressBarTest {
                 + ProgressBar.FADED_LOOK + " 1, " + ProgressBar.INVISIBLE_LOOK + " 2", statusLine());
     }
 
+    /** A look that shows the bar takes the place of a hide Facebook parked, only while the bar is kept (#73). */
+    @Test
+    public void aLookThatShowsTheBarTakesAParkedHidesPlaceWhileKept() {
+        assertFalse("off, a parked hide was replaced", ProgressBar.replacesParkedLook(0, ProgressBar.INVISIBLE));
+        Settings.KEEP_PROGRESS_BAR.save(true);
+        for (Integer look : new Integer[]{0, 1, 3}) {
+            assertTrue("look " + look + " left a parked hide", ProgressBar.replacesParkedLook(look, ProgressBar.INVISIBLE));
+            assertTrue("look " + look + " left a parked fade", ProgressBar.replacesParkedLook(look, ProgressBar.FADED));
+        }
+        assertFalse("a hide took a parked fade's place", ProgressBar.replacesParkedLook(ProgressBar.INVISIBLE, ProgressBar.FADED));
+        assertFalse("a fade took a parked hide's place", ProgressBar.replacesParkedLook(ProgressBar.FADED, ProgressBar.INVISIBLE));
+        assertFalse("a parked look that shows the bar was replaced", ProgressBar.replacesParkedLook(0, 1));
+        assertFalse("with nothing parked the skip was passed", ProgressBar.replacesParkedLook(0, null));
+        assertFalse(ProgressBar.replacesParkedLook(null, ProgressBar.INVISIBLE));
+        String line = statusLine();
+        assertTrue("the six replaced hides weren't counted: " + line, line.contains(ProgressBar.PARKED_HIDE_REPLACED + " 6"));
+    }
+
     @Test
     public void offOrPausedShortReelsAndTheBarStayFacebooks() {
         assertFalse("off, a short reel was given a bar", ProgressBar.barsEveryReel());
@@ -196,6 +229,7 @@ public class ProgressBarTest {
         assertFalse("paused, a short reel's faded bar was skipped", ProgressBar.noFadedBar());
         assertFalse("paused, a playing reel's caption was lifted", ProgressBar.liftsFooter());
         assertFalse("paused, the bar's wait was changed", ProgressBar.smoothsBar());
+        assertFalse("paused, a parked hide was replaced", ProgressBar.replacesParkedLook(0, ProgressBar.INVISIBLE));
         ProgressBar.look(ProgressBar.FADED);
         PauseForTests.resume();
         SettingsContextRule.withoutContext(() -> {
@@ -203,6 +237,7 @@ public class ProgressBarTest {
             assertFalse(ProgressBar.noFadedBar());
             assertFalse(ProgressBar.liftsFooter());
             assertFalse(ProgressBar.smoothsBar());
+            assertFalse(ProgressBar.replacesParkedLook(0, ProgressBar.INVISIBLE));
             ProgressBar.look(ProgressBar.INVISIBLE);
         });
         String line = statusLine();
@@ -346,5 +381,13 @@ public class ProgressBarTest {
         assertNull(Settings.KEEP_PROGRESS_BAR_TIME.userDialogMessage);
         assertTrue("Pause and the report don't know the time switch",
                 PatchFamily.PROGRESS_BAR.switches.contains(Settings.KEEP_PROGRESS_BAR_TIME));
+    }
+
+    @Test
+    public void tapTheBarToSeekNeedsNoRestartAndTravelsWithItsFamily() {
+        assertFalse(Settings.TAP_TO_SEEK.rebootApp);
+        assertNull(Settings.TAP_TO_SEEK.userDialogMessage);
+        assertTrue("Pause and the report don't know Tap the bar to seek",
+                PatchFamily.PROGRESS_BAR.switches.contains(Settings.TAP_TO_SEEK));
     }
 }
