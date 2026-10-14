@@ -101,13 +101,23 @@ public final class MediaDownload {
     }
 
     /**
-     * Save the media of the story that is open.
-     *
-     * <p>[host] is the story card. Its address is read by value, because the fields that hold it
-     * are renamed on every release of the app while the addresses in them keep their shape.
-     *
-     * @return whether a download started. {@code false} lets the caller fall back to the app.
+     * Whether every save slot is taken, saying so on screen when it is. The post menu items ask this
+     * before they save, so a tap while saves fill every slot hears why nothing started instead of a
+     * guess at a missing file. A slot that frees or fills in between only means the save's own
+     * answer stands, and so does anything that fails in here. Never throws.
      */
+    static boolean busy(Context application) {
+        try {
+            if (SAVE_SLOTS.availablePermits() > 0) return false;
+            info(() -> "a tap found every save slot taken, so nothing started");
+            Feedback.show(application, L10n.t(application, "Too many saves at once. Try again when one finishes."), true);
+            return true;
+        } catch (Throwable t) {
+            failure(() -> "could not say that every save slot was taken", t);
+            return false;
+        }
+    }
+
     /**
      * The answer the story viewer's menu gets when it asks whether a story can be saved, where
      * Facebook's own [facebooks] means "it's yours". With Save any story on, every story can be.
@@ -125,6 +135,14 @@ public final class MediaDownload {
         }
     }
 
+    /**
+     * Save the media of the story that is open.
+     *
+     * <p>[host] is the story card. Its address is read by value, because the fields that hold it
+     * are renamed on every release of the app while the addresses in them keep their shape.
+     *
+     * @return whether a download started. {@code false} lets the caller fall back to the app.
+     */
     public static boolean saveStory(Context context, Object host) {
         HookStatus.invoked(FamilyNames.STORY_DOWNLOAD);
         try {
@@ -626,7 +644,7 @@ public final class MediaDownload {
             Downloader.Result fetched = DashSave.fetchWork(url, kind, file, policyFor(application), cap(), progress);
             if (!fetched.ok()) return fetched;
             // A photo the CDN sent as AVIF goes to the gallery as a JPEG, like Facebook's own saves.
-            String mime = kind == Downloader.Kind.IMAGE ? PhotoFormat.jpegFromAvif(file, fetched.mime) : fetched.mime;
+            String mime = kind == Downloader.Kind.IMAGE ? PhotoFormat.jpegFromAvif(file, fetched.mime, cap()) : fetched.mime;
             Downloader.Result published = Downloader.publish(file, mime, writer, progress);
             boolean lower = false;
             boolean refused = false;

@@ -597,6 +597,9 @@ try {
         # ran the script contract tests at most, and never the check that reads them.
         $_ -like 'release-receipt-*.json' -or
         $_ -eq 'scripts/manifest-delta-allowlist.txt' -or
+        # What the release check accepts as an intentional rename, removal or default change of a
+        # published patch, so a push of that file alone is held to the check that reads it.
+        $_ -eq 'scripts/patch-catalog-compatibility.json' -or
         # A released version's heading is the only record a reader has that it shipped, and one
         # was renamed away by a post-release commit that no gate read.
         $_ -eq 'CHANGELOG.md' -or

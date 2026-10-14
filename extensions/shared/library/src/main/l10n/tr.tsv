@@ -12,7 +12,6 @@ Hides "Pages you may like" cards, cards promoting Facebook's own features, and s
 %1$s elapsed	%1$s geçti
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Yamaladığında ayarlandığı için Duraklatma bunu kapatamaz. Bunu elemek için yeniden yamala ve o yamayı dışarıda bırak.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Yamaladığında ayarlandıkları için Duraklatma bunları kapatamaz. Birini elemek için yeniden yamala ve onun ardından parantez içinde yazan yamayı dışarıda bırak.
-A change here applies after Facebook restarts.	Buradaki bir değişiklik Facebook yeniden başladıktan sonra geçerli olur.
 Add a Download button to reels, using your download quality. Off or paused, Facebook's own buttons return.	Reels'e indirme kalitenizle İndir düğmesi ekler. Kapalı veya duraklatılmışken Facebook'un kendi düğmeleri geri gelir.
 A file named %1$s in %2$s paused Hushfacebook.	%2$s içindeki %1$s adlı bir dosya Hushfacebook'u duraklattı.
 About	Hakkında
@@ -119,6 +118,8 @@ Android couldn't use that font file. Your font didn't change.	Android bu yazı t
 Couldn't save a copy of that font. Check that the phone has room, then try again.	Bu yazı tipinin kopyası kaydedilemedi. Telefonda yer olup olmadığını kontrol et, sonra tekrar dene.
 Couldn't open that file. Your font didn't change.	Bu dosya açılamadı. Yazı tipin değişmedi.
 Couldn't go back to your phone's font. Try again.	Telefonunun yazı tipine geri dönülemedi. Tekrar dene.
+The app holding that font file is taking too long, so Hushfacebook stopped waiting. Your font didn't change.	O yazı tipi dosyasını tutan uygulama çok uzun sürüyor, bu yüzden Hushfacebook beklemeyi bıraktı. Yazı tipin değişmedi.
+The app holding the last font file still hasn't answered. Try again later.	Son yazı tipi dosyasını tutan uygulama hâlâ yanıt vermedi. Daha sonra tekrar dene.
 Full report saved to %1$s	Tam rapor şuraya kaydedildi: %1$s
 The GPL-3.0 license, plus notices for the projects this is built on	GPL-3.0 lisansı ve bu çalışmanın dayandığı projelerin bildirimleri
 Hide "People you may know"	“Tanıyor olabileceğin kişiler” bölümünü gizle
@@ -392,6 +393,10 @@ Hides the banners at the top of Chats, like the one asking you to turn on notifi
 Open the Messenger app	Messenger uygulamasını aç
 # context: summary of that switch; Messenger is the app's name, Chats is Facebook's own chat screen as named above
 Tapping the Messenger icon at the top of Facebook opens the Messenger app instead of Chats. Without Messenger, Chats opens as before.	Facebook'un üstündeki Messenger simgesine dokunmak Sohbetler yerine Messenger uygulamasını açar. Messenger yoksa Sohbetler eskisi gibi açılır.
+# context: switch title under Chats; on, Facebook leaves ringing for calls and notifying about chats to the Messenger app
+Leave calls and chats to Messenger	Aramaları ve sohbetleri Messenger'a bırak
+# context: summary of that switch; signed out means not logged in to the Messenger app, turned off means the app is disabled in Android's settings
+Facebook stops ringing for calls and notifying you about chats while Messenger is installed, so only Messenger does. Without Messenger, or with it turned off, Facebook rings and notifies as before. If you're signed out of Messenger, you'll miss calls and messages.	Messenger yüklü olduğu sürece Facebook aramalarda çalmayı ve sohbetler için bildirim göndermeyi bırakır, böylece bunu yalnızca Messenger yapar. Messenger yoksa veya kapalıysa Facebook eskisi gibi çalar ve bildirim gönderir. Messenger'da oturumunuz kapalıysa aramaları ve mesajları kaçırırsınız.
 # context: settings section heading for the Tap to play switch
 Playback	Oynatma
 # context: switch title; on, videos and music wait for a tap before they play
@@ -663,6 +668,7 @@ Suggestions, saving, auto-advance and viewing anonymously	Öneriler, kaydetme, o
 Cleaner reels and video controls	Daha sade Reels ve video kontrolleri
 Tap to play, quality and resume	Oynatmak için dokunma, kalite ve devam ettirme
 Quality, format and file names	Kalite, biçim ve dosya adları
+Settings	Ayarlar
 Browse settings	Ayarları keşfet
 More settings	Diğer ayarlar
 Additional Facebook preferences	Ek Facebook tercihleri
@@ -1009,6 +1015,8 @@ Hide Edits promotions	Edits tanıtımlarını gizle
 Hide Threads cross-posting prompts	Threads'de paylaşma önerilerini gizle
 # context: switch title under Meta's other products; Threads is Meta's app, keep its name; the share sheet is the panel that opens when you tap Share on a post, use Facebook's own word for it in this language
 Hide Threads in the share sheet	Paylaşım menüsünde Threads'i gizle
+# context: switch title under Meta's other products; Muse is Meta's AI agent app, keep its name; the share sheet is the panel that opens when you tap Share on a post, use Facebook's own word for it in this language
+Hide Muse in the share sheet	Paylaşım menüsünde Muse'u gizle
 # context: switch title; Meta Verified is Meta's paid subscription, keep its name
 Hide Meta Verified offers	Meta Verified tekliflerini gizle
 # context: switch title; avatar stickers are stickers made from your Facebook avatar
@@ -1019,6 +1027,8 @@ Hides the Edits button in the Reels composer and the Edits pill under videos. Yo
 Facebook stops asking whether to share your post to Threads too. Posting to Facebook works as before.	Facebook, gönderinizi Threads'te de paylaşmak isteyip istemediğinizi sormayı bırakır. Facebook'ta paylaşım eskisi gibi çalışır.
 # context: summary of the Threads share sheet switch; the share sheet is the panel that opens when you tap Share on a post
 Removes the Threads button when you share something. All other ways to share stay, in the same order.	Bir şey paylaşırken Threads düğmesini kaldırır. Diğer paylaşım yolları aynı sırayla kalır.
+# context: summary of the Muse share sheet switch; Muse is Meta's AI agent app, keep its name
+Removes Muse, Meta's AI agent app, when you share something. All other ways to share stay, in the same order.	Bir şey paylaşırken Meta'nın yapay zekâ asistanı uygulaması Muse'u kaldırır. Diğer paylaşım yolları aynı sırayla kalır.
 # context: summary of the Meta Verified switch; the label is a line Facebook adds under the poster's name on some posts
 No Meta Verified offer after you post, and no Meta Verified label under the names on posts. Posting works as usual.	Paylaşım yaptıktan sonra Meta Verified teklifi çıkmaz, gönderilerdeki isimlerin altında Meta Verified etiketi de görünmez. Paylaşım her zamanki gibi çalışır.
 # context: summary of the avatar sticker switch; promotion slots are the cards Facebook uses to suggest its own features
@@ -1045,6 +1055,7 @@ Save photo	Fotoğrafı kaydet
 Save all photos	Tüm fotoğrafları kaydet
 # context: short message shown when the photos of a post could not start saving
 Couldn't save this post's photos. Try again in a moment.	Bu gönderinin fotoğrafları kaydedilemedi. Birazdan tekrar dene.
+Too many saves at once. Try again when one finishes.	Aynı anda çok fazla indirme var. Biri bitince tekrar dene.
 # context: settings switch under Block Instant Games ads that makes a game's rewarded ad count as watched
 Answer rewarded game ads as watched	Ödüllü oyun reklamlarını izlenmiş say
 # context: description under that switch
@@ -1425,3 +1436,28 @@ The saved copy of %1$s is missing. Choose the file again.	%1$s dosyasının kay�
 The video wasn't saved. Try again.	Video kaydedilmedi. Tekrar dene.
 This list needs more room than it has. Shorten it, then save again.	Bu liste ayrılan alana sığmıyor. Kısaltıp tekrar kaydet.
 Your settings already match that file, so nothing will change.	Ayarların zaten bu dosyayla aynı, bu yüzden hiçbir şey değişmeyecek.
+# context: title of the row that restarts Facebook, shown while one change waits for a restart
+Restart Facebook to apply this change	Bu değişikliği uygulamak için Facebook'u yeniden başlatın
+# context: the same row with two or more changes waiting
+Restart Facebook to apply %1$d changes	%1$d değişikliği uygulamak için Facebook'u yeniden başlatın
+# context: summary of that row; after the restart the settings screen opens again on the same page
+Facebook closes and reopens on this page.	Facebook kapanır ve bu sayfada yeniden açılır.
+# context: row near the end of the settings home page; opens a new bug report on GitHub
+Report a problem	Sorun bildir
+Opens a GitHub report with your versions and settings filled in. Add what happened.	Sürümleriniz ve ayarlarınız doldurulmuş bir GitHub raporu açar. Ne olduğunu ekleyin.
+# context: row near the top of the settings home page; a list of ready-made sets of switches
+Quick setups	Hızlı kurulumlar
+Turn on a set of switches in one tap, or put every switch back the way it started.	Bir grup anahtarı tek dokunuşla açın veya her anahtarı başlangıçtaki hâline döndürün.
+# context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
+Quiet	Sakin
+Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Reklamları, önerileri, tanıtımları ve yönlendirmeleri gizler, rahatsız eden bildirimleri durdurur.
+# context: what the Privacy choice of Quick setups turns on; camera roll scans are Hold back camera roll processing
+Holds back usage reports and camera roll scans, removes link tracking, and hides your typing and screenshots.	Kullanım raporlarını ve film rulosu taramalarını bekletir, bağlantı izlemeyi kaldırır, yazmanızı ve ekran görüntülerinizi gizler.
+# context: name of the Quick setups choice that puts the switches back as they were after install
+Back to defaults	Varsayılanlara dön
+# context: Lock Facebook is the name of the app lock switch, left as it is
+Puts every feature switch but Lock Facebook back the way it started.	Facebook'u kilitle dışındaki her özellik anahtarını başlangıçtaki hâline döndürür.
+# context: toast after a Quick setups choice changed one switch
+Changed %1$d setting	%1$d ayar değiştirildi
+# context: the same toast for none, or for two or more
+Changed %1$d settings	%1$d ayar değiştirildi

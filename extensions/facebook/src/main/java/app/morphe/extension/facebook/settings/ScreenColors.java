@@ -239,7 +239,7 @@ final class ScreenColors {
 
     /** Group boundaries follow the visible rows, including a filtered search result. */
     void paintSurface(View row, Preference preference, boolean first, boolean last) {
-        float radius = dp(row, 10);
+        float radius = dp(row, 8);
         GradientDrawable surface = new GradientDrawable();
         surface.setColor(card);
         surface.setStroke(dp(row, 1), focusStroke(heading, outline));
@@ -248,15 +248,15 @@ final class ScreenColors {
                 first ? radius : 0, first ? radius : 0,
                 last ? radius : 0, last ? radius : 0,
                 last ? radius : 0, last ? radius : 0});
-        Drawable inset = new InsetDrawable(surface, dp(row, 18), first ? dp(row, 4) : -dp(row, 1),
-                dp(row, 18), last ? dp(row, 4) : 0);
+        Drawable inset = new InsetDrawable(surface, dp(row, 20), first ? dp(row, 4) : -dp(row, 1),
+                dp(row, 20), last ? dp(row, 4) : 0);
         row.setBackground(preference.isSelectable()
                 ? new RippleDrawable(ColorStateList.valueOf(half(accent)), inset, null) : inset);
         // Explicit padding after the inset background prevents its padding from moving the text.
-        int vertical = preference.getIcon() == null ? 18 : 14;
-        row.setPaddingRelative(dp(row, 34), dp(row, vertical + (first ? 4 : 0)),
-                dp(row, 34), dp(row, vertical + (last ? 4 : 0)));
-        row.setMinimumHeight(dp(row, 72));
+        int vertical = 14;
+        row.setPaddingRelative(dp(row, 36), dp(row, vertical + (first ? 4 : 0)),
+                dp(row, 36), dp(row, vertical + (last ? 4 : 0)));
+        row.setMinimumHeight(dp(row, preference.getIcon() == null ? 72 : 64));
     }
 
     /** A section title. */
@@ -268,7 +268,7 @@ final class ScreenColors {
             title.setLetterSpacing(0.07f);
             title.setAllCaps(true);
         }
-        row.setPaddingRelative(dp(row, 22), dp(row, 22), dp(row, 22), dp(row, 10));
+        row.setPaddingRelative(dp(row, 20), dp(row, 22), dp(row, 20), dp(row, 10));
     }
 
     /** Marks the chevron a row was given, so a recycled row's can be found and taken off. */
@@ -428,12 +428,12 @@ final class ScreenColors {
         }
         GradientDrawable surface = new GradientDrawable();
         surface.setColor(primary ? accent : Color.TRANSPARENT);
-        surface.setCornerRadius(dp(row, 8));
+        surface.setCornerRadius(dp(row, 6));
         if (primary) surface.setStroke(dp(row, 1), accent);
         row.setBackground(new RippleDrawable(ColorStateList.valueOf(half(primary ? onAccent : accent)),
-                new InsetDrawable(surface, dp(row, 16), dp(row, 4), dp(row, 16), dp(row, 4)), null));
+                new InsetDrawable(surface, dp(row, 20), dp(row, 4), dp(row, 20), dp(row, 4)), null));
         row.setMinimumHeight(dp(row, 56));
-        row.setPadding(dp(row, 32), dp(row, 8), dp(row, 32), dp(row, 8));
+        row.setPadding(dp(row, 36), dp(row, 8), dp(row, 36), dp(row, 8));
     }
 
     static void recoveryMessage(View row) {
@@ -486,11 +486,11 @@ final class ScreenColors {
         if (window != null) {
             GradientDrawable panel = new GradientDrawable();
             panel.setColor(this.dialog);
-            panel.setCornerRadius(dp(window.getDecorView(), 10));
+            panel.setCornerRadius(dp(window.getDecorView(), 8));
             panel.setStroke(dp(window.getDecorView(), 1), outline);
             window.setBackgroundDrawable(panel);
             int width = Math.min(dialog.getContext().getResources().getDisplayMetrics().widthPixels
-                    - dp(window.getDecorView(), 32), dp(window.getDecorView(), 560));
+                    - dp(window.getDecorView(), 40), dp(window.getDecorView(), 560));
             window.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         @SuppressWarnings("DiscouragedApi")
@@ -530,7 +530,7 @@ final class ScreenColors {
             GradientDrawable surface = new GradientDrawable();
             surface.setColor(new ColorStateList(new int[][]{{-android.R.attr.state_enabled}, {}},
                     new int[]{primary ? outline : this.dialog, primary ? accent : this.dialog}));
-            surface.setCornerRadius(dp(button, 8));
+            surface.setCornerRadius(dp(button, 6));
             surface.setStroke(dp(button, 2), new ColorStateList(
                     new int[][]{{-android.R.attr.state_enabled}, {android.R.attr.state_focused}, {}},
                     new int[]{Color.TRANSPARENT, this.title, primary ? accent : Color.TRANSPARENT}));

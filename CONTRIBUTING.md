@@ -480,8 +480,27 @@ The checks that matter before a release:
 
 - `:patches:test` and `:extensions:facebook:testDebugUnitTest`, with `HUSHFACEBOOK_FIXTURE_DIR` set so the tests that read real Facebook builds run instead of skipping. Those tests are the ones whose source calls `Fixtures` or `FixtureDex`, and they run in their own task, `:patches:fixtureTest`, which `:patches:test` runs first. Add `-x :patches:fixtureTest -x :patches:verifyPatchTestSelection` for a quick pass without them.
 - `scripts/verify-all-patches.ps1` on every retained fixture. It merges the split bundle into one APK the way the CLI does, applies all patches to that merge in one run, checks the CLI's own report and holds the rebuilt resource table to the merge's, so the resources only the splits carry are compared too.
-- `scripts/build-release-receipt.ps1`, which writes the release receipt from those runs, and `scripts/validate-release-facts.ps1`, which holds the README, `patches-bundle.json`, the CHANGELOG and the bug form to the generated patch list. `verify-all-patches.ps1 -KeepIn <folder>` keeps a passing run with a stamp naming the bundle, APK, patch list and CLI it used, and `build-release-receipt.ps1 -AppliedDir patches/build/fixture-apply` reads a kept run whose stamp matches instead of patching that fixture a second time.
+- `scripts/build-release-receipt.ps1`, which writes the release receipt from those runs, and `scripts/validate-release-facts.ps1`, which holds the README, `patches-bundle.json`, the CHANGELOG and the bug form to the generated patch list. `verify-all-patches.ps1 -KeepIn <folder>` keeps a passing run with a stamp naming the bundle, APK, patch list and CLI it used and the SHA-256 of each file it kept. `build-release-receipt.ps1 -AppliedDir patches/build/fixture-apply` reads a kept run whose stamp matches and whose files still hash the same instead of patching that fixture a second time.
 - The advisory check inside the receipt script. It reads the SBOM `buildAndroid` writes beside the bundle and asks [OSV](https://osv.dev) about every library in it, and a high or critical advisory stops the release before anything gets patched. If one doesn't apply to what the bundle does with that library, accept it in `scripts/advisory-exceptions.txt` with the reason and a date at most 90 days out. With no network, `-SkipAdvisoryCheck` gets you a receipt anyway, and the index push asks OSV again.
+
+The release check also holds every patch's name and `use` default to the catalog the published release shipped, since Morphe Manager remembers patch choices by name. It downloads that release's receipt and `SHA256SUMS.txt`, checks the receipt against the checksum list and its commit against the published tag, and reads `patches-list.json` at that commit. It runs on every push the hook checks, with or without a local receipt or bundle, and a published asset or catalog it can't read fails it. New patches need nothing.
+
+Renaming or removing a patch, or flipping its default, needs `scripts/patch-catalog-compatibility.json` with the published version and its full commit, the candidate version and each change, like this.
+
+```json
+{
+  "baselineVersion": "0.6.0",
+  "baselineCommit": "<full commit of the published release>",
+  "candidateVersion": "0.7.0",
+  "changes": [{
+    "before": { "name": "Old patch name", "use": true },
+    "after": { "name": "New patch name", "use": true },
+    "migrationNote": "Old patch name is now New patch name. This causes a selection reset and requires manual re-selection."
+  }]
+}
+```
+
+Use `"after": null` for a removal. Each `migrationNote` has to appear word for word in the candidate version's CHANGELOG section, or under `Unreleased` while the version is still the published one. Morphe doesn't carry a choice over to a new name, so a note for a rename or removal has to mention the selection reset and the manual re-selection. Duplicate, stale and unused entries fail the check. The index push compares the release with the index at its own tagged commit, which still names the release before it, and once that release is out the file has to go. A first release passes only when its commit has no `patches-bundle.json` and GitHub has no earlier version tag, so a failed download never counts as one.
 
 `scripts/install-hooks.ps1` installs a pre-push hook that runs the tests when a push changes `extensions/` or `patches/`, and the release check when it changes a published file. It runs Gradle twice: the quick pass without the fixture tests first, so a slip there stops the push in minutes, then the full run. When the patch sources or the version in `gradle.properties` change, it also builds the release bundle, patches every declared fixture with it and keeps each passing run in `patches/build/fixture-apply` for the receipt. Set `HUSHFACEBOOK_SKIP_PRE_PUSH=1` to push without it.
 

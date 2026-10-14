@@ -293,6 +293,22 @@
     },
     {
       "paths": [
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/settings/preference/QuickSetups.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/settings/preference/ReopenSettingsAfterRestart.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/settings/preference/ReportProblem.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/settings/preference/SettingsSearch.java"
+      ],
+      "origin": "ported",
+      "upstream": "https://github.com/SysAdminDoc/HushPinterest",
+      "commit": "c5be4d9e0a1b08396837b4a49c0bfd62aa5d9e7e",
+      "via": [
+        "https://github.com/SysAdminDoc/hushfeed"
+      ],
+      "license": "GPL-3.0-only",
+      "changes": "The settings standard, copied from HushPinterest, which wrote these four against the same shared library from Hushfeed: the quick setups that turn a group of switches on together, the return to the settings page a restart was asked from, the report a problem page with its prefilled issue, and the search over the settings. The package and the app's name are Hushfacebook's, and ReportProblem's example of the line it writes names a Hushfacebook version and a Facebook build. Each file carries a 'Modified for Hushfacebook' line."
+    },
+    {
+      "paths": [
         "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTranslations.java"
       ],
       "origin": "original",
@@ -307,12 +323,14 @@
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/SaveLeftovers.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/Mp4Join.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/AacReencode.java",
-        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/VideoTranscode.java"
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/TransferRate.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/VideoTranscode.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/OutputAllowance.java"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: a running save's notification with its progress and a Cancel button, the removal of the work files and pending gallery rows a save left when Android ended the process, and the MP4 writer that joins a DASH picture and its sound for the formats MediaMuxer won't write, VP9 always and AV1 before Android 14, by copying the fragments' boxes and samples into one plain MP4, and the conversions that turn a save's xHE-AAC sound into AAC-LC and its VP9, AV1 or H.265 picture into H.264 for the apps that take only those."
+      "changes": "Written for Hushfacebook: a running save's notification with its progress and a Cancel button, the removal of the work files and pending gallery rows a save left when Android ended the process, and the MP4 writer that joins a DASH picture and its sound for the formats MediaMuxer won't write, VP9 always and AV1 before Android 14, by copying the fragments' boxes and samples into one plain MP4, and the conversions that turn a save's xHE-AAC sound into AAC-LC and its VP9, AV1 or H.265 picture into H.264 for the apps that take only those, with the count that holds a conversion's output to the room reserved for it."
     },
     {
       "paths": [

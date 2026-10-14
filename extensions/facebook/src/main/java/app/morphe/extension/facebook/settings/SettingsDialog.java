@@ -51,8 +51,11 @@ public final class SettingsDialog extends DialogFragment {
      * carries an id.
      */
     static final int CONTAINER_ID = 0x48464301;
+    /** The argument naming the page the screen opens on: a route of {@link SettingsNavigation}. */
+    static final String START_PAGE = "hushfacebook_start_page";
 
     private TextView pageTitle;
+    private TextView pageContext;
     private LinearLayout searchBox;
     private EditText search;
     private TextView results;
@@ -67,6 +70,26 @@ public final class SettingsDialog extends DialogFragment {
     /** The page's colours, or null for the black page. Read when the dialog is created. */
     @Nullable
     private ScreenColors colors;
+
+    /**
+     * The screen, opening on [page] when nothing saved says otherwise: the page a restart from the
+     * restart row left. Null or empty opens the first page.
+     */
+    static SettingsDialog onPage(@Nullable String page) {
+        SettingsDialog dialog = new SettingsDialog();
+        if (page != null && !page.isEmpty()) {
+            Bundle arguments = new Bundle();
+            arguments.putString(START_PAGE, page);
+            dialog.setArguments(arguments);
+        }
+        return dialog;
+    }
+
+    /** The page this screen was asked to open on, or "" for the first page. */
+    String startPage() {
+        Bundle arguments = getArguments();
+        return arguments == null ? "" : arguments.getString(START_PAGE, "");
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -129,9 +152,8 @@ public final class SettingsDialog extends DialogFragment {
         LinearLayout bar = new LinearLayout(getContext());
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        int pad = dp(16);
         // Start and end, not left and right: in a right-to-left language the bar is mirrored.
-        bar.setPaddingRelative(dp(4), dp(12), pad, dp(12));
+        bar.setPaddingRelative(dp(8), dp(4), dp(20), dp(4));
 
         android.widget.ImageButton back = new android.widget.ImageButton(getContext());
         android.graphics.drawable.Drawable arrow = SettingsIcons.icon(getContext(), SettingsIcons.BACK, foreground());
@@ -158,19 +180,37 @@ public final class SettingsDialog extends DialogFragment {
             dismissAllowingStateLoss();
         });
         bar.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        root.addView(bar);
+
+        LinearLayout heading = new LinearLayout(getContext());
+        heading.setOrientation(LinearLayout.VERTICAL);
+        heading.setPaddingRelative(dp(20), dp(8), dp(20), dp(8));
+        pageContext = new TextView(getContext());
+        pageContext.setText(L10n.t("Settings"));
+        pageContext.setAllCaps(true);
+        pageContext.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+        pageContext.setTextColor((colors == null ? ScreenColors.DEFAULT : colors).heading);
+        pageContext.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        pageContext.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+        pageContext.setLetterSpacing(0.08f);
+        pageContext.setPaddingRelative(0, 0, 0, dp(4));
+        pageContext.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        heading.addView(pageContext);
 
         TextView title = new TextView(getContext());
         pageTitle = title;
         title.setText("Hushfacebook");
+        title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         title.setTextColor(foreground());
         title.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 28);
-        title.setAutoSizeTextTypeUniformWithConfiguration(16, 28, 1, TypedValue.COMPLEX_UNIT_SP);
+        title.setIncludeFontPadding(false);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+        title.setAutoSizeTextTypeUniformWithConfiguration(16, 32, 1, TypedValue.COMPLEX_UNIT_SP);
         title.setMaxLines(1);
-        title.setPaddingRelative(dp(8), 0, 0, 0);
         title.setAccessibilityHeading(true);
-        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        root.addView(bar);
+        heading.addView(title, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(heading);
 
         buildSearch(root);
 
@@ -195,7 +235,7 @@ public final class SettingsDialog extends DialogFragment {
         searchBox.setGravity(Gravity.CENTER_VERTICAL);
         android.graphics.drawable.GradientDrawable surface = new android.graphics.drawable.GradientDrawable();
         surface.setColor(palette.card);
-        surface.setCornerRadius(dp(10));
+        surface.setCornerRadius(dp(8));
         surface.setStroke(dp(2), ScreenColors.focusStroke(palette.heading, palette.outline));
         searchBox.setBackground(surface);
         searchBox.setAddStatesFromChildren(true);
@@ -249,13 +289,13 @@ public final class SettingsDialog extends DialogFragment {
         });
         LinearLayout.LayoutParams layout = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
-        layout.setMargins(dp(18), dp(4), dp(18), dp(14));
+        layout.setMargins(dp(20), 0, dp(20), dp(16));
         root.addView(searchBox, layout);
         // Typed letters alone tell a screen reader nothing about the list below, so the count is
         // spoken from a polite live region, once the typing has settled.
         results = new TextView(getContext());
         results.setTextColor(palette.summary);
-        results.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        results.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         results.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         results.setVisibility(View.GONE);
         LinearLayout.LayoutParams place = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -272,6 +312,14 @@ public final class SettingsDialog extends DialogFragment {
 
     void showPage(CharSequence title, boolean home, String query) {
         pageTitle.setText(title);
+        pageContext.setText(home ? L10n.t("Settings") : "Hushfacebook");
+        int headingSize = home || L10n.t("More settings").contentEquals(title) ? 32 : 28;
+        if (home) {
+            pageTitle.setAutoSizeTextTypeUniformWithConfiguration(16, headingSize, 1, TypedValue.COMPLEX_UNIT_SP);
+        } else {
+            pageTitle.setAutoSizeTextTypeWithDefaults(TextView.AUTO_SIZE_TEXT_TYPE_NONE);
+            pageTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, headingSize);
+        }
         pageTitle.setMaxLines(home ? 1 : Integer.MAX_VALUE);
         searchBox.setVisibility(home ? View.VISIBLE : View.GONE);
         settingSearch = true;

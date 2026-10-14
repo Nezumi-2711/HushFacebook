@@ -146,6 +146,129 @@ public class JavaCrashReportTest {
         }
     }
 
+    /**
+     * Clear diagnostic data empties the report, and a worker's exception saved before the clear
+     * that lives on after it leaves it empty. It used to write the earlier crash back. A crash
+     * after the clear still takes the place.
+     */
+    @Test
+    public void aClearHoldsWhenAWorkerLivesOnAfterIt() throws Exception {
+        LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        LogBufferManager.clearLogBuffer();
+        JavaCrashReport.survived(worker, swallowed);
+        assertEquals("the worker wrote a cleared report back", "", LogBufferManager.readCrashReport(context));
+
+        JavaCrashReport.save(new Thread("Background"), new IllegalArgumentException("after the clear"));
+        assertTrue(LogBufferManager.readCrashReport(context).contains("java.lang.IllegalArgumentException: after the clear"));
+    }
+
+    /** Undo after the worker lived on puts back what the report would hold without the clear. */
+    @Test
+    public void undoAfterTheWorkerLivesOnPutsTheEarlierCrashBack() throws Exception {
+        LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        LogBufferManager.clearLogBuffer();
+        JavaCrashReport.survived(worker, swallowed);
+        assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+        String kept = LogBufferManager.readCrashReport(context);
+        assertTrue(kept, kept.contains("an earlier start's crash"));
+        assertFalse("Undo put the swallowed exception back: " + kept, kept.contains("swallowed"));
+    }
+
+    /** Undo before the worker lives on puts its exception back, and it then takes back as it would have. */
+    @Test
+    public void undoBeforeTheWorkerLivesOnLetsItTakeBackAsBefore() throws Exception {
+        LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        LogBufferManager.clearLogBuffer();
+        assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+        assertTrue(LogBufferManager.readCrashReport(context).contains("swallowed"));
+        JavaCrashReport.survived(worker, swallowed);
+        String kept = LogBufferManager.readCrashReport(context);
+        assertTrue(kept, kept.contains("an earlier start's crash"));
+        assertFalse(kept, kept.contains("swallowed"));
+    }
+
+    /**
+     * A crash saved after the clear keeps the place through Undo, and the worker saved before the
+     * clear living on leaves it there.
+     */
+    @Test
+    public void aCrashAfterTheClearOutlastsUndoAndTheOldWorker() throws Exception {
+        LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        LogBufferManager.clearLogBuffer();
+        JavaCrashReport.save(new Thread("Background"), new IllegalArgumentException("the fatal one"));
+        LogBufferManager.undoClear();
+        JavaCrashReport.survived(worker, swallowed);
+        String kept = LogBufferManager.readCrashReport(context);
+        assertTrue("the newer crash was pushed out: " + kept, kept.contains("java.lang.IllegalArgumentException: the fatal one"));
+        assertFalse(kept, kept.contains("an earlier start's crash"));
+        assertFalse(kept, kept.contains("swallowed"));
+    }
+
+    /**
+     * Undo while a worker's exception saved after the clear holds the place puts the cleared report
+     * in under it, so when that worker and the one saved before the clear both live on, whichever
+     * goes first, the report ends as it was. Undo used to leave the cleared report with the clear,
+     * and the report ended empty.
+     */
+    @Test
+    public void undoUnderAWorkerSavedSinceEndsWithTheEarlierCrashWhenBothLiveOn() throws Exception {
+        for (boolean newerFirst : new boolean[]{false, true}) {
+            JavaCrashReport.resetForTests();
+            LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+            Thread one = new Thread("CombinedTP3");
+            Thread two = new Thread("CombinedTP4");
+            JavaCrashReport.Saved first = JavaCrashReport.save(one, new IllegalStateException("before the clear"));
+            LogBufferManager.clearLogBuffer();
+            JavaCrashReport.Saved second = JavaCrashReport.save(two, new IllegalStateException("after the clear"));
+            assertEquals(LogBufferManager.UndoResult.RESTORED, LogBufferManager.undoClear());
+            assertTrue("newer first " + newerFirst + ": the crash since the clear lost its place",
+                    LogBufferManager.readCrashReport(context).contains("after the clear"));
+            if (newerFirst) {
+                JavaCrashReport.survived(two, second);
+                assertTrue("the worker saved before the clear isn't back under it",
+                        LogBufferManager.readCrashReport(context).contains("before the clear"));
+                JavaCrashReport.survived(one, first);
+            } else {
+                JavaCrashReport.survived(one, first);
+                JavaCrashReport.survived(two, second);
+            }
+            String kept = LogBufferManager.readCrashReport(context);
+            assertTrue("newer first " + newerFirst + ": " + kept, kept.contains("an earlier start's crash"));
+            assertFalse("newer first " + newerFirst + ": " + kept, kept.contains("the clear"));
+        }
+    }
+
+    /**
+     * Undo tapped again after a later step of the first one failed leaves the report as the first
+     * put it back. The second tap took the report the first had restored for what the waiting
+     * worker wrote over, so the worker living on left its own exception in place of the earlier crash.
+     */
+    @Test
+    public void undoAgainAfterAPartlyFailedOneChangesNothing() throws Exception {
+        LogBufferManager.persistCrashReport(context, "an earlier start's crash");
+        Thread worker = new Thread("CombinedTP3");
+        JavaCrashReport.Saved swallowed = JavaCrashReport.save(worker, new IllegalStateException("swallowed"));
+        // What Clear diagnostic data does to the Java crash, and the first Undo's Java crash step.
+        JavaCrashReport.Cleared cleared = JavaCrashReport.clear(context);
+        LogBufferManager.persistCrashReport(context, "");
+        JavaCrashReport.putBack(context, cleared);
+        assertTrue(LogBufferManager.readCrashReport(context).contains("swallowed"));
+        // A later step of that Undo failed, so the next tap runs it again.
+        JavaCrashReport.putBack(context, cleared);
+        JavaCrashReport.survived(worker, swallowed);
+        String kept = LogBufferManager.readCrashReport(context);
+        assertTrue(kept, kept.contains("an earlier start's crash"));
+        assertFalse("the second Undo left the swallowed exception in: " + kept, kept.contains("swallowed"));
+    }
+
     @Test
     public void nothingToKeepLeavesTheNextCrashItsPlace() {
         JavaCrashReport.save(Thread.currentThread(), null);

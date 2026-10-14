@@ -53,6 +53,7 @@ import app.morphe.extension.facebook.ads.ReelsAdFilter;
 import app.morphe.extension.facebook.ads.SearchAdFilterForTests;
 import app.morphe.extension.facebook.chats.ChatListForTests;
 import app.morphe.extension.facebook.chats.MessengerCardForTests;
+import app.morphe.extension.facebook.chats.MessengerHandoffForTests;
 import app.morphe.extension.facebook.chats.MessengerIconForTests;
 import app.morphe.extension.facebook.chats.OriginalChatMediaForTests;
 import app.morphe.extension.facebook.chats.ReadReceipts;
@@ -207,7 +208,7 @@ public class PausedHooksTest {
     private enum StoryTool { TEXT_BASE, IMAGINE }
 
     /** Stands in for Facebook's enum of share sheet items, named the same way. */
-    private enum ShareItem { SHARE_NOW, SHARE_TO_THREADS }
+    private enum ShareItem { SHARE_NOW, SHARE_TO_HATCH, SHARE_TO_THREADS }
 
     @After
     public void restore() {
@@ -611,8 +612,13 @@ public class PausedHooksTest {
         probes.put(PatchFamily.CHAT_LIST, Arrays.asList(
                 ChatListForTests::dropsTheNotesTiles,
                 ChatListForTests::hidesAPromotion));
-        // With Messenger installed, a tap on the top bar's Messenger icon opens Messenger instead of Chats.
-        probes.put(PatchFamily.MESSENGER_ICON, Collections.singletonList(MessengerIconForTests::opensMessenger));
+        // With Messenger installed, a tap on the top bar's Messenger icon opens Messenger instead of
+        // Chats, and an incoming call's push, its ring and a new message are left to Messenger.
+        probes.put(PatchFamily.MESSENGER_ICON, Arrays.asList(
+                MessengerIconForTests::opensMessenger,
+                MessengerHandoffForTests::dropsACallPush,
+                MessengerHandoffForTests::dropsARing,
+                MessengerHandoffForTests::dropsAMessage));
         // The Menu's Upgrades and Also from Meta groups build nothing, in the section Facebook
         // draws and in the one carrying what the server sends.
         probes.put(PatchFamily.MENU_PROMOTIONS, Arrays.asList(
@@ -621,7 +627,7 @@ public class PausedHooksTest {
                 MenuSectionsForTests::hidesServerUpgrades,
                 MenuSectionsForTests::hidesServerAlsoFromMeta));
         // Edits' header flag and both shapes of its pill request, the Threads cross-posting
-        // onboarding and the share sheet's Threads item, the Meta Verified sheet and label, an avatar
+        // onboarding and the share sheet's Threads and Muse items, the Meta Verified sheet and label, an avatar
         // sticker upsell, Imagine's post button, composer capability and Create story tile, and the
         // other Meta AI post buttons, with the deep dive under a caption.
         probes.put(PatchFamily.META_UPSELLS, Arrays.asList(

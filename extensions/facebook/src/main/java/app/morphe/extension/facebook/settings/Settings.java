@@ -712,18 +712,19 @@ public class Settings extends BaseSettings {
     /**
      * Facebook's own text, React Native screens' included, drawn in the font {@link #FONT_SOURCE}
      * names instead of Meta's Optimistic, at the same weight and slant. A typeface already on
-     * screen keeps its font until Facebook restarts.
+     * screen keeps its font until Facebook restarts, so a change brings up the restart row.
      */
     public static final BooleanSetting USE_SYSTEM_FONT =
-            new BooleanSetting("hushfacebook_use_system_font", FALSE);
+            new BooleanSetting("hushfacebook_use_system_font", FALSE, true);
 
     /**
      * Emoji drawn with the phone's own emoji font instead of the one Meta downloads. An emoji
      * already laid out keeps its look until its text is drawn again, and the quick emoji picker
-     * until Facebook restarts. Reactions and stickers are pictures, not text, and don't change.
+     * until Facebook restarts, so a change brings up the restart row. Reactions and stickers are
+     * pictures, not text, and don't change.
      */
     public static final BooleanSetting USE_SYSTEM_EMOJI =
-            new BooleanSetting("hushfacebook_use_system_emoji", FALSE);
+            new BooleanSetting("hushfacebook_use_system_emoji", FALSE, true);
 
     /** Web links leave Facebook's in-app browser for the default browser. */
     public static final BooleanSetting OPEN_LINKS_EXTERNALLY =
@@ -790,6 +791,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_open_messenger_app", FALSE);
 
     /**
+     * While Messenger is installed and enabled, Facebook doesn't ring for calls or post
+     * notifications for new messages, reactions, message requests and missed calls, so only
+     * Messenger does. Starts off. Without Messenger, or with it disabled, Facebook rings and
+     * notifies as it always did. Read on every call and notification, so it needs no restart.
+     */
+    public static final BooleanSetting LEAVE_CALLS_AND_CHATS_TO_MESSENGER =
+            new BooleanSetting("hushfacebook_leave_calls_and_chats_to_messenger", FALSE);
+
+    /**
      * The Upgrades section of Facebook's Menu, the group Facebook types UPSELL, with its offers.
      * Only that group goes: Settings, Help and support and the rest of the Menu stay.
      */
@@ -825,6 +835,13 @@ public class Settings extends BaseSettings {
     /** The share sheet's button for sharing to Threads. Off until it's turned on. */
     public static final BooleanSetting HIDE_THREADS_SHARE_BUTTON =
             new BooleanSetting("hushfacebook_hide_threads_share_button", FALSE);
+
+    /**
+     * The share sheet's Muse button, Meta's AI agent app, wherever Facebook's one list of share
+     * items reaches. Off until it's turned on.
+     */
+    public static final BooleanSetting HIDE_MUSE_SHARE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_muse_share_button", FALSE);
 
     /**
      * The share sheet items Share sheet items keeps out, as the item enum's constant names separated
@@ -1447,18 +1464,20 @@ public class Settings extends BaseSettings {
     /**
      * How large Facebook's text is, as a share of the phone's font size ({@link TextSize}). It
      * isn't a switch: 100% is Facebook as it ships, which is also what a paused Facebook reads.
-     * The settings entry carries it, so every build has it.
+     * The settings entry carries it, so every build has it. Its row says to restart, so a change
+     * brings up the restart row.
      */
     public static final EnumSetting<TextSize.Scale> TEXT_SIZE =
-            new EnumSetting<>("hushfacebook_text_size", TextSize.Scale.P100);
+            new EnumSetting<>("hushfacebook_text_size", TextSize.Scale.P100, true);
 
     /**
      * The colour that stands in for Facebook's blue on links, buttons, switches and the selected
      * tab ({@link AccentColor}), with the Accent color patch in the build. Facebook blue is Facebook
-     * as it ships, which is also what a paused Facebook reads. Not a switch.
+     * as it ships, which is also what a paused Facebook reads. Not a switch. Screens pick their
+     * colours as they build, so a change brings up the restart row.
      */
     public static final EnumSetting<AccentColor.Preset> ACCENT_COLOR =
-            new EnumSetting<>("hushfacebook_accent_color", AccentColor.Preset.FACEBOOK);
+            new EnumSetting<>("hushfacebook_accent_color", AccentColor.Preset.FACEBOOK, true);
 
     /**
      * Where {@link #USE_SYSTEM_FONT} takes its font from: empty for the phone's own, or the name of

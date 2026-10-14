@@ -1,5 +1,5 @@
 {
-  "version": "v0.11.1",
+  "version": "v0.12.0",
   "appNames": {
     "com.facebook.katana": "Facebook"
   },
@@ -2412,7 +2412,7 @@
     },
     {
       "name": "Open Messenger from the top bar",
-      "description": "Makes the Messenger icon at the top of Facebook open the Messenger app instead of Facebook's own Chats, if you'd rather chat in Messenger. Without Messenger installed, Chats opens as before. Starts off. Turn it on in Hushfacebook settings > Chats.",
+      "description": "Makes the Messenger icon at the top of Facebook open the Messenger app instead of Facebook's own Chats, if you'd rather chat in Messenger. Without Messenger installed, Chats opens as before. Starts off. Turn it on in Hushfacebook settings > Chats. Also carries Leave calls and chats to Messenger, a separate switch that starts off and leaves ringing and chat notifications to Messenger while it's installed and enabled.",
       "category": "Chats",
       "use": true,
       "dependencies": [

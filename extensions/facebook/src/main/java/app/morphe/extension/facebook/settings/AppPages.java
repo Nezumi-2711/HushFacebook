@@ -43,7 +43,7 @@ final class AppPages {
     private AppPages() {
     }
 
-    /** Chats: the Get Messenger card, the chat list clean-up and the Messenger icon. */
+    /** Chats: the Get Messenger card, the chat list clean-up, the Messenger icon and leaving calls to Messenger. */
     static void chats(HushfacebookPreferenceFragment page, PreferenceScreen screen, Context context,
             Set<PatchFamily> build) {
         if (build.contains(PatchFamily.MESSENGER_CARD) || build.contains(PatchFamily.CHAT_LIST)
@@ -65,6 +65,11 @@ final class AppPages {
                 chats.addPreference(toggle(context, Settings.OPEN_MESSENGER_APP,
                         L10n.t("Tapping the Messenger icon at the top of Facebook opens the Messenger app instead of Chats. Without "
                                 + "Messenger, Chats opens as before.")));
+                // Read on every call and chat notification, so a change applies without a restart.
+                chats.addPreference(toggle(context, Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER,
+                        L10n.t("Facebook stops ringing for calls and notifying you about chats while Messenger is installed, "
+                                + "so only Messenger does. Without Messenger, or with it turned off, Facebook rings and notifies "
+                                + "as before. If you're signed out of Messenger, you'll miss calls and messages.")));
             }
             if (build.contains(PatchFamily.ORIGINAL_CHAT_MEDIA)) {
                 chats.addPreference(toggle(context, Settings.ORIGINAL_CHAT_MEDIA,
@@ -130,6 +135,9 @@ final class AppPages {
             upsells.addPreference(toggle(context, Settings.HIDE_THREADS_SHARE_BUTTON,
                     L10n.t("Removes the Threads button when you share something. All other ways to share stay, in the same "
                             + "order.")));
+            upsells.addPreference(toggle(context, Settings.HIDE_MUSE_SHARE_BUTTON,
+                    L10n.t("Removes Muse, Meta's AI agent app, when you share something. All other ways to share stay, in "
+                            + "the same order.")));
             upsells.addPreference(toggle(context, Settings.HIDE_META_VERIFIED_UPSELLS,
                     L10n.t("No Meta Verified offer after you post, and no Meta Verified label under the names on "
                             + "posts. Posting works as usual.")));
@@ -331,7 +339,8 @@ final class AppPages {
 
     /**
      * The list: every item it knows, ticked when it's kept out. Save keeps the ticks, or, when they
-     * need more room than the setting has, keeps the list open and saves nothing.
+     * need more room than the setting has or the phone doesn't keep the write, keeps the list open
+     * with its ticks, so Save can be tried again.
      */
     private static void showShareItems(HushfacebookPreferenceFragment page, Context context, Preference row) {
         List<String> types = ShareSheetItems.choices();
@@ -354,8 +363,13 @@ final class AppPages {
             for (int i = 0; i < ticked.length; i++) {
                 if (ticked[i]) picked.add(types.get(i));
             }
-            if (!ShareSheetItems.hide(picked)) {
+            ShareSheetItems.Hidden saved = ShareSheetItems.hide(picked);
+            if (saved == ShareSheetItems.Hidden.NO_ROOM) {
                 Utils.showToastLong(L10n.t("This list needs more room than it has. Shorten it, then save again."));
+                return;
+            }
+            if (saved == ShareSheetItems.Hidden.NOT_STORED) {
+                Utils.showToastLong(L10n.t("Couldn't save the change. Try again."));
                 return;
             }
             row.setSummary(shareItemsSummary(ShareSheetItems.hidden()));

@@ -34,8 +34,8 @@ param(
     # are off by default included (AMOLED black theme, Download any video), so a check of what
     # Facebook does without one of them needs a build that leaves it out.
     [string[]]$Exclude = @(),
-    # Patch with the release bundle even when a source file is newer than it, for replaying
-    # an earlier build on purpose. Without it a stale bundle stops the run.
+    # Patch with the release bundle even when it was built from other sources than the checkout
+    # holds, for replaying an earlier build on purpose. Without it a stale bundle stops the run.
     [switch]$AllowStaleBundle,
     # Option values for a patch, keyed by patch name, each a list of key=value strings, for
     # example @{ 'Hushfacebook settings' = @('appName=HushBook') }. They go after that patch's
@@ -116,15 +116,14 @@ $version = Get-BundleVersion -Root $root
 $bundle = Get-ReleaseBundlePath -Root $root -Version $version
 if (-not (Test-Path $bundle)) { throw "No bundle at $bundle. Build it first: :patches:generatePatchesList then :patches:buildAndroid, through the governor." }
 # Only buildAndroid writes this bundle; a test run after a patch change leaves it behind, and the
-# phone would get the previous hooks while the result reads as a verdict on the new ones.
-if (-not $AllowStaleBundle) {
-    $newerSources = @(Get-SourcesNewerThanBundle -Root $root -Bundle $bundle)
-    if ($newerSources.Count -gt 0) {
-        throw ("The bundle at $bundle is older than $($newerSources.Count) source file(s), the newest " +
-            "$($newerSources[0].FullName). Rebuild it first: :patches:buildAndroid through the governor " +
-            '(or pass -AllowStaleBundle to patch with it as it is).')
-    }
+# phone would get the previous hooks while the result reads as a verdict on the new ones. Held to
+# the input digest it carries, not file times, so a deleted, renamed or backdated source counts too.
+$staleBundle = Get-BundleInputMismatch -Root $root -BundlePath $bundle
+if ($staleBundle -and -not $AllowStaleBundle) {
+    throw ("The bundle at $bundle doesn't match this checkout: $staleBundle. Rebuild it first: " +
+        ':patches:buildAndroid through the governor (or pass -AllowStaleBundle to patch with it as it is).')
 }
+if ($staleBundle) { Write-Warning "[device] -AllowStaleBundle: patching with $bundle although $staleBundle." }
 $names = @($catalog.patches | ForEach-Object { $_.name } | Where-Object { $_ -notin $Exclude })
 foreach ($excluded in $Exclude) {
     if ($excluded -notin ($catalog.patches | ForEach-Object { $_.name })) { throw "No patch named '$excluded' to exclude." }
@@ -202,6 +201,7 @@ $validation = Test-PatchingReport -Report $report -ExpectedNames $names `
 if (-not $validation.Valid) { throw "Patching did not produce a complete APK: $($validation.Reason)" }
 Write-Host "[device] applied $(@($report.appliedPatches).Count), failed $(@($report.failedPatches).Count), target $($report.packageName) $($report.packageVersion)"
 Write-Host "[device] $out"
+if ($staleBundle) { Write-Warning "[device] built with -AllowStaleBundle from a bundle that doesn't match this checkout." }
 
 if (-not $Serial) { return }
 $adb = (Get-Command adb -ErrorAction SilentlyContinue).Source

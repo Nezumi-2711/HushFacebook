@@ -43,6 +43,7 @@ import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.settings.HushfacebookPause;
+import app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 import app.morphe.extension.facebook.download.ClipboardLink;
 import app.morphe.extension.facebook.download.SaveLeftovers;
 import app.morphe.extension.facebook.download.SavedFileActions;
@@ -88,6 +89,12 @@ public final class SettingsEntry {
     private static volatile long requestedAt;
     /** The setting the pending request opens at, or null for the overview. */
     private static volatile String requestedSetting;
+    /**
+     * The page the next open lands on, or null for the first page. Set by a restart from the
+     * restart row, kept while the screen is opened again over a later activity, and dropped
+     * once the person closes it or asks for it another way.
+     */
+    private static volatile String requestedPage;
     private static volatile boolean callbacksRegistered;
     /** The activity the screen was last shown over, while the person hasn't closed it. */
     private static WeakReference<Activity> host;
@@ -112,7 +119,8 @@ public final class SettingsEntry {
      * check, when it's on, asks at most once a day, on a worker, and where what a save cut short
      * by Android left behind is removed, on a worker too. Every process starts private push
      * observations. Other processes also start Lock Facebook's watch ({@link AppLock#watch}). The
-     * report's network count starts here too ({@link NetworkUsage}).
+     * report's network count starts here too ({@link NetworkUsage}). A start that the settings
+     * screen's restart row asked for opens the screen again, on the page it was on.
      */
     public static void onApplicationCreate(Context context) {
         try {
@@ -140,6 +148,8 @@ public final class SettingsEntry {
             if (SettingsStatus.materialYouTheme()) MaterialYouTheme.watchWindows(context);
             // Accent color's route five, for the colours views inflated from XML read themselves.
             if (SettingsStatus.accentColor()) AccentResources.watchActivities(context);
+            // Last, so nothing above waits on it. The open itself waits for the first screen to resume.
+            ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn);
         } catch (Throwable ex) {
             // Throwable, as in every hook: an Error here, from a class that fails to load or set
             // itself up, would end Facebook at every start, paused or not.
@@ -541,6 +551,7 @@ public final class SettingsEntry {
         }
         requestedAt = SystemClock.elapsedRealtime();
         requestedSetting = null;
+        requestedPage = null;
         openPending = true;
         Logger.printInfo(() -> "Settings requested by a long press on the Facebook logo");
         OpenWhenResumed.openWhenSettled(activity);
@@ -642,6 +653,7 @@ public final class SettingsEntry {
                 if (SystemClock.elapsedRealtime() - requestedAt > REQUEST_LIFETIME_MS) {
                     openPending = false;
                     requestedSetting = null;
+                    requestedPage = null;
                     Logger.printInfo(() -> "Settings request expired before a Facebook screen could show it");
                     return;
                 }
@@ -680,7 +692,7 @@ public final class SettingsEntry {
                 return false;
             }
             closedByUser = false;
-            new SettingsDialog().show(fragments, DIALOG_TAG);
+            SettingsDialog.onPage(requestedPage).show(fragments, DIALOG_TAG);
             host = new WeakReference<>(activity);
             Logger.printInfo(() -> "Settings opened over " + name);
             return true;
@@ -702,6 +714,7 @@ public final class SettingsEntry {
     static void onClosedByUser() {
         closedByUser = true;
         host = null;
+        requestedPage = null;
     }
 
     private static void noteIntent(Intent intent) {
@@ -713,10 +726,28 @@ public final class SettingsEntry {
             String key = asked != null && asked.matches("[a-z0-9_]{1,64}") ? asked : null;
             requestedAt = SystemClock.elapsedRealtime();
             requestedSetting = key;
+            requestedPage = null;
             openPending = true;
             Logger.printInfo(() -> key == null ? "Settings requested by the launcher shortcut"
                     : "Settings requested at " + key);
         }
+    }
+
+    /**
+     * The screen again after the restart row restarted Facebook, on [page], over the first
+     * Facebook screen to resume: the same open the logo's long press and the shortcut lead to.
+     */
+    static void reopenOn(String page) {
+        requestedAt = SystemClock.elapsedRealtime();
+        requestedSetting = null;
+        requestedPage = page;
+        openPending = true;
+        Logger.printInfo(() -> "Settings requested by a restart from the settings screen");
+    }
+
+    /** The page the next open lands on. Package-visible for tests. */
+    static String requestedPage() {
+        return requestedPage;
     }
 
     /** A Facebook-blue disc with an "H", drawn so the shortcut needs no resource in Facebook's APK. */

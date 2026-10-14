@@ -42,6 +42,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowLooper;
+import org.robolectric.shadows.ShadowSystemClock;
 import org.robolectric.shadows.ShadowToast;
 
 import java.io.ByteArrayInputStream;
@@ -51,6 +52,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -3259,6 +3261,43 @@ public class SettingsBackupTest {
             deliver(activity, tap(activity, page, IMPORT_ROW), fileWith(Settings.HIDE_SPONSORED_POSTS, false));
             shownPreview().cancel();
             settle();
+        }
+    }
+
+    /**
+     * A file turned down at the moment the wait runs out: the worker returned first, so the screen
+     * says why the file was turned down rather than that the app took too long, and the rows come
+     * back. The answer used to lose to the wait, which then dropped it.
+     */
+    @Test
+    public void aRefusalThatLandsAsTheWaitRunsOutIsTheOneSaid() throws Exception {
+        CountDownLatch release = new CountDownLatch(1);
+        SettingsFileProvider.stall = release;
+        Uri uri = SettingsFileProvider.put(AUTHORITY, "notes.json", "just some text".getBytes(StandardCharsets.UTF_8));
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            ShadowAlertDialog.reset();
+            try {
+                shadowOf(activity).receiveResult(tap(activity, page, IMPORT_ROW).intent, Activity.RESULT_OK,
+                        new Intent().setData(uri));
+                ShadowLooper.idleMainLooper();
+                awaitHeldOpen();
+                // The wait is due, but the main thread hasn't got to it when the worker returns.
+                ShadowSystemClock.advanceBy(Duration.ofMillis(SettingsBackupPreference.timeoutMs + 1));
+            } finally {
+                release.countDown();
+            }
+            Utils.awaitBackgroundTasksForTests();
+            ShadowLooper.idleMainLooper();
+
+            assertEquals(SettingsBackupPreference.refusal(SettingsBackup.Reason.DAMAGED), ShadowToast.getTextOfLatestToast());
+            assertEquals("the cancel went out after the worker returned", 0, SettingsFileProvider.cancels.get());
+            assertNull(ShadowAlertDialog.getLatestAlertDialog());
+            assertTrue(page.findPreference(IMPORT_ROW).isEnabled());
+            assertTrue(page.findPreference(EXPORT_ROW).isEnabled());
+            // Nothing is left holding a worker, so the next pick opens the picker.
+            tap(activity, page, IMPORT_ROW);
         }
     }
 

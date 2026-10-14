@@ -12,7 +12,6 @@ Hides "Pages you may like" cards, cards promoting Facebook's own features, and s
 %1$s elapsed	%1$s transcurridos
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Este cambio se aplicó al parchear, así que Pausar no puede desactivarlo. Para descartarlo, vuelve a parchear sin ese parche.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Estos cambios se aplicaron al parchear, así que Pausar no puede desactivarlos. Para descartar uno, vuelve a parchear sin el parche que aparece entre paréntesis después de él.
-A change here applies after Facebook restarts.	Un cambio de aquí se aplica cuando Facebook se reinicie.
 Add a Download button to reels, using your download quality. Off or paused, Facebook's own buttons return.	Añade Descargar a los reels con tu calidad de descarga. Desactivado o en pausa, vuelven los botones de Facebook.
 A file named %1$s in %2$s paused Hushfacebook.	Un archivo llamado %1$s en %2$s pausó Hushfacebook.
 About	Acerca de
@@ -119,6 +118,8 @@ Android couldn't use that font file. Your font didn't change.	Android no pudo us
 Couldn't save a copy of that font. Check that the phone has room, then try again.	No se pudo guardar una copia de esa fuente. Comprueba que el teléfono tenga espacio y vuelve a intentarlo.
 Couldn't open that file. Your font didn't change.	No se pudo abrir ese archivo. Tu fuente no cambió.
 Couldn't go back to your phone's font. Try again.	No se pudo volver a la fuente de tu teléfono. Inténtalo de nuevo.
+The app holding that font file is taking too long, so Hushfacebook stopped waiting. Your font didn't change.	La app que guarda ese archivo de fuente tarda demasiado, así que Hushfacebook dejó de esperar. Tu fuente no cambió.
+The app holding the last font file still hasn't answered. Try again later.	La app del último archivo de fuente aún no ha respondido. Inténtalo más tarde.
 Full report saved to %1$s	Informe completo guardado en %1$s
 The GPL-3.0 license, plus notices for the projects this is built on	La licencia GPL-3.0 y los avisos de los proyectos en los que se basa
 Hide "People you may know"	Ocultar “Personas que quizá conozcas”
@@ -392,6 +393,10 @@ Hides the banners at the top of Chats, like the one asking you to turn on notifi
 Open the Messenger app	Abrir la app de Messenger
 # context: summary of that switch; Messenger is the app's name, Chats is Facebook's own chat screen as named above
 Tapping the Messenger icon at the top of Facebook opens the Messenger app instead of Chats. Without Messenger, Chats opens as before.	Al tocar el icono de Messenger en la parte superior de Facebook, se abre la app Messenger en lugar de Chats. Sin Messenger, Chats se abre como antes.
+# context: switch title under Chats; on, Facebook leaves ringing for calls and notifying about chats to the Messenger app
+Leave calls and chats to Messenger	Dejar llamadas y chats a Messenger
+# context: summary of that switch; signed out means not logged in to the Messenger app, turned off means the app is disabled in Android's settings
+Facebook stops ringing for calls and notifying you about chats while Messenger is installed, so only Messenger does. Without Messenger, or with it turned off, Facebook rings and notifies as before. If you're signed out of Messenger, you'll miss calls and messages.	Facebook deja de sonar con las llamadas y de avisarte de los chats mientras Messenger esté instalado, así que solo lo hace Messenger. Sin Messenger, o si está desactivado, Facebook suena y avisa como antes. Si cerraste sesión en Messenger, te perderás llamadas y mensajes.
 # context: settings section heading for the Tap to play switch
 Playback	Reproducción
 # context: switch title; on, videos and music wait for a tap before they play
@@ -663,6 +668,7 @@ Suggestions, saving, auto-advance and viewing anonymously	Sugerencias, guardado,
 Cleaner reels and video controls	Reels más limpios y controles de vídeo
 Tap to play, quality and resume	Tocar para reproducir, calidad y reanudar
 Quality, format and file names	Calidad, formato y nombres de archivo
+Settings	Ajustes
 Browse settings	Explorar ajustes
 More settings	Más ajustes
 Additional Facebook preferences	Otras preferencias de Facebook
@@ -1009,6 +1015,8 @@ Hide Edits promotions	Ocultar promociones de Edits
 Hide Threads cross-posting prompts	Ocultar avisos para publicar también en Threads
 # context: switch title under Meta's other products; Threads is Meta's app, keep its name; the share sheet is the panel that opens when you tap Share on a post, use Facebook's own word for it in this language
 Hide Threads in the share sheet	Ocultar Threads al compartir
+# context: switch title under Meta's other products; Muse is Meta's AI agent app, keep its name; the share sheet is the panel that opens when you tap Share on a post, use Facebook's own word for it in this language
+Hide Muse in the share sheet	Ocultar Muse al compartir
 # context: switch title; Meta Verified is Meta's paid subscription, keep its name
 Hide Meta Verified offers	Ocultar ofertas de Meta Verified
 # context: switch title; avatar stickers are stickers made from your Facebook avatar
@@ -1019,6 +1027,8 @@ Hides the Edits button in the Reels composer and the Edits pill under videos. Yo
 Facebook stops asking whether to share your post to Threads too. Posting to Facebook works as before.	Facebook deja de preguntar si quieres compartir tu publicación también en Threads. Publicar en Facebook funciona como antes.
 # context: summary of the Threads share sheet switch; the share sheet is the panel that opens when you tap Share on a post
 Removes the Threads button when you share something. All other ways to share stay, in the same order.	Quita el botón de Threads al compartir algo. Las demás formas de compartir se quedan, en el mismo orden.
+# context: summary of the Muse share sheet switch; Muse is Meta's AI agent app, keep its name
+Removes Muse, Meta's AI agent app, when you share something. All other ways to share stay, in the same order.	Quita Muse, la app de agente de IA de Meta, al compartir algo. Las demás formas de compartir se quedan, en el mismo orden.
 # context: summary of the Meta Verified switch; the label is a line Facebook adds under the poster's name on some posts
 No Meta Verified offer after you post, and no Meta Verified label under the names on posts. Posting works as usual.	Sin la oferta de Meta Verified después de publicar y sin la etiqueta de Meta Verified debajo de los nombres en las publicaciones. Publicar funciona como siempre.
 # context: summary of the avatar sticker switch; promotion slots are the cards Facebook uses to suggest its own features
@@ -1045,6 +1055,7 @@ Save photo	Guardar foto
 Save all photos	Guardar todas las fotos
 # context: short message shown when the photos of a post could not start saving
 Couldn't save this post's photos. Try again in a moment.	No se pudieron guardar las fotos de esta publicación. Vuelve a intentarlo en un momento.
+Too many saves at once. Try again when one finishes.	Hay demasiadas descargas en curso. Vuelve a intentarlo cuando termine una.
 # context: settings switch under Block Instant Games ads that makes a game's rewarded ad count as watched
 Answer rewarded game ads as watched	Dar por vistos los anuncios con recompensa de los juegos
 # context: description under that switch
@@ -1425,3 +1436,28 @@ The saved copy of %1$s is missing. Choose the file again.	Falta la copia guardad
 The video wasn't saved. Try again.	El video no se guardó. Inténtalo de nuevo.
 This list needs more room than it has. Shorten it, then save again.	Esta lista necesita más espacio del disponible. Acórtala y vuelve a guardar.
 Your settings already match that file, so nothing will change.	Tus ajustes ya coinciden con ese archivo, así que no cambiará nada.
+# context: title of the row that restarts Facebook, shown while one change waits for a restart
+Restart Facebook to apply this change	Reinicia Facebook para aplicar este cambio
+# context: the same row with two or more changes waiting
+Restart Facebook to apply %1$d changes	Reinicia Facebook para aplicar %1$d cambios
+# context: summary of that row; after the restart the settings screen opens again on the same page
+Facebook closes and reopens on this page.	Facebook se cierra y se vuelve a abrir en esta página.
+# context: row near the end of the settings home page; opens a new bug report on GitHub
+Report a problem	Informar de un problema
+Opens a GitHub report with your versions and settings filled in. Add what happened.	Abre un informe en GitHub con tus versiones y ajustes ya rellenados. Añade lo que pasó.
+# context: row near the top of the settings home page; a list of ready-made sets of switches
+Quick setups	Ajustes rápidos
+Turn on a set of switches in one tap, or put every switch back the way it started.	Activa un grupo de interruptores con un toque o devuelve cada interruptor a como estaba al principio.
+# context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
+Quiet	Tranquilo
+Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Oculta anuncios, sugerencias, promociones y avisos, y detiene las notificaciones insistentes.
+# context: what the Privacy choice of Quick setups turns on; camera roll scans are Hold back camera roll processing
+Holds back usage reports and camera roll scans, removes link tracking, and hides your typing and screenshots.	Retiene los informes de uso y los análisis del carrete, quita el seguimiento de los enlaces y oculta cuándo escribes y haces capturas.
+# context: name of the Quick setups choice that puts the switches back as they were after install
+Back to defaults	Volver a lo predeterminado
+# context: Lock Facebook is the name of the app lock switch, left as it is
+Puts every feature switch but Lock Facebook back the way it started.	Devuelve cada interruptor de función, salvo Bloquear Facebook, a como estaba al principio.
+# context: toast after a Quick setups choice changed one switch
+Changed %1$d setting	%1$d ajuste cambiado
+# context: the same toast for none, or for two or more
+Changed %1$d settings	%1$d ajustes cambiados

@@ -37,6 +37,7 @@ import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.SettingsContextRule;
 import app.morphe.extension.shared.settings.BaseSettings;
 import app.morphe.extension.shared.settings.BooleanSetting;
+import app.morphe.extension.shared.settings.FailingStore;
 import app.morphe.extension.shared.settings.HushfacebookPause;
 import app.morphe.extension.shared.settings.PauseForTests;
 
@@ -786,6 +787,45 @@ public class HushfacebookPreferenceFragmentTest {
             ShadowLooper.idleMainLooper();
             assertFalse(list.isShowing());
             assertEquals("the imported type didn't stay picked", longType, Settings.HIDDEN_SHARE_ITEMS.savedValue());
+            assertEquals(AppPages.shareItemsSummary(ShareSheetItems.hidden()), String.valueOf(items.getSummary()));
+        } finally {
+            Settings.HIDDEN_SHARE_ITEMS.resetToDefault();
+        }
+    }
+
+    /**
+     * A Save the phone doesn't keep leaves the share sheet list open with its ticks and says so in
+     * its own words, not the out-of-room ones, and Save again keeps them once the phone does.
+     */
+    @Test
+    public void theShareSheetListStaysOpenWhenThePhoneDoesntKeepTheSave() {
+        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.SHARE_SHEET_ITEMS);
+        Settings.HIDDEN_SHARE_ITEMS.resetToDefault();
+        String before = Settings.HIDDEN_SHARE_ITEMS.savedValue();
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<Preference> rows = rowsOf(controller);
+            Preference items = rows.get(indexOfKey(rows, AppPages.SHARE_ITEMS_ROW));
+            String summary = String.valueOf(items.getSummary());
+            ShadowAlertDialog.reset();
+            items.getOnPreferenceClickListener().onPreferenceClick(items);
+            AlertDialog list = ShadowAlertDialog.getLatestAlertDialog();
+            Shadows.shadowOf(list).clickOnItem(ShareSheetItems.choices().indexOf("COPY_LINK"));
+            ShadowLooper.idleMainLooper();
+
+            try (FailingStore ignored = FailingStore.install(FailingStore.Fault.COMMIT_THROWS)) {
+                list.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                ShadowLooper.idleMainLooper();
+            }
+            assertTrue("a Save the phone didn't keep closed the list", list.isShowing());
+            assertEquals("Couldn't save the change. Try again.", ShadowToast.getTextOfLatestToast());
+            assertEquals(before, Settings.HIDDEN_SHARE_ITEMS.get());
+            assertEquals(before, Settings.HIDDEN_SHARE_ITEMS.savedValue());
+            assertEquals(summary, String.valueOf(items.getSummary()));
+
+            list.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            ShadowLooper.idleMainLooper();
+            assertFalse(list.isShowing());
+            assertEquals("COPY_LINK", Settings.HIDDEN_SHARE_ITEMS.savedValue());
             assertEquals(AppPages.shareItemsSummary(ShareSheetItems.hidden()), String.valueOf(items.getSummary()));
         } finally {
             Settings.HIDDEN_SHARE_ITEMS.resetToDefault();

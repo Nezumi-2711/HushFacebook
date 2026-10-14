@@ -27,6 +27,7 @@ import app.morphe.extension.facebook.settings.PatchFamilyForTests;
 import app.morphe.extension.facebook.settings.Settings;
 import app.morphe.extension.shared.SettingsContextRule;
 import app.morphe.extension.shared.diagnostics.HookStatus;
+import app.morphe.extension.shared.settings.FailingStore;
 import app.morphe.extension.shared.settings.HushfacebookPause;
 import app.morphe.extension.shared.settings.PauseForTests;
 
@@ -159,7 +160,7 @@ public class ShareSheetItemsTest {
         String longType = one.toString();
         assertTrue(ShareSheetItems.isClean(longType));
         Settings.HIDDEN_SHARE_ITEMS.save(longType);
-        assertFalse(ShareSheetItems.hide(Arrays.asList("COPY_LINK", longType)));
+        assertSame(ShareSheetItems.Hidden.NO_ROOM, ShareSheetItems.hide(Arrays.asList("COPY_LINK", longType)));
         assertEquals(longType, Settings.HIDDEN_SHARE_ITEMS.savedValue());
 
         // 128 short types of 15 letters fill 2,047 of the 2,048 characters.
@@ -170,13 +171,30 @@ public class ShareSheetItemsTest {
         Settings.HIDDEN_SHARE_ITEMS.save(saved);
         List<String> withCopyLink = new ArrayList<>(many);
         withCopyLink.add(0, "COPY_LINK");
-        assertFalse(ShareSheetItems.hide(withCopyLink));
+        assertSame(ShareSheetItems.Hidden.NO_ROOM, ShareSheetItems.hide(withCopyLink));
         assertEquals(saved, Settings.HIDDEN_SHARE_ITEMS.savedValue());
 
         many.remove(many.size() - 1);
         many.add(0, "COPY_LINK");
-        assertTrue(ShareSheetItems.hide(many));
+        assertSame(ShareSheetItems.Hidden.SAVED, ShareSheetItems.hide(many));
         assertEquals(new ArrayList<>(many), new ArrayList<>(ShareSheetItems.hidden()));
+    }
+
+    /**
+     * A pick the phone doesn't keep says so, and isn't taken for a save: the old list stands, live
+     * and on disk, and the same pick saved again once the phone keeps writes holds every type.
+     */
+    @Test
+    public void aPickThePhoneDoesntKeepSaysSoAndSavesOnRetry() {
+        assertSame(ShareSheetItems.Hidden.SAVED, ShareSheetItems.hide(Collections.singletonList("COPY_LINK")));
+        List<String> picked = Arrays.asList("COPY_LINK", "SHARE_NOW");
+        try (FailingStore ignored = FailingStore.install(FailingStore.Fault.COMMIT_THROWS)) {
+            assertSame(ShareSheetItems.Hidden.NOT_STORED, ShareSheetItems.hide(picked));
+        }
+        assertEquals("COPY_LINK", Settings.HIDDEN_SHARE_ITEMS.get());
+        assertEquals("COPY_LINK", Settings.HIDDEN_SHARE_ITEMS.savedValue());
+        assertSame(ShareSheetItems.Hidden.SAVED, ShareSheetItems.hide(picked));
+        assertEquals(picked, new ArrayList<>(ShareSheetItems.hidden()));
     }
 
     @Test

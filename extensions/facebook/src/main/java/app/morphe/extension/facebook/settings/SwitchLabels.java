@@ -142,6 +142,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_CHAT_NOTES_TRAY) return L10n.t("Hide the notes and active now row");
         if (setting == Settings.HIDE_CHAT_PROMOTIONS) return L10n.t("Hide chat list promotions");
         if (setting == Settings.OPEN_MESSENGER_APP) return L10n.t("Open the Messenger app");
+        if (setting == Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER) return L10n.t("Leave calls and chats to Messenger");
         if (setting == Settings.SAVED_SHORTCUT) return L10n.t("Saved shortcut");
         if (setting == Settings.WATCH_HISTORY_SHORTCUT) return L10n.t("Watch history shortcut");
         if (setting == Settings.APP_LOCK) return L10n.t("Lock Facebook");
@@ -152,6 +153,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_EDITS_UPSELLS) return L10n.t("Hide Edits promotions");
         if (setting == Settings.HIDE_THREADS_CROSS_POSTING) return L10n.t("Hide Threads cross-posting prompts");
         if (setting == Settings.HIDE_THREADS_SHARE_BUTTON) return L10n.t("Hide Threads in the share sheet");
+        if (setting == Settings.HIDE_MUSE_SHARE_BUTTON) return L10n.t("Hide Muse in the share sheet");
         if (setting == Settings.HIDE_META_VERIFIED_UPSELLS) return L10n.t("Hide Meta Verified offers");
         if (setting == Settings.HIDE_AVATAR_UPSELLS) return L10n.t("Hide avatar sticker promotions");
         if (setting == Settings.HIDE_META_AI_IMAGINE) return L10n.t("Hide Meta AI's Imagine");

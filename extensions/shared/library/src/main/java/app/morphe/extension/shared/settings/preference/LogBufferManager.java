@@ -92,7 +92,8 @@ public final class LogBufferManager {
     private static final Deque<DiagnosticEvent> logBuffer = new ConcurrentLinkedDeque<>();
     private static final AtomicInteger logBufferCharSize = new AtomicInteger();
     private static final Object CRASH_FILE_LOCK = new Object();
-    private static final Object CLEAR_UNDO_LOCK = new Object();
+    /** The diagnostic generation lock: events, Clear and Undo, and every Java crash save. */
+    static final Object CLEAR_UNDO_LOCK = new Object();
     private static final AtomicBoolean EXPORT_RUNNING = new AtomicBoolean();
     private static ClearSnapshot lastClear;
 
@@ -101,14 +102,14 @@ public final class LogBufferManager {
         final List<DiagnosticEvent> events;
         final app.morphe.extension.shared.diagnostics.HookStatus.Snapshot hooks;
         final app.morphe.extension.shared.diagnostics.FeedFilterCounters.Snapshot feedFilter;
-        final String javaCrash;
+        final JavaCrashReport.Cleared javaCrash;
         final String nativeCrash;
 
         ClearSnapshot(
                 List<DiagnosticEvent> events,
                 app.morphe.extension.shared.diagnostics.HookStatus.Snapshot hooks,
                 app.morphe.extension.shared.diagnostics.FeedFilterCounters.Snapshot feedFilter,
-                String javaCrash,
+                JavaCrashReport.Cleared javaCrash,
                 String nativeCrash
         ) {
             this.events = events;
@@ -120,7 +121,7 @@ public final class LogBufferManager {
 
         boolean isEmpty() {
             return events.isEmpty() && hooks.isEmpty() && feedFilter.isEmpty()
-                    && javaCrash.isEmpty() && nativeCrash.isEmpty();
+                    && javaCrash.report.isEmpty() && nativeCrash.isEmpty();
         }
     }
 
@@ -803,7 +804,8 @@ public final class LogBufferManager {
                     new ArrayList<>(logBuffer),
                     app.morphe.extension.shared.diagnostics.HookStatus.snapshotAndClear(),
                     app.morphe.extension.shared.diagnostics.FeedFilterCounters.snapshotAndClear(),
-                    readCrashReport(context),
+                    // With the swallowed exceptions still waiting in it, so none writes it back.
+                    JavaCrashReport.clear(context),
                     readNpthCrashReport(context)
             );
             clearLogBufferData();
@@ -833,7 +835,7 @@ public final class LogBufferManager {
             } else {
                 try {
                     Context context = Utils.getContext();
-                    restoreCrashReportIfMissing(context, CRASH_FILE, saved.javaCrash);
+                    JavaCrashReport.putBack(context, saved.javaCrash);
                     restoreCrashReportIfMissing(context, NPTH_CRASH_FILE, saved.nativeCrash);
                     restoreLogBufferData(saved.events);
                     app.morphe.extension.shared.diagnostics.HookStatus.restore(saved.hooks);
@@ -881,18 +883,24 @@ public final class LogBufferManager {
         }
     }
 
-    private static void restoreCrashReportIfMissing(
+    /** Undo's Java crash: true when [report] went back into the empty place. */
+    static boolean restoreJavaCrashIfMissing(Context context, String report) throws Exception {
+        return restoreCrashReportIfMissing(context, CRASH_FILE, report);
+    }
+
+    private static boolean restoreCrashReportIfMissing(
             Context context,
             String fileName,
             String report
     ) throws Exception {
-        if (report.isEmpty()) return;
+        if (report.isEmpty()) return false;
         if (context == null) throw new IOException("Application context unavailable");
         // A newer crash is better evidence than the one that was cleared. Undo fills only the
         // empty slot so it cannot erase a crash recorded after the first tap.
         synchronized (CRASH_FILE_LOCK) {
-            if (!readCrashReport(context, fileName).isEmpty()) return;
+            if (!readCrashReport(context, fileName).isEmpty()) return false;
             persistCrashReportLocked(context, fileName, report);
+            return true;
         }
     }
 

@@ -1125,11 +1125,12 @@ public class SettingsBackupPreference extends Preference {
     /**
      * After {@link #timeoutMs} the rows come back if [run] still holds them, the open is cancelled
      * through the file's app and the file is closed. An app can ignore both, so [message] says only
-     * that the screen stopped waiting, never that the app stopped.
+     * that the screen stopped waiting, never that the app stopped. A worker that has already
+     * returned has its answer on the way to this thread, so that answer is the one shown.
      */
     private static void watch(Run run, String message) {
         Utils.runOnMainThreadDelayed(() -> {
-            if (!finish(run)) return;
+            if (run.ended || !finish(run)) return;
             if (!run.ended) stalled = run;
             run.cancel.cancel();
             Closeable open = run.open;

@@ -12,7 +12,6 @@ Hides "Pages you may like" cards, cards promoting Facebook's own features, and s
 %1$s elapsed	%1$s berlalu
 %1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again and leave out that patch.	%1$s. Ini diatur saat Anda menambal, jadi Jeda tidak dapat mematikannya. Untuk memastikan bukan ini penyebabnya, tambal ulang tanpa tambalan yang tertera dalam kurung setelahnya.
 %1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch again and leave out the patch in brackets after it.	%1$s. Ini diatur saat Anda menambal, jadi Jeda tidak dapat mematikannya. Untuk memastikan bukan ini penyebabnya, tambal ulang tanpa tambalan yang tertera dalam kurung setelahnya.
-A change here applies after Facebook restarts.	Perubahan di sini berlaku setelah Facebook dimulai ulang.
 Add a Download button to reels, using your download quality. Off or paused, Facebook's own buttons return.	Tambahkan tombol Unduh ke reel dengan kualitas unduhan Anda. Saat mati atau dijeda, tombol asli Facebook kembali.
 A file named %1$s in %2$s paused Hushfacebook.	File bernama %1$s di %2$s menjeda Hushfacebook.
 About	Tentang
@@ -119,6 +118,8 @@ Android couldn't use that font file. Your font didn't change.	Android tidak bisa
 Couldn't save a copy of that font. Check that the phone has room, then try again.	Salinan font itu tidak dapat disimpan. Pastikan ponsel masih punya ruang, lalu coba lagi.
 Couldn't open that file. Your font didn't change.	File itu tidak dapat dibuka. Font Anda tidak berubah.
 Couldn't go back to your phone's font. Try again.	Tidak dapat kembali ke font ponsel Anda. Coba lagi.
+The app holding that font file is taking too long, so Hushfacebook stopped waiting. Your font didn't change.	Aplikasi yang menyimpan file font itu terlalu lama, jadi Hushfacebook berhenti menunggu. Font Anda tidak berubah.
+The app holding the last font file still hasn't answered. Try again later.	Aplikasi yang menyimpan file font terakhir masih belum merespons. Coba lagi nanti.
 Full report saved to %1$s	Laporan lengkap disimpan ke %1$s
 The GPL-3.0 license, plus notices for the projects this is built on	Lisensi GPL-3.0 dan pemberitahuan untuk proyek-proyek yang menjadi dasarnya
 Hide "People you may know"	Sembunyikan “Orang yang Mungkin Anda Kenal”
@@ -392,6 +393,10 @@ Hides the banners at the top of Chats, like the one asking you to turn on notifi
 Open the Messenger app	Buka aplikasi Messenger
 # context: summary of that switch; Messenger is the app's name, Chats is Facebook's own chat screen as named above
 Tapping the Messenger icon at the top of Facebook opens the Messenger app instead of Chats. Without Messenger, Chats opens as before.	Mengetuk ikon Messenger di bagian atas Facebook membuka aplikasi Messenger, bukan Chat. Tanpa Messenger, Chat terbuka seperti biasa.
+# context: switch title under Chats; on, Facebook leaves ringing for calls and notifying about chats to the Messenger app
+Leave calls and chats to Messenger	Serahkan panggilan dan chat ke Messenger
+# context: summary of that switch; signed out means not logged in to the Messenger app, turned off means the app is disabled in Android's settings
+Facebook stops ringing for calls and notifying you about chats while Messenger is installed, so only Messenger does. Without Messenger, or with it turned off, Facebook rings and notifies as before. If you're signed out of Messenger, you'll miss calls and messages.	Facebook berhenti berdering untuk panggilan dan berhenti memberi notifikasi chat selama Messenger terpasang, jadi hanya Messenger yang melakukannya. Tanpa Messenger, atau jika Messenger dinonaktifkan, Facebook berdering dan memberi notifikasi seperti biasa. Jika kamu keluar dari Messenger, kamu akan melewatkan panggilan dan pesan.
 # context: settings section heading for the Tap to play switch
 Playback	Pemutaran
 # context: switch title; on, videos and music wait for a tap before they play
@@ -663,6 +668,7 @@ Suggestions, saving, auto-advance and viewing anonymously	Saran, penyimpanan, pe
 Cleaner reels and video controls	Reels lebih bersih dan kontrol video
 Tap to play, quality and resume	Ketuk untuk memutar, kualitas, dan melanjutkan
 Quality, format and file names	Kualitas, format, dan nama file
+Settings	Pengaturan
 Browse settings	Jelajahi pengaturan
 More settings	Pengaturan lainnya
 Additional Facebook preferences	Preferensi Facebook tambahan
@@ -1009,6 +1015,8 @@ Hide Edits promotions	Sembunyikan promosi Edits
 Hide Threads cross-posting prompts	Sembunyikan ajakan membagikan ke Threads
 # context: switch title under Meta's other products; Threads is Meta's app, keep its name; the share sheet is the panel that opens when you tap Share on a post, use Facebook's own word for it in this language
 Hide Threads in the share sheet	Sembunyikan Threads di menu bagikan
+# context: switch title under Meta's other products; Muse is Meta's AI agent app, keep its name; the share sheet is the panel that opens when you tap Share on a post, use Facebook's own word for it in this language
+Hide Muse in the share sheet	Sembunyikan Muse di menu bagikan
 # context: switch title; Meta Verified is Meta's paid subscription, keep its name
 Hide Meta Verified offers	Sembunyikan penawaran Meta Verified
 # context: switch title; avatar stickers are stickers made from your Facebook avatar
@@ -1019,6 +1027,8 @@ Hides the Edits button in the Reels composer and the Edits pill under videos. Yo
 Facebook stops asking whether to share your post to Threads too. Posting to Facebook works as before.	Facebook berhenti menanyakan apakah postinganmu mau dibagikan juga ke Threads. Memposting di Facebook berjalan seperti biasa.
 # context: summary of the Threads share sheet switch; the share sheet is the panel that opens when you tap Share on a post
 Removes the Threads button when you share something. All other ways to share stay, in the same order.	Menghapus tombol Threads saat kamu membagikan sesuatu. Cara berbagi lainnya tetap ada, dengan urutan yang sama.
+# context: summary of the Muse share sheet switch; Muse is Meta's AI agent app, keep its name
+Removes Muse, Meta's AI agent app, when you share something. All other ways to share stay, in the same order.	Menghapus Muse, aplikasi agen AI dari Meta, saat kamu membagikan sesuatu. Cara berbagi lainnya tetap ada, dengan urutan yang sama.
 # context: summary of the Meta Verified switch; the label is a line Facebook adds under the poster's name on some posts
 No Meta Verified offer after you post, and no Meta Verified label under the names on posts. Posting works as usual.	Tidak ada penawaran Meta Verified setelah kamu memposting, dan tidak ada label Meta Verified di bawah nama pada postingan. Memposting tetap berjalan seperti biasa.
 # context: summary of the avatar sticker switch; promotion slots are the cards Facebook uses to suggest its own features
@@ -1045,6 +1055,7 @@ Save photo	Simpan foto
 Save all photos	Simpan semua foto
 # context: short message shown when the photos of a post could not start saving
 Couldn't save this post's photos. Try again in a moment.	Foto postingan ini tidak dapat disimpan. Coba lagi sebentar lagi.
+Too many saves at once. Try again when one finishes.	Terlalu banyak unduhan sekaligus. Coba lagi setelah salah satunya selesai.
 # context: settings switch under Block Instant Games ads that makes a game's rewarded ad count as watched
 Answer rewarded game ads as watched	Anggap iklan berhadiah game sudah ditonton
 # context: description under that switch
@@ -1425,3 +1436,28 @@ The saved copy of %1$s is missing. Choose the file again.	Salinan tersimpan dari
 The video wasn't saved. Try again.	Video tidak tersimpan. Coba lagi.
 This list needs more room than it has. Shorten it, then save again.	Daftar ini membutuhkan lebih banyak ruang dari yang tersedia. Persingkat, lalu simpan lagi.
 Your settings already match that file, so nothing will change.	Pengaturan Anda sudah sesuai dengan file itu, jadi tidak ada yang akan berubah.
+# context: title of the row that restarts Facebook, shown while one change waits for a restart
+Restart Facebook to apply this change	Mulai ulang Facebook untuk menerapkan perubahan ini
+# context: the same row with two or more changes waiting
+Restart Facebook to apply %1$d changes	Mulai ulang Facebook untuk menerapkan %1$d perubahan
+# context: summary of that row; after the restart the settings screen opens again on the same page
+Facebook closes and reopens on this page.	Facebook ditutup lalu dibuka lagi di halaman ini.
+# context: row near the end of the settings home page; opens a new bug report on GitHub
+Report a problem	Laporkan masalah
+Opens a GitHub report with your versions and settings filled in. Add what happened.	Membuka laporan GitHub dengan versi dan pengaturan Anda yang sudah terisi. Tambahkan apa yang terjadi.
+# context: row near the top of the settings home page; a list of ready-made sets of switches
+Quick setups	Pengaturan cepat
+Turn on a set of switches in one tap, or put every switch back the way it started.	Nyalakan sekumpulan sakelar dengan sekali ketuk, atau kembalikan setiap sakelar seperti semula.
+# context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
+Quiet	Tenang
+Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Menyembunyikan iklan, saran, promosi, dan ajakan, serta menghentikan notifikasi yang mengganggu.
+# context: what the Privacy choice of Quick setups turns on; camera roll scans are Hold back camera roll processing
+Holds back usage reports and camera roll scans, removes link tracking, and hides your typing and screenshots.	Menahan laporan penggunaan dan pemindaian rol kamera, menghapus pelacakan tautan, serta menyembunyikan status mengetik dan tangkapan layar Anda.
+# context: name of the Quick setups choice that puts the switches back as they were after install
+Back to defaults	Kembali ke bawaan
+# context: Lock Facebook is the name of the app lock switch, left as it is
+Puts every feature switch but Lock Facebook back the way it started.	Mengembalikan setiap sakelar fitur kecuali Kunci Facebook seperti semula.
+# context: toast after a Quick setups choice changed one switch
+Changed %1$d setting	%1$d pengaturan diubah
+# context: the same toast for none, or for two or more
+Changed %1$d settings	%1$d pengaturan diubah
