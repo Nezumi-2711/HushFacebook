@@ -44,7 +44,7 @@ Changes in each Hushfacebook version, newest first.
 
 ## 0.13.0 (2026-10-14)
 
-* **Facebook:** This release gathers everything since v0.12.0 and still brings 88 patches for Facebook 582.0.0.50.54. New switches hide reposts, save the picture behind a photo Story with music, take the Meta AI button out of Chats and keep saves quiet. With Picture-in-picture on, a link that opens while a reel floats brings Facebook back full screen. Link posts leave Home on 582 again, the kept top bar stops fading, and a reel waiting to play starts its bar at the beginning. A failed save says why, Morphe Manager shows this release's whole list of changes, and the Reported issues list below maps each report this release touches.
+* **Facebook:** This release gathers everything since v0.12.0 and still brings 91 patches for Facebook 582.0.0.50.54. New switches hide reposts, save the picture behind a photo Story with music, take the Meta AI button out of Chats and keep saves quiet. With Picture-in-picture on, a link that opens while a reel floats brings Facebook back full screen. Link posts leave Home on 582 again, the kept top bar stops fading, and a reel waiting to play starts its bar at the beginning. A failed save says why, Morphe Manager shows this release's whole list of changes, and the Reported issues list below maps each report this release touches.
 
 ### Added
 
