@@ -1329,6 +1329,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_phone_layout_big_screens", FALSE, true);
 
     /**
+     * The top bar and the tab bar let the feed show through, with a blur of it behind them on
+     * Android 12 and newer (#124, {@link app.morphe.extension.facebook.navigation.TranslucentBars}).
+     * Asked as each frame of the main screen draws, so a change shows right away.
+     */
+    public static final BooleanSetting TRANSLUCENT_BARS =
+            new BooleanSetting("hushfacebook_translucent_bars", FALSE);
+
+    /**
      * Facebook's dark mode controller answers dark whatever its own setting says
      * ({@link app.morphe.extension.facebook.theme.ForceDarkMode}), for tablets whose Facebook
      * settings have no Dark mode row. Facebook asks as each screen applies its theme, so a change

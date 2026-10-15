@@ -184,7 +184,7 @@ public enum PatchFamily {
             Settings.HIDE_CREATE_TAB, Settings.HIDE_EXPLORE_TAB, Settings.HIDE_JOBS_TAB),
     BOTTOM_TAB_BAR(FamilyNames.BOTTOM_TAB_BAR, "bottomTabBar", null,
             Settings.BOTTOM_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR, Settings.KEEP_TOP_BAR,
-            Settings.PHONE_LAYOUT_ON_BIG_SCREENS),
+            Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS),
     FORCE_DARK_MODE(FamilyNames.FORCE_DARK_MODE, "forceDarkMode", null,
             Settings.FORCE_DARK_MODE),
     MESSENGER_CARD(FamilyNames.MESSENGER_CARD, "messengerCard", null,

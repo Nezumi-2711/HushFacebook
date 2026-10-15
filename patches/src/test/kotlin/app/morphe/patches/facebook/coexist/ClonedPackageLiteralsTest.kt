@@ -20,6 +20,7 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction10x
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction11x
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21c
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction31c
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction31i
@@ -111,7 +112,7 @@ class ClonedPackageLiteralsTest {
     /** The calls the patch writes are public static methods of the payload, moving names under Facebook's package. */
     @Test
     fun theExtensionDeclaresTheCall() {
-        for (written in listOf(AUTHORITY_CALL, PACKAGE_CALL)) {
+        for (written in listOf(AUTHORITY_CALL, PACKAGE_CALL, AS_FACEBOOK_CALL)) {
             val type = written.substringBefore("->")
             val call = written.substringAfter("->")
             val declared = ExtensionDex.classDef(type).methods.filter {
@@ -242,5 +243,42 @@ class ClonedPackageLiteralsTest {
         assertEquals(facebook, inChats[4].literal())
         assertEquals("a launch of Facebook outside Firebase", Opcode.INVOKE_VIRTUAL, inChats[5].opcode)
         assertEquals("an intent whose own register holds the name", Opcode.INVOKE_VIRTUAL, inChats[13].opcode)
+    }
+
+    /**
+     * #113: where Facebook looks the running package up among Meta's apps (a method that also names
+     * Messenger's debug build), the package it reads goes through the extension right after it's
+     * moved into its register. A method that doesn't name the debug build is left alone.
+     */
+    @Test
+    fun theRunningPackageInAMetaAppLookupGoesThroughTheExtension() {
+        val lookup = "Lcom/example/BackupPreferences;"
+        val elsewhere = "Lcom/example/Elsewhere;"
+        val getPackageName = ImmutableMethodReference("Landroid/content/Context;", "getPackageName", emptyList(), "Ljava/lang/String;")
+        fun read(context: Int) = ImmutableInstruction35c(Opcode.INVOKE_VIRTUAL, 1, context, 0, 0, 0, 0, getPackageName)
+        fun moved(register: Int) = ImmutableInstruction11x(Opcode.MOVE_RESULT_OBJECT, register)
+        val context = PatchContexts.of(
+            listOf(
+                classDef(lookup, method(lookup, 10,
+                    read(1), moved(7),
+                    load(0, "com.facebook.orca"),
+                    load(0, MESSENGER_DEBUG),
+                    ImmutableInstruction10x(Opcode.RETURN_VOID))),
+                classDef(elsewhere, method(elsewhere, 10,
+                    read(1), moved(7), load(0, "com.facebook.orca"), ImmutableInstruction10x(Opcode.RETURN_VOID))),
+            ),
+        )
+
+        assertEquals(1, context.routeMetaAppLookups())
+
+        val routed = context.mutableClassDefBy(lookup).methods.single().instructions()
+        assertEquals(7, routed.size)
+        val call = routed[2]
+        assertEquals(AS_FACEBOOK_CALL, (call as ReferenceInstruction).reference.toString())
+        assertEquals(7 to 1, (call as RegisterRangeInstruction).startRegister to call.registerCount)
+        assertEquals(Opcode.MOVE_RESULT_OBJECT, routed[3].opcode)
+        assertEquals(7, (routed[3] as OneRegisterInstruction).registerA)
+        assertEquals("a method without Messenger's debug name", 4,
+            context.mutableClassDefBy(elsewhere).methods.single().instructions().size)
     }
 }

@@ -128,6 +128,10 @@ final class HushfacebookPages {
                     L10n.t("A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches "
                             + "above work on the big screen too. Facebook's wider big screen layout goes away. Untested on a "
                             + "big screen, so it starts off. Restart Facebook to see the change.")));
+            // Asked as each frame of the main screen draws, so a change shows right away.
+            appearance.addPreference(toggle(context, Settings.TRANSLUCENT_BARS,
+                    L10n.t("The top bar and the tab bar turn see-through, so the feed shows through them as you scroll. "
+                            + "On Android 12 and newer the feed behind them is blurred.")));
         }
         if (build.contains(PatchFamily.HIDDEN_TABS)) {
             // Facebook builds the tab bar once, so a change waits for a restart.

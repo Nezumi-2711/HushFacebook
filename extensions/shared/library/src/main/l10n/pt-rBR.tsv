@@ -112,6 +112,10 @@ The top bar with search and Messenger stays put while you scroll down, instead o
 Phone layout on big screens	Layout de celular em telas grandes
 # context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
 A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Untested on a big screen, so it starts off. Restart Facebook to see the change.	Um tablet ou um celular dobrável aberto recebe o layout que o Facebook usa no celular, assim as opções da barra de abas acima também funcionam na tela grande. O layout mais largo do Facebook para telas grandes some. Ainda não testado em uma tela grande, por isso começa desligado. Reinicie o Facebook para ver a mudança.
+# context: switch title under Appearance, after Phone layout on big screens; it makes Facebook's top bar (search and Messenger) and its tab bar partly transparent
+See-through bars	Barras transparentes
+# context: description of that switch; the feed is the list of posts on Home, and blurred means frosted like glass
+The top bar and the tab bar turn see-through, so the feed shows through them as you scroll. On Android 12 and newer the feed behind them is blurred.	A barra superior e a barra de abas ficam transparentes, então o feed aparece por trás delas enquanto você rola. No Android 12 ou mais recente, o feed atrás delas fica desfocado.
 # context: switch title under Appearance; it keeps Facebook's dark mode on whatever Facebook's own Dark mode setting says
 Force dark mode	Forçar modo escuro
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row

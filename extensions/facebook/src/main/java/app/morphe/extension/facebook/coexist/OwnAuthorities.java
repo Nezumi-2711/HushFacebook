@@ -76,6 +76,24 @@ public final class OwnAuthorities {
         }
     }
 
+    /**
+     * [packageName], the running app's package as Facebook reads it where it looks itself up among
+     * Meta's apps, as the Facebook a clone stands in for. Facebook's encrypted chat backup picks its
+     * preferences file by finding the running package among Messenger's and Facebook's names and
+     * throws when none matches, so a clone crashed as soon as chats opened (#113). The running app's
+     * own package comes back as Facebook's in a clone. Anything else, and every name in Facebook
+     * itself, comes back as it was.
+     */
+    public static String asFacebook(@Nullable String packageName) {
+        if (packageName == null || FACEBOOK.equals(packageName)) return packageName;
+        try {
+            return packageName.equals(runningPackage()) ? FACEBOOK : packageName;
+        } catch (Throwable failure) {
+            // The name as read is what every install but a clone uses.
+            return packageName;
+        }
+    }
+
     @Nullable
     private static String runningPackage() {
         String known = runningPackage;

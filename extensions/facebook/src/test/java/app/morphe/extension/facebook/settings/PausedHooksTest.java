@@ -114,6 +114,7 @@ import app.morphe.extension.facebook.misc.OwnPostLink;
 import app.morphe.extension.facebook.misc.ShareSheetGroups;
 import app.morphe.extension.facebook.navigation.BottomTabBar;
 import app.morphe.extension.facebook.navigation.TabBarScrollAway;
+import app.morphe.extension.facebook.navigation.TranslucentBarsForTests;
 import app.morphe.extension.facebook.navigation.MarketplaceOnlyForTests;
 import app.morphe.extension.facebook.navigation.MarketplaceSellerProfileForTests;
 import app.morphe.extension.facebook.navigation.HiddenTabsForTests;
@@ -614,13 +615,15 @@ public class PausedHooksTest {
         // Facebook's own override of where the tab bar goes reads YES, for the bottom, where it read NO.
         // With the bar at the bottom, Facebook's check of whether it slides away answers yes. The top
         // bar's entry is told to move 0 and fade by 0. (A kept bottom bar has its own test: with every
-        // switch on, the slide wins over it.) Facebook's big screen layout gate is answered no.
+        // switch on, the slide wins over it.) Facebook's big screen layout gate is answered no. A frame
+        // of the main screen makes the top bar's background see-through.
         probes.put(PatchFamily.BOTTOM_TAB_BAR, Arrays.asList(
                 () -> BottomTabBar.override(TriState.NO.ordinal()) == TriState.YES.ordinal(),
                 BottomTabBar::phoneLayout,
                 TabBarScrollAway::slidesAway,
                 () -> TabBarScrollAway.topBarOffset("app_header_container", -120) == 0,
-                () -> TabBarScrollAway.topBarFade("app_header_container", 1f) == 0f));
+                () -> TabBarScrollAway.topBarFade("app_header_container", 1f) == 0f,
+                TranslucentBarsForTests::makesABarSeeThrough));
         // Facebook's dark mode controller answers dark where it answered light.
         probes.put(PatchFamily.FORCE_DARK_MODE, Collections.singletonList(ForceDarkModeForTests::forcesDark));
         // A request for a post's comments that names no order asks for the chosen one, and with

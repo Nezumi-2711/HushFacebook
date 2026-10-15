@@ -112,6 +112,10 @@ The top bar with search and Messenger stays put while you scroll down, instead o
 Phone layout on big screens	Büyük ekranlarda telefon düzeni
 # context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
 A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Untested on a big screen, so it starts off. Restart Facebook to see the change.	Tablet ya da açılmış katlanabilir telefon, Facebook'un telefonda kullandığı düzeni alır. Böylece yukarıdaki sekme çubuğu ayarları büyük ekranda da çalışır. Facebook'un büyük ekranlar için daha geniş düzeni kalkar. Büyük bir ekranda henüz denenmedi, bu yüzden kapalı başlar. Değişikliği görmek için Facebook'u yeniden başlatın.
+# context: switch title under Appearance, after Phone layout on big screens; it makes Facebook's top bar (search and Messenger) and its tab bar partly transparent
+See-through bars	Saydam çubuklar
+# context: description of that switch; the feed is the list of posts on Home, and blurred means frosted like glass
+The top bar and the tab bar turn see-through, so the feed shows through them as you scroll. On Android 12 and newer the feed behind them is blurred.	Üst çubuk ve sekme çubuğu saydam olur, böylece kaydırırken akış arkalarından görünür. Android 12 ve sonrasında arkalarındaki akış bulanıklaştırılır.
 # context: switch title under Appearance; it keeps Facebook's dark mode on whatever Facebook's own Dark mode setting says
 Force dark mode	Karanlık modu zorla
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row

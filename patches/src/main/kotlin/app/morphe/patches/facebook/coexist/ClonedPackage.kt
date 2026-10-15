@@ -318,6 +318,74 @@ private fun BytecodePatchContext.routePackageLoads(packageName: String, loadsOf:
     }
 }
 
+/*
+ * Facebook's encrypted chat backup (MibEbAutoRestoreHandler) builds a helper whose constructor
+ * looks the running package up among Messenger's and Facebook's names (com.facebook.orca, its debug
+ * build, com.facebook.katana and com.facebook.wakizashi) to pick its preferences file, and throws
+ * NoSuchElementException when none matches. A clone's package matches none, so it crashed as soon as
+ * chats opened (#113). The package name each such lookup reads is handed to the extension, which
+ * answers Facebook's in a clone. Only methods that also name Messenger's debug build count, which in
+ * 582 is that constructor alone (the other method naming it is a table that reads no package).
+ */
+
+/** The call the running package goes through where Facebook looks itself up among Meta's apps. */
+internal const val AS_FACEBOOK_CALL =
+    "$EXTENSION_PACKAGE/coexist/OwnAuthorities;->asFacebook(Ljava/lang/String;)Ljava/lang/String;"
+
+internal const val GET_PACKAGE_NAME = "Landroid/content/Context;->getPackageName()Ljava/lang/String;"
+
+/** The name only Meta's own app lookups carry: Messenger's in-house build. */
+internal const val MESSENGER_DEBUG = "com.facebook.orca.debug"
+
+/**
+ * Where [this] looks the running package up among Meta's apps: for each getPackageName() whose
+ * result it moves into a register, the index right after that move, which is where the call goes.
+ * A method that doesn't name [MESSENGER_DEBUG] has none, and a spot something jumps onto is left out,
+ * since the jump would pass the call.
+ */
+internal fun Method.metaAppLookupReads(): List<Int> {
+    val code = implementation?.instructions?.toList() ?: return emptyList()
+    if (code.none { it.loadedString() == MESSENGER_DEBUG }) return emptyList()
+    val targets = jumpTargets(code)
+    return code.indices.filter { at ->
+        val call = code[at]
+        val moved = code.getOrNull(at + 1) ?: return@filter false
+        call.opcode == Opcode.INVOKE_VIRTUAL &&
+            ((call as ReferenceInstruction).reference as? MethodReference)?.toString() == GET_PACKAGE_NAME &&
+            moved.opcode == Opcode.MOVE_RESULT_OBJECT &&
+            (moved as OneRegisterInstruction).registerA <= 255 &&
+            at + 2 !in targets
+    }.map { it + 2 }
+}
+
+/**
+ * Hands the running package to the extension wherever Facebook looks itself up among Meta's apps
+ * ([metaAppLookupReads]). Answers how many it handed over. The extension is left alone.
+ */
+internal fun BytecodePatchContext.routeMetaAppLookups(): Int {
+    val owners = classDefByStrings(MESSENGER_DEBUG, StringComparisonType.EQUALS)
+        .filterNot { it.type.startsWith(EXTENSION_ROOT) }
+        .filter { owner -> owner.methods.any { it.metaAppLookupReads().isNotEmpty() } }
+        .map { it.type }
+        .distinct()
+    return owners.sumOf { type ->
+        mutableClassDefBy(type).methods.sumOf { method ->
+            val reads = method.metaAppLookupReads()
+            reads.asReversed().forEach { at ->
+                val register = method.getInstruction<OneRegisterInstruction>(at - 1).registerA
+                method.addInstructions(
+                    at,
+                    """
+                        invoke-static/range { v$register .. v$register }, $AS_FACEBOOK_CALL
+                        move-result-object v$register
+                    """,
+                )
+            }
+            reads.size
+        }
+    }
+}
+
 /** The stock app's own authorities and permissions, read before anything renames the package. */
 private var stockAuthorities: Set<String> = emptySet()
 private var stockPermissions: Set<String> = emptySet()
@@ -354,5 +422,11 @@ internal val clonedPackagePatch = bytecodePatch {
         routeOwnAuthorities(packageMetadata.packageName, stockAuthorities)
         routeRemoteViewsPackage(packageMetadata.packageName)
         routeOwnPackageCalls(packageMetadata.packageName)
+        if (routeMetaAppLookups() == 0) {
+            patchLog.warning(
+                "Found no place where Facebook looks itself up among Meta's apps, so a copy made with Clone app " +
+                    "may still close when its chats open.",
+            )
+        }
     }
 }

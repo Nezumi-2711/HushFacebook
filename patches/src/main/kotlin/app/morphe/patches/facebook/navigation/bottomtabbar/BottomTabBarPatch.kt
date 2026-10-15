@@ -54,6 +54,10 @@ internal const val OVERRIDE = "$BOTTOM_TAB_BAR->override(I)I"
  * On a tablet or an unfolded phone Facebook's big screen layout puts the bar at the top before
  * the override is read. A further switch, off by default, answers the gate of that layout no, so
  * the big screen gets the phone layout and the override decides there too (see BigScreenLayout.kt).
+ *
+ * See-through bars, one more switch off by default, needs no hook: the extension finds both bars
+ * by their kept classes as the main screen draws (TranslucentBars.java, started from the settings
+ * entry's onApplicationCreate while this patch is in).
  */
 @Suppress("unused")
 val bottomTabBarPatch = bytecodePatch(
@@ -62,8 +66,8 @@ val bottomTabBarPatch = bytecodePatch(
     description = "Moves Facebook's tab bar to the bottom of the screen on accounts that have it at the top, " +
         "where it's easier to reach. A second switch lets it slide away as you scroll, and two more keep the tab bar " +
         "or the top bar on screen instead. Another gives tablets and unfolded phones the phone layout so the bar can " +
-        "move there too. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart " +
-        "Facebook.",
+        "move there too. One more makes the top bar and the tab bar see-through. Starts off. Turn it on in " +
+        "Hushfacebook settings > Appearance, then restart Facebook.",
 ) {
     category("Navigation")
     // The other switches: Facebook's own scroll-away for both bars, in TabBarScrollAwayPatch.kt.

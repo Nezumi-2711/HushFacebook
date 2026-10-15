@@ -471,6 +471,42 @@ class SharedPermissionsFixtureTest {
         assertEquals("a declared build has no fixture", versions, checked)
     }
 
+    /**
+     * #113: each declared build's lookup of the running package among Meta's apps (the encrypted
+     * chat backup's preferences picker, which throws when nothing matches) hands the package it
+     * reads to the extension, once, straight after getPackageName's result is moved, and that
+     * method is the one choosing between Messenger's and Facebook's backup preferences.
+     */
+    @Test
+    fun eachDeclaredBuildsMetaAppLookupReadsAsFacebook() {
+        val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }.toSet()
+        val checked = mutableSetOf<String>()
+        for (version in versions) {
+            for (bundle in Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") }) {
+                val holders = FixtureDex.classesHolding(bundle, MESSENGER_DEBUG)
+                val context = PatchContexts.of(holders)
+                assertEquals("${bundle.name}: Meta app lookups routed", 1, context.routeMetaAppLookups())
+
+                val routed = holders.flatMap { context.mutableClassDefBy(it.type).methods }
+                    .map { it.instructions() }
+                    .filter { code -> code.any { (it as? ReferenceInstruction)?.reference?.toString() == AS_FACEBOOK_CALL } }
+                assertEquals("${bundle.name}: methods calling the extension", 1, routed.size)
+                val code = routed.single()
+                val at = code.indexOfFirst { (it as? ReferenceInstruction)?.reference?.toString() == AS_FACEBOOK_CALL }
+                assertEquals(GET_PACKAGE_NAME, (code[at - 2] as ReferenceInstruction).reference.toString())
+                val register = (code[at - 1] as OneRegisterInstruction).registerA
+                assertEquals(register, (code[at] as RegisterRangeInstruction).startRegister)
+                assertEquals(Opcode.MOVE_RESULT_OBJECT, code[at + 1].opcode)
+                assertEquals(register, (code[at + 1] as OneRegisterInstruction).registerA)
+                val strings = code.mapNotNull { ((it as? ReferenceInstruction)?.reference as? StringReference)?.string }
+                assertTrue("${bundle.name}: the routed lookup picks the backup preferences: $strings",
+                    "fbautobackupprefs" in strings && "autobackupprefs" in strings)
+                checked += version
+            }
+        }
+        assertEquals("a declared build has no fixture", versions, checked)
+    }
+
     private fun Document.authorities(): List<String> =
         elements("provider").flatMap { it.getAttribute("android:authorities").split(';') }
 
