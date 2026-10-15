@@ -35,7 +35,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * returns before anything opens. A comment keeps whether its reply thread is open in its state,
  * which starts closed until a tap on View replies opens it. The patch hands
  * {@link #openReplyThreads} that flag as the state is first set up and writes back the answer.
- * Each comment is drawn by a section that the patch asks {@link #hidesComment} first, with the
+ * Once an open thread's replies are fetched, it builds a list over them that either pages on by
+ * itself or draws View more replies; the patch asks {@link #loadWholeReplyThreads} which, just
+ * before Facebook sets it. Each comment is drawn by a section that the patch asks {@link #hidesComment} first, with the
  * comment it draws; a yes draws nothing for it.
  *
  * <p>Off, paused, before the settings are ready, or when anything here fails, the answers are
@@ -66,6 +68,9 @@ public final class CommentSheetOptions {
     /** Counted each time a comment starts with its reply thread open. */
     static final String THREAD_OPENED = "Reply thread opened";
 
+    /** Counted each time an open reply thread's list is set to load the rest of its replies as it's scrolled. */
+    static final String THREAD_LOADS_IN_FULL = "Reply thread loads in full";
+
     /** Counted each time a comment is left out for a link to a shop. */
     static final String SHOP_LINK_HIDDEN = "Comment with a shop link left out";
 
@@ -86,6 +91,9 @@ public final class CommentSheetOptions {
 
     /** The member the report names once a comment's state has been set up. */
     static final String REPLY_THREADS = "reply threads";
+
+    /** The member the report names once an open reply thread has built the list of its replies. */
+    static final String REPLY_LISTS = "reply lists";
 
     /**
      * Facebook's own settings, a route its links table carries on 577, 580 and 581. Reaction
@@ -168,6 +176,28 @@ public final class CommentSheetOptions {
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reply thread", failure);
             return open;
+        }
+    }
+
+    /**
+     * The hook, as an open reply thread builds the list of its fetched replies, handed whether that
+     * list pages on by itself, which Facebook leaves false for replies: it draws View more replies
+     * under them, and each tap loads one more page. True, while Load whole reply threads is on,
+     * makes the list load its next page each time its end comes into view, the way Facebook's own
+     * comment lists do, so the rest of the thread follows as it's scrolled with no more taps. It
+     * goes a page at a time and only as far as the reader scrolls, so a huge thread can't hold the
+     * sheet up. Otherwise Facebook's own value comes back.
+     */
+    public static boolean loadWholeReplyThreads(boolean pagesOnScroll) {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, REPLY_LISTS);
+            if (pagesOnScroll || !Utils.settingsReady() || !Settings.LOAD_WHOLE_REPLY_THREADS.get()) return pagesOnScroll;
+            HookStatus.counted(FAMILY, THREAD_LOADS_IN_FULL);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "reply list", failure);
+            return pagesOnScroll;
         }
     }
 

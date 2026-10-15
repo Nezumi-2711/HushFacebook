@@ -50,6 +50,10 @@ internal const val OVERRIDE = "$BOTTOM_TAB_BAR->override(I)I"
  * answers YES's while the switch is on. Facebook's own tab menu writes the key without reading it,
  * and that's left alone. A load of the key that's neither is refused, since a read the patch
  * can't see would leave that place deciding the bar on its own.
+ *
+ * On a tablet or an unfolded phone Facebook's big screen layout puts the bar at the top before
+ * the override is read. A further switch, off by default, answers the gate of that layout no, so
+ * the big screen gets the phone layout and the override decides there too (see BigScreenLayout.kt).
  */
 @Suppress("unused")
 val bottomTabBarPatch = bytecodePatch(
@@ -57,7 +61,8 @@ val bottomTabBarPatch = bytecodePatch(
     name = "Tab bar at the bottom",
     description = "Moves Facebook's tab bar to the bottom of the screen on accounts that have it at the top, " +
         "where it's easier to reach. A second switch lets it slide away as you scroll, and two more keep the tab bar " +
-        "or the top bar on screen instead. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart " +
+        "or the top bar on screen instead. Another gives tablets and unfolded phones the phone layout so the bar can " +
+        "move there too. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart " +
         "Facebook.",
 ) {
     category("Navigation")
@@ -75,6 +80,7 @@ val bottomTabBarPatch = bytecodePatch(
             classDef.methods.forEach { method -> reads += overrideReads(method, key) }
         }
         if (reads.isEmpty()) refuse("nothing reads $key from FbSharedPreferences")
+        hookBigScreenLayout(reads)
         reads.groupBy { it.method }.forEach { (method, sites) ->
             mutableClassDefBy(method.definingClass).findMutableMethodOf(method).hookOverrideReads(sites)
         }

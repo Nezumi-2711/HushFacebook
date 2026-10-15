@@ -105,21 +105,26 @@ public class PatchFamilyTest {
     public void theReportSaysWhatTheSharedDownloadSwitchesAreSetTo() {
         try {
             List<String> lines = PatchFamily.reportLines(EnumSet.of(PatchFamily.STORY_DOWNLOAD), false);
-            assertEquals("Download any story: on (hushfacebook_download_stories=on)", lines.get(0));
-            assertEquals("Every download patch: hushfacebook_download_compatible=off", lines.get(1));
+            assertEquals("Download any story: on (hushfacebook_download_stories=on, hushfacebook_save_story_photos=off)",
+                    lines.get(0));
+            assertEquals("Every download patch: hushfacebook_download_compatible=off, hushfacebook_download_quiet=off",
+                    lines.get(1));
             assertTrue(lines.get(2), lines.get(2).startsWith("not in this build: "));
 
             Settings.DOWNLOAD_COMPATIBLE.save(true);
-            assertEquals("Every download patch: hushfacebook_download_compatible=on",
+            Settings.DOWNLOAD_QUIET.save(true);
+            assertEquals("Every download patch: hushfacebook_download_compatible=on, hushfacebook_download_quiet=on",
                     PatchFamily.reportLines(EnumSet.of(PatchFamily.VIDEO_DOWNLOAD), false).get(1));
-            assertEquals("Every download patch: off while paused (saved hushfacebook_download_compatible=on)",
+            assertEquals("Every download patch: off while paused (saved hushfacebook_download_compatible=on, "
+                            + "hushfacebook_download_quiet=on)",
                     PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DOWNLOAD), true).get(1));
 
             for (String line : PatchFamily.reportLines(EnumSet.of(PatchFamily.SPONSORED_POSTS), false)) {
-                assertFalse(line, line.contains("hushfacebook_download_compatible"));
+                assertFalse(line, line.contains("hushfacebook_download_"));
             }
         } finally {
             Settings.DOWNLOAD_COMPATIBLE.resetToDefault();
+            Settings.DOWNLOAD_QUIET.resetToDefault();
         }
     }
 
@@ -188,6 +193,18 @@ public class PatchFamilyTest {
         } finally {
             Settings.HIDE_POSTS_WITH_WORDS.resetToDefault();
             Settings.POST_WORDS_WHOLE_WORDS.resetToDefault();
+        }
+    }
+
+    @Test
+    public void hideRepostsAloneCountsAsTheFamilyBeingOn() {
+        try {
+            Settings.HIDE_REPOSTS.save(true);
+            String line = PatchFamily.reportLines(EnumSet.of(PatchFamily.POST_WORDS), false).get(0);
+            assertTrue(line, line.startsWith(FamilyNames.POST_WORDS + ": on ("));
+            assertTrue(line, line.contains(Settings.HIDE_REPOSTS.key + "=on"));
+        } finally {
+            Settings.HIDE_REPOSTS.resetToDefault();
         }
     }
 
@@ -396,14 +413,14 @@ public class PatchFamilyTest {
                         + "Block background-return feed refresh, Hide AI-detected posts, Hide posts by words, Hide "
                         + "post prompts, Hide seen posts, Hide Meta AI questions under posts, Keep post dates, Turn "
                         + "off auto-translation, Hide the Feeds header, Hide sponsored stories, Hide suggested "
-                        + "stories, Stop Story auto-advance, View stories anonymously, Hide sponsored search results, "
+                        + "stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Hide sponsored search results, "
                         + "Hide sponsored profile posts, Hide sponsored Marketplace listings, Block Instant Games "
                         + "ads, Hide affiliate product links, Clean up Reels, Hide reel interest prompts, Don't send "
                         + "reel watch history, Turn off double tap to like, Keep the reel speed, Hold a reel for 2x, "
                         + "Default comment order, Hide Meta AI comment summaries, Comment sheet options, Tag "
                         + "suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback quality, "
-                        + "Picture-in-picture, Turn off HDR brightness, Keep the progress bar, Use the system font, "
-                        + "Use the phone's emoji, Turn off haptics, Turn off screen transitions, Unlock app icons, Open links in "
+                        + "Picture-in-picture, Turn off HDR brightness, Skip silent parts, Keep the progress bar, Use the system font, "
+                        + "Use the phone's emoji, Turn off haptics, Hide carrier data banners, Turn off screen transitions, Unlock app icons, Open links in "
                         + "external browser, Sanitize sharing links, Stop update prompts, Download any story, "
                         + "Download any reel, Download any video, Download any photo, Open on a chosen tab, Following "
                         + "feed on Home, Marketplace only, Show View profile on Marketplace sellers, Hide the Reels "
@@ -419,14 +436,14 @@ public class PatchFamilyTest {
                         + "Reels in the feed, Block background-return feed refresh, Hide AI-detected posts, Hide "
                         + "posts by words, Hide post prompts, Hide seen posts, Hide Meta AI questions under posts, "
                         + "Keep post dates, Turn off auto-translation, Hide the Feeds header, Hide sponsored stories, "
-                        + "Hide suggested stories, Stop Story auto-advance, View stories anonymously, Hide sponsored "
+                        + "Hide suggested stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Hide sponsored "
                         + "search results, Hide sponsored profile posts, Hide sponsored Marketplace listings, Block "
                         + "Instant Games ads, Hide affiliate product links, Clean up Reels, Hide reel interest "
                         + "prompts, Don't send reel watch history, Turn off double tap to like, Keep the reel speed, "
                         + "Hold a reel for 2x, Default comment order, Hide Meta AI comment summaries, Comment sheet "
                         + "options, Tag suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback "
-                        + "quality, Picture-in-picture, Turn off HDR brightness, Keep the progress bar, Use the "
-                        + "system font, Use the phone's emoji, Turn off haptics, Turn off screen transitions, Unlock app icons, Open "
+                        + "quality, Picture-in-picture, Turn off HDR brightness, Skip silent parts, Keep the progress bar, Use the "
+                        + "system font, Use the phone's emoji, Turn off haptics, Hide carrier data banners, Turn off screen transitions, Unlock app icons, Open "
                         + "links in external browser, Sanitize sharing links, Stop update prompts, Download any "
                         + "story, Download any reel, Download any video, Download any photo, Open on a chosen tab, "
                         + "Following feed on Home, Marketplace only, Show View profile on Marketplace sellers, Hide "
@@ -439,11 +456,12 @@ public class PatchFamilyTest {
                         + "color, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
                         + "apps, Hushfacebook in the Menu"),
                 running);
-        // Clean up Reels has six switches, all off to start, and the report names each one.
+        // Clean up Reels has seven switches, all off to start, and the report names each one.
         Settings.HIDE_REEL_FOLLOW_BUTTON.save(true);
         assertEquals("Clean up Reels: on (hushfacebook_hide_reel_chips=off, hushfacebook_hide_reel_follow_button=on, "
                         + "hushfacebook_hide_reel_social_footer=off, hushfacebook_hide_reel_threads_cards=off, "
-                        + "hushfacebook_reel_clean_mode=off, hushfacebook_play_reels_once=off)",
+                        + "hushfacebook_reel_clean_mode=off, hushfacebook_play_reels_once=off, "
+                        + "hushfacebook_original_audio=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);

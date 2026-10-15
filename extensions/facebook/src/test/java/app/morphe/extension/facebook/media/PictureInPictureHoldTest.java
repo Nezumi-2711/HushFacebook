@@ -7,11 +7,16 @@ package app.morphe.extension.facebook.media;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
 import android.app.PictureInPictureParams;
+import android.content.pm.PackageManager;
+import android.os.Looper;
+import android.util.Rational;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -209,6 +214,46 @@ public class PictureInPictureHoldTest {
         Settings.PICTURE_IN_PICTURE.save(false);
         PictureInPicture.playerPlaying(player);
         assertEquals("the hold stayed", Arrays.asList(false, true), screen.autoEnter);
+    }
+
+    /**
+     * #126: a swipe to a reel the window doesn't take, a landscape one, arms nothing. Arming again
+     * says no for it (the stub says no until the patch fills it in), so auto-enter goes off and stays
+     * off through its pause and play, and its More sheet gets no row. Facebook's next arming ends it.
+     */
+    @Test
+    public void aReelTheWindowDoesntTakeStaysOutOfIt() {
+        shadowOf(screen.getPackageManager()).setSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE, true);
+        PictureInPicture.armed(screen, player, new Object[0]);
+        assertNotNull("the armed reel's More sheet", PictureInPictureRow.forSheet(screen));
+        PictureInPicture.playerPlaying(other);
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals("the wide reel left auto-enter on", Collections.singletonList(false), screen.autoEnter);
+        assertNull("the wide reel's More sheet has a row", PictureInPictureRow.forSheet(screen));
+        PictureInPicture.playerPaused(other);
+        PictureInPicture.playerPlaying(other);
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals("its pause and play turned auto-enter back on", Arrays.asList(false, false), screen.autoEnter);
+        assertTrue(statusLine(), statusLine().contains(PictureInPicture.KEPT_OUT + " 1"));
+
+        PictureInPicture.armed(screen, other, new Object[0]);
+        assertNotNull("after Facebook's arming, the More sheet", PictureInPictureRow.forSheet(screen));
+        PictureInPicture.playerPaused(other);
+        PictureInPicture.playerPlaying(other);
+        assertEquals("after Facebook's arming, pause and play", Arrays.asList(false, false, false, true), screen.autoEnter);
+    }
+
+    /** The window's shape for a reel, as Facebook works it out when it arms: tall up to square, nothing wider. */
+    @Test
+    public void theShapeFollowsFacebooksOwnBounds() {
+        assertEquals(new Rational(562, 1000), PictureInPicture.shape(9 / 16.0));
+        assertEquals(new Rational(1000, 1000), PictureInPicture.shape(1.0));
+        assertEquals(new Rational(419, 1000), PictureInPicture.shape(0.4195));
+        assertNull("narrower than 1 by 2.39", PictureInPicture.shape(0.418));
+        assertNull("landscape", PictureInPicture.shape(16 / 9.0));
+        assertNull("a little wider than square", PictureInPicture.shape(1.002));
+        assertEquals("no known shape", new Rational(9, 16), PictureInPicture.shape(0));
+        assertEquals("no known shape", new Rational(9, 16), PictureInPicture.shape(Double.NaN));
     }
 
     /** Puts a view holding [id] on the screen, the way Marketplace's React Native root holds 1. */

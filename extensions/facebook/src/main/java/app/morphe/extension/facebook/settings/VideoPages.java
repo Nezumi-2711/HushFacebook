@@ -118,6 +118,10 @@ final class VideoPages {
                     L10n.t("A reel stops on its last frame instead of starting over. Tap it to watch again, or swipe to "
                             + "the next one. Feed videos and stories aren't changed. Untested on a real account, so it "
                             + "starts off.")));
+            // Asked as each video's audio is picked, so a change shows from the next video.
+            reels.addPreference(toggle(context, Settings.ORIGINAL_AUDIO,
+                    L10n.t("Reels and videos play with the sound they were made with, not a version Facebook dubbed "
+                            + "into your language with Meta AI. Untested on a real account, so it starts off.")));
         }
         if (build.contains(PatchFamily.REEL_WATCH_HISTORY)) {
             reels.addPreference(toggle(context, Settings.DONT_SEND_REEL_WATCH_HISTORY,
@@ -160,7 +164,8 @@ final class VideoPages {
         if (build.contains(PatchFamily.TAP_TO_PLAY) || build.contains(PatchFamily.RESUME_LONG_VIDEOS)
                 || build.contains(PatchFamily.FRAME_STEP)
                 || build.contains(PatchFamily.PLAYBACK_QUALITY) || build.contains(PatchFamily.PICTURE_IN_PICTURE)
-                || build.contains(PatchFamily.HDR_BRIGHTNESS) || build.contains(PatchFamily.PROGRESS_BAR)) {
+                || build.contains(PatchFamily.HDR_BRIGHTNESS) || build.contains(PatchFamily.SKIP_SILENCE)
+                || build.contains(PatchFamily.PROGRESS_BAR)) {
             PreferenceCategory playback = category(screen, L10n.t("Playback"));
             if (build.contains(PatchFamily.TAP_TO_PLAY)) {
                 playback.addPreference(toggle(context, Settings.TAP_TO_PLAY,
@@ -191,12 +196,27 @@ final class VideoPages {
             if (build.contains(PatchFamily.PICTURE_IN_PICTURE)) {
                 playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE,
                         L10n.t("A playing reel or full-screen video keeps going in a small window when you leave Facebook. Android 12 or later.")));
+                // Asked as each window is armed and on each tap of the row, so a change shows from the next reel.
+                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE_FROM_MENU,
+                        L10n.t("Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu "
+                                + "(the three dots) when you want one. That row is there whenever Picture-in-picture is on.")));
             }
             if (build.contains(PatchFamily.HDR_BRIGHTNESS)) {
                 // Asked as each screen comes to the front, so a change shows from the next one.
                 playback.addPreference(toggle(context, Settings.TURN_OFF_HDR_BRIGHTNESS,
                         L10n.t("HDR videos and photos stay at your screen's usual brightness instead of turning it up to "
                                 + "full. They keep their resolution.")));
+                // Asked as each video's manifest is read, so a change shows from the next new video.
+                playback.addPreference(toggle(context, Settings.PREFER_SDR_RENDITIONS,
+                        L10n.t("When Facebook also sends an HDR video in SDR at the same size, play that version instead. "
+                                + "The screen doesn't brighten and the picture stays as sharp. Works with the switch above "
+                                + "on or off.")));
+            }
+            if (build.contains(PatchFamily.SKIP_SILENCE)) {
+                // Asked as each player's sound starts, so a change shows from the next seek or video.
+                playback.addPreference(toggle(context, Settings.SKIP_SILENT_PARTS,
+                        L10n.t("Videos, reels and stories jump past the quiet stretches in their sound, so talks and "
+                                + "how-tos get to the point sooner.")));
             }
             if (build.contains(PatchFamily.PROGRESS_BAR)) {
                 playback.addPreference(toggle(context, Settings.KEEP_PROGRESS_BAR,
@@ -235,8 +255,10 @@ final class VideoPages {
                 downloads.addPreference(toggle(context, Settings.POST_MENU_PHOTO_SAVE,
                         L10n.t("With Save any photo on, a post with photos gets Save photo in its three-dot menu too. A post with several saves each one, one after another.")));
             }
-            // Every save reads it, a story's and a reel's as much as a feed video's, so it's here
-            // whichever download patch is in, above the quality it keeps within.
+            // Every save reads these two, a story's and a reel's as much as a feed video's, so they're
+            // here whichever download patch is in, the compatible one above the quality it keeps within.
+            downloads.addPreference(toggle(context, Settings.DOWNLOAD_QUIET,
+                    L10n.t("No toast when a save starts, finishes or is canceled. A save that fails still says why.")));
             downloads.addPreference(toggle(context, Settings.DOWNLOAD_COMPATIBLE,
                     L10n.t("Fixes saved videos that play without sound in WhatsApp, video editors such as CapCut and InShot, or "
                             + "some galleries and players. May lower quality.")));

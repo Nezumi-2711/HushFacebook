@@ -59,7 +59,7 @@ public enum PatchFamily {
     POST_WORDS(FamilyNames.POST_WORDS, "postWords", null,
             Settings.HIDE_POSTS_WITH_WORDS, Settings.POST_WORDS_WHOLE_WORDS, Settings.HIDE_POSTS_FROM_SOURCES,
             Settings.HIDE_PHOTO_POSTS, Settings.HIDE_VIDEO_POSTS, Settings.HIDE_LINK_POSTS,
-            Settings.HIDE_BACKGROUND_POSTS),
+            Settings.HIDE_BACKGROUND_POSTS, Settings.HIDE_REPOSTS),
     POST_PROMPTS(FamilyNames.POST_PROMPTS, "postPrompts", null,
             Settings.HIDE_POST_PROMPTS, Settings.HIDE_POST_FOLLOW_LINK),
     SEEN_POSTS(FamilyNames.SEEN_POSTS, "seenPosts", null,
@@ -80,6 +80,8 @@ public enum PatchFamily {
             Settings.BLOCK_STORY_AUTO_ADVANCE, Settings.LOOP_STORIES),
     STORY_SEEN(FamilyNames.STORY_SEEN, "storySeen", null,
             Settings.VIEW_STORIES_ANONYMOUSLY, Settings.MARK_STORIES_SEEN),
+    STORY_UPLOAD_HD(FamilyNames.STORY_UPLOAD_HD, "storyUploadHd", null,
+            Settings.UPLOAD_STORIES_IN_HD),
     SPONSORED_REELS(FamilyNames.SPONSORED_REELS, "sponsoredReels",
             "the part of the Reels ad blocking built in when you patched",
             Settings.HIDE_SPONSORED_REELS),
@@ -95,7 +97,8 @@ public enum PatchFamily {
             Settings.HIDE_AFFILIATE_LINKS),
     REEL_DECLUTTER(FamilyNames.REEL_DECLUTTER, "reelDeclutter", null,
             Settings.HIDE_REEL_CHIPS, Settings.HIDE_REEL_FOLLOW_BUTTON, Settings.HIDE_REEL_SOCIAL_FOOTER,
-            Settings.HIDE_REEL_THREADS_CARDS, Settings.REEL_CLEAN_MODE, Settings.PLAY_REELS_ONCE),
+            Settings.HIDE_REEL_THREADS_CARDS, Settings.REEL_CLEAN_MODE, Settings.PLAY_REELS_ONCE,
+            Settings.ORIGINAL_AUDIO),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
@@ -112,8 +115,8 @@ public enum PatchFamily {
             Settings.HIDE_META_AI_SUMMARIES),
     COMMENT_SHEET_OPTIONS(FamilyNames.COMMENT_SHEET_OPTIONS, "commentSheetOptions", null,
             Settings.LIKE_ONLY, Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS, Settings.OPEN_REPLY_THREADS,
-            Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS, Settings.HIDE_SHOP_LINK_COMMENTS,
-            Settings.HIDE_COMMENTS_WITH_WORDS),
+            Settings.LOAD_WHOLE_REPLY_THREADS, Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS,
+            Settings.HIDE_SHOP_LINK_COMMENTS, Settings.HIDE_COMMENTS_WITH_WORDS),
     TAG_SUGGESTIONS(FamilyNames.TAG_SUGGESTIONS, "tagSuggestions", null,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT),
     TAP_TO_PLAY(FamilyNames.TAP_TO_PLAY, "tapToPlay", null,
@@ -125,9 +128,11 @@ public enum PatchFamily {
     PLAYBACK_QUALITY(FamilyNames.PLAYBACK_QUALITY, "defaultPlaybackQuality", null,
             Settings.DEFAULT_PLAYBACK_QUALITY),
     PICTURE_IN_PICTURE(FamilyNames.PICTURE_IN_PICTURE, "pictureInPicture", null,
-            Settings.PICTURE_IN_PICTURE),
+            Settings.PICTURE_IN_PICTURE, Settings.PICTURE_IN_PICTURE_FROM_MENU),
     HDR_BRIGHTNESS(FamilyNames.HDR_BRIGHTNESS, "turnOffHdrBrightness", null,
-            Settings.TURN_OFF_HDR_BRIGHTNESS),
+            Settings.TURN_OFF_HDR_BRIGHTNESS, Settings.PREFER_SDR_RENDITIONS),
+    SKIP_SILENCE(FamilyNames.SKIP_SILENCE, "skipSilentParts", null,
+            Settings.SKIP_SILENT_PARTS),
     PROGRESS_BAR(FamilyNames.PROGRESS_BAR, "keepProgressBar", null,
             Settings.KEEP_PROGRESS_BAR, Settings.KEEP_PROGRESS_BAR_TIME, Settings.TAP_TO_SEEK),
     SYSTEM_FONT(FamilyNames.SYSTEM_FONT, "systemFont", null,
@@ -136,6 +141,8 @@ public enum PatchFamily {
             Settings.USE_SYSTEM_EMOJI),
     HAPTICS(FamilyNames.HAPTICS, "turnOffHaptics", null,
             Settings.TURN_OFF_HAPTICS),
+    CARRIER_BANNERS(FamilyNames.CARRIER_BANNERS, "carrierBanners", null,
+            Settings.HIDE_DATA_MODE_BANNER, Settings.HIDE_FREE_MODE_BANNER),
     SCREEN_TRANSITIONS(FamilyNames.SCREEN_TRANSITIONS, "turnOffScreenTransitions", null,
             Settings.TURN_OFF_SCREEN_TRANSITIONS),
     APP_ICONS(FamilyNames.APP_ICONS, "unlockAppIcons", null,
@@ -147,7 +154,7 @@ public enum PatchFamily {
     UPDATE_PROMPTS(FamilyNames.UPDATE_PROMPTS, "updatePrompts", null,
             Settings.STOP_UPDATE_PROMPTS),
     STORY_DOWNLOAD(FamilyNames.STORY_DOWNLOAD, "storyDownload", null,
-            Settings.DOWNLOAD_STORIES),
+            Settings.DOWNLOAD_STORIES, Settings.SAVE_STORY_PHOTOS),
     REEL_DOWNLOAD(FamilyNames.REEL_DOWNLOAD, "reelDownload", null,
             Settings.DOWNLOAD_REELS),
     VIDEO_DOWNLOAD(FamilyNames.VIDEO_DOWNLOAD, "videoDownload", null,
@@ -176,13 +183,14 @@ public enum PatchFamily {
             Settings.HIDE_PROFESSIONAL_DASHBOARD_TAB, Settings.HIDE_SAVED_TAB, Settings.HIDE_AD_CENTER_TAB,
             Settings.HIDE_CREATE_TAB, Settings.HIDE_EXPLORE_TAB, Settings.HIDE_JOBS_TAB),
     BOTTOM_TAB_BAR(FamilyNames.BOTTOM_TAB_BAR, "bottomTabBar", null,
-            Settings.BOTTOM_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR, Settings.KEEP_TOP_BAR),
+            Settings.BOTTOM_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR, Settings.KEEP_TOP_BAR,
+            Settings.PHONE_LAYOUT_ON_BIG_SCREENS),
     FORCE_DARK_MODE(FamilyNames.FORCE_DARK_MODE, "forceDarkMode", null,
             Settings.FORCE_DARK_MODE),
     MESSENGER_CARD(FamilyNames.MESSENGER_CARD, "messengerCard", null,
             Settings.HIDE_GET_MESSENGER_CARD),
     CHAT_LIST(FamilyNames.CHAT_LIST, "chatListCleanup", null,
-            Settings.HIDE_CHAT_NOTES_TRAY, Settings.HIDE_CHAT_PROMOTIONS),
+            Settings.HIDE_CHAT_NOTES_TRAY, Settings.HIDE_CHAT_PROMOTIONS, Settings.HIDE_CHAT_META_AI_BUTTON),
     MESSENGER_ICON(FamilyNames.MESSENGER_ICON, "messengerIcon", null,
             Settings.OPEN_MESSENGER_APP, Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER),
     MENU_PROMOTIONS(FamilyNames.MENU_PROMOTIONS, "menuPromotions", null,
@@ -265,20 +273,24 @@ public enum PatchFamily {
 
     /**
      * The switches of the settings entry itself, which no family owns: every build with this screen
-     * carries them. These are the release check, the Saved and Watch history shortcuts and Lock Facebook. Pause
-     * turns them off like a family's switches, so the screen draws them above the Pause row with the rest.
+     * carries them. These are the release check, the Saved, Watch history and settings shortcuts and Lock
+     * Facebook. Pause turns them off like a family's switches, so the screen draws them above the Pause row
+     * with the rest, but for Lock Facebook and the settings shortcut, which a pause leaves as they are.
      */
     static final List<BooleanSetting> ENTRY_SWITCHES = Collections.unmodifiableList(
             java.util.Arrays.asList(Settings.CHECK_FOR_RELEASES, Settings.SAVED_SHORTCUT,
-                    Settings.WATCH_HISTORY_SHORTCUT, Settings.APP_LOCK, Settings.SAVE_CRASH_FILE));
+                    Settings.WATCH_HISTORY_SHORTCUT, Settings.SETTINGS_SHORTCUT, Settings.APP_LOCK,
+                    Settings.SAVE_CRASH_FILE));
 
     /**
      * The switches the download patches share and none of them owns: each shapes what every
      * save picks, a story's, a reel's or a feed video's, so it's on the screen under Downloads
-     * whenever one of them is in the build. Today that's saves other apps can open. Pause turns
-     * them off like a family's switches, and a paused Facebook makes no Hushfacebook saves anyway.
+     * whenever one of them is in the build. Today that's saves other apps can open and quiet saves.
+     * Pause turns them off like a family's switches, and a paused Facebook makes no Hushfacebook
+     * saves anyway.
      */
-    static final List<BooleanSetting> DOWNLOAD_SWITCHES = Collections.singletonList(Settings.DOWNLOAD_COMPATIBLE);
+    static final List<BooleanSetting> DOWNLOAD_SWITCHES = Collections.unmodifiableList(
+            java.util.Arrays.asList(Settings.DOWNLOAD_COMPATIBLE, Settings.DOWNLOAD_QUIET));
 
     /** The families whose saves read {@link #DOWNLOAD_SWITCHES}. */
     static final Set<PatchFamily> DOWNLOADS = Collections.unmodifiableSet(
@@ -457,7 +469,8 @@ public enum PatchFamily {
         if (this == POST_WORDS) {
             anyOn = Settings.HIDE_POSTS_WITH_WORDS.savedValue() || Settings.HIDE_POSTS_FROM_SOURCES.savedValue()
                     || Settings.HIDE_PHOTO_POSTS.savedValue() || Settings.HIDE_VIDEO_POSTS.savedValue()
-                    || Settings.HIDE_LINK_POSTS.savedValue() || Settings.HIDE_BACKGROUND_POSTS.savedValue();
+                    || Settings.HIDE_LINK_POSTS.savedValue() || Settings.HIDE_BACKGROUND_POSTS.savedValue()
+                    || Settings.HIDE_REPOSTS.savedValue();
         }
         line.append(paused ? "disabled while paused (saved " : anyOn ? "on (" : "disabled by its switch (");
         for (int i = 0; i < switches.size(); i++) {

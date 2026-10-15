@@ -251,6 +251,9 @@ final class FeedPages {
                         L10n.t("Hides posts that share a link to a website, with its preview card.")));
                 feed.addPreference(toggle(context, Settings.HIDE_BACKGROUND_POSTS,
                         L10n.t("Hides short posts shown as big text on a colored background.")));
+                feed.addPreference(toggle(context, Settings.HIDE_REPOSTS,
+                        L10n.t("Hides posts that share another post, with or without a caption. Original posts stay. Untested "
+                                + "on a real feed, so it starts off.")));
                 feed.addPreference(reactionCeilingRow(context));
             }
         }
@@ -297,7 +300,7 @@ final class FeedPages {
             Set<PatchFamily> build) {
         if (build.contains(PatchFamily.SPONSORED_STORIES) || build.contains(PatchFamily.SUGGESTED_STORIES)
                 || build.contains(PatchFamily.STORY_AUTO_ADVANCE) || build.contains(PatchFamily.STORY_SEEN)
-                || build.contains(PatchFamily.STORY_DOWNLOAD)) {
+                || build.contains(PatchFamily.STORY_DOWNLOAD) || build.contains(PatchFamily.STORY_UPLOAD_HD)) {
             PreferenceCategory stories = category(screen, L10n.t("Stories"));
             if (build.contains(PatchFamily.SPONSORED_STORIES)) {
                 stories.addPreference(toggle(context, Settings.HIDE_SPONSORED_STORIES,
@@ -326,8 +329,8 @@ final class FeedPages {
             if (build.contains(PatchFamily.STORY_SEEN)) {
                 stories.addPreference(toggle(context, Settings.VIEW_STORIES_ANONYMOUSLY,
                         L10n.t("Facebook isn't told which stories you watch, so you stay off their viewer lists. "
-                                + "Replying or reacting still shows you, and stories you've watched keep their "
-                                + "unwatched ring.")));
+                                + "Replying or reacting still shows you. Stories you watch to the end show as watched "
+                                + "on this phone only, until that person posts a new one.")));
                 stories.addPreference(toggle(context, Settings.MARK_STORIES_SEEN,
                         L10n.t("Adds an eye button to the top of each story while you view anonymously. Tap it to "
                                 + "show up on that story's viewer list. The other stories stay hidden.")));
@@ -335,6 +338,17 @@ final class FeedPages {
             if (build.contains(PatchFamily.STORY_DOWNLOAD)) {
                 stories.addPreference(toggle(context, Settings.DOWNLOAD_STORIES,
                         L10n.t("Add Save to every story menu, using your download quality. Off or paused, Facebook only saves your own stories.")));
+                // Read as each story's menu opens, so a change shows on the next menu.
+                stories.addPreference(toggle(context, Settings.SAVE_STORY_PHOTOS,
+                        L10n.t("Adds Save photo to any story that carries a picture beside its video, like a photo "
+                                + "story with music that Facebook didn't mark as one. On a video story it saves the "
+                                + "cover picture. Untested on a real account, so it starts off.")));
+            }
+            if (build.contains(PatchFamily.STORY_UPLOAD_HD)) {
+                // Read as each Story's upload is set up, so a change applies to the next one you post.
+                stories.addPreference(toggle(context, Settings.UPLOAD_STORIES_IN_HD,
+                        L10n.t("Videos you post to your Story ask Facebook for its high upload quality instead of "
+                                + "standard. Applies to the next Story you post.")));
             }
         }
     }
@@ -367,6 +381,8 @@ final class FeedPages {
                     L10n.t("The comment box loses its GIF and sticker buttons. Typing, photos and posting work as before.")));
             comments.addPreference(toggle(context, Settings.OPEN_REPLY_THREADS,
                     L10n.t("Comments show their replies right away, so there's no View replies to tap.")));
+            comments.addPreference(toggle(context, Settings.LOAD_WHOLE_REPLY_THREADS,
+                    L10n.t("An open reply thread keeps loading as you scroll, so there's no View more replies to tap.")));
             comments.addPreference(toggle(context, Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS,
                     L10n.t("A group post's comments end without the Related groups list and its Join buttons.")));
             comments.addPreference(toggle(context, Settings.HIDE_SHOP_LINK_COMMENTS,

@@ -60,6 +60,9 @@ final class AppPages {
                                 + "go too. Your chats stay.")));
                 chats.addPreference(toggle(context, Settings.HIDE_CHAT_PROMOTIONS,
                         L10n.t("Hides the banners at the top of Chats, like the one asking you to turn on notifications.")));
+                chats.addPreference(toggle(context, Settings.HIDE_CHAT_META_AI_BUTTON,
+                        L10n.t("Removes the Meta AI button beside the search box in Chats, at the top of the list and on the "
+                                + "search screen. The search box stays, and so do your chats with Meta AI.")));
             }
             if (build.contains(PatchFamily.MESSENGER_ICON)) {
                 chats.addPreference(toggle(context, Settings.OPEN_MESSENGER_APP,
@@ -106,6 +109,20 @@ final class AppPages {
             return true;
         });
         menu.addPreference(watched);
+        // The settings entry's own, so every build has it, and a pause leaves it as it is (#146).
+        SwitchPreference settingsShortcut = toggle(context, Settings.SETTINGS_SHORTCUT,
+                build.contains(PatchFamily.MENU_SETTINGS_ROW)
+                ? L10n.t("Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves "
+                        + "that menu, and you can still open these settings from the Hushfacebook settings row in "
+                        + "Settings and privacy or with a long press on the Facebook logo.")
+                : L10n.t("Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves "
+                        + "that menu, and you can still open these settings with a long press on the Facebook logo."));
+        settingsShortcut.setOnPreferenceChangeListener((preference, value) -> {
+            Settings.SETTINGS_SHORTCUT.save((Boolean) value);
+            SettingsEntry.shortcutSwitchChanged(context);
+            return true;
+        });
+        menu.addPreference(settingsShortcut);
         if (build.contains(PatchFamily.MENU_PROMOTIONS)) {
             menu.addPreference(toggle(context, Settings.HIDE_MENU_UPGRADES,
                     L10n.t("The Upgrades section and its offers leave Facebook's Menu. Settings, Help and support "

@@ -26,6 +26,9 @@ public final class BottomTabBar {
     /** Counted under the patch's name each time the override is answered with YES. */
     static final String PUT_AT_BOTTOM = "Tab bar put at the bottom";
 
+    /** Counted each time Facebook's big screen layout check is answered no. */
+    static final String PHONE_LAYOUT = "Big screen given the phone layout";
+
     /** Facebook's three-way preference value. Its class and its constants keep their names. */
     static final String TRI_STATE = "com.facebook.common.util.TriState";
 
@@ -53,6 +56,27 @@ public final class BottomTabBar {
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "tab bar position", failure);
             return facebooks;
+        }
+    }
+
+    /**
+     * The hook at the top of Facebook's check of whether its big screen layout may run at all, a
+     * set of MobileConfig flags (#149). Answering true tells it no, the answer accounts outside
+     * Facebook's big screen rollout get: a tablet or an unfolded phone then gets the phone layout,
+     * where the tab bar's place is the override {@link #override} answers, and every tab bar
+     * switch works. Off, paused, before the settings are ready, or when anything here fails, it's
+     * false and Facebook's own check runs.
+     */
+    public static boolean phoneLayout() {
+        try {
+            HookStatus.invoked(FAMILY);
+            if (!Utils.settingsReady() || !Settings.PHONE_LAYOUT_ON_BIG_SCREENS.get()) return false;
+            HookStatus.bound(FAMILY, "big screen layout");
+            HookStatus.counted(FAMILY, PHONE_LAYOUT);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "big screen layout", failure);
+            return false;
         }
     }
 

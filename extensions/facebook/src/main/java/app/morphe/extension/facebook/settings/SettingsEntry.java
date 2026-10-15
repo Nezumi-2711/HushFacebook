@@ -72,7 +72,9 @@ import app.morphe.extension.facebook.theme.MaterialYouTheme;
  * here from {@code onCreate} and {@code onNewIntent}, and the next Facebook activity to resume
  * shows the screen as a full screen dialog. Nothing is added to Facebook's manifest, so no resource
  * has to be rebuilt to get here. The shortcut is kept first among Facebook's own, because a
- * launcher shows only the first few, and some launchers have no shortcut menu at all (#2).
+ * launcher shows only the first few, and some launchers have no shortcut menu at all (#2). Its
+ * switch ({@link Settings#SETTINGS_SHORTCUT}) takes it out of that menu for someone who opens the
+ * screen from Facebook's Menu instead (#146).
  */
 @SuppressWarnings("unused")
 public final class SettingsEntry {
@@ -251,11 +253,17 @@ public final class SettingsEntry {
      */
     static void publishShortcutNow(Context app) {
         try {
+            // Nothing to go by until the settings are read: the shortcut stays as the last start left it.
+            if (!Utils.settingsReady()) return;
             ShortcutManager manager = app.getSystemService(ShortcutManager.class);
             if (manager == null) return;
             String longLabel = L10n.t(app, "Hushfacebook settings");
             // Set before the attempt, so a shortcut that can't be pushed isn't tried on every screen.
             publishedLabel = longLabel;
+            if (!Settings.SETTINGS_SHORTCUT.get()) {
+                removeShortcut(manager);
+                return;
+            }
             ShortcutInfo existing = ours(manager);
             Intent open = openIntent(app);
             // One labelled in another language, behind Facebook's, or naming a launcher entry an
@@ -280,8 +288,14 @@ public final class SettingsEntry {
      */
     static void keepFirstNow(Context app) {
         try {
+            if (!Utils.settingsReady()) return;
             ShortcutManager manager = app.getSystemService(ShortcutManager.class);
             if (manager == null) return;
+            // Switched off, Facebook's calls neither bring it back nor rank it.
+            if (!Settings.SETTINGS_SHORTCUT.get()) {
+                removeShortcut(manager);
+                return;
+            }
             ShortcutInfo existing = ours(manager);
             if (existing == null) {
                 publishShortcutNow(app);
@@ -295,6 +309,22 @@ public final class SettingsEntry {
         } catch (Exception ex) {
             Logger.printException(() -> "Settings entry: could not put the shortcut back in front", ex);
         }
+    }
+
+    /**
+     * The settings shortcut switch changed: off takes the shortcut out of the launcher's menu now,
+     * on puts it back in front, both on a background thread. Facebook's own shortcuts stay.
+     */
+    static void shortcutSwitchChanged(Context context) {
+        final Context app = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+        Utils.runOnBackgroundThread(() -> publishShortcutNow(app));
+    }
+
+    /** Takes the Hushfacebook shortcut out of the launcher's menu, if it's there. */
+    private static void removeShortcut(ShortcutManager manager) {
+        if (ours(manager) == null) return;
+        manager.removeDynamicShortcuts(java.util.Collections.singletonList(SHORTCUT_ID));
+        Logger.printInfo(() -> "Settings entry: launcher shortcut removed, its switch is off");
     }
 
     /** The Hushfacebook shortcut among the dynamic ones, or null. */

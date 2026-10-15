@@ -84,7 +84,8 @@ import app.morphe.extension.shared.settings.StringSetting;
  * <p>The release check stays out of the file: it puts the phone online, so it's switched on
  * from the phone's own screen, never by a file.
  *
- * <p>Call the file and preference work on a worker thread.
+ * <p>Call the file and preference work on a worker thread. An export reads what it writes on the
+ * main thread first ({@link Saved}), so its file is one whole set of choices.
  */
 public final class SettingsBackup {
     /**
@@ -136,6 +137,7 @@ public final class SettingsBackup {
             Settings.HIDE_VIDEO_POSTS,
             Settings.HIDE_LINK_POSTS,
             Settings.HIDE_BACKGROUND_POSTS,
+            Settings.HIDE_REPOSTS,
             Settings.HIDE_POST_PROMPTS,
             Settings.HIDE_POST_FOLLOW_LINK,
             Settings.HIDE_SEEN_POSTS,
@@ -151,6 +153,7 @@ public final class SettingsBackup {
             Settings.LOOP_STORIES,
             Settings.VIEW_STORIES_ANONYMOUSLY,
             Settings.MARK_STORIES_SEEN,
+            Settings.UPLOAD_STORIES_IN_HD,
             Settings.HIDE_SPONSORED_REELS,
             Settings.HIDE_SPONSORED_SEARCH_RESULTS,
             Settings.HIDE_SPONSORED_PROFILE_POSTS,
@@ -165,11 +168,14 @@ public final class SettingsBackup {
             Settings.HIDE_REEL_THREADS_CARDS,
             Settings.REEL_CLEAN_MODE,
             Settings.PLAY_REELS_ONCE,
+            Settings.ORIGINAL_AUDIO,
             Settings.DONT_SEND_REEL_WATCH_HISTORY,
             Settings.HOLD_ANALYTICS_UPLOADS,
             Settings.HOLD_CAMERA_ROLL_PROCESSING,
             Settings.ALLOW_SCREENSHOTS,
             Settings.TURN_OFF_HAPTICS,
+            Settings.HIDE_DATA_MODE_BANNER,
+            Settings.HIDE_FREE_MODE_BANNER,
             Settings.TURN_OFF_SCREEN_TRANSITIONS,
             Settings.UNLOCK_APP_ICONS,
             Settings.BLOCK_SCREENSHOT_DETECTION,
@@ -188,6 +194,7 @@ public final class SettingsBackup {
             Settings.LIKE_ONLY,
             Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS,
             Settings.OPEN_REPLY_THREADS,
+            Settings.LOAD_WHOLE_REPLY_THREADS,
             Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS,
             Settings.HIDE_SHOP_LINK_COMMENTS,
             Settings.HIDE_COMMENTS_WITH_WORDS,
@@ -198,7 +205,10 @@ public final class SettingsBackup {
             Settings.FRAME_STEP,
             Settings.DEFAULT_PLAYBACK_QUALITY,
             Settings.PICTURE_IN_PICTURE,
+            Settings.PICTURE_IN_PICTURE_FROM_MENU,
             Settings.TURN_OFF_HDR_BRIGHTNESS,
+            Settings.PREFER_SDR_RENDITIONS,
+            Settings.SKIP_SILENT_PARTS,
             Settings.KEEP_PROGRESS_BAR,
             Settings.KEEP_PROGRESS_BAR_TIME,
             Settings.TAP_TO_SEEK,
@@ -211,16 +221,19 @@ public final class SettingsBackup {
             Settings.HIDE_SHARE_GROUP_BUTTONS,
             Settings.STOP_UPDATE_PROMPTS,
             Settings.DOWNLOAD_STORIES,
+            Settings.SAVE_STORY_PHOTOS,
             Settings.DOWNLOAD_REELS,
             Settings.DOWNLOAD_VIDEOS,
             Settings.CLIPBOARD_DOWNLOAD,
             Settings.DOWNLOAD_PHOTOS,
             Settings.POST_MENU_PHOTO_SAVE,
             Settings.DOWNLOAD_COMPATIBLE,
+            Settings.DOWNLOAD_QUIET,
             Settings.OPEN_ON_CHOSEN_TAB,
             Settings.FOLLOWING_FEED_HOME,
             Settings.SAVED_SHORTCUT,
             Settings.WATCH_HISTORY_SHORTCUT,
+            Settings.SETTINGS_SHORTCUT,
             Settings.APP_LOCK,
             Settings.SAVE_CRASH_FILE,
             Settings.MARKETPLACE_ONLY,
@@ -253,11 +266,13 @@ public final class SettingsBackup {
             Settings.TAB_BAR_SCROLL_AWAY,
             Settings.KEEP_TAB_BAR,
             Settings.KEEP_TOP_BAR,
+            Settings.PHONE_LAYOUT_ON_BIG_SCREENS,
             Settings.FORCE_DARK_MODE,
             Settings.HIDE_REEL_PROMPTS,
             Settings.HIDE_GET_MESSENGER_CARD,
             Settings.HIDE_CHAT_NOTES_TRAY,
             Settings.HIDE_CHAT_PROMOTIONS,
+            Settings.HIDE_CHAT_META_AI_BUTTON,
             Settings.OPEN_MESSENGER_APP,
             Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER,
             Settings.HIDE_MENU_UPGRADES,
@@ -1146,49 +1161,82 @@ public final class SettingsBackup {
     }
 
     /**
-     * The file for the switches as they're saved now. Saved rather than what a paused Facebook is
-     * answered, so exporting while paused keeps what the person chose.
+     * Every value a file carries, as saved at the moment this was made. Saved rather than what a
+     * paused Facebook is answered, so exporting while paused keeps what the person chose.
+     *
+     * <p>Making one is a single pass on the calling thread, and the settings screen changes what's
+     * saved on the main thread: a Quick setup flips its switches one after another in one step
+     * there, and the two word lists are saved there one at a time. So an export makes its own on
+     * the main thread, where none of that can be halfway, and the file holds what was saved when
+     * the person asked for it. Read on a worker instead, as exports once were, the values could
+     * straddle such a change and make a file nobody chose. They never change afterwards, which
+     * lets a worker write the file from them whatever is edited meanwhile.
      */
-    public static String create() throws JSONException {
-        JSONObject switches = new JSONObject();
-        for (BooleanSetting setting : ALLOWLIST) {
-            switches.put(setting.key, setting.savedValue().booleanValue());
+    static final class Saved {
+        private final Map<Setting<?>, Object> values = new HashMap<>();
+
+        private Saved() {
+            for (BooleanSetting setting : ALLOWLIST) values.put(setting, setting.savedValue());
+            for (Setting<?> setting : VALUES) values.put(setting, setting.savedValue());
         }
-        switches.put(TO.key, TO.savedValue().fileValue);
-        // The name the saves use, so a file never carries one an import would refuse.
-        switches.put(FOLDER.key, SaveFolder.sanitize(FOLDER.savedValue()));
-        switches.put(VIDEO_SUBFOLDER.key, SaveFolder.cleanSubfolder(VIDEO_SUBFOLDER.savedValue()));
-        switches.put(PHOTO_SUBFOLDER.key, SaveFolder.cleanSubfolder(PHOTO_SUBFOLDER.savedValue()));
-        switches.put(QUALITY.key, QUALITY.savedValue().fileValue);
-        switches.put(FILE_NAME.key, FileNameTemplate.sanitize(FILE_NAME.savedValue()));
-        switches.put(PHOTO_NAME.key, FileNameTemplate.sanitizePhoto(PHOTO_NAME.savedValue()));
-        switches.put(START.key, START.savedValue().fileValue);
-        switches.put(SUBTAB.key, SUBTAB.savedValue().fileValue);
-        switches.put(HOME_FEED.key, HOME_FEED.savedValue().fileValue);
-        switches.put(ORDER.key, ORDER.savedValue().fileValue);
-        switches.put(PLAYBACK.key, PLAYBACK.savedValue().fileValue);
-        switches.put(REELS_QUALITY.key, REELS_QUALITY.savedValue().fileValue);
-        switches.put(STORIES_QUALITY.key, STORIES_QUALITY.savedValue().fileValue);
-        switches.put(QUIET_FROM.key, QUIET_FROM.savedValue().fileValue());
-        switches.put(QUIET_UNTIL.key, QUIET_UNTIL.savedValue().fileValue());
-        switches.put(LOCK_AFTER.key, LOCK_AFTER.savedValue().fileValue);
-        switches.put(SEEN_KEEP.key, SEEN_KEEP.savedValue().fileValue);
-        switches.put(TEXT_SIZE.key, TEXT_SIZE.savedValue().fileValue);
-        switches.put(ACCENT.key, ACCENT.savedValue().fileValue);
-        switches.put(CEILING.key, CEILING.savedValue().fileValue);
-        switches.put(ACTION.key, ACTION.savedValue().fileValue);
-        // The app links really go to, so a file never carries a name an import would refuse.
-        switches.put(APP.key, SendLink.fileApp(APP.savedValue()));
-        // The lists the filter reads, so a file never carries one an import would refuse.
-        switches.put(HIDDEN.key, PostWords.clean(HIDDEN.savedValue()));
-        switches.put(KEPT.key, PostWords.clean(KEPT.savedValue()));
-        switches.put(SOURCES.key, PostSources.clean(SOURCES.savedValue()));
-        switches.put(SHARE_ITEMS.key, ShareSheetItems.clean(SHARE_ITEMS.savedValue()));
-        return new JSONObject()
-                .put(FORMAT_NAME, FORMAT)
-                .put(SCHEMA_NAME, SCHEMA)
-                .put(SETTINGS_NAME, switches)
-                .toString(2);
+
+        @SuppressWarnings("unchecked")
+        private <T> T of(Setting<T> setting) {
+            return (T) values.get(setting);
+        }
+
+        /** The file for these values. Reads no setting, so it can run on a worker. */
+        String file() throws JSONException {
+            JSONObject switches = new JSONObject();
+            for (BooleanSetting setting : ALLOWLIST) {
+                switches.put(setting.key, of(setting).booleanValue());
+            }
+            switches.put(TO.key, of(TO).fileValue);
+            // The name the saves use, so a file never carries one an import would refuse.
+            switches.put(FOLDER.key, SaveFolder.sanitize(of(FOLDER)));
+            switches.put(VIDEO_SUBFOLDER.key, SaveFolder.cleanSubfolder(of(VIDEO_SUBFOLDER)));
+            switches.put(PHOTO_SUBFOLDER.key, SaveFolder.cleanSubfolder(of(PHOTO_SUBFOLDER)));
+            switches.put(QUALITY.key, of(QUALITY).fileValue);
+            switches.put(FILE_NAME.key, FileNameTemplate.sanitize(of(FILE_NAME)));
+            switches.put(PHOTO_NAME.key, FileNameTemplate.sanitizePhoto(of(PHOTO_NAME)));
+            switches.put(START.key, of(START).fileValue);
+            switches.put(SUBTAB.key, of(SUBTAB).fileValue);
+            switches.put(HOME_FEED.key, of(HOME_FEED).fileValue);
+            switches.put(ORDER.key, of(ORDER).fileValue);
+            switches.put(PLAYBACK.key, of(PLAYBACK).fileValue);
+            switches.put(REELS_QUALITY.key, of(REELS_QUALITY).fileValue);
+            switches.put(STORIES_QUALITY.key, of(STORIES_QUALITY).fileValue);
+            switches.put(QUIET_FROM.key, of(QUIET_FROM).fileValue());
+            switches.put(QUIET_UNTIL.key, of(QUIET_UNTIL).fileValue());
+            switches.put(LOCK_AFTER.key, of(LOCK_AFTER).fileValue);
+            switches.put(SEEN_KEEP.key, of(SEEN_KEEP).fileValue);
+            switches.put(TEXT_SIZE.key, of(TEXT_SIZE).fileValue);
+            switches.put(ACCENT.key, of(ACCENT).fileValue);
+            switches.put(CEILING.key, of(CEILING).fileValue);
+            switches.put(ACTION.key, of(ACTION).fileValue);
+            // The app links really go to, so a file never carries a name an import would refuse.
+            switches.put(APP.key, SendLink.fileApp(of(APP)));
+            // The lists the filter reads, so a file never carries one an import would refuse.
+            switches.put(HIDDEN.key, PostWords.clean(of(HIDDEN)));
+            switches.put(KEPT.key, PostWords.clean(of(KEPT)));
+            switches.put(SOURCES.key, PostSources.clean(of(SOURCES)));
+            switches.put(SHARE_ITEMS.key, ShareSheetItems.clean(of(SHARE_ITEMS)));
+            return new JSONObject()
+                    .put(FORMAT_NAME, FORMAT)
+                    .put(SCHEMA_NAME, SCHEMA)
+                    .put(SETTINGS_NAME, switches)
+                    .toString(2);
+        }
+    }
+
+    /** What's saved right now, read in one pass on this thread. An export asks on the main thread. */
+    static Saved savedNow() {
+        return new Saved();
+    }
+
+    /** The file for the switches as they're saved now, read and written out on this thread. */
+    public static String create() throws JSONException {
+        return savedNow().file();
     }
 
     /**

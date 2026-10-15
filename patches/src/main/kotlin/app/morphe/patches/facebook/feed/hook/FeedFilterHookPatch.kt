@@ -42,9 +42,12 @@ private const val HIDE_EDGE =
  * <p>An edge Facebook swaps in over another one never reaches this method, so the runnable that
  * makes the swap asks the extension too, with the same two getters, before it touches the feed
  * (EdgeSwap.kt). That's a different method, so the funnel still carries one guard.
+ *
+ * <p>A page the guard empties can leave Home's scroll fetcher at the end of its list with nothing
+ * that makes it ask for the next page, so the guard brings the tail fetch hook along (TailFetch.kt).
  */
 internal val feedFilterHookPatch = bytecodePatch {
-    dependsOn(facebookExtensionPatch)
+    dependsOn(facebookExtensionPatch, homeTailFetchPatch)
 
     execute {
         val categoryGetter = storyCategoryGetter()

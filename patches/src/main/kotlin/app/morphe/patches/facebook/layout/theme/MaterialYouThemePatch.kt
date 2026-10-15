@@ -9,11 +9,13 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.facebookExtensionPatch
+import app.morphe.patches.facebook.misc.extension.patchLog
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -328,9 +330,9 @@ private val materialYouResourcePatch = resourcePatch {
 @Suppress("unused")
 val materialYouThemePatch = bytecodePatch(
     name = "Material You theme",
-    description = "Gives Facebook's dark mode the colors of your wallpaper on Android 12 and newer, so it " +
-        "matches your phone. Turn on dark mode in Facebook first. It isn't selected by default because undoing " +
-        "it means patching again. Turn on Expert mode in Manager to pick it.",
+    description = "Gives Facebook the colors of your wallpaper on Android 12 and newer, so it matches your " +
+        "phone. Dark mode takes them everywhere, and light mode on its grays, blues and selected tab. It isn't " +
+        "selected by default because undoing it means patching again. Turn on Expert mode in Manager to pick it.",
     default = false,
 ) {
     category("Theme")
@@ -390,6 +392,18 @@ val materialYouThemePatch = bytecodePatch(
         // The box under a link post's picture (issue #37), whose dark-mode colour MobileConfig sends.
         check(hookLinkBoxColour(darkCheck) > 0) { "No parse of the link box's colour found, so link posts would keep a grey box" }
 
+        // What a link box takes when that config's string is empty (#37 leftover): a colour a parent
+        // hands FDS's link attachment, a second config's grey, and FDS's light or dark chooser, which
+        // the footer's box goes through with a colour from the attachment's model.
+        if (hookLinkBoxFallbacks() == 0) {
+            patchLog.warning("No link box fallback colour found. Link boxes still take the palette when MobileConfig sends their colour.")
+        }
+        try {
+            hookDarkPick(darkCheck)
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. The theme goes on without FDS's light or dark chooser.")
+        }
+
         // Bloks screens such as the Menu's profile card (issue #37): the server sends each colour as
         // a light and a dark hex string, and the screen's model parses the one Bloks' theme picks.
         check(hookBloksColourPairs() > 0) { "No parse of a Bloks colour pair found, so the Menu's profile card would stay grey" }
@@ -418,6 +432,30 @@ val materialYouThemePatch = bytecodePatch(
         // React Native screens such as Marketplace home. With AMOLED in the build its call put
         // the hooks in already, and ReactColours runs both themes.
         hookReactColours()
+
+        // The older comment row's time (#138). With AMOLED in the build its call put the hook in
+        // already, and CommentTimeColour runs both themes.
+        try {
+            hookCommentTimeColour()
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. The theme goes on without the comment time's colour check.")
+        }
+
+        // The ring between a post's overlapping reaction icons (#147). With AMOLED in the build its
+        // call put the hook in already, and ReactionRing runs both themes.
+        try {
+            hookReactionRing()
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. The theme goes on without the reaction ring's cut.")
+        }
+
+        // The reactions token pile's discs (#147). With AMOLED in the build its call put the hook in
+        // already, and ReactionRing runs both themes.
+        try {
+            hookReactionPile()
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. The theme goes on without the reactions token pile's page colour.")
+        }
     }
 }
 
@@ -428,7 +466,8 @@ val materialYouThemePatch = bytecodePatch(
  * more renders. In dark mode each reads this config's string first and parses it when it isn't
  * empty, and only then falls back to a grey a second config picks or to CARD_BACKGROUND_FLAT's
  * token, which route one already themes. The string came out #333334, a grey light mode draws too,
- * so route four's parser leaves it.
+ * so route four's parser leaves it. The fallbacks that route one doesn't reach are in
+ * LinkBoxFallbacks.kt.
  */
 internal const val LINK_BOX_COLOUR_CONFIG = 0x103074c000203a8L
 
@@ -683,7 +722,7 @@ internal fun MutableMethod.readDarkBranchLiterals(darkCheck: String): Int {
 }
 
 /** The indexes some branch or switch case of a method jumps to. */
-private fun branchTargets(instructions: List<Instruction>): Set<Int> {
+internal fun branchTargets(instructions: List<Instruction>): Set<Int> {
     val addresses = instructions.runningFold(0) { address, it -> address + it.codeUnits }
     val indexOfAddress = addresses.withIndex().associate { (index, address) -> address to index }
     val targets = mutableSetOf<Int>()

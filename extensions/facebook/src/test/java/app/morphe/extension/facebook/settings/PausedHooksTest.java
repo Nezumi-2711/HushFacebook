@@ -21,6 +21,7 @@ import com.facebook.common.util.TriState;
 import com.facebook.graphql.model.GraphQLComment;
 import com.facebook.graphql.model.GraphQLPagesYouMayLikeFeedUnit;
 import com.facebook.graphql.model.GraphQLStory;
+import com.facebook.graphservice.tree.TreeJNI;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -51,6 +52,7 @@ import app.morphe.extension.facebook.ads.ProfileAdFilterForTests;
 import app.morphe.extension.facebook.ads.FeedAdPills;
 import app.morphe.extension.facebook.ads.ReelsAdFilter;
 import app.morphe.extension.facebook.ads.SearchAdFilterForTests;
+import app.morphe.extension.facebook.chats.ChatList;
 import app.morphe.extension.facebook.chats.ChatListForTests;
 import app.morphe.extension.facebook.chats.MessengerCardForTests;
 import app.morphe.extension.facebook.chats.MessengerHandoffForTests;
@@ -65,6 +67,7 @@ import app.morphe.extension.facebook.download.PhotoSave;
 import app.morphe.extension.facebook.download.PlayerSourcesForTests;
 import app.morphe.extension.facebook.download.ReelDownload;
 import app.morphe.extension.facebook.download.SaveRulesForTests;
+import app.morphe.extension.facebook.download.StoryPhoto;
 import app.morphe.extension.facebook.download.VideoMenuItemForTests;
 import app.morphe.extension.facebook.emoji.SystemEmoji;
 import app.morphe.extension.facebook.feed.AutoTranslationForTests;
@@ -90,6 +93,7 @@ import app.morphe.extension.facebook.media.PictureInPictureForTests;
 import app.morphe.extension.facebook.media.FrameStepForTests;
 import app.morphe.extension.facebook.media.ProgressBar;
 import app.morphe.extension.facebook.media.QualityChoiceForTests;
+import app.morphe.extension.facebook.media.SkipSilence;
 import app.morphe.extension.facebook.media.ReelSpeedForTests;
 import app.morphe.extension.facebook.media.ResumePlaybackForTests;
 import app.morphe.extension.facebook.media.TapToPlay;
@@ -99,6 +103,7 @@ import app.morphe.extension.facebook.menu.MenuSectionsForTests;
 import app.morphe.extension.facebook.misc.MetaUpsells;
 import app.morphe.extension.facebook.misc.AnalyticsUploads;
 import app.morphe.extension.facebook.misc.AppIcons;
+import app.morphe.extension.facebook.misc.CarrierBanners;
 import app.morphe.extension.facebook.misc.Haptics;
 import app.morphe.extension.facebook.misc.ScreenshotDetection;
 import app.morphe.extension.facebook.misc.ScreenTransitionsForTests;
@@ -117,6 +122,7 @@ import app.morphe.extension.facebook.navigation.TabBadgesForTests;
 import app.morphe.extension.facebook.navigation.StartTabRouteForTests;
 import app.morphe.extension.facebook.notifications.NotificationKindsForTests;
 import app.morphe.extension.facebook.reels.DoubleTapLike;
+import app.morphe.extension.facebook.reels.OriginalAudio;
 import app.morphe.extension.facebook.reels.ReelHold;
 import app.morphe.extension.facebook.reels.ReelHoldForTests;
 import app.morphe.extension.facebook.reels.ReelCleanMode;
@@ -128,6 +134,7 @@ import app.morphe.extension.facebook.reels.SeenStateSendForTests;
 import app.morphe.extension.facebook.search.MetaAiSearchForTests;
 import app.morphe.extension.facebook.stories.StoryAdvance;
 import app.morphe.extension.facebook.stories.StorySeenForTests;
+import app.morphe.extension.facebook.stories.StoryUpload;
 import app.morphe.extension.facebook.stories.SuggestedStoriesForTests;
 import app.morphe.extension.facebook.theme.ForceDarkModeForTests;
 import app.morphe.extension.facebook.updates.UpdatePrompts;
@@ -194,6 +201,22 @@ public class PausedHooksTest {
         }
     }
 
+    /**
+     * A photo Story with music's card: its node holds the tree Facebook's card kind asks for
+     * (StoryPhoto.MADE_FROM_PHOTO), and its media the video and the photo it was made from.
+     */
+    public static final class MusicPhotoStoryCard {
+        final TreeJNI story = new TreeJNI().with(0xaa18ee7f, new TreeJNI());
+        final TreeJNI media = new TreeJNI().with("playable_url", "https://video.xx.fbcdn.net/v/t42/story.mp4")
+                .with("stories_photo_uri", new TreeJNI().with("uri", "https://scontent.xx.fbcdn.net/v/t39/story.jpg"));
+    }
+
+    /** The same media on a node without that tree, which Facebook plays and labels as a video (#38). */
+    public static final class UnmarkedPhotoStoryCard {
+        final TreeJNI story = new TreeJNI();
+        final TreeJNI media = new MusicPhotoStoryCard().media;
+    }
+
     /** One hook with its switch on: true when it changed what Facebook would have done. */
     interface Probe {
         boolean changedFacebook();
@@ -233,6 +256,8 @@ public class PausedHooksTest {
         probes.put(Settings.CHECK_FOR_RELEASES, ReleaseCheckForTests::aStartAsksGitHub);
         probes.put(Settings.SAVED_SHORTCUT, SavedShortcutTest::aStartPublishes);
         probes.put(Settings.WATCH_HISTORY_SHORTCUT, WatchHistoryShortcutTest::aStartPublishes);
+        // A start puts the Hushfacebook settings shortcut in the launcher icon's menu.
+        probes.put(Settings.SETTINGS_SHORTCUT, SettingsEntryTest::aStartPublishes);
         // A cold start on a phone with a screen lock covers Facebook and asks for it.
         probes.put(Settings.APP_LOCK, AppLockForTests::aStartLocks);
         // A crash that ends the app writes its file to Downloads.
@@ -248,17 +273,20 @@ public class PausedHooksTest {
         Map<BooleanSetting, Probe> probes = new LinkedHashMap<>();
         // A save takes the H.264 picture over the sharper AV1 one.
         probes.put(Settings.DOWNLOAD_COMPATIBLE, SaveRulesForTests::picksAFileOtherAppsOpen);
+        // A finished save goes without its Saved to toast.
+        probes.put(Settings.DOWNLOAD_QUIET, SaveRulesForTests::finishesQuietly);
         return probes;
     }
 
     /**
      * The switches that keep working while paused. Lock Facebook guards the phone's owner rather
      * than changing Facebook, and every way to pause is in reach of someone holding the phone: the
-     * Pause switch, a marker file left over USB, safe mode after a few quick crashes. A method, not
-     * a field, so the class doesn't load Settings before the rule hands it a context.
+     * Pause switch, a marker file left over USB, safe mode after a few quick crashes. The settings
+     * shortcut is a way back to the screen where a pause is lifted (#146). A method, not a field, so
+     * the class doesn't load Settings before the rule hands it a context.
      */
     private static Set<BooleanSetting> kept() {
-        return Collections.singleton(Settings.APP_LOCK);
+        return new HashSet<>(Arrays.asList(Settings.APP_LOCK, Settings.SETTINGS_SHORTCUT));
     }
 
     /** The probes whose switch is in [kept] when [keep], and the others otherwise. */
@@ -355,7 +383,8 @@ public class PausedHooksTest {
                     return !section.items.contains(reel);
                 }));
         // A story whose own words hold a phrase from the hide list, and one drawn as a photo, which
-        // the kinds of post switches read without any list. Paused, the list reads empty too.
+        // the kinds of post switches read without any list. Paused, the list reads empty too. The
+        // last is a story that shares another, with no words on either.
         // Saved here, with the context, so a probe run without one reads it rather than loading it.
         Settings.HIDDEN_WORDS.save("spoiler");
         Settings.HIDE_POSTS_OVER_REACTIONS.save(app.morphe.extension.facebook.feed.ReactionCeiling.K1);
@@ -363,7 +392,8 @@ public class PausedHooksTest {
                 () -> FeedGuardForTests.hidesByWords(Category.ORGANIC, new GraphQLStory(),
                         FeedGuardForTests.postText("Big SPOILER inside")),
                 () -> FeedGuardForTests.hidesPhotoPost(Category.ORGANIC),
-                () -> FeedGuardForTests.hidesPopularPost(Category.ORGANIC)));
+                () -> FeedGuardForTests.hidesPopularPost(Category.ORGANIC),
+                () -> FeedGuardForTests.hidesRepost(Category.ORGANIC)));
         // A story with a bumper is answered as one without, so no strip is drawn and no room kept, and a
         // header whose title plugin would add "Follow" is told it has nothing to add.
         probes.put(PatchFamily.POST_PROMPTS, Arrays.asList(
@@ -372,10 +402,13 @@ public class PausedHooksTest {
         // A post the store remembers is dropped by the feed guard while the switch is on.
         probes.put(PatchFamily.SEEN_POSTS, Collections.singletonList(SeenPostsForTests::hidesARememberedPost));
         // The pill socket's yes for Meta AI's questions is answered as a no, so it draws no row for
-        // them, and its default way of drawing a pill drops one typed meta_ai.
+        // them, and its default way of drawing a pill drops one typed meta_ai. The call-to-action
+        // selector hears Meta AI's question chips don't apply, and the caption deep dive reads as missing.
         probes.put(PatchFamily.META_AI_QUESTIONS, Arrays.asList(
                 () -> !MetaAiQuestions.keep(1, MetaAiQuestions.META_AI_PILL),
-                () -> MetaAiQuestions.dropsDefaultPill(MetaAiQuestions.META_AI_TYPE)));
+                () -> MetaAiQuestions.dropsDefaultPill(MetaAiQuestions.META_AI_TYPE),
+                () -> MetaAiQuestions.hidesQuestionButton(MetaAiQuestions.QUESTION_BUTTON),
+                MetaAiQuestions::hidesQuestionsBelowCaption));
         // A post header's yes to rotating its subtitle is answered as a no, so it keeps the one line.
         probes.put(PatchFamily.POST_DATES, Collections.singletonList(() -> !PostDates.cycling(true)));
         // A post marked for automatic translation reads as one to translate on request, and the
@@ -402,6 +435,8 @@ public class PausedHooksTest {
                 StorySeenForTests::holdsABatch,
                 StorySeenForTests::sendsOnlyTheMarked,
                 StorySeenForTests::pointsTheButton));
+        // A Story video's upload asks for high quality.
+        probes.put(PatchFamily.STORY_UPLOAD_HD, Collections.singletonList(() -> "high".equals(StoryUpload.quality("standard"))));
         probes.put(PatchFamily.SPONSORED_REELS, Arrays.asList(
                 () -> {
                     VideoAd ad = new VideoAd();
@@ -448,7 +483,9 @@ public class PausedHooksTest {
                 ReelDeclutter::skipSocialBubbles,
                 ReelMidCardsForTests::dropsAThreadsCard,
                 () -> ReelCleanMode.startClean(false),
-                ReelLoopForTests::stopsAReel));
+                ReelLoopForTests::stopsAReel,
+                // A video whose audio Facebook would pick in Spanish is asked for no language.
+                () -> !"es".equals(OriginalAudio.language("es"))));
         // A reel that would get the interest prompt is answered as one that doesn't.
         probes.put(PatchFamily.REEL_PROMPTS, Collections.singletonList(() -> !ReelPrompts.keep(true)));
         // The Reels batcher's send of the reels you watched never reaches its executor.
@@ -531,6 +568,10 @@ public class PausedHooksTest {
                 },
                 // The menu offers Save on someone else's story.
                 () -> MediaDownload.offersSave(false),
+                // A photo Story with music gets Save photo beside Save.
+                () -> StoryPhoto.menuTitle(new MusicPhotoStoryCard()) != null,
+                // Save photo on more stories: so does one Facebook doesn't mark as made from a photo.
+                () -> StoryPhoto.menuTitle(new UnmarkedPhotoStoryCard()) != null,
                 // The recorder runs in every player Facebook builds, not only in stories.
                 PlayerSourcesForTests::recordsAPlayer));
         // Every reel's sidebar gets the Download button.
@@ -572,12 +613,14 @@ public class PausedHooksTest {
         probes.put(PatchFamily.HIDDEN_TABS, Collections.singletonList(HiddenTabsForTests::hidesTheTab));
         // Facebook's own override of where the tab bar goes reads YES, for the bottom, where it read NO.
         // With the bar at the bottom, Facebook's check of whether it slides away answers yes. The top
-        // bar's entry is told to move 0. (A kept bottom bar has its own test: with every switch on,
-        // the slide wins over it.)
+        // bar's entry is told to move 0 and fade by 0. (A kept bottom bar has its own test: with every
+        // switch on, the slide wins over it.) Facebook's big screen layout gate is answered no.
         probes.put(PatchFamily.BOTTOM_TAB_BAR, Arrays.asList(
                 () -> BottomTabBar.override(TriState.NO.ordinal()) == TriState.YES.ordinal(),
+                BottomTabBar::phoneLayout,
                 TabBarScrollAway::slidesAway,
-                () -> TabBarScrollAway.topBarOffset("app_header_container", -120) == 0));
+                () -> TabBarScrollAway.topBarOffset("app_header_container", -120) == 0,
+                () -> TabBarScrollAway.topBarFade("app_header_container", 1f) == 0f));
         // Facebook's dark mode controller answers dark where it answered light.
         probes.put(PatchFamily.FORCE_DARK_MODE, Collections.singletonList(ForceDarkModeForTests::forcesDark));
         // A request for a post's comments that names no order asks for the chosen one, and with
@@ -590,7 +633,8 @@ public class PausedHooksTest {
                 () -> MetaAiSummaries.holds(MetaAiSummaries.SHEET_SUMMARY),
                 () -> MetaAiSummaries.holds(MetaAiSummaries.POST_SUMMARY)));
         // The comment box's check answers no for its GIF and sticker buttons, a long press on Like
-        // returns before the reaction picker opens, a comment starts with its replies open, and the
+        // returns before the reaction picker opens, a comment starts with its replies open, an open
+        // thread's replies page on as they're scrolled, and the
         // check under a post's comments answers no for Related groups. A comment linking to a shop,
         // and one holding a phrase from the hide list, are left out of the comment section.
         probes.put(PatchFamily.COMMENT_SHEET_OPTIONS, Arrays.asList(
@@ -598,6 +642,7 @@ public class PausedHooksTest {
                 () -> CommentSheetOptions.holdsButton(CommentSheetOptions.STICKER_BUTTON),
                 CommentSheetOptions::skipReactionPicker,
                 () -> CommentSheetOptions.openReplyThreads(false),
+                () -> CommentSheetOptions.loadWholeReplyThreads(false),
                 () -> CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS),
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("https://s.shopee.vn/9zKs")),
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("Big SPOILER inside"))));
@@ -611,7 +656,10 @@ public class PausedHooksTest {
         // The notes tray's tiles go in Chats, and a promotion banner's show question answers no.
         probes.put(PatchFamily.CHAT_LIST, Arrays.asList(
                 ChatListForTests::dropsTheNotesTiles,
-                ChatListForTests::hidesAPromotion));
+                ChatListForTests::hidesAPromotion,
+                // The search row at the top of Chats loses its Meta AI button, and so does the search screen.
+                () -> ChatList.metaAiButton(new Object()) == null,
+                () -> !ChatList.showsSearchMetaAiButton(true)));
         // With Messenger installed, a tap on the top bar's Messenger icon opens Messenger instead of
         // Chats, and an incoming call's push, its ring and a new message are left to Messenger.
         probes.put(PatchFamily.MESSENGER_ICON, Arrays.asList(
@@ -659,6 +707,10 @@ public class PausedHooksTest {
                 AnalyticsUploads::holdXAnalyticsUpload,
                 () -> !AnalyticsUploads.papayaOn(true)));
         // A haptic Facebook asks for doesn't play.
+        // Facebook Flex's Data mode and Free mode banners are hidden.
+        probes.put(PatchFamily.CARRIER_BANNERS, Arrays.asList(
+                () -> CarrierBanners.hides("autoflex_paid_mode_banner"),
+                () -> CarrierBanners.hides("autoflex_banner")));
         probes.put(PatchFamily.HAPTICS, Collections.singletonList(
                 () -> !Haptics.performHapticFeedback(new android.view.View(RuntimeEnvironment.getApplication()) {
                     @Override
@@ -671,16 +723,20 @@ public class PausedHooksTest {
         probes.put(PatchFamily.PICTURE_IN_PICTURE, Arrays.asList(
                 PictureInPictureForTests::allowsWithTheFeature, PictureInPictureForTests::surfaceAllows,
                 PictureInPictureForTests::immersiveAllows, PictureInPictureForTests::homeGateAllows,
-                PictureInPictureForTests::homeFlagAllows));
-        // An HDR window comes out in the default colour mode, a headroom as none, and the screen
-        // answers as one that shows no HDR.
+                PictureInPictureForTests::homeFlagAllows, PictureInPictureForTests::offersTheMenuRow));
+        // An HDR window comes out in the default colour mode, a headroom as none, the screen
+        // answers as one that shows no HDR, and a manifest loses the HDR twin of an SDR rendition.
         probes.put(PatchFamily.HDR_BRIGHTNESS, Arrays.asList(
                 HdrBrightnessForTests::keepsAnHdrWindowInTheUsualRange, HdrBrightnessForTests::holdsTheHeadroom,
-                HdrBrightnessForTests::answersTheScreenAsShowingNoHdr));
-        // A reel's bar is kept full size, a full-screen video sets no fade timer, and a press off the
-        // bar's thumb is held as a tap to seek.
+                HdrBrightnessForTests::answersTheScreenAsShowingNoHdr, HdrBrightnessForTests::dropsTheHdrRendition));
+        // A sink's sound starts with its silent parts skipped.
+        probes.put(PatchFamily.SKIP_SILENCE, Collections.singletonList(() -> SkipSilence.skipSilence(false)));
+        // A reel's bar is kept full size, a full-screen video sets no fade timer, a press off the
+        // bar's thumb is held as a tap to seek, the next reel's bar starts over, and a bar still in
+        // Facebook's thin look takes the kept look.
         probes.put(PatchFamily.PROGRESS_BAR, Arrays.asList(ProgressBar::keepsReelBar, ProgressBar::keepsControls,
-                ProgressBar::liftsFooter, ProgressBar::noFadedBar, PausedHooksTest::holdsATapOnTheBar));
+                ProgressBar::liftsFooter, ProgressBar::noFadedBar, PausedHooksTest::holdsATapOnTheBar,
+                PausedHooksTest::startsTheNextReelOver, PausedHooksTest::givesAThinBarTheKeptLook));
         // A tab asked for shows without its slide.
         probes.put(PatchFamily.SCREEN_TRANSITIONS, Collections.singletonList(() -> !ScreenTransitionsForTests.slides()));
         // The app icon benefit is answered yes, at the provider's check and at the picker's own look,
@@ -755,6 +811,19 @@ public class PausedHooksTest {
             if (!family.switches.isEmpty()) switched.add(family);
         }
         return switched;
+    }
+
+    /** The scrubber takes the next reel with its bar where the last reel stopped. */
+    private static boolean startsTheNextReelOver() {
+        android.widget.SeekBar bar = new android.widget.SeekBar(RuntimeEnvironment.getApplication());
+        bar.setProgress(47);
+        ProgressBar.nextReel(null, bar);
+        return bar.getProgress() == 0;
+    }
+
+    /** A scrubber still in Facebook's thin look, which an update would give the kept look. */
+    private static boolean givesAThinBarTheKeptLook() {
+        return ProgressBar.looksAgain(new android.widget.LinearLayout(RuntimeEnvironment.getApplication()));
     }
 
     /** A press at the far end of a bar whose thumb sits at its start, then a cancel to end it. */

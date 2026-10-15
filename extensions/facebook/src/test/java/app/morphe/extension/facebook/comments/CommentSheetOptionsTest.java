@@ -66,6 +66,7 @@ public class CommentSheetOptionsTest {
         Settings.LIKE_ONLY.resetToDefault();
         Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.resetToDefault();
         Settings.OPEN_REPLY_THREADS.resetToDefault();
+        Settings.LOAD_WHOLE_REPLY_THREADS.resetToDefault();
         Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS.resetToDefault();
         HookStatus.clear();
     }
@@ -98,6 +99,52 @@ public class CommentSheetOptionsTest {
         assertTrue("a thread Facebook opened was closed", CommentSheetOptions.openReplyThreads(true));
         assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 3, 1 found, 0 missing. Counted: "
                 + CommentSheetOptions.THREAD_OPENED + " 2", statusLine());
+    }
+
+    @Test
+    public void onAnOpenThreadsRepliesPageOnByThemselvesAndAreCounted() {
+        Settings.LOAD_WHOLE_REPLY_THREADS.save(true);
+        assertTrue("a thread's replies kept View more replies", CommentSheetOptions.loadWholeReplyThreads(false));
+        assertTrue("a list Facebook pages on was stopped", CommentSheetOptions.loadWholeReplyThreads(true));
+        assertFalse("loading whole threads opened every thread", CommentSheetOptions.openReplyThreads(false));
+        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 3, 2 found, 0 missing. Counted: "
+                + CommentSheetOptions.THREAD_LOADS_IN_FULL + " 1", statusLine());
+    }
+
+    @Test
+    public void bothReplySwitchesWorkTogetherAndApart() {
+        Settings.OPEN_REPLY_THREADS.save(true);
+        assertFalse("Open every reply thread paged a thread's replies on", CommentSheetOptions.loadWholeReplyThreads(false));
+        Settings.LOAD_WHOLE_REPLY_THREADS.save(true);
+        assertTrue("with both on, a thread started closed", CommentSheetOptions.openReplyThreads(false));
+        assertTrue("with both on, a thread's replies kept View more replies", CommentSheetOptions.loadWholeReplyThreads(false));
+        Settings.OPEN_REPLY_THREADS.save(false);
+        assertFalse("Load whole reply threads alone opened a thread", CommentSheetOptions.openReplyThreads(false));
+        assertTrue("alone, a tapped thread's replies kept View more replies", CommentSheetOptions.loadWholeReplyThreads(false));
+    }
+
+    @Test
+    public void offPausedOrColdAThreadsRepliesKeepFacebooksPager() {
+        assertFalse("Load whole reply threads doesn't start off", Settings.LOAD_WHOLE_REPLY_THREADS.get());
+        assertFalse("off, a thread's replies paged on", CommentSheetOptions.loadWholeReplyThreads(false));
+        assertTrue("off, a list Facebook pages on was stopped", CommentSheetOptions.loadWholeReplyThreads(true));
+
+        Settings.LOAD_WHOLE_REPLY_THREADS.save(true);
+        for (HushfacebookPause.Reason reason : new HushfacebookPause.Reason[] {
+                HushfacebookPause.Reason.SWITCH, HushfacebookPause.Reason.CRASH_LOOP,
+                HushfacebookPause.Reason.MARKER_FILE}) {
+            PauseForTests.pause(reason);
+            assertFalse("a Hushfacebook paused by " + reason + " paged a thread's replies on",
+                    CommentSheetOptions.loadWholeReplyThreads(false));
+            PauseForTests.resume();
+        }
+        SettingsContextRule.withoutContext(() -> assertFalse(
+                "a thread's replies paged on before the settings were ready", CommentSheetOptions.loadWholeReplyThreads(false)));
+
+        String line = statusLine();
+        assertFalse("a list left to Facebook was counted: " + line, line != null && line.contains("Counted"));
+        assertTrue("on again after the pause, a thread's replies kept View more replies",
+                CommentSheetOptions.loadWholeReplyThreads(false));
     }
 
     @Test
@@ -224,7 +271,7 @@ public class CommentSheetOptionsTest {
     public void theSwitchesNeedNoRestartAndTravelWithTheirFamily() {
         for (app.morphe.extension.shared.settings.BooleanSetting setting : new app.morphe.extension.shared.settings.BooleanSetting[] {
                 Settings.LIKE_ONLY, Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS, Settings.OPEN_REPLY_THREADS,
-                Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS, Settings.HIDE_SHOP_LINK_COMMENTS,
+                Settings.LOAD_WHOLE_REPLY_THREADS, Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS, Settings.HIDE_SHOP_LINK_COMMENTS,
                 Settings.HIDE_COMMENTS_WITH_WORDS}) {
             assertFalse(setting.key + " asks for a restart, but each hook reads it again", setting.rebootApp);
             assertNull(setting.key + " asks before it changes", setting.userDialogMessage);

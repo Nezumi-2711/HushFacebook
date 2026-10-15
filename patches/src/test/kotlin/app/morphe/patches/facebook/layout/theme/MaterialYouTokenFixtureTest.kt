@@ -336,6 +336,68 @@ class MaterialYouTokenFixtureTest {
     }
 
     /**
+     * Issue #141: FDS_LIGHT is, for each token FDS_DARK lists, the colour the light FDS style gives
+     * it when that is a grey other than white and black, one of Facebook's blues or one of its pale
+     * tints, and no dark style gives the token that colour, so the Video tab's dark colours stay out.
+     * The table is built here from each fixture and has to match the Java one exactly, and no colour
+     * of a token is in both FDS_LIGHT and FDS_SHARED.
+     */
+    @Test
+    fun `every light colour the theme recolours is the light style's and no dark style's in each declared build`() {
+        val listed = listedTokens("FDS_LIGHT")
+        val dark = listedTokens()
+        val shared = listedTokens("FDS_SHARED")
+        for ((name, colours) in listed) {
+            assertTrue("$name is in FDS_LIGHT but not FDS_DARK", name in dark)
+            val twice = colours intersect shared[name].orEmpty()
+            assertTrue("$name lists ${hex(twice)} in FDS_LIGHT and FDS_SHARED", twice.isEmpty())
+        }
+        var builds = 0
+        for (target in AppCompatibilities.facebook().single().targets) {
+            val version = checkNotNull(target.version)
+            for (fixture in Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") }) {
+                withBaseApk(fixture) { apk ->
+                    val attributes = tokenAttributes(apk)
+                    val styles = fdsStyles(apk, attributes.values.toSet())
+                    val light = styles.values.single { it.parent == 0 && it.sets > 300 }
+                    val darkStyle = styles.values.single { it.parent == light.id && it.sets > 300 }
+                    val darker = styles.values.single { it.parent == darkStyle.id }
+                    val built = sortedMapOf<String, Int>()
+                    for (name in dark.keys) {
+                        val attribute = attributes[name] ?: error("${fixture.name}: no FDS token $name")
+                        val colour = light.values[attribute] ?: continue
+                        val darkColours = setOfNotNull(darkStyle.values[attribute], darker.values[attribute])
+                        if (colour !in darkColours && lightThemed(colour)) built[name] = colour
+                    }
+                    val table = built.entries.joinToString(";") { (name, colour) ->
+                        name + "=" + if (colour ushr 24 == 0xFF) "%06X".format(colour and 0xFFFFFF) else "%08X".format(colour)
+                    }
+                    assertEquals("${fixture.name}: FDS_LIGHT should be \"$table\"", built.mapValues { setOf(it.value) }, listed.toSortedMap())
+                }
+                builds++
+            }
+        }
+        assertEquals("one fixture for each declared build", declaredBuilds(), builds)
+        assertTrue("the light table lists almost nothing", listed.size > 20)
+    }
+
+    /** MaterialYouTheme's light half's colours: a grey but white and black, a Facebook blue, or a pale tint of one. */
+    private fun lightThemed(colour: Int): Boolean {
+        val rgb = colour and 0xFFFFFF
+        if (rgb == 0xFFFFFF || rgb == 0) return false
+        val r = rgb shr 16 and 0xFF
+        val g = rgb shr 8 and 0xFF
+        val b = rgb and 0xFF
+        if (maxOf(r, g, b) - minOf(r, g, b) <= 10) return true
+        if (rgb in setOf(0xDDEDFE, 0xE7F3FF, 0xEBF5FF)) return true
+        // MaterialYouTheme.isFacebookBlue: hue 200 to 225 degrees, saturation a quarter, value 0.3.
+        val delta = b - minOf(r, g)
+        if (b < r || b < g || b < 77 || delta * 4 < b) return false
+        val turn = 60 * (r - g)
+        return turn >= -40 * delta && turn <= -15 * delta
+    }
+
+    /**
      * Issue #37: SERVER_BLUES, which routes two and four recolour with no token to go on, are
      * Facebook's own palette and nobody else's: each is a colour one of the FDS styles gives some
      * token, at some alpha.

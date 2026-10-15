@@ -7,6 +7,7 @@
  */
 package app.morphe.patches.facebook.downloads.story
 
+import app.morphe.patches.facebook.downloads.photo.fillCdnResize
 import app.morphe.patches.facebook.feed.resolveStatic
 import app.morphe.patches.facebook.shared.reportedFieldNames
 import app.morphe.patches.shared.compat.AppCompatibilities
@@ -25,6 +26,7 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -34,9 +36,19 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 
-/** The extension call that saves the story. It answers whether it took the job. */
+/**
+ * The extension call that saves the story, or the photo it was made from when the item tapped is
+ * Save photo. It answers whether it took the job.
+ */
 private const val SAVE_STORY = "Lapp/morphe/extension/facebook/download/MediaDownload;->" +
-    "saveStory(Landroid/content/Context;Ljava/lang/Object;)Z"
+    "saveStory(Landroid/content/Context;Ljava/lang/Object;Ljava/lang/Object;)Z"
+
+/** The extension call that titles Save photo for a story card, or answers null when the menu gets no such item. */
+private const val PHOTO_TITLE = "Lapp/morphe/extension/facebook/download/StoryPhoto;->" +
+    "menuTitle(Ljava/lang/Object;)Ljava/lang/String;"
+
+/** The extension call that remembers a Save photo item, so a tap on it saves the photo. */
+private const val PHOTO_OFFERED = "Lapp/morphe/extension/facebook/download/StoryPhoto;->offered(Ljava/lang/Object;)V"
 
 /** The extension call that answers the menu's "can this story be saved": the switch, or Facebook's own. */
 private const val OFFERS_SAVE = "Lapp/morphe/extension/facebook/download/MediaDownload;->offersSave(Z)Z"
@@ -44,6 +56,12 @@ private const val OFFERS_SAVE = "Lapp/morphe/extension/facebook/download/MediaDo
 /** The extension call that records the source of each player that the app builds. */
 private const val REMEMBER_SOURCE = "Lapp/morphe/extension/facebook/download/PlayerSources;->" +
     "remember(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V"
+
+/** The patch's name, for its warnings. The README table check reads the literal in the patch below. */
+internal const val STORY_PATCH = "Download any story"
+
+/** What a story's Save photo does when Facebook's photo address modifier isn't found, for the patch log. */
+internal const val STORY_WITHOUT_CDN = "a story's Save photo saves the photo at the size the story holds"
 
 /** The helper that this patch adds to the player params. Each constructor then gets one call. */
 private const val REMEMBER_HELPER = "hushfacebookRememberSource"
@@ -174,6 +192,12 @@ val downloadStoryPatch = bytecodePatch(
             "$saveAction->${handler.name} has too few registers to borrow two"
         }
 
+        // The tapped item, the handler's one parameter, goes to the save too, so Save photo saves
+        // the photo. invoke-static names its arguments in four bits.
+        check(implementation.registerCount - parameterRegisters + 1 < 16) {
+            "$saveAction->${handler.name}: the tapped item's register is out of four-bit range"
+        }
+
         // The download answers whether it took the job. It can decline: an old Android, no
         // address on the story, or too many saves at once. Then the original body still runs, so
         // the patch never leaves the item doing nothing at all.
@@ -186,13 +210,20 @@ val downloadStoryPatch = bytecodePatch(
             """
                 iget-object v0, p0, $saveAction->$contextField:Landroid/content/Context;
                 iget-object v1, p0, $saveAction->$storyCardField:$STORY_CARD
-                invoke-static { v0, v1 }, $SAVE_STORY
+                invoke-static { v0, v1, p1 }, $SAVE_STORY
                 move-result v0
                 if-eqz v0, :original
                 return-void
             """,
             ExternalLabel("original", handler.getInstruction(0)),
         )
+
+        addSavePhotoItem(builder, action, storyCardField)
+
+        // #38: Save photo on a story asks Meta's CDN for the photo at its full size, as Save photo
+        // on a post does. Download any photo fills the same stub when it's in; whichever runs
+        // second leaves it. Its warnings name this patch, since it's this one asking.
+        fillCdnResize(STORY_PATCH, STORY_WITHOUT_CDN)
 
         rememberPlayerSources()
 
@@ -283,6 +314,40 @@ internal fun BytecodePatchContext.rememberPlayerSources(
     check(hooked >= constructors.size && constructors.isNotEmpty()) {
         "Hooked $hooked return(s) across ${constructors.size} constructor(s) of $VIDEO_PLAYER_PARAMS"
     }
+}
+
+/**
+ * Build Save photo beside Save for a photo Story with music (#38). Right after [builder] adds its
+ * Save item, the extension is asked for a title from the story [action] carries in
+ * [storyCardField]; with one, a second item is constructed from the same arguments with that title
+ * in place of the first String, remembered, and added. The story menu draws a set title instead of
+ * the item's string resource, and a tap on either item reaches the same action with the item
+ * tapped. With no title, Save any story off or paused, or a Story not made from a photo, the menu
+ * is Facebook's own.
+ *
+ * The title register is the call's own until the item's constructor reads it, so it holds the card
+ * first. The method returns right after ([saveItemSite]), and the branch past the new item lands
+ * on that return, a real instruction.
+ */
+internal fun addSavePhotoItem(builder: MutableMethod, action: ClassDef, storyCardField: String) {
+    val site = saveItemSite(builder, action)
+    val title = "v${site.titleRegister}"
+    val item = "v${site.itemRegister}"
+
+    builder.addInstructionsWithLabels(
+        site.addIndex + 1,
+        """
+            iget-object $title, v${site.actionRegister}, ${action.type}->$storyCardField:$STORY_CARD
+            invoke-static { $title }, $PHOTO_TITLE
+            move-result-object $title
+            if-eqz $title, :menu_done
+            new-instance $item, ${site.init.definingClass}
+            invoke-direct/range { $item .. v${site.lastRegister} }, ${site.init}
+            invoke-static { $item }, $PHOTO_OFFERED
+            invoke-virtual { v${site.listRegister}, $item }, $LIST_BUILDER->add(Ljava/lang/Object;)$LIST_BUILDER
+        """,
+        ExternalLabel("menu_done", builder.getInstruction(site.addIndex + 1)),
+    )
 }
 
 /**

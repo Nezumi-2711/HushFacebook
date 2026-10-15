@@ -246,6 +246,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_background_posts", FALSE);
 
     /**
+     * Feed posts that share another post, with a caption or without: a story whose attached story
+     * is a story ({@link app.morphe.extension.facebook.feed.PostText#shareKind}). Off by default:
+     * no served repost has been checked on a signed-in feed yet.
+     */
+    public static final BooleanSetting HIDE_REPOSTS =
+            new BooleanSetting("hushfacebook_hide_reposts", FALSE);
+
+    /**
      * The reaction count above which feed posts are hidden, read from the feed unit's own feedback
      * ({@link app.morphe.extension.facebook.feed.PostReactions}). Off hides nothing. Not a switch:
      * a list picks the count, and a paused Facebook reads Off.
@@ -295,8 +303,9 @@ public class Settings extends BaseSettings {
 
     /**
      * The batches of viewed story cards the story viewer sends as DirectSeenMutation, which put you
-     * on each story's viewer list. Held back, replies and reactions still show you, and stories you
-     * viewed keep their unwatched ring.
+     * on each story's viewer list. Held back, replies and reactions still show you, and a bucket
+     * watched to its newest story is marked watched on the phone only (StorySeen, #61). Saved off,
+     * the buckets kept for that are forgotten.
      */
     public static final BooleanSetting VIEW_STORIES_ANONYMOUSLY =
             new BooleanSetting("hushfacebook_view_stories_anonymously", FALSE);
@@ -307,6 +316,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting MARK_STORIES_SEEN =
             new BooleanSetting("hushfacebook_mark_stories_seen", FALSE);
+
+    /**
+     * A video posted only to your Story asks the upload server for high quality instead of the
+     * standard quality it gets otherwise ({@link
+     * app.morphe.extension.facebook.stories.StoryUpload}, #123). Starts off.
+     */
+    public static final BooleanSetting UPLOAD_STORIES_IN_HD =
+            new BooleanSetting("hushfacebook_upload_stories_in_hd", FALSE);
 
     /** The two page filters that take server-inlined ads out of Reels and Watch. */
     public static final BooleanSetting HIDE_SPONSORED_REELS =
@@ -408,6 +425,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_play_reels_once", FALSE);
 
     /**
+     * Reels and videos keep the sound they were made with instead of a version Facebook dubbed into
+     * your language with Meta AI ({@link app.morphe.extension.facebook.reels.OriginalAudio}). The
+     * player is told no language was asked for, so it keeps the video's main audio track. Off until
+     * it's turned on, since nobody has seen it on a phone yet.
+     */
+    public static final BooleanSetting ORIGINAL_AUDIO =
+            new BooleanSetting("hushfacebook_original_audio", FALSE);
+
+    /**
      * The batches of watched reels the Reels viewer sends as FbShortsSeenStateMutation: only their
      * ids, the record Facebook ranks the Reels feed with, which nobody else sees. Held back, reels
      * already watched may come back in the feed.
@@ -454,6 +480,20 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting TURN_OFF_HAPTICS =
             new BooleanSetting("hushfacebook_turn_off_haptics", FALSE);
+
+    /**
+     * The Data mode banner Facebook Flex carriers show under the top bar, with its offer to buy
+     * mobile data ({@link app.morphe.extension.facebook.misc.CarrierBanners}, #70). Starts off.
+     */
+    public static final BooleanSetting HIDE_DATA_MODE_BANNER =
+            new BooleanSetting("hushfacebook_hide_data_mode_banner", FALSE);
+
+    /**
+     * The purple Free mode banner of Facebook Flex carriers, which is also the way back to Data
+     * mode ({@link app.morphe.extension.facebook.misc.CarrierBanners}, #70). Starts off.
+     */
+    public static final BooleanSetting HIDE_FREE_MODE_BANNER =
+            new BooleanSetting("hushfacebook_hide_free_mode_banner", FALSE);
 
     /**
      * Facebook's screens and tabs show without the slide or fade between them
@@ -589,6 +629,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_open_reply_threads", FALSE);
 
     /**
+     * An open reply thread loads the rest of its replies as it's scrolled, with no View more
+     * replies to tap ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}, #140).
+     * Works with or without {@link #OPEN_REPLY_THREADS}. Off by default. A change shows on the
+     * next thread opened.
+     */
+    public static final BooleanSetting LOAD_WHOLE_REPLY_THREADS =
+            new BooleanSetting("hushfacebook_load_whole_reply_threads", FALSE);
+
+    /**
      * A group post's comments end without the Related groups list and its Join buttons
      * ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}, #101). Off by default. A
      * change shows on the next comments opened.
@@ -677,12 +726,38 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_picture_in_picture", FALSE);
 
     /**
+     * With Picture-in-picture on, leaving Facebook opens no window and only the Picture-in-picture
+     * row in a reel's More menu does (#44,
+     * {@link app.morphe.extension.facebook.media.PictureInPictureRow}). Starts off, so leaving
+     * still opens it. Off, paused or with Picture-in-picture off, it changes nothing.
+     */
+    public static final BooleanSetting PICTURE_IN_PICTURE_FROM_MENU =
+            new BooleanSetting("hushfacebook_picture_in_picture_from_menu", FALSE);
+
+    /**
      * HDR videos and photos stay in the screen's usual range instead of turning it up to full
      * brightness ({@link app.morphe.extension.facebook.media.HdrBrightness}). Starts off. Off
      * or paused, Facebook asks for its HDR window again.
      */
     public static final BooleanSetting TURN_OFF_HDR_BRIGHTNESS =
             new BooleanSetting("hushfacebook_turn_off_hdr_brightness", FALSE);
+
+    /**
+     * An HDR video Facebook also serves in SDR at the same height or taller plays the SDR version
+     * ({@link app.morphe.extension.facebook.media.SdrRenditions}, #66). Works with {@link
+     * #TURN_OFF_HDR_BRIGHTNESS} on or off. Starts off. Off or paused, the next video's manifest
+     * reaches the player whole.
+     */
+    public static final BooleanSetting PREFER_SDR_RENDITIONS =
+            new BooleanSetting("hushfacebook_prefer_sdr_renditions", FALSE);
+
+    /**
+     * Videos, reels and stories play past the silent stretches in their sound ({@link
+     * app.morphe.extension.facebook.media.SkipSilence}). Starts off. Off or paused, each player
+     * gets Facebook's own flag again from its next seek or video.
+     */
+    public static final BooleanSetting SKIP_SILENT_PARTS =
+            new BooleanSetting("hushfacebook_skip_silent_parts", FALSE);
 
     /**
      * A reel's progress bar stays full size, thumb and all, and a full-screen video's controls stay
@@ -781,6 +856,13 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_CHAT_PROMOTIONS =
             new BooleanSetting("hushfacebook_hide_chat_promotions", FALSE);
+
+    /**
+     * The Meta AI button beside the search box in Facebook's own Chats, at the top of the list and
+     * on the search screen. Starts off. The search box and chats with Meta AI stay.
+     */
+    public static final BooleanSetting HIDE_CHAT_META_AI_BUTTON =
+            new BooleanSetting("hushfacebook_hide_chat_meta_ai_button", FALSE);
 
     /**
      * A tap on the Messenger icon at the top of Facebook opens the Messenger app, while it's
@@ -992,6 +1074,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_watch_history_shortcut", FALSE);
 
     /**
+     * The Hushfacebook settings shortcut in the menu a long press on Facebook's launcher icon opens
+     * ({@link SettingsEntry}). On by default, as it always was. Off, the shortcut goes at once and
+     * isn't published again; the Menu row and the logo's long press still open the screen (#146).
+     * Kept while paused, since it's a way back to the switch that resumes Hushfacebook.
+     */
+    public static final BooleanSetting SETTINGS_SHORTCUT =
+            new BooleanSetting("hushfacebook_settings_shortcut", TRUE);
+
+    /**
      * A cold start, and a return after {@link #APP_LOCK_AFTER}, ask for the phone's screen lock
      * before Facebook shows ({@link app.morphe.extension.facebook.misc.AppLock}). The settings
      * entry's own switch, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off by default.
@@ -1021,6 +1112,13 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting DOWNLOAD_STORIES =
             new BooleanSetting("hushfacebook_download_stories", TRUE);
+
+    /**
+     * Save photo goes on every story whose media carries a picture beside its video, not only on
+     * the ones Facebook marks as made from a photo (#38). See StoryPhoto.
+     */
+    public static final BooleanSetting SAVE_STORY_PHOTOS =
+            new BooleanSetting("hushfacebook_save_story_photos", FALSE);
 
     /** The Download button the reel patch adds to every reel's sidebar. */
     public static final BooleanSetting DOWNLOAD_REELS =
@@ -1222,6 +1320,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_keep_top_bar", FALSE);
 
     /**
+     * A tablet or an unfolded phone gets Facebook's phone layout, so the tab bar switches work on
+     * the big screen too (#149, {@link app.morphe.extension.facebook.navigation.BottomTabBar#phoneLayout}).
+     * Facebook decides on its big screen layout as its main screen starts, so a change waits for a
+     * restart.
+     */
+    public static final BooleanSetting PHONE_LAYOUT_ON_BIG_SCREENS =
+            new BooleanSetting("hushfacebook_phone_layout_big_screens", FALSE, true);
+
+    /**
      * Facebook's dark mode controller answers dark whatever its own setting says
      * ({@link app.morphe.extension.facebook.theme.ForceDarkMode}), for tablets whose Facebook
      * settings have no Dark mode row. Facebook asks as each screen applies its theme, so a change
@@ -1355,6 +1462,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_download_compatible", FALSE);
 
     /**
+     * Saves go without the toasts that only say how a save went: Saving as it starts, Saved to as
+     * it finishes, and Save canceled (issue #142). A failed save still says why, and the WhatsApp
+     * warning still shows when no notification card carries it. Off by default. Every download
+     * patch reads it ({@link PatchFamily#DOWNLOAD_SWITCHES}).
+     */
+    public static final BooleanSetting DOWNLOAD_QUIET =
+            new BooleanSetting("hushfacebook_download_quiet", FALSE);
+
+    /**
      * The name a saved video gets: {date}, {video_id}, {owner}, {owner_id} and {posted} fill in per
      * save, the last four only when the save knows them, and the default is Facebook's own FB_VID_
      * name, so nothing changes for anyone who leaves it. Photos have {@link #PHOTO_FILENAME_TEMPLATE}.
@@ -1459,6 +1575,9 @@ public class Settings extends BaseSettings {
         // a few quick crashes can turn on. Its own switch, behind the lock, is the only way off.
         // Here, after both fields, since a static block runs in the order it's written.
         Setting.keepWhenPaused(APP_LOCK, APP_LOCK_AFTER);
+        // The launcher shortcut is a way back to the settings screen, where a pause is lifted, so a
+        // pause neither brings it back nor takes it away (#146).
+        Setting.keepWhenPaused(SETTINGS_SHORTCUT);
     }
 
     /**

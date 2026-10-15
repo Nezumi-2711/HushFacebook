@@ -29,6 +29,7 @@ import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
 import app.morphe.util.ControlFlow
 import app.morphe.util.namedRegisters
+import app.morphe.util.readsAfter
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -80,6 +81,15 @@ internal const val COMMENT_SECTION = "CommentSection"
 /** The state update a tap on View replies sends the comment section, named where it's sent. */
 internal const val EXPAND_REPLIES = "updateState:CommentSection.expandReplySection"
 
+/**
+ * The name an open reply thread's section gives itself in its constructor. Once its replies are
+ * fetched, it builds a [COMMENT_LIST] over them.
+ */
+internal const val EXPANDED_REPLIES = "ExpandedReplySection"
+
+/** The name the list of a post's comments, or of a thread's replies, gives itself in its constructor. */
+internal const val COMMENT_LIST = "CommentListSection"
+
 private const val VIEW = "Landroid/view/View;"
 
 private const val OBJECTS = "[Ljava/lang/Object;"
@@ -90,6 +100,7 @@ internal const val HOLDS_BOTTOM_CONTENT = "$COMMENT_SHEET_OPTIONS->holdsBottomCo
 internal const val SKIP_PICKER = "$COMMENT_SHEET_OPTIONS->skipReactionPicker()Z"
 internal const val OPEN_REPLY_THREADS = "$COMMENT_SHEET_OPTIONS->openReplyThreads(Z)Z"
 internal const val HIDES_COMMENT = "$COMMENT_SHEET_OPTIONS->hidesComment(Ljava/lang/Object;)Z"
+internal const val LOAD_WHOLE_REPLY_THREADS = "$COMMENT_SHEET_OPTIONS->loadWholeReplyThreads(Z)Z"
 
 /** Facebook's comment model, a kept class the comment section casts its comment to. */
 internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment;"
@@ -131,6 +142,16 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * initial-state method returns, the extension is handed the flag and its answer is written back, so
  * with the switch on every comment starts the way a tap on View replies leaves it.
  *
+ * Load whole reply threads (#140): once an open thread's replies are fetched, the section that
+ * names itself [EXPANDED_REPLIES] (582 `LX/BEb;->A2G`) builds a [COMMENT_LIST] over them and writes
+ * one boolean of it, false (582 `LX/A4r;->A0Q`). That flag is whether the list pages on by itself:
+ * true, its paginated section loads the next page each time the end of the list comes into view,
+ * the way Facebook's own comment lists do, and the View more replies pager isn't drawn; false, the
+ * pager is drawn and each tap on it loads one more page. The extension is handed the flag just
+ * before it's written, and while the switch is on its answer is true, so the rest of a thread loads
+ * as it's scrolled with no further taps. It loads a page at a time, as far as the reader scrolls,
+ * so a thread with thousands of replies can't hold the sheet up.
+ *
  * Hide comments with shop links and Hide comments with your words (#118): the same comment section
  * draws its one comment, with its replies, in the one method of it besides the constructor that
  * names [COMMENT_SECTION] (582 `LX/5mz;->A2F`). Its comment sits in a props holder kept in one field
@@ -138,15 +159,15 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * [GRAPHQL_COMMENT]. First thing there, the extension is handed that comment, and a yes returns
  * no children, as Facebook's own comment list section does when it has nothing to draw.
  *
- * In the default selection with all six switches off, so nothing changes until one is turned on.
+ * In the default selection with all seven switches off, so nothing changes until one is turned on.
  */
 @Suppress("unused")
 val commentSheetOptionsPatch = bytecodePatch(
     // The README table check reads this literal; PATCH carries the same text for the messages.
     name = "Comment sheet options",
     description = "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and " +
-        "sticker buttons, show every reply without tapping View replies, hide Related groups under group " +
-        "posts, and hide comments with shop links or your words. Starts off. Turn on the parts you want in " +
+        "sticker buttons, show every reply without tapping View replies, load a whole reply thread as you " +
+        "scroll, hide Related groups under group posts, and hide comments with shop links or your words. Starts off. Turn on the parts you want in " +
         "Hushfacebook settings > Comments.",
 ) {
     category("Comments")
@@ -173,6 +194,7 @@ val commentSheetOptionsPatch = bytecodePatch(
             holders(EXPAND_REPLIES).flatMap { methodsHolding(it, EXPAND_REPLIES) },
         ) { types -> types.mapNotNull { classDefByOrNull(it) }.associateBy { it.type } }
         val drawn = commentDraw(holders(COMMENT_SECTION))
+        val replyList = replyList(holders(EXPANDED_REPLIES), holders(COMMENT_LIST))
 
         mutableClassDefBy(buttons.check.definingClass).methods.single { it.descriptor() == buttons.check.descriptor() }
             .holdButtons(buttons.table)
@@ -185,6 +207,8 @@ val commentSheetOptionsPatch = bytecodePatch(
             .openReplyThreads(threads)
         mutableClassDefBy(drawn.render.definingClass).methods.single { it.descriptor() == drawn.render.descriptor() }
             .hideComments(drawn)
+        mutableClassDefBy(replyList.build.definingClass).methods.single { it.descriptor() == replyList.build.descriptor() }
+            .loadWholeReplyThreads(replyList)
         enableStatus("commentSheetOptions")
     }
 }
@@ -552,6 +576,78 @@ internal fun MutableMethod.openReplyThreads(threads: ReplyThreads) {
             invoke-static/range { v$free .. v$free }, $OPEN_REPLY_THREADS
             move-result v$free
             iput-boolean v$free, v$state, $field
+        """,
+    )
+}
+
+/**
+ * Where an open reply thread builds the list of its replies: the method of the thread's section,
+ * [build], and the instruction in it, [write], that writes [flag], the list's flag for paging on by
+ * itself as it's scrolled.
+ */
+internal class ReplyList(val build: Method, val write: Int, val flag: FieldReference)
+
+/**
+ * The reply list's paging flag, from [threads], the classes loading [EXPANDED_REPLIES], and
+ * [lists], the classes loading [COMMENT_LIST]. The thread's section and the list are each the one
+ * class whose constructor names itself. The build is the one method of the section that makes a
+ * list, and the flag is the one boolean of the list it writes there, which the list's own method
+ * naming [COMMENT_LIST] reads. The hook replaces the value just before the write, so the write must
+ * be reached only by the instruction before it, and nothing after it may read the register the
+ * value sat in. Refuses unless each is exactly one and those hold.
+ */
+internal fun replyList(threads: List<ClassDef>, lists: List<ClassDef>): ReplyList {
+    fun named(classes: List<ClassDef>, name: String): ClassDef {
+        val found = classes.filter { holder -> holder.methods.any { it.name == "<init>" && holdsString(it, name) } }
+            .distinctBy { it.type }
+        return found.singleOrNull() ?: refuse("expected one class naming itself \"$name\", found ${found.size}")
+    }
+    val thread = named(threads, EXPANDED_REPLIES)
+    val list = named(lists, COMMENT_LIST)
+
+    val builds = thread.methods.filter { method ->
+        method.implementation?.instructions?.any {
+            it.opcode == Opcode.NEW_INSTANCE && ((it as ReferenceInstruction).reference as TypeReference).type == list.type
+        } == true
+    }
+    val build = builds.singleOrNull()
+        ?: refuse("expected one method of ${thread.type} making a ${list.type}, found ${builds.size}")
+    val where = build.descriptor()
+    val code = build.implementation!!.instructions.toList()
+    val writes = code.indices.filter { code[it].opcode == Opcode.IPUT_BOOLEAN && code[it].field()?.definingClass == list.type }
+    val write = writes.singleOrNull() ?: refuse("$where writes ${writes.size} booleans of ${list.type}, not one")
+    val flag = code[write].field()!!
+
+    val reads = list.methods.filter { it.name != "<init>" && holdsString(it, COMMENT_LIST) }.any { method ->
+        method.implementation?.instructions?.any { it.opcode == Opcode.IGET_BOOLEAN && it.field()?.sameAs(flag) == true } == true
+    }
+    if (!reads) refuse("${list.type} never reads the flag $where writes, ${flag.name}")
+
+    val flow = ControlFlow.of(build)
+    for (index in code.indices) {
+        for (next in flow.normal[index] + flow.exceptional[index]) {
+            if (next == write && index != write - 1) refuse("$where has a jump to the flag's write at $write")
+        }
+    }
+    if (flow.normal[write - 1] != listOf(write)) refuse("$where doesn't run straight into the flag's write")
+    val value = (code[write] as TwoRegisterInstruction).registerA
+    val later = build.readsAfter(write, value)
+    if (later.isNotEmpty()) refuse("$where reads v$value again after the flag's write, at $later")
+    return ReplyList(build, write, flag)
+}
+
+/**
+ * Just before the reply list's paging flag is written, hand the extension the value Facebook
+ * gives it and write its answer instead. The value's register is free after the write, so the
+ * answer goes back into it, and the call takes it as a range.
+ */
+internal fun MutableMethod.loadWholeReplyThreads(list: ReplyList) {
+    val value = getInstruction<TwoRegisterInstruction>(list.write).registerA
+    addInstructions(
+        list.write,
+        """
+            invoke-static/range { v$value .. v$value }, $LOAD_WHOLE_REPLY_THREADS
+            move-result v$value
         """,
     )
 }

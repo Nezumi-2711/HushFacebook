@@ -48,7 +48,8 @@ private const val PATCH = "Clean up Reels"
  * takes the "Threads you might like" card out from between reels (see ReelMidCards.kt), a fifth,
  * also off, starts reels and videos in Facebook's own Clean mode (see ReelCleanMode.kt), and a
  * sixth, also off, plays each reel once instead of starting it over at its end (see ReelLoop.kt,
- * whose hook is reelLoopPatch's).
+ * whose hook is reelLoopPatch's). A seventh, also off, keeps reels and videos in the audio they
+ * were made with instead of a Meta AI dub (see OriginalAudio.kt).
  *
  * Every anchor is a kept name or literal (see ReelAnchors.kt), and every one of them is required: a
  * build where one can't be found stops the patch with what's missing, rather than shipping a switch
@@ -63,7 +64,7 @@ val cleanUpReelsPatch = bytecodePatch(
     name = "Clean up Reels",
     description = "Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template " +
         "buttons and Threads cards between reels, so more of the video shows, and can play each reel once " +
-        "instead of over and over. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
+        "instead of over and over or keep its original audio instead of a Meta AI dub. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
 ) {
     category("Reels")
     dependsOn(settingsPatch)
@@ -76,6 +77,8 @@ val cleanUpReelsPatch = bytecodePatch(
         skipFooterQueries()
         hideThreadsCards()
         startReelsInCleanMode()
+        // #148: the audio language the player picks a video's sound by.
+        hookOriginalAudio()
         enableStatus("reelDeclutter")
     }
 }

@@ -19,6 +19,10 @@ Hides ad cards between people's stories.	İnsanların hikayeleri arasındaki rek
 Ad tracking blocked	Reklam takibi engellendi
 Add Download to phone to feed and Watch video menus. Uses the quality below. Off or paused, Facebook's menu returns.	Akış ve Watch video menülerine Telefona indir ekler. Aşağıdaki kaliteyi kullanır. Kapalı veya duraklatılmışken Facebook menüsü geri gelir.
 Add Save to every story menu, using your download quality. Off or paused, Facebook only saves your own stories.	Her hikaye menüsüne indirme kalitenizle Kaydet ekler. Kapalı veya duraklatılmışken Facebook yalnızca kendi hikayelerinizi kaydeder.
+# context: switch title on the Stories page, under Save any story; offers the Save photo menu item on more stories than before
+Save photo on more stories	Daha fazla hikayede fotoğrafı kaydet
+# context: summary of that switch; "Save photo" is the menu item's name, keep it as translated for that item; the cover picture is the still image shown before a video plays
+Adds Save photo to any story that carries a picture beside its video, like a photo story with music that Facebook didn't mark as one. On a video story it saves the cover picture. Untested on a real account, so it starts off.	Videosunun yanında bir resim taşıyan her hikayeye Fotoğrafı kaydet seçeneğini ekler; örneğin Facebook'un fotoğraf olarak işaretlemediği müzikli bir fotoğraf hikayesi. Video hikayesinde kapak resmini kaydeder. Gerçek bir hesapta henüz denenmedi, bu yüzden kapalı başlar.
 Hides ads in Reels, starting with the next batch Facebook loads. Banner ads, mid-video ads and other ads added by the app stay blocked even while paused.	Facebook'un yükleyeceği bir sonraki gruptan başlayarak Reels içindeki reklamları gizler. Banner reklamlar, video ortası reklamlar ve uygulamanın eklediği diğer reklamlar duraklatılmışken bile engelli kalır.
 AMOLED black theme	AMOLED siyah tema
 Appearance	Görünüm
@@ -104,6 +108,10 @@ The bottom tab bar stays put while you scroll, on accounts where Facebook slides
 Keep the top bar on screen	Üst çubuğu ekranda tut
 # context: description of that switch
 The top bar with search and Messenger stays put while you scroll down, instead of sliding away.	Arama ve Messenger'ın olduğu üst çubuk, aşağı kaydırdığınızda kaybolmak yerine yerinde kalır.
+# context: switch title under Appearance, after Keep the top bar on screen; a big screen is a tablet or the inner screen of a folding phone, and the phone layout is the one Facebook shows on a normal phone
+Phone layout on big screens	Büyük ekranlarda telefon düzeni
+# context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
+A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Untested on a big screen, so it starts off. Restart Facebook to see the change.	Tablet ya da açılmış katlanabilir telefon, Facebook'un telefonda kullandığı düzeni alır. Böylece yukarıdaki sekme çubuğu ayarları büyük ekranda da çalışır. Facebook'un büyük ekranlar için daha geniş düzeni kalkar. Büyük bir ekranda henüz denenmedi, bu yüzden kapalı başlar. Değişikliği görmek için Facebook'u yeniden başlatın.
 # context: switch title under Appearance; it keeps Facebook's dark mode on whatever Facebook's own Dark mode setting says
 Force dark mode	Karanlık modu zorla
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row
@@ -274,7 +282,7 @@ No time limit	Süre sınırı yok
 With the switch above on, your place stays however long you're away. Pull to refresh and a fresh start still load new posts.	Yukarıdaki anahtar açıkken ne kadar uzun süre uzakta kalırsan kal yerin korunur. Yenilemek için çekmek ve uygulamayı yeniden başlatmak yine yeni gönderileri yükler.
 A finished story stays on screen until you tap or swipe. Turn this off for Facebook's timing.	Biten bir hikaye, dokunana veya kaydırana kadar ekranda kalır. Facebook'un zamanlamasını kullanmak için bunu kapat.
 View stories anonymously	Hikayeleri anonim olarak izle
-Facebook isn't told which stories you watch, so you stay off their viewer lists. Replying or reacting still shows you, and stories you've watched keep their unwatched ring.	Facebook hangi hikayeleri izlediğini öğrenmez, bu yüzden izleyici listelerinde yer almazsın. Yanıt vermek veya tepki bırakmak yine de seni gösterir. İzlediğin hikayeler izlenmemiş halkasını korur.
+Facebook isn't told which stories you watch, so you stay off their viewer lists. Replying or reacting still shows you. Stories you watch to the end show as watched on this phone only, until that person posts a new one.	Facebook hangi hikayeleri izlediğini öğrenmez, bu yüzden izleyici listelerinde yer almazsın. Yanıt vermek veya tepki bırakmak yine de seni gösterir. Sonuna kadar izlediğin hikayeler, o kişi yenisini paylaşana kadar yalnızca bu telefonda izlenmiş görünür.
 Stop Story auto-advance	Hikayelerin otomatik ilerlemesini durdur
 Copy a short report to the clipboard.	Kısa raporu panoya kopyalar.
 Save the full report in Download/Hushfacebook.	Tam raporu Download/Hushfacebook konumuna kaydeder.
@@ -375,6 +383,10 @@ Go straight to one group of settings. Back returns to where you were.	Doğrudan 
 Save videos other apps can open	Videoları diğer uygulamaların açabileceği biçimde kaydet
 # context: summary of that switch; WhatsApp is a name and stays as it is, and saves are the videos the user saved to the phone
 Fixes saved videos that play without sound in WhatsApp, video editors such as CapCut and InShot, or some galleries and players. May lower quality.	WhatsApp'ta, CapCut ve InShot gibi video düzenleyicilerde veya bazı galeri ve oynatıcılarda sessiz çalan kayıtlı videoları düzeltir. Kaliteyi düşürebilir.
+# context: switch title under Downloads; on, a save shows no message when it starts, finishes or is canceled
+Quiet saves	Sessiz kaydetme
+# context: summary of that switch; a toast is Android's short message at the bottom of the screen
+No toast when a save starts, finishes or is canceled. A save that fails still says why.	Kaydetme başladığında, bittiğinde veya iptal edildiğinde mesaj gösterilmez. Kaydetme başarısız olursa nedeni yine gösterilir.
 # context: section title for the Chats settings, named like Facebook's own Chats screen
 Chats	Sohbetler
 # context: switch title under Chats; the card is Facebook's own "Get the Messenger app" card
@@ -389,6 +401,10 @@ Removes the row above your chats that shows friends' notes and who's active. You
 Hide chat list promotions	Sohbet listesindeki tanıtımları gizle
 # context: summary of that switch
 Hides the banners at the top of Chats, like the one asking you to turn on notifications.	Sohbetler'in üstündeki, bildirimleri açmanızı isteyen gibi bannerları gizler.
+# context: switch title under Chats; Meta AI is Meta's assistant and keeps its name; the button sits beside the search box at the top of Chats and on Chats' search screen
+Hide the Meta AI button in Chats	Sohbetler'deki Meta AI düğmesini gizle
+# context: summary of that switch; your chats with Meta AI are conversations with the assistant, which stay in the list
+Removes the Meta AI button beside the search box in Chats, at the top of the list and on the search screen. The search box stays, and so do your chats with Meta AI.	Sohbetler'de arama kutusunun yanındaki Meta AI düğmesini, listenin üstünde ve arama ekranında kaldırır. Arama kutusu ve Meta AI ile sohbetleriniz kalır.
 # context: switch title under Chats; on, Facebook's Messenger icon opens the Messenger app
 Open the Messenger app	Messenger uygulamasını aç
 # context: summary of that switch; Messenger is the app's name, Chats is Facebook's own chat screen as named above
@@ -444,6 +460,10 @@ The comment box loses its GIF and sticker buttons. Typing, photos and posting wo
 Open every reply thread	Tüm yanıt dizilerini aç
 # context: summary of that switch; View replies is the link Facebook shows under a comment that has replies
 Comments show their replies right away, so there's no View replies to tap.	Yorumlar yanıtlarını hemen gösterir, Yanıtları gör'e dokunman gerekmez.
+# context: switch title under Comments; it makes an open reply thread load the rest of its replies by itself as the list is scrolled
+Load whole reply threads	Yanıt dizilerini tamamen yükle
+# context: summary of that switch; View more replies is the row Facebook shows under an open thread that has more replies to load
+An open reply thread keeps loading as you scroll, so there's no View more replies to tap.	Açık bir yanıt dizisi sen kaydırdıkça yüklenmeye devam eder, daha fazla yanıt için dokunman gerekmez.
 Hide related groups	İlgili grupları gizle
 A group post's comments end without the Related groups list and its Join buttons.	Bir grup gönderisinin yorumları, İlgili gruplar listesi ve Katıl düğmeleri olmadan biter.
 # context: row title under Comments that opens Facebook's own settings; reaction counts are the numbers next to the reactions on a post
@@ -974,6 +994,14 @@ A playing reel or full-screen video keeps going in a small window when you leave
 Turn off HDR brightness	HDR parlaklığını kapat
 # context: summary of that switch
 HDR videos and photos stay at your screen's usual brightness instead of turning it up to full. They keep their resolution.	HDR videolar ve fotoğraflar, ekranı tam parlaklığa çıkarmak yerine ekranın her zamanki parlaklığında kalır. Çözünürlükleri değişmez.
+# context: switch title under Playback, below Turn off HDR brightness; when a video comes in both HDR and SDR, the SDR copy plays. Keep HDR and SDR as they are
+Play SDR versions of HDR videos	HDR videoların SDR sürümlerini oynat
+# context: summary of that switch; "the same size" means the same resolution; "the switch above" is Turn off HDR brightness
+When Facebook also sends an HDR video in SDR at the same size, play that version instead. The screen doesn't brighten and the picture stays as sharp. Works with the switch above on or off.	Facebook bir HDR videoyu aynı boyutta SDR olarak da gönderdiğinde onun yerine o sürüm oynatılır. Ekran parlamaz ve görüntü aynı netlikte kalır. Yukarıdaki anahtar açıkken de kapalıyken de çalışır.
+# context: switch title under Playback; it makes videos play past the silent stretches of their sound
+Skip silent parts	Sessiz kısımları atla
+# context: summary of that switch; how-tos are tutorial videos
+Videos, reels and stories jump past the quiet stretches in their sound, so talks and how-tos get to the point sooner.	Videolar, Reels ve hikayeler sesteki sessiz bölümleri atlar, böylece konuşmalar ve nasıl yapılır videoları sadede daha çabuk gelir.
 # context: switch title under Playback; keeps a video's progress bar (the line showing how far it has played) on screen
 Keep the progress bar	İlerleme çubuğunu koru
 # context: summary of that switch; a reel is a short vertical video
@@ -1007,6 +1035,10 @@ Opens reels and videos in Facebook's Clean mode, which hides the buttons down th
 Play reels once	Reelleri bir kez oynat
 # context: summary of that switch; "last frame" is the final picture of the video, which stays on screen
 A reel stops on its last frame instead of starting over. Tap it to watch again, or swipe to the next one. Feed videos and stories aren't changed. Untested on a real account, so it starts off.	Bir reel baştan başlamak yerine son karesinde durur. Yeniden izlemek için dokunun ya da sonrakine kaydırın. Akıştaki videolar ve hikayeler değişmez. Gerçek bir hesapta henüz denenmedi, bu yüzden kapalı başlar.
+# context: switch title under Reels and Watch, part of Clean up Reels; reels and videos play in the language they were recorded in instead of an audio track Facebook translated
+Keep the original audio	Orijinal sesi koru
+# context: summary of that switch; "dubbed" means the spoken audio was replaced by a translated voice; Meta AI is the company's AI assistant, keep the name
+Reels and videos play with the sound they were made with, not a version Facebook dubbed into your language with Meta AI. Untested on a real account, so it starts off.	Reeller ve videolar, Facebook'un Meta AI ile dilinize seslendirdiği bir sürümle değil, yapıldıkları sesle oynatılır. Gerçek bir hesapta henüz denenmedi, bu yüzden kapalı başlar.
 # context: settings section title on the App page, above the switches of Hide Meta upsells; Meta is the company
 Meta's other products	Meta'nın diğer ürünleri
 # context: switch title; Edits is Meta's video editing app, keep its name
@@ -1055,6 +1087,7 @@ Save photo	Fotoğrafı kaydet
 Save all photos	Tüm fotoğrafları kaydet
 # context: short message shown when the photos of a post could not start saving
 Couldn't save this post's photos. Try again in a moment.	Bu gönderinin fotoğrafları kaydedilemedi. Birazdan tekrar dene.
+Couldn't save this story's photo. Try again in a moment.	Bu hikayenin fotoğrafı kaydedilemedi. Birazdan tekrar dene.
 Too many saves at once. Try again when one finishes.	Aynı anda çok fazla indirme var. Biri bitince tekrar dene.
 # context: settings switch under Block Instant Games ads that makes a game's rewarded ad count as watched
 Answer rewarded game ads as watched	Ödüllü oyun reklamlarını izlenmiş say
@@ -1160,6 +1193,10 @@ Hides posts with a video, including shares. Reels in the feed have their own swi
 Hides posts that share a link to a website, with its preview card.	Bir web sitesine bağlantı paylaşan gönderileri, önizleme kartıyla birlikte gizler.
 # context: summary of the Hide posts on a colored background switch
 Hides short posts shown as big text on a colored background.	Renkli bir arka planda büyük yazı olarak görünen kısa gönderileri gizler.
+# context: switch title under News feed: hides posts that share someone else's post, the ones Facebook heads "shared a post"; use Facebook's own word for a shared post in this language
+Hide reposts	Yeniden paylaşılan gönderileri gizle
+# context: summary of the Hide reposts switch; a caption is what the sharer wrote above the shared post
+Hides posts that share another post, with or without a caption. Original posts stay. Untested on a real feed, so it starts off.	Başka bir gönderiyi paylaşan gönderileri, açıklamalı ya da açıklamasız, gizler. Özgün gönderiler kalır. Gerçek bir akışta henüz denenmedi, bu yüzden kapalı başlar.
 # context: switch title in Privacy: asks for the phone's own screen lock before Facebook shows
 Lock Facebook	Facebook'u kilitle
 Save crashes to Downloads	Çökmeleri İndirilenler'e kaydet
@@ -1353,8 +1390,6 @@ Your list of share sheet items to hide will hold %1$d item.	Paylaşırken gizlen
 Your list of share sheet items to hide will hold %1$d items.	Paylaşırken gizlenecek öğeler listende %1$d öğe olacak.
 # context: title of the last row on the settings home page; a tap opens the maintainer's Ko-fi page in a browser
 Support Hushfacebook	Hushfacebook'u destekle
-# context: that row's summary; Ko-fi is a tipping site's name and stays as it is
-Buy me a coffee on Ko-fi	Ko-fi'de bana bir kahve ısmarla
 # context: heading row at the end of the Privacy settings page, above a list of the places Facebook shows ads or reports usage
 Where ads and tracking are blocked	Reklamların ve takibin engellendiği yerler
 # context: that heading's summary; build means this patched copy of Facebook, switch is a settings toggle
@@ -1447,7 +1482,13 @@ Report a problem	Sorun bildir
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Sürümleriniz ve ayarlarınız doldurulmuş bir GitHub raporu açar. Ne olduğunu ekleyin.
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	Hızlı kurulumlar
-Turn on a set of switches in one tap, or put every switch back the way it started.	Bir grup anahtarı tek dokunuşla açın veya her anahtarı başlangıçtaki hâline döndürün.
+Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Bir grup anahtarı tek dokunuşla açın veya her anahtarı başlangıçtaki hâline döndürün. Bu satırı gizlemek için basılı tut.
+# context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
+Quick setups hidden. Bring it back from %1$s.	Hızlı kurulumlar gizlendi. %1$s bölümünden geri getirebilirsin.
+# context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
+Quick setups on the home page	Ana Sayfada hızlı kurulumlar
+Shown. Tap to hide it.	Gösteriliyor. Gizlemek için dokun.
+Hidden. Tap to show it again.	Gizli. Tekrar göstermek için dokun.
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	Sakin
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Reklamları, önerileri, tanıtımları ve yönlendirmeleri gizler, rahatsız eden bildirimleri durdurur.
@@ -1461,3 +1502,39 @@ Puts every feature switch but Lock Facebook back the way it started.	Facebook'u 
 Changed %1$d setting	%1$d ayar değiştirildi
 # context: the same toast for none, or for two or more
 Changed %1$d settings	%1$d ayar değiştirildi
+# context: toast and Last save row: a save failed for want of a connection
+The connection failed. Check your internet and try again.	Bağlantı başarısız oldu. İnternetini kontrol edip tekrar dene.
+# context: toast and Last save row: the server answered a save with an error, not the file
+Facebook's server didn't send the file. Try again in a moment.	Facebook'un sunucusu dosyayı göndermedi. Birazdan tekrar dene.
+# context: toast and Last save row: the file a save fetched came empty or cut short
+The download ended before the whole file arrived. Try again.	İndirme, dosyanın tamamı gelmeden bitti. Tekrar dene.
+# context: toast and Last save row: a save's work file couldn't be written, for a reason the phone didn't give
+Your phone couldn't write the file. Check your free space and try again.	Telefonun dosyayı yazamadı. Boş alanını kontrol edip tekrar dene.
+# context: toast and Last save row: the phone was measured and has too little free space for a save
+Not enough free space to save this. Free some up and try again.	Bunu kaydetmek için yeterli boş alan yok. Biraz yer açıp tekrar dene.
+# context: toast and Last save row: a video's picture and sound couldn't be converted or joined; Download quality is the setting's name
+Your phone couldn't put this video together. Try another Download quality.	Telefonun bu videoyu birleştiremedi. Başka bir İndirme kalitesi dene.
+# context: toast and Last save row: the gallery refused a finished photo or video
+The file couldn't be copied into your phone's gallery. Try again in a moment.	Dosya telefonunun galerisine kopyalanamadı. Birazdan tekrar dene.
+# context: title of a switch on the Menu settings page: whether the Hushfacebook settings shortcut shows when you hold Facebook's launcher icon
+Settings shortcut on the app icon	Uygulama simgesinde ayarlar kısayolu
+# context: summary of that switch when the build has the Hushfacebook settings row in Facebook's Settings and privacy
+Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu, and you can still open these settings from the Hushfacebook settings row in Settings and privacy or with a long press on the Facebook logo.	Facebook simgesine basılı tutunca açılan menüye Hushfacebook ayarlarını koyar. Kapalıyken bu menüden çıkar. Bu ayarları yine Ayarlar ve gizlilik içindeki Hushfacebook ayarları satırından ya da Facebook logosuna basılı tutarak açabilirsin.
+# context: summary of that switch when the build has no settings row in Facebook's Menu
+Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu, and you can still open these settings with a long press on the Facebook logo.	Facebook simgesine basılı tutunca açılan menüye Hushfacebook ayarlarını koyar. Kapalıyken bu menüden çıkar. Bu ayarları yine Facebook logosuna basılı tutarak açabilirsin.
+# context: switch title on the Appearance settings page: hides Facebook Flex's Data mode bar under the top bar; Data mode is Facebook's own name for paid mode on Flex carriers
+Hide the Data mode banner	Veri modu bannerını gizle
+# context: switch title on the Appearance settings page: hides Facebook Flex's purple Free mode bar; Free mode is Facebook's own name for the free text-only mode
+Hide the Free mode banner	Ücretsiz mod bannerını gizle
+# context: summary of the Hide the Data mode banner switch
+On carriers with Facebook Flex, hides the Data mode bar under the top bar and its button to buy mobile data.	Facebook Flex sunan operatörlerde üst çubuğun altındaki Veri modu çubuğunu ve mobil veri satın alma düğmesini gizler.
+# context: summary of the Hide the Free mode banner switch; the purple bar is also where you switch back to Data mode
+On carriers with Facebook Flex, hides the purple Free mode bar. That bar is also how you go back to Data mode, so turn this off when you want to switch.	Facebook Flex sunan operatörlerde mor Ücretsiz mod çubuğunu gizler. Bu çubuk Veri moduna geri dönmenin de yoludur, bu yüzden geçiş yapmak istediğinde bunu kapat.
+# context: switch title under Picture-in-picture on the Playback page: the small window opens only from the Picture-in-picture row this adds to a reel's three-dot More menu, not when you leave Facebook
+Only from a reel's More menu	Yalnızca bir reel'in menüsünden
+# context: summary of that switch; Picture-in-picture is the name of the row in the reel's menu, translated as the row is; the three dots are the reel's own menu button
+Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu (the three dots) when you want one. That row is there whenever Picture-in-picture is on.	Facebook'tan çıkmak pencereyi açmaz. İstediğinde bir reel'in menüsünde (üç nokta) Pencere içinde pencere'ye dokun. Pencere içinde pencere açık olduğu sürece bu satır orada olur.
+# context: switch title under Stories; it makes videos you post to your own Story ask for high quality when they upload
+Upload Stories in HD	Hikayeleri HD yükle
+# context: summary of that switch; standard is the normal upload quality, high the better one
+Videos you post to your Story ask Facebook for its high upload quality instead of standard. Applies to the next Story you post.	Hikayenizde paylaştığınız videolar Facebook'tan standart yerine yüksek yükleme kalitesi ister. Paylaşacağınız bir sonraki hikayeden itibaren geçerlidir.

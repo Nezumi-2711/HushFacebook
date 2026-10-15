@@ -9,7 +9,8 @@ import android.app.Application;
 import androidx.annotation.Nullable;
 
 /**
- * Facebook's own content provider authorities, as the running app has them.
+ * Facebook's own content provider authorities, and the package its notifications' views name, as
+ * the running app has them.
  *
  * <p>Facebook's code spells some of its authorities out, such as
  * {@code content://com.facebook.katana.ClientMessagePushDedupInfoProvider/mutestatus}, which it
@@ -52,6 +53,26 @@ public final class OwnAuthorities {
         } catch (Throwable failure) {
             // Facebook's own name is what every install but a clone uses.
             return facebookName;
+        }
+    }
+
+    /**
+     * [facebooksPackage], the package name Facebook's notification templates build their
+     * RemoteViews with, as the running app's package. RemoteViews takes its layouts from the
+     * package it names, so a clone handing over Facebook's name had its notifications drawn from
+     * the stock app's layouts, or from an app that isn't there, and Android closed it for a bad
+     * notification (#36). The same goes for the places Facebook names itself to Android: the intent
+     * a notification's tap sends, the app a notification launches, and the meta-data Firebase reads
+     * for a notification's icon. Anything but Facebook's package name exactly comes back as it was.
+     */
+    public static String packageName(@Nullable String facebooksPackage) {
+        if (!FACEBOOK.equals(facebooksPackage)) return facebooksPackage;
+        try {
+            String running = runningPackage();
+            return running == null ? facebooksPackage : running;
+        } catch (Throwable failure) {
+            // Facebook's own name is what every install but a clone uses.
+            return facebooksPackage;
         }
     }
 
