@@ -86,6 +86,35 @@ class MaterialYouTokenFixtureTest {
         val UNCHECKED_TOKENS = setOf("PRIMARY_TEXT", "SHADOW_TEXT_AND_ICON_ON_MEDIA", "SURFACE_BACKGROUND")
 
         /**
+         * The tokens a styleable array's integer read reaches on 582, through the styles' `?attr/`
+         * aliases (StyleableTokens.kt). SECONDARY_TEXT is the likes line's text colour, read with
+         * getInteger through the attribute its text styles alias to the token: as a colour state
+         * list it crashed the feed on Android 12 and newer (issue #154). ACCENT, DIVIDER,
+         * NAV_BAR_BACKGROUND, SURFACE_BACKGROUND and ALWAYS_WHITE are aliased the same way by one
+         * style each. The rest come through `android:textColor`, `textColorPrimary` and
+         * `textColorSecondary`: three read attributes alias to those, and Facebook's text styles
+         * point them at nearly every text token, so the closure takes them all. The scan doesn't
+         * tell which theme a style is read against, and a plain colour can't crash the read, so
+         * the night styles give every one of them the nearest system tone instead of a state
+         * list. Of these the patch recolours thirteen, seven of them plain already as data reads.
+         */
+        val STYLEABLE_TOKENS = setOf("ACCENT", "ALWAYS_WHITE", "BLUE_LINK", "DECORATIVE_ICON_RED", "DISABLED_TEXT", "DIVIDER",
+            "NAV_BAR_BACKGROUND", "NEGATIVE", "NOTIFICATION_BADGE", "PLACEHOLDER_TEXT", "POSITIVE", "PRIMARY_BUTTON_TEXT",
+            "PRIMARY_BUTTON_TEXT_ON_COLOR", "PRIMARY_DEEMPHASIZED_BUTTON_TEXT", "PRIMARY_ICON_ON_MEDIA", "PRIMARY_TEXT",
+            "PRIMARY_TEXT_ON_MEDIA", "SECONDARY_BUTTON_TEXT", "SECONDARY_ICON", "SECONDARY_TEXT", "SECONDARY_TEXT_ON_MEDIA",
+            "SURFACE_BACKGROUND", "TERTIARY_TEXT", "WARNING")
+
+        /**
+         * The attribute the likes line's text styles set to `?attr/SECONDARY_TEXT`, by build: the
+         * third entry of the styleable array the UFI feedback summary component reads with
+         * getInteger (issue #154). The scan has to find it, or the crash is back. The reactions
+         * pill bar below reads the same array in its constructor, under a name Redex leaves alone
+         * on both ABIs, where the Litho component and the array's holder are renamed per build.
+         */
+        val LIKES_LINE_ATTRIBUTE = mapOf("582.0.0.50.54" to 0x7f040fd6)
+        const val PILLS_BLING_BAR = "Lcom/facebook/feedback/reactions/ui/PillsBlingBarView;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V"
+
+        /**
          * The calls whose attribute the scan can't follow, by build. React Native's
          * PlatformColor (`A02`, called from FabricUIManager.getColor) looks an attribute up by the name
          * the JavaScript gives it, and Mapbox's ColorUtils looks up colorAccent, colorPrimary and
@@ -599,8 +628,7 @@ class MaterialYouTokenFixtureTest {
         assertEquals("$build: the patch reads other token attributes", attributes, patchTokenAttributes(initializer, tokenType))
         val tokens = attributes.entries.associate { (token, attribute) -> "attr_0x%08x".format(attribute) to token }
         val scan = scannedTokens(apk, initializer, tokenType)
-        val plain = scan.tokens
-        assertEquals("$build: the tokens read as TypedValue data", DATA_READ_TOKENS, plain)
+        assertEquals("$build: the tokens read as TypedValue data", DATA_READ_TOKENS, scan.tokens)
         assertEquals("$build: the tokens resolved where the read isn't checked", UNCHECKED_TOKENS, scan.unchecked.keys)
         assertEquals("$build: the data reads the scan can't follow",
             UNRESOLVED[version]?.get(build.substringAfter("-$version-").substringBefore(".apkm")), scan.unresolved)
@@ -609,6 +637,9 @@ class MaterialYouTokenFixtureTest {
         val light = styles.values.single { it.parent == 0 && it.sets > 300 }
         val darkStyle = styles.values.single { it.parent == light.id && it.sets > 300 }
         val decoded = decode(apk)
+        val styleable = styleableTokens(apk, version, decoded.styleFiles.values.toList(), tokens)
+        assertEquals("$build: the tokens a styleable array's integer read reaches", STYLEABLE_TOKENS, styleable)
+        val plain = scan.tokens + styleable
 
         var restyled = 0
         val darkTokens = mutableSetOf<String>()
@@ -652,6 +683,27 @@ class MaterialYouTokenFixtureTest {
             "PRIMARY_TEXT @color/hushfacebook_you_neutral_95" in plainTones)
     }
 
+    /**
+     * The tokens the patch's styleable scan reaches over every class in [apk]: the attributes some
+     * styleable array reads as an integer, followed through [styles]' `?attr/` aliases to [tokens].
+     */
+    private fun styleableTokens(apk: File, version: String, styles: List<Document>, tokens: Map<String, String>): Set<String> {
+        val container = DexFileFactory.loadDexContainer(apk, Opcodes.getDefault())
+        val scan = integerReadAttributes { visit ->
+            for (name in container.dexEntryNames) container.getEntry(name)!!.dexFile.classes.forEach(visit)
+        }
+        assertTrue("${apk.name}: no styleable array is read as an integer", scan.attributes.isNotEmpty())
+        val likesLine = LIKES_LINE_ATTRIBUTE.getValue(version)
+        assertTrue("${apk.name}: the likes line's text colour attribute isn't read as an integer", likesLine in scan.attributes)
+        val readers = scan.readers.filterValues { fields -> fields.any { likesLine in scan.arrays.getValue(it) } }
+        assertTrue("${apk.name}: the reactions pill bar doesn't read the likes line's array, found ${readers.keys}",
+            PILLS_BLING_BAR in readers)
+        assertTrue("${apk.name}: only the pill bar reads the likes line's array", readers.size > 1)
+        assertEquals("${apk.name}: the likes line's attribute alone reaches its token",
+            setOf("SECONDARY_TEXT"), styleablePlainTokens(styles, tokens, setOf(likesLine)))
+        return styleablePlainTokens(styles, tokens, scan.attributes)
+    }
+
     /** What the patch's scan for tokens read through `TypedValue.data` finds over every class in [apk]. */
     private fun scannedTokens(apk: File, initializer: Method, tokenType: String): DataReadScan {
         val container = DexFileFactory.loadDexContainer(apk, Opcodes.getDefault())
@@ -688,6 +740,7 @@ class MaterialYouTokenFixtureTest {
             ValueType.COLOR_ARGB8, ValueType.COLOR_RGB8, ValueType.COLOR_ARGB4, ValueType.COLOR_RGB4 -> "#%08x".format(item.data)
             ValueType.REFERENCE, ValueType.DYNAMIC_REFERENCE ->
                 byId[item.data]?.takeIf { it.type == "color" }?.let { "@color/${name(it)}" } ?: "@null"
+            ValueType.ATTRIBUTE, ValueType.DYNAMIC_ATTRIBUTE -> "?attr/attr_0x%08x".format(item.data)
             else -> "@null"
         }
 

@@ -131,7 +131,10 @@ internal const val REPLACES_PARKED = "$PROGRESS_BAR->replacesParkedLook(Ljava/la
 internal const val HANDS_OVER =
     "$PROGRESS_BAR->handsOver(Landroid/view/ViewGroup;Landroid/view/View;Ljava/lang/String;Ljava/lang/String;)V"
 internal const val LEFT_ON_LAST_REEL = "$PROGRESS_BAR->leftOnLastReel()V"
-internal const val MOUNTS = "$PROGRESS_BAR->mounts(Landroid/view/ViewGroup;)V"
+internal const val MOUNTS = "$PROGRESS_BAR->mounts(Landroid/view/ViewGroup;Ljava/lang/Object;)V"
+
+/** The extension's stub the patch fills with a call to the scrubber base's progress update. */
+internal const val UPDATE_AGAIN_STUB = "updateAgain"
 internal const val LOOK_FOR = "$PROGRESS_BAR->lookFor(Landroid/view/ViewGroup;Ljava/lang/Integer;)Ljava/lang/Integer;"
 internal const val LOOKS_AGAIN = "$PROGRESS_BAR->looksAgain(Landroid/view/ViewGroup;)Z"
 
@@ -206,7 +209,14 @@ internal const val INVALIDATE = "Landroid/view/View;->invalidate()V"
  * method's single return asks whether the light mount ran (a hook first in the mount reports that),
  * and when it didn't, the extension hides the bar and its time until a reel takes the scrubber. A
  * hook first in the look selector hands the extension each look, and while the bar is hidden that
- * way a look that would show the last reel's bar is dropped.
+ * way a look that would show the last reel's bar is dropped. The light mount also starts the
+ * scrubber's progress update, which stops for good when it can't draw the reel yet: the pager still
+ * scrolling, no player ready, or no position or length, the last leaving the update marked as
+ * running with nothing scheduled. Only the scroll settling and a change in the player's state start
+ * it again, and after a fast double swipe on a phone both could come too early, so the reel on screen
+ * played with its bar at the start and no time (#120). So the mount's hook hands the extension the
+ * scrubber too, and the patch fills the extension's [UPDATE_AGAIN_STUB] with a run of the base's
+ * progress update, which the extension calls every half second until the update draws the reel.
  *
  * The Reels footer lays the caption out from a seek bar status (582 `LX/AGv;` holding a `LX/AGw;`):
  * HIDDEN while a reel plays, VISIBLE while it's paused, DRAGGING during a drag. Only VISIBLE lifts
@@ -345,6 +355,10 @@ val keepProgressBarPatch = bytecodePatch(
         if (classDefByOrNull(PROGRESS_BAR)?.methods?.any(::isLiftFooterStub) != true) {
             refuse("$PROGRESS_BAR has no static boolean $LIFT_FOOTER_STUB(Object)")
         }
+        if (classDefByOrNull(PROGRESS_BAR)?.methods?.any(::isUpdateAgainStub) != true) {
+            refuse("$PROGRESS_BAR has no static void $UPDATE_AGAIN_STUB(Object)")
+        }
+        checkUpdateAgain(progress)
         val overrides = lengthCheckOverrides(checkHolders, scrubber.type, listOf(lengthCheck, shortCheck)) {
             classDefByOrNull(it)?.superclass
         }
@@ -405,6 +419,7 @@ val keepProgressBarPatch = bytecodePatch(
             liftsWhenAsked(footer, status)
         }
         fillFooterLift(footer)
+        fillUpdateAgain(progress)
         if (plugin != null && sizes != null) {
             mutableClassDefBy(plugin.type).methods.single { it.sameAs(sizes.shrink) }
                 .fullSizeInstead(plugin.type, sizes.fullSize)
@@ -1405,12 +1420,13 @@ internal fun MutableMethod.checksHandOver(handOver: ReelHandOver) {
 }
 
 /**
- * First thing in the scrubber base's light mount: hand the extension the scrubber's time label, as
- * the scrubber takes the reel it's given. A views holder that isn't there goes straight on. It goes
- * in after the hooks at the branch for another video, whose index is the unpatched mount's.
+ * First thing in the scrubber base's light mount: hand the extension the scrubber's time label and
+ * the scrubber, as the scrubber takes the reel it's given. A views holder that isn't there goes
+ * straight on. It goes in after the hooks at the branch for another video, whose index is the
+ * unpatched mount's. Nothing is live at the top, so two low locals are borrowed.
  */
 internal fun MutableMethod.reportsMount(looks: ScrubberLooks) {
-    requireLocals(PATCH, 1)
+    requireLocals(PATCH, 2)
     addInstructionsWithLabels(
         0,
         """
@@ -1418,9 +1434,47 @@ internal fun MutableMethod.reportsMount(looks: ScrubberLooks) {
             iget-object v0, v0, ${looks.viewsField}
             if-eqz v0, :facebook
             iget-object v0, v0, ${looks.labelField}
-            invoke-static { v0 }, $MOUNTS
+            move-object/from16 v1, p0
+            invoke-static { v0, v1 }, $MOUNTS
         """,
         ExternalLabel("facebook", getInstruction(0)),
+    )
+}
+
+/** Whether [method] is the extension's [UPDATE_AGAIN_STUB]: static, void, taking one Object. */
+internal fun isUpdateAgainStub(method: Method) = method.name == UPDATE_AGAIN_STUB &&
+    AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "V" &&
+    method.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/Object;")
+
+/**
+ * Refuses unless the scrubber base and its progress update can be reached from the extension's
+ * package, the update being the static method taking the base that the stub calls.
+ */
+internal fun checkUpdateAgain(progress: ProgressUpdate) {
+    val base = progress.base
+    if (!AccessFlags.PUBLIC.isSet(base.accessFlags)) refuse("${base.type}, the scrubber base, isn't public")
+    val update = progress.update
+    if (!AccessFlags.PUBLIC.isSet(update.accessFlags) || !AccessFlags.STATIC.isSet(update.accessFlags)) {
+        refuse("${base.type}->${update.name}, the progress update, isn't public and static")
+    }
+}
+
+/**
+ * Fills the extension's [UPDATE_AGAIN_STUB] with a run of the scrubber base's progress update on
+ * the scrubber it's handed: Facebook's frame callback runs the same update. d8 gives the stub no
+ * locals of its own, so the scrubber is cast in p0.
+ */
+internal fun BytecodePatchContext.fillUpdateAgain(progress: ProgressUpdate) {
+    checkUpdateAgain(progress)
+    val base = progress.base.type
+    val stub = mutableClassDefBy(PROGRESS_BAR).methods.singleOrNull(::isUpdateAgainStub)
+        ?: refuse("$PROGRESS_BAR has no static void $UPDATE_AGAIN_STUB(Object)")
+    stub.addInstructions(
+        0,
+        """
+            check-cast p0, $base
+            invoke-static { p0 }, $base->${progress.update.name}($base)V
+        """,
     )
 }
 

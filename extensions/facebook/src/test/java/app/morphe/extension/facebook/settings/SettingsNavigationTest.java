@@ -104,8 +104,8 @@ public class SettingsNavigationTest {
     @Test public void homeAndEveryCategoryAreReachableWithoutRemovingTheModel() {
         assertNotNull(page.navigation);
         // Status, Quick setups, Browse settings, six feature categories, More settings, Report a
-        // problem and Support Hushfacebook.
-        assertEquals(12, list().getCount());
+        // problem, Restart Facebook and Support Hushfacebook.
+        assertEquals(13, list().getCount());
         assertEquals(21, page.sections().size());
         int total = page.getPreferenceScreen().getRootAdapter().getCount();
         for (Preference section : page.sections()) {
@@ -116,12 +116,12 @@ public class SettingsNavigationTest {
             assertTrue(page.navigation.back());
             while (page.navigation.back()) { }
         }
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
     }
 
     /**
-     * The home page ends with Support Hushfacebook, under More settings and Report a problem. A tap opens the Ko-fi page
-     * in a browser of its own, and with no browser a tip names the address and Facebook keeps running.
+     * The home page ends with Support Hushfacebook, under More settings, Report a problem and Restart Facebook. A tap
+     * opens the Ko-fi page in a browser of its own, and with no browser a tip names the address and Facebook keeps running.
      */
     @Test public void theHomePageEndsWithSupportWhichOpensKoFi() {
         Map<String, Object> before = savedValues();
@@ -130,8 +130,9 @@ public class SettingsNavigationTest {
         assertEquals(HushfacebookPages.SUPPORT, row.getKey());
         assertEquals("Support Hushfacebook", String.valueOf(row.getTitle()));
         assertNull(row.getSummary());
-        assertEquals("Report a problem", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
-        assertEquals("More settings", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
+        assertEquals("Restart Facebook", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
+        assertEquals("Report a problem", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
+        assertEquals("More settings", String.valueOf(((Preference) list().getItemAtPosition(last - 3)).getTitle()));
         assertTrue(list().getAdapter().isEnabled(last));
 
         tap(HushfacebookPages.SUPPORT);
@@ -368,7 +369,7 @@ public class SettingsNavigationTest {
         app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
         page.navigation.restartChanged();
         assertFalse(contains(SettingsNavigation.RESTART));
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
     }
 
     /** A switch that needs a restart brings the row up the moment it's flipped, and flipping it back takes it away. */
@@ -410,6 +411,43 @@ public class SettingsNavigationTest {
         }
     }
 
+    /**
+     * The home page's own Restart Facebook row, just above Support, restarts Facebook with no change waiting and brings
+     * the screen back on the home page. While a change waits, the counting restart row at the top is the page's only one.
+     */
+    @Test public void theHomePageHasItsOwnRestartRowUntilAChangeWaits() {
+        List<Context> restarted = new ArrayList<>();
+        app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart.setRestarterForTests(restarted::add);
+        int own = position(SettingsNavigation.RESTART_NOW);
+        assertEquals(list().getCount() - 2, own);
+        Preference row = (Preference) list().getItemAtPosition(own);
+        assertEquals("Restart Facebook", String.valueOf(row.getTitle()));
+        assertEquals("Facebook closes and reopens on this page.", String.valueOf(row.getSummary()));
+        assertFalse(contains(SettingsNavigation.RESTART));
+
+        app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
+                Settings.HOLD_ANALYTICS_UPLOADS.key);
+        page.navigation.restartChanged();
+        assertFalse("two restart rows on one page", contains(SettingsNavigation.RESTART_NOW));
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(1)).getKey());
+        app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
+        page.navigation.restartChanged();
+        assertFalse(contains(SettingsNavigation.RESTART));
+        assertEquals(own, position(SettingsNavigation.RESTART_NOW));
+
+        // Only the home page has it.
+        page.navigation.navigate("Privacy");
+        assertFalse(contains(SettingsNavigation.RESTART_NOW));
+        while (page.navigation.back()) { }
+
+        Map<String, Object> before = savedValues();
+        tap(SettingsNavigation.RESTART_NOW);
+        assertEquals(1, restarted.size());
+        assertEquals(before, savedValues());
+        assertEquals("", app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart
+                .takeFresh(Setting.preferences.preferences, android.os.SystemClock.elapsedRealtime()));
+    }
+
     /** The row restarts Facebook and leaves a marker that opens the screen again on this page. */
     @Test public void theRestartRowRestartsIntoThePageItWasTappedOn() {
         List<Context> restarted = new ArrayList<>();
@@ -448,7 +486,7 @@ public class SettingsNavigationTest {
         controller.get().getFragmentManager().executePendingTransactions();
         ShadowLooper.idleMainLooper();
         page = page(dialog);
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
     }
 
     /** Each Quick setups choice changes its switches through their rows and says how many changed. */
@@ -511,7 +549,7 @@ public class SettingsNavigationTest {
         assertTrue(BaseSettings.HIDE_QUICK_SETUPS.savedValue());
         assertTrue(Setting.preferences.preferences.getBoolean(BaseSettings.HIDE_QUICK_SETUPS.key, false));
         assertFalse("the row stayed on the home page", contains(SettingsNavigation.QUICK_SETUPS));
-        assertEquals(11, list().getCount());
+        assertEquals(12, list().getCount());
         assertEquals("Quick setups hidden. Bring it back from Pause, backup and diagnostics.",
                 ShadowToast.getTextOfLatestToast());
         assertFalse("hiding the row waits for no restart", contains(SettingsNavigation.RESTART));
@@ -530,7 +568,7 @@ public class SettingsNavigationTest {
         assertEquals("Shown. Tap to hide it.", String.valueOf(restore.getSummary()));
         while (page.navigation.back()) { }
         assertTrue(contains(SettingsNavigation.QUICK_SETUPS));
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
         // And back the other way from the same row.
         page.navigation.navigate("Pause, backup and diagnostics");
         tap(HushfacebookPages.QUICK_SETUPS_HOME);
@@ -758,7 +796,7 @@ public class SettingsNavigationTest {
         assertEquals("No matching settings", ((Preference) list().getItemAtPosition(0)).getTitle());
         assertTrue(page.navigation.back());
         assertEquals("", search.getText().toString());
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -840,7 +878,7 @@ public class SettingsNavigationTest {
             assertTrue(clear.isClickable());
             assertTrue(clear.performClick());
             assertEquals("", search.getText().toString());
-            assertEquals(12, list().getCount());
+            assertEquals(13, list().getCount());
             android.app.Dialog shown = dialog.getDialog();
             assertTrue(back.performClick());
             assertFalse(shown.isShowing());
@@ -1012,7 +1050,7 @@ public class SettingsNavigationTest {
         page = page(dialog);
         Map<String, Object> before = savedValues();
 
-        assertEquals(13, list().getCount());
+        assertEquals(14, list().getCount());
         assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
         Preference row = (Preference) list().getItemAtPosition(1);
         assertEquals("1 default patch isn't in this build", String.valueOf(row.getTitle()));
@@ -1046,7 +1084,7 @@ public class SettingsNavigationTest {
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
 
-        assertEquals(13, list().getCount());
+        assertEquals(14, list().getCount());
         assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
         assertFalse(contains(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
         Preference row = (Preference) list().getItemAtPosition(1);
@@ -1067,7 +1105,7 @@ public class SettingsNavigationTest {
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
 
-        assertEquals(14, list().getCount());
+        assertEquals(15, list().getCount());
         assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
         assertEquals(2, position(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
         Preference defaults = (Preference) list().getItemAtPosition(2);
@@ -1088,7 +1126,7 @@ public class SettingsNavigationTest {
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
 
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
         assertFalse(contains(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
         assertFalse(contains(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
     }
@@ -1427,12 +1465,12 @@ public class SettingsNavigationTest {
         page.navigation.open(page.findPreference(Settings.TAP_TO_PLAY.key));
         SettingsL10nTest.backOf(dialog).performClick();
         assertTrue(dialog.getDialog().isShowing());
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
         page.navigation.navigate("About");
         dialog.getDialog().onBackPressed();
         assertEquals(15, list().getCount());
         dialog.getDialog().onBackPressed();
-        assertEquals(12, list().getCount());
+        assertEquals(13, list().getCount());
         dialog.getDialog().onBackPressed();
         ShadowLooper.idleMainLooper();
         assertFalse(controller.get().isFinishing());

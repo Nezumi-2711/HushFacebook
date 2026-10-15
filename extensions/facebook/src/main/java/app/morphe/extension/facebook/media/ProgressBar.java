@@ -120,6 +120,15 @@ public final class ProgressBar {
     /** Counted each time a bar hidden for holding the last reel comes back once a reel takes it. */
     static final String LAST_REEL_BACK = "Reel bar back once a reel takes it";
 
+    /** Counted each time a reel's bar update is run again because nothing had drawn the reel since its light mount. */
+    static final String UPDATE_AGAIN = "Reel bar update run again after a hand-over";
+
+    /** How long after a light mount, and then between checks, a kept bar is checked for having drawn its reel. */
+    static final long UPDATE_CHECK_MS = 500;
+
+    /** The most checks after one light mount: about 30 seconds of a reel that doesn't start. */
+    static final int UPDATE_CHECKS = 60;
+
     /** The scrubber's looks that leave no bar on screen: 2 fades it out, 4 hides it. */
     static final int FADED = 2;
     static final int INVISIBLE = 4;
@@ -163,6 +172,11 @@ public final class ProgressBar {
         }
     }
 
+    /** Ends every watch {@link #mounts} started, for tests, which share one process. */
+    static void forgetWatchesForTests() {
+        watches.clear();
+    }
+
     /** Facebook's footer lift in its place, for tests, where the stub has nothing behind it. */
     @Nullable
     static volatile FooterLift footerLiftForTests;
@@ -201,6 +215,34 @@ public final class ProgressBar {
      * scrubber holds is back on screen.
      */
     private static final Map<View, HandOver> handOvers = new WeakHashMap<>();
+
+    /**
+     * A scrubber Facebook's light mount just handed a reel, watched from the mount until its progress
+     * update first draws that reel ({@link #refreshesTime} is reached), the next mount, or {@link
+     * #UPDATE_CHECKS} checks.
+     */
+    private static final class Watch {
+        final WeakReference<Object> scrubber;
+        @Nullable final String reel;
+        int checks;
+        int runs;
+
+        Watch(Object scrubber, @Nullable String reel) {
+            this.scrubber = new WeakReference<>(scrubber);
+            this.reel = reel;
+        }
+    }
+
+    /** Each time label's watch, from {@link #mounts} until its scrubber's update draws the reel. */
+    private static final Map<View, Watch> watches = new WeakHashMap<>();
+
+    /** Facebook's progress update in its place, for tests, where the stub has nothing behind it. */
+    @Nullable
+    static volatile UpdateAgain updateAgainForTests;
+
+    interface UpdateAgain {
+        void run(Object scrubber);
+    }
 
     /** The label of the hand-over running now, between {@link #handsOver} and {@link #leftOnLastReel}. */
     @Nullable
@@ -343,15 +385,27 @@ public final class ProgressBar {
     }
 
     /**
-     * The hook, first thing in the scrubber base's light mount, with the scrubber's time label.
-     * Facebook runs the mount as it hands the scrubber a reel, so the scrubber holds the reel it's
-     * given from here on: a hand-over noted by {@link #handsOver} is done, and a bar hidden for
-     * holding the last reel shows again, unless Facebook hid it meanwhile.
+     * The hook, first thing in the scrubber base's light mount, with the scrubber's time label and
+     * the scrubber. Facebook runs the mount as it hands the scrubber a reel, so the scrubber holds the
+     * reel it's given from here on: a hand-over noted by {@link #handsOver} is done, and a bar hidden
+     * for holding the last reel shows again, unless Facebook hid it meanwhile.
+     *
+     * <p>While the bar is kept, the scrubber is also watched until its progress update draws the
+     * reel. The mount starts that update, but the update stops for good when it can't draw yet: the
+     * pager still scrolling, no player ready, or no position or length yet, the last leaving the
+     * update marked as running with nothing scheduled. Only the scroll settling and a change in the
+     * player's state start it again, and after a fast double swipe both can come too early. The reel
+     * swiped past starts playing and loses the scrubber before it pauses, so the scrubber still has
+     * its PLAYING when the reel on screen plays, and a play event that changes nothing, or one sent
+     * before the scrubber listens to that reel, starts nothing. The reel played with its bar at the
+     * start and no time (#120). So every {@link #UPDATE_CHECK_MS} until a first draw, {@link
+     * #updateAgain} runs the update once more, which goes on by itself once it draws.
      */
-    public static void mounts(@Nullable ViewGroup label) {
+    public static void mounts(@Nullable ViewGroup label, @Nullable Object scrubber) {
         try {
             if (label == null) return;
             HandOver over = handOvers.remove(label);
+            watch(label, scrubber, over == null ? null : over.shown);
             if (over == null) return;
             over.mounted = true;
             boolean back = showBarAgain(over);
@@ -359,6 +413,65 @@ public final class ProgressBar {
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reel hand-over", failure);
         }
+    }
+
+    /** Starts watching [label]'s scrubber after a light mount while the bar is kept, in place of any earlier watch. */
+    private static void watch(View label, @Nullable Object scrubber, @Nullable String reel) {
+        if (scrubber == null || !Utils.settingsReady() || !Settings.KEEP_PROGRESS_BAR.get()) {
+            watches.remove(label);
+            return;
+        }
+        Watch watch = new Watch(scrubber, reel);
+        watches.put(label, watch);
+        WeakReference<View> held = new WeakReference<>(label);
+        Utils.runOnMainThreadDelayed(() -> check(held, watch), UPDATE_CHECK_MS);
+    }
+
+    /**
+     * One check of a watch {@link #watch} started: unless its scrubber's update drew the reel, another
+     * mount took the label or the switch went off, runs the update again and checks again later.
+     * While the bar is hidden for holding the last reel there's nothing of the reel's own to draw, so
+     * only the next check comes.
+     */
+    private static void check(WeakReference<View> held, Watch watch) {
+        try {
+            View label = held.get();
+            if (label == null || watches.get(label) != watch) return;
+            Object scrubber = watch.scrubber.get();
+            if (scrubber == null || ++watch.checks > UPDATE_CHECKS || !Utils.settingsReady() || !Settings.KEEP_PROGRESS_BAR.get()) {
+                watches.remove(label);
+                return;
+            }
+            HandOver over = handOvers.get(label);
+            if (over == null || !over.hidden) {
+                HookStatus.invoked(FAMILY);
+                HookStatus.bound(FAMILY, "reel bar update again");
+                watch.runs++;
+                HookStatus.counted(FAMILY, UPDATE_AGAIN);
+                if (watch.runs == 1) {
+                    Logger.printDebug(() -> "Reel bar: nothing drew " + watch.reel + " since Facebook handed over the bar, so its update runs again");
+                }
+                UpdateAgain forced = updateAgainForTests;
+                if (forced != null) {
+                    forced.run(scrubber);
+                } else {
+                    updateAgain(scrubber);
+                }
+                // A run that drew ended the watch in refreshesTime.
+                if (watches.get(label) != watch) return;
+            }
+            Utils.runOnMainThreadDelayed(() -> check(held, watch), UPDATE_CHECK_MS);
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "reel bar update again", failure);
+        }
+    }
+
+    /**
+     * Filled in by the patch: runs [scrubber]'s own progress update once, as Facebook's frame
+     * callback does. The update moves the bar and schedules the next one when it finds the reel's
+     * position and length, and stops again otherwise. Does nothing until filled.
+     */
+    public static void updateAgain(Object scrubber) {
     }
 
     /**
@@ -456,12 +569,14 @@ public final class ProgressBar {
      * the scrubber's time label, the elapsed and total time. With the time switch on it stays, and
      * {@link #refreshesTime} keeps it current. Otherwise this hides it the way the passive look does
      * (invisible, not gone, which keeps the layout), as Facebook's update only writes it during a
-     * drag, and a drag shows it again.
+     * drag, and a drag shows it again. The first time a bar takes the kept look this way, the playing
+     * footers are lifted too ({@link #liftFooters}), as {@link #looksAgain} does when it gets there
+     * first.
      */
     public static void hideTimeLabel(ViewGroup label) {
         try {
             if (label == null) return;
-            keptLooks.add(label);
+            boolean newlyKept = keptLooks.add(label);
             if (showsTime()) {
                 if (label.getVisibility() != View.VISIBLE) {
                     label.setVisibility(View.VISIBLE);
@@ -470,6 +585,15 @@ public final class ProgressBar {
             } else if (label.getVisibility() != View.INVISIBLE) {
                 label.setVisibility(View.INVISIBLE);
                 HookStatus.counted(FAMILY, TIME_LABEL_HIDDEN);
+            }
+            // Facebook's own look can be the first to give a bar the kept look after the switch went
+            // on: the reel on screen asks for its look again as it plays on or loops once the
+            // settings close, before its next progress update, so looksAgain then finds the look
+            // already kept and lifts nothing. That reel's footer, and the next reel's already laid
+            // out, stayed HIDDEN, and a play event changes nothing (HIDDEN again), so the bar's time
+            // sat on their captions (#73).
+            if (newlyKept && liftFooters() > 0) {
+                Logger.printDebug(() -> "Reel bar: Facebook's look gave the bar the kept look, so the playing footers lift too");
             }
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reel time label", failure);
@@ -512,10 +636,19 @@ public final class ProgressBar {
      *
      * <p>While the bar is hidden for holding the last reel ({@link #leftOnLastReel}), the label stays
      * hidden and nothing is written, as the scrubber's position and length are the last reel's.
+     *
+     * <p>Being asked at all means the update drew the reel, which ends the label's watch from {@link
+     * #mounts}, whatever the switches.
      */
     public static boolean refreshesTime(ViewGroup label, @Nullable View bar) {
         try {
-            if (label == null || !showsTime()) return false;
+            if (label == null) return false;
+            // Facebook found the reel's position and length and moved the bar: the update draws.
+            Watch watch = watches.remove(label);
+            if (watch != null && watch.runs > 0) {
+                Logger.printDebug(() -> "Reel bar: " + watch.reel + " drew after its update ran again " + watch.runs + " time(s)");
+            }
+            if (!showsTime()) return false;
             HandOver over = handOvers.get(label);
             if (over != null && over.hidden) return false;
             if (label.getVisibility() == View.INVISIBLE && bar != null && !bar.isPressed() && visible(bar)) {

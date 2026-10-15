@@ -74,7 +74,7 @@ public final class TailFetch {
     }
 
     /** The family the guard's own counts go under first. */
-    private static String family() {
+    static String family() {
         return SettingsStatus.suggestedPosts() ? FamilyNames.SUGGESTED_POSTS : FamilyNames.SPONSORED_POSTS;
     }
 

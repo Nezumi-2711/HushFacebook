@@ -83,6 +83,21 @@ internal val SUGGESTED_FEED_UNITS = listOf(
 )
 
 /**
+ * The units of [SUGGESTED_FEED_UNITS] Facebook took out between 577 and 582. They stay on the
+ * list for a build that brings one back, and the patch log says in one plain line that the
+ * declared build goes without them, where a unit missing beyond these is a warning (issue #162).
+ * PartialTargetsFixtureTest holds this to the declared build's fixtures.
+ */
+internal val DROPPED_SUGGESTED_FEED_UNITS = setOf(
+    "Lcom/facebook/graphql/model/GraphQLPagesYouMayFollowFeedUnit;",
+    "Lcom/facebook/graphql/model/GraphQLPagesYouMayAdvertiseFeedUnit;",
+    "Lcom/facebook/graphql/model/GraphQLEndOfFeedUpsellCustomNTFeedUnit;",
+    "Lcom/facebook/graphql/model/GraphQLGreetingCardPromotionFeedUnit;",
+    "Lcom/facebook/graphql/model/GraphQLBusinessPageReviewFeedUnit;",
+    "Lcom/facebook/graphql/model/GraphQLHoldoutAdFeedUnit;",
+)
+
+/**
  * The type name the "People you may know" row answers. The extension's
  * `FeedFilter.PEOPLE_YOU_MAY_KNOW_TYPE` matches it.
  */
@@ -165,12 +180,12 @@ val hideSuggestedPostsPatch = bytecodePatch(
 /**
  * Checks the build for the suggested feed units the extension hides. Each unit class stands alone:
  * the extension tells them apart by name at run time, so one a build drops is one it can't show.
- * The patch goes on with the ones it finds, and the patch log names each missing one (580 dropped
- * six that 577 still carries). None of them stops the patch: that is a renamed model package, not
- * a smaller feed.
+ * The patch goes on with the ones it finds. The six of [DROPPED_SUGGESTED_FEED_UNITS] get one
+ * plain line between them, and the patch log names any other missing one with a warning. None of
+ * them stops the patch: that is a renamed model package, not a smaller feed.
  */
 internal fun BytecodePatchContext.requireSuggestedUnits() {
-    handleTargets(PATCH, "suggested feed unit classes", SUGGESTED_FEED_UNITS) { type ->
+    handleTargets(PATCH, "suggested feed unit classes", SUGGESTED_FEED_UNITS, DROPPED_SUGGESTED_FEED_UNITS) { type ->
         if (classDefByOrNull(type) != null) null else "${javaName(type)} isn't in this Facebook build"
     }
 }

@@ -47,7 +47,7 @@ import java.io.File
  * sits above the bar (issue #73), and the Reels registry's hand-over telling the extension which reel
  * the scrubber holds and which is on screen, then whether the light mount ran, with the mount
  * reporting itself and the look selector asking the extension for each look first (issues #90 and
- * #120). Each hook asks the extension, a no lands on Facebook's code, and nothing of Facebook's code
+ * #120), and the extension able to run the scrubber's progress update again (#120). Each hook asks the extension, a no lands on Facebook's code, and nothing of Facebook's code
  * moves. Reads the fixture bundles from HUSHFACEBOOK_FIXTURE_DIR and
  * skips without it.
  */
@@ -714,14 +714,20 @@ class KeepProgressBarReelsFixtureTest {
         mount.reportsMount(looks)
         val mounted = mount.code()
         assertEquals("$where: the hook's code",
-            listOf(Opcode.MOVE_OBJECT_FROM16, Opcode.IGET_OBJECT, Opcode.IF_EQZ, Opcode.IGET_OBJECT, Opcode.INVOKE_STATIC),
-            mounted.take(5).map { it.opcode })
+            listOf(Opcode.MOVE_OBJECT_FROM16, Opcode.IGET_OBJECT, Opcode.IF_EQZ, Opcode.IGET_OBJECT, Opcode.MOVE_OBJECT_FROM16,
+                Opcode.INVOKE_STATIC),
+            mounted.take(6).map { it.opcode })
         assertEquals("$where: from p0", mount.localRegisterCount(), (mounted[0] as TwoRegisterInstruction).registerB)
         assertEquals("$where: the views holder", looks.viewsField, mounted[1].reference())
         assertEquals("$where: the time label", looks.labelField, mounted[3].reference())
-        assertEquals("$where: the extension is told", MOUNTS, mounted[4].reference())
-        assertEquals("$where: Facebook's code stays", mountCode.map { it.opcode }, mounted.drop(5).map { it.opcode })
-        assertEquals("$where: a missing views holder goes on to Facebook", setOf(3, 5), ControlFlow.of(mount).normal[2].toSet())
+        assertEquals("$where: the scrubber from p0", mount.localRegisterCount(), (mounted[4] as TwoRegisterInstruction).registerB)
+        assertEquals("$where: the extension is told", MOUNTS, mounted[5].reference())
+        val told = mounted[5] as FiveRegisterInstruction
+        assertEquals("$where: with the label and the scrubber",
+            listOf(2, (mounted[3] as TwoRegisterInstruction).registerA, (mounted[4] as TwoRegisterInstruction).registerA),
+            listOf(told.registerCount, told.registerC, told.registerD))
+        assertEquals("$where: Facebook's code stays", mountCode.map { it.opcode }, mounted.drop(6).map { it.opcode })
+        assertEquals("$where: a missing views holder goes on to Facebook", setOf(3, 6), ControlFlow.of(mount).normal[2].toSet())
         val mountFlow = ControlFlow.of(another.mount)
         assertEquals("$where: something jumps onto the mount's first instruction", emptySet<Int>(),
             mountCode.indices.filter { 0 in mountFlow.normal[it] }.toSet())
@@ -756,5 +762,39 @@ class KeepProgressBarReelsFixtureTest {
         assertEquals("$where no longer returns on a null look", Opcode.RETURN_VOID, original[onNull].opcode)
         extensionHas(where, MOUNTS)
         extensionHas(where, LOOK_FOR)
+    }
+
+    /**
+     * #120: the update stops for good when it can't draw a reel yet, and after a fast double swipe
+     * nothing of Facebook's may start it again, so the extension runs it again until the reel draws.
+     * The stub it calls runs the base's own progress update, and that update moves the bar and
+     * schedules its next run once it finds the reel's position and length.
+     */
+    @Test
+    fun `each declared build lets the extension run the scrubber's progress update again`() = bundles { bundle ->
+        val name = bundle.name
+        val found = scrubber(bundle)
+        val progress = found.progress
+        val base = progress.base
+        val where = "$name: ${base.type}->${progress.update.name}"
+        checkUpdateAgain(progress)
+        val update = progress.update.code()
+        assertTrue("$where no longer schedules its next run", update.any {
+            val call = (it as? ReferenceInstruction)?.reference as? MethodReference
+            it.opcode == Opcode.INVOKE_STATIC && call?.definingClass == base.type && call.returnType == "V" &&
+                call.parameterTypes.map(CharSequence::toString) == listOf(base.type, "J")
+        })
+
+        val context = PatchContexts.of(listOf(base, ExtensionDex.classDef(PROGRESS_BAR)))
+        context.fillUpdateAgain(progress)
+        val stub = context.mutableClassDefBy(PROGRESS_BAR).methods.single(::isUpdateAgainStub).code()
+        assertEquals("$where: the stub's code", listOf(Opcode.CHECK_CAST, Opcode.INVOKE_STATIC, Opcode.RETURN_VOID),
+            stub.map { it.opcode })
+        assertEquals("$where: the scrubber is cast to the base", base.type, stub[0].reference())
+        assertEquals("$where: the stub runs the update", "${base.type}->${progress.update.name}(${base.type})V", stub[1].reference())
+        val call = stub[1] as FiveRegisterInstruction
+        assertEquals("$where: on the scrubber it's handed", listOf(1, (stub[0] as OneRegisterInstruction).registerA),
+            listOf(call.registerCount, call.registerC))
+        extensionHas(where, "$PROGRESS_BAR->$UPDATE_AGAIN_STUB(Ljava/lang/Object;)V")
     }
 }

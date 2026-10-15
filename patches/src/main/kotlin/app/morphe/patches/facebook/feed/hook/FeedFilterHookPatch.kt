@@ -45,9 +45,12 @@ private const val HIDE_EDGE =
  *
  * <p>A page the guard empties can leave Home's scroll fetcher at the end of its list with nothing
  * that makes it ask for the next page, so the guard brings the tail fetch hook along (TailFetch.kt).
+ * With the posts that do get through arriving one by one, Home adds most of them while it's on
+ * screen, so it also brings the hook that lets in a row only an accessibility change holds back
+ * (HeldInserts.kt).
  */
 internal val feedFilterHookPatch = bytecodePatch {
-    dependsOn(facebookExtensionPatch, homeTailFetchPatch)
+    dependsOn(facebookExtensionPatch, homeTailFetchPatch, heldInsertsPatch)
 
     execute {
         val categoryGetter = storyCategoryGetter()

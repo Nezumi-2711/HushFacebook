@@ -55,13 +55,13 @@ The overview groups the main pages in one list, with search and **Pause** above 
 
 Switches act straight away, with no restart and no new patching, but what's already on screen stays as it was until Facebook draws it again. A reel keeps the buttons it was built with, and rows already in the feed stay until it loads fresh posts. The Stories tray switch shows the next time you pull the feed down to refresh. A row that tells you to restart Facebook, such as the font and tab switches, waits for that restart.
 
-Changing one of those brings up a **Restart Facebook** row at the top of the page, and a tap reopens Facebook on the same page. **Quick setups** turns on a ready-made set of switches at once, and **Report a problem** opens a GitHub bug report with your versions and switches filled in.
+Changing one of those brings up a **Restart Facebook** row at the top of the page, and a tap reopens Facebook on the same page. The end of the home page has a Restart Facebook row of its own for whenever Facebook needs a fresh start. **Quick setups** turns on a ready-made set of switches at once, and **Report a problem** opens a GitHub bug report with your versions and switches filled in.
 
 **Pause Hushfacebook** turns every switch off from the next start without forgetting your choices. A few things stay in, Lock Facebook among them, and the screen lists them. If Facebook crashes or freezes within a minute of starting three times in a row, Hushfacebook pauses itself and the screen says so.
 
 Morphe Manager can back up your patch choices but not these switches. **Export settings** saves them to a JSON file, word lists included, and **Import settings** reads one back on this phone or a new one. It shows what the file would change before anything does. **Check for new Hushfacebook releases** under Updates is off until you turn it on. Then it asks GitHub once a day and tells you when there's a newer release, and you update through Morphe Manager as usual.
 
-The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese and Turkish are translated, and any other language gets English.
+The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish and Vietnamese are translated, and any other language gets English.
 
 ### Blocking Reels
 
@@ -168,7 +168,7 @@ Each row says what the patch does, how its switch starts and which settings page
 | `Turn off haptics` | Stops the short vibrations Facebook plays when you tap and swipe in it, if you find them distracting. Your keyboard and your phone's own vibrations stay. Starts off. Turn it on in Hushfacebook settings > Appearance. |
 | `Turn off HDR brightness` | Stops HDR videos and photos from turning your screen up to full brightness, which can be harsh in the dark. They keep their resolution. Starts off. Turn it on in Hushfacebook settings > Playback. |
 | `Turn off screen transitions` | Shows Facebook's tabs, Menu and new screens at once, without the slide between them, so the app feels quicker. Swipes and animations inside a page stay. Starts off. Turn it on in Hushfacebook settings > Appearance. |
-| `Unlock app icons` | Lets you pick the app icons Facebook keeps for Facebook Plus on its App icon page (Menu > Settings and privacy > App icon), so your home screen icon can be any of them. Starts off. Turn it on in Hushfacebook settings > Appearance. |
+| `Unlock app icons` | Lets you pick the app icons Facebook keeps for Facebook Plus on its App icon page (Menu > Settings and privacy > App icon), so your home screen icon and the logo at the top of Home match your pick. The normal blue icon keeps Facebook's wordmark. Starts off. Turn it on in Hushfacebook settings > Appearance. |
 | `Upload Stories in HD` | Videos you post to your Story ask Facebook for its high upload quality instead of standard, so they can come out sharper. Starts off. Turn it on in Hushfacebook settings > Stories. |
 | `Use the phone's emoji` | Draws emoji with your phone's own emoji font instead of Meta's, so emoji in posts, comments and chats match your keyboard. Reactions and stickers stay as they are. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart Facebook. |
 | `Use the system font` | Draws Facebook's text in your phone's font instead of Meta's, or in a font file you pick, so Facebook matches the rest of your phone. Icons and emoji keep their own. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart Facebook. |
@@ -196,7 +196,7 @@ If Hushfacebook still stops on the supported bundle with the other sources off, 
 
 ### The log says a patch goes on without something
 
-Four patches work down a list of separate targets, `Block background ad prefetch`, `Block ad telemetry`, `Disable Audience Network` and `Hide suggested and promoted posts`. They stop only when a build has none of their list, so a `WARNING:` line naming a missing target means the patch still applied to the rest. On Facebook 582, `Hide suggested and promoted posts` names six feed units Facebook took out earlier, and that's expected. Any other one is worth [reporting](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=bug_report.yml) with the log.
+Four patches work down a list of separate targets, `Block background ad prefetch`, `Block ad telemetry`, `Disable Audience Network` and `Hide suggested and promoted posts`. They stop only when a build has none of their list, so a `WARNING:` line naming a missing target means the patch still applied to the rest. On Facebook 582, `Hide suggested and promoted posts` says in one plain line that six feed units left Facebook before this build. That's expected and isn't a warning. Any warning is worth [reporting](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=bug_report.yml) with the log.
 
 ### Unexpected end of ZLIB input stream
 

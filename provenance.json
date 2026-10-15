@@ -15,6 +15,13 @@
       "changes": "Written for Hushfacebook from Facebook 582: one check for each way a build reads a MobileConfig flag (straight from the config, through a static helper, or through a helper that casts its argument to the config first), shared by the patches that hook a flag read."
     },
     {
+      "paths": ["patches/src/main/kotlin/app/morphe/patches/facebook/layout/theme/StyleableTokens.kt"],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 582 for issue #154. It follows styleable arrays from obtainStyledAttributes through their TypedArray index reads, so Material You keeps a plain colour for tokens read with getInteger or getInt."
+    },
+    {
       "paths": [
         "extensions/shared/**",
         "patches/src/main/kotlin/app/morphe/util/**",
@@ -867,7 +874,7 @@
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: Unlock app icons, the idea of HushMessenger's patch of the same name, written here from Facebook 582 for issue #109. The subscription benefit provider, found by the strings SUBSBenefitDataProvider and subs_active_benefits it keeps, has one (String)Z instance method that checks a benefit name against its Set; the hook goes first in it and answers true for CUSTOM_APP_ICON while the switch is on. The App icon page's (Set)V callback that loads CUSTOM_APP_ICON and calls Set.contains with it on each synced set passes that answer through the extension, which answers true while the switch is on."
+      "changes": "Written for Hushfacebook: Unlock app icons, based on the idea of HushMessenger's patch with the same name and traced here on Facebook 582 for issues #109 and #160. The subscription benefit provider is found by the strings SUBSBenefitDataProvider and subs_active_benefits. Its one (String)Z instance method checks a benefit name against its Set. The hook goes first and answers true for CUSTOM_APP_ICON while the switch is on. The App icon page's (Set)V callback also loads CUSTOM_APP_ICON and calls Set.contains. Its answer passes through the extension. The Home header hook follows Facebook's stock wordmark load and replaces that drawable with the explicitly enabled non-default launcher alias."
     },
     {
       "paths": [

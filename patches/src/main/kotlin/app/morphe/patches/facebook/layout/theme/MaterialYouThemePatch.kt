@@ -299,6 +299,9 @@ private val materialYouResourcePatch = resourcePatch {
         val colours = readOnly(get(DEFAULT_COLORS)).colourValues()
         val styleFiles = get(DEFAULT_VALUES).listFiles().orEmpty()
             .filter { it.name.startsWith("style") && it.name.endsWith(".xml") }.sortedBy { it.name }
+        // The tokens whose items keep a plain colour: read as TypedValue.data, or reached from a
+        // styleable array's integer read through the styles' attribute aliases (issue #154).
+        val plain = plainTokens + styleablePlainTokens(styleFiles.map(::readOnly), tokenAttributeNames, integerReadAttributeIds)
         var restyled = 0
         val stateLists = sortedMapOf<String, String>()
         for (file in styleFiles) {
@@ -310,7 +313,7 @@ private val materialYouResourcePatch = resourcePatch {
                 document(NIGHT_COLORS).use { nightColours ->
                     document(NIGHT_V31_COLORS).use { nightV31Colours ->
                         writeNightStyles(family, colours, nightColourNames, tokenAttributeNames, night, nightColours,
-                            nightV31Colours, stateLists, plainTokens)
+                            nightV31Colours, stateLists, plain)
                     }
                 }
             }
