@@ -108,6 +108,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_friends_locations", FALSE);
 
     /**
+     * The "More from your friends" list under a post opened from a notification, ads among it (#163).
+     * It's a server-built footer asked for with the post, never a feed unit, so the query is told not
+     * to ask for it ({@link app.morphe.extension.facebook.feed.NotificationFooter}).
+     */
+    public static final BooleanSetting HIDE_NOTIFICATION_POST_FOOTER =
+            new BooleanSetting("hushfacebook_hide_notification_post_footer", FALSE);
+
+    /**
      * The row of stories at the top of the feed. The feed's adapter list builds it as an adapter of
      * its own, and the patch has both tray adapters count no rows while this is on.
      */
@@ -299,7 +307,7 @@ public class Settings extends BaseSettings {
      * through Facebook's own restart, instead of holding its last frame. Off until you turn it on.
      */
     public static final BooleanSetting LOOP_STORIES =
-            new BooleanSetting("hushfacebook_loop_stories", FALSE);
+            new BooleanSetting("hushfacebook_loop_stories", FALSE, Setting.parent(BLOCK_STORY_AUTO_ADVANCE));
 
     /**
      * The batches of viewed story cards the story viewer sends as DirectSeenMutation, which put you
@@ -875,11 +883,12 @@ public class Settings extends BaseSettings {
     /**
      * While Messenger is installed and enabled, Facebook doesn't ring for calls or post
      * notifications for new messages, reactions, message requests and missed calls, so only
-     * Messenger does. Starts off. Without Messenger, or with it disabled, Facebook rings and
-     * notifies as it always did. Read on every call and notification, so it needs no restart.
+     * Messenger does. Starts off. Without Messenger, or with it disabled when Facebook starts,
+     * Facebook rings and notifies as it always did. A restart rebuilds Facebook's MQTT connection
+     * without its VOIP capability.
      */
     public static final BooleanSetting LEAVE_CALLS_AND_CHATS_TO_MESSENGER =
-            new BooleanSetting("hushfacebook_leave_calls_and_chats_to_messenger", FALSE);
+            new BooleanSetting("hushfacebook_leave_calls_and_chats_to_messenger", FALSE, true);
 
     /**
      * The Upgrades section of Facebook's Menu, the group Facebook types UPSELL, with its offers.
@@ -901,6 +910,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_MENU_MUSE =
             new BooleanSetting("hushfacebook_hide_menu_muse", TRUE);
+
+    /**
+     * The Meta AI shortcut in Facebook's Menu, beside Feeds, Marketplace, Reels and Groups, taken
+     * out of the bookmarks list it's drawn from ({@link app.morphe.extension.facebook.menu.MenuShortcuts}).
+     * Off until it's turned on, like the other ways into Meta AI that some people use.
+     */
+    public static final BooleanSetting HIDE_MENU_META_AI =
+            new BooleanSetting("hushfacebook_hide_menu_meta_ai", FALSE);
 
     /**
      * Edits outside the Menu: the button and badge in the Reels composer's header, and the Edits
@@ -1185,6 +1202,15 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting MARKETPLACE_ONLY =
             new BooleanSetting("hushfacebook_marketplace_only", FALSE, true);
 
+    /**
+     * Like {@link #MARKETPLACE_ONLY}, with Events in Marketplace's place (#164): the tab bar keeps
+     * Events, Notifications and the profile or Menu tab, and a start from the launcher icon opens
+     * Events. Marketplace only wins when both are on, and this greys out under it. Facebook builds
+     * the bar once, so a change shows when it restarts.
+     */
+    public static final BooleanSetting EVENTS_ONLY =
+            new BooleanSetting("hushfacebook_events_only", FALSE, true, Setting.parentNot(MARKETPLACE_ONLY));
+
     /** Silences only recognized social promotions while Marketplace only is selected. */
     public static final BooleanSetting MARKETPLACE_QUIET_NOTIFICATIONS =
             new BooleanSetting("hushfacebook_marketplace_quiet_notifications", FALSE);
@@ -1293,6 +1319,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting BOTTOM_TAB_BAR =
             new BooleanSetting("hushfacebook_bottom_tab_bar", FALSE, true);
+
+    /**
+     * The tab bar goes to the top of the screen, under the search row, as older Facebook had it
+     * (#166, {@link app.morphe.extension.facebook.navigation.BottomTabBar}). Facebook places the bar
+     * as its main screen starts, so a change waits for a restart. Greyed out while
+     * {@link #BOTTOM_TAB_BAR} is on, which wins.
+     */
+    public static final BooleanSetting TOP_TAB_BAR =
+            new BooleanSetting("hushfacebook_top_tab_bar", FALSE, true, Setting.parentNot(BOTTOM_TAB_BAR));
 
     /**
      * The tab bar at the bottom slides away while the feed scrolls down and comes back scrolling
@@ -1575,7 +1610,7 @@ public class Settings extends BaseSettings {
      * is on. It isn't a switch.
      */
     public static final EnumSetting<AppLock.After> APP_LOCK_AFTER =
-            new EnumSetting<>("hushfacebook_app_lock_after", AppLock.After.ONE_MINUTE);
+            new EnumSetting<>("hushfacebook_app_lock_after", AppLock.After.ONE_MINUTE, Setting.parent(APP_LOCK));
 
     static {
         // The lock guards the phone's owner rather than changing Facebook, so no pause opens it: not

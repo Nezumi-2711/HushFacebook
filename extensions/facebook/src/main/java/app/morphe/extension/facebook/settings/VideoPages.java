@@ -97,7 +97,7 @@ final class VideoPages {
         if (build.contains(PatchFamily.AI_DETECTED_POSTS)) {
             reels.addPreference(toggle(context, Settings.HIDE_AI_DETECTED_REELS,
                     L10n.t("Hides reels and Watch videos that Facebook marks as made with AI. Ones only their creator labeled "
-                            + "stay. Untested on a real account, so it starts off.")));
+                            + "stay. Off by default, since it hasn't been tried on a real account yet.")));
         }
         if (build.contains(PatchFamily.REEL_DECLUTTER)) {
             reels.addPreference(toggle(context, Settings.HIDE_REEL_CHIPS,
@@ -109,19 +109,21 @@ final class VideoPages {
                     L10n.t("The comment Facebook previews under a reel and the bubbles of friends who reacted. "
                             + "Open the comments to see them all.")));
             reels.addPreference(toggle(context, Settings.HIDE_REEL_THREADS_CARDS,
-                    L10n.t("Hides the \"Threads you might like\" card between reels. Untested on a real account, so it starts "
-                            + "off.")));
+                    L10n.t("Hides the \"Threads you might like\" card between reels. Off by default, since it hasn't "
+                            + "been tried on a real account yet.")));
             reels.addPreference(toggle(context, Settings.REEL_CLEAN_MODE,
                     L10n.t("Opens reels and videos in Facebook's Clean mode, which hides the buttons down the side. You can "
-                            + "still leave Clean mode as usual. Untested on a real account, so it starts off.")));
+                            + "still leave Clean mode as usual. Off by default, since it hasn't been tried on a real "
+                            + "account yet.")));
             reels.addPreference(toggle(context, Settings.PLAY_REELS_ONCE,
                     L10n.t("A reel stops on its last frame instead of starting over. Tap it to watch again, or swipe to "
-                            + "the next one. Feed videos and stories aren't changed. Untested on a real account, so it "
-                            + "starts off.")));
+                            + "the next one. Feed videos and stories aren't changed. Off by default, since it hasn't "
+                            + "been tried on a real account yet.")));
             // Asked as each video's audio is picked, so a change shows from the next video.
             reels.addPreference(toggle(context, Settings.ORIGINAL_AUDIO,
                     L10n.t("Reels and videos play with the sound they were made with, not a version Facebook dubbed "
-                            + "into your language with Meta AI. Untested on a real account, so it starts off.")));
+                            + "into your language with Meta AI. Off by default, since it hasn't been tried on a real "
+                            + "account yet.")));
         }
         if (build.contains(PatchFamily.REEL_WATCH_HISTORY)) {
             reels.addPreference(toggle(context, Settings.DONT_SEND_REEL_WATCH_HISTORY,
@@ -139,7 +141,7 @@ final class VideoPages {
                             + "or Facebook restarts. Off, every reel starts at normal speed.")));
             reels.addPreference(toggle(context, Settings.KEEP_VIDEO_SPEED,
                     L10n.t("The speed you pick in a feed or Watch video's menu carries over to the next videos. Reels keep "
-                            + "their own speed. Untested on a real account, so it starts off.")));
+                            + "their own speed. Off by default, since it hasn't been tried on a real account yet.")));
             reels.addPreference(toggle(context, Settings.SLOWER_REEL_SPEEDS,
                     L10n.t("Adds 0.1x and 0.25x to the speed menu of reels and of feed and Watch videos, for slowing down a "
                             + "fast moment.")));

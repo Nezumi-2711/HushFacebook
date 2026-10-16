@@ -111,7 +111,7 @@ class MaterialYouTokenFixtureTest {
          * pill bar below reads the same array in its constructor, under a name Redex leaves alone
          * on both ABIs, where the Litho component and the array's holder are renamed per build.
          */
-        val LIKES_LINE_ATTRIBUTE = mapOf("582.0.0.50.54" to 0x7f040fd6)
+        val LIKES_LINE_ATTRIBUTE = mapOf("583.0.0.39.55" to 0x7f040fd6)
         const val PILLS_BLING_BAR = "Lcom/facebook/feedback/reactions/ui/PillsBlingBarView;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V"
 
         /**
@@ -138,6 +138,8 @@ class MaterialYouTokenFixtureTest {
          * 581 had it (2026-10-10): `CM1.A02`, `ksB.A00`, `9MV.A0Q`, `S2K.EzN`, `S47.DCV`, `U0q.A04`,
          * `U3I`'s constructor and `U3I.A0f`, and Mapbox's three. The 32-bit build has them under
          * other names again, a few at an instruction or two apart, so each build has its own list.
+         * 583 keeps the same 18 on both ABIs (2026-10-16), arm64's `9Sj.A0Q` to `nJl.A00` and
+         * armeabi-v7a's `9Tq.A0Q` to `nZb.A00`.
          */
         private val MAPBOX = setOf(
             "Lcom/mapbox/mapboxsdk/utils/ColorUtils;->getAccentColor(Landroid/content/Context;)I@13",
@@ -145,40 +147,40 @@ class MaterialYouTokenFixtureTest {
             "Lcom/mapbox/mapboxsdk/utils/ColorUtils;->getPrimaryDarkColor(Landroid/content/Context;)I@13",
         )
         val UNRESOLVED = mapOf(
-            "582.0.0.50.54" to mapOf(
+            "583.0.0.39.55" to mapOf(
                 "arm64-v8a" to MAPBOX + setOf(
-                    "LX/9MV;->A0Q(Ljava/lang/Integer;)V@16",
-                    "LX/CM1;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
-                    "LX/S2K;->EzN(LX/UrJ;)V@155",
-                    "LX/S2K;->EzN(LX/UrJ;)V@169",
-                    "LX/S2K;->EzN(LX/UrJ;)V@54",
-                    "LX/S2K;->EzN(LX/UrJ;)V@67",
-                    "LX/S2K;->EzN(LX/UrJ;)V@79",
-                    "LX/S2K;->EzN(LX/UrJ;)V@82",
-                    "LX/S47;->DCV(LX/6CH;I)V@169",
-                    "LX/S47;->DCV(LX/6CH;I)V@226",
-                    "LX/S47;->DCV(LX/6CH;I)V@32",
-                    "LX/U0q;->A04(LX/U0q;LX/U6D;)V@9",
-                    "LX/U3I;-><init>(Landroid/content/Context;)V@114",
-                    "LX/U3I;->A0f()V@35",
-                    "LX/ksB;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
+                    "LX/9Sj;->A0Q(Ljava/lang/Integer;)V@16",
+                    "LX/CTX;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
+                    "LX/PBh;->F3q(LX/Qqc;)V@155",
+                    "LX/PBh;->F3q(LX/Qqc;)V@169",
+                    "LX/PBh;->F3q(LX/Qqc;)V@54",
+                    "LX/PBh;->F3q(LX/Qqc;)V@67",
+                    "LX/PBh;->F3q(LX/Qqc;)V@79",
+                    "LX/PBh;->F3q(LX/Qqc;)V@82",
+                    "LX/PEA;->DFh(LX/6Ei;I)V@169",
+                    "LX/PEA;->DFh(LX/6Ei;I)V@226",
+                    "LX/PEA;->DFh(LX/6Ei;I)V@32",
+                    "LX/PoM;->A04(LX/PoM;LX/Pur;)V@9",
+                    "LX/Pq0;-><init>(Landroid/content/Context;)V@122",
+                    "LX/Pq0;->A0f()V@35",
+                    "LX/nJl;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
                 ),
                 "armeabi-v7a" to MAPBOX + setOf(
-                    "LX/9Pn;->A0Q(Ljava/lang/Integer;)V@16",
-                    "LX/CQK;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
-                    "LX/ctJ;->EzQ(LX/eig;)V@154",
-                    "LX/ctJ;->EzQ(LX/eig;)V@168",
-                    "LX/ctJ;->EzQ(LX/eig;)V@54",
-                    "LX/ctJ;->EzQ(LX/eig;)V@67",
-                    "LX/ctJ;->EzQ(LX/eig;)V@79",
-                    "LX/ctJ;->EzQ(LX/eig;)V@82",
-                    "LX/cwt;->DCW(LX/6Ct;I)V@171",
-                    "LX/cwt;->DCW(LX/6Ct;I)V@228",
-                    "LX/cwt;->DCW(LX/6Ct;I)V@33",
-                    "LX/dme;->A04(LX/dme;LX/dtT;)V@11",
-                    "LX/dpO;-><init>(Landroid/content/Context;)V@114",
-                    "LX/dpO;->A0f()V@36",
-                    "LX/hUD;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
+                    "LX/9Tq;->A0Q(Ljava/lang/Integer;)V@16",
+                    "LX/CVG;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
+                    "LX/ipx;->F3d(LX/krO;)V@155",
+                    "LX/ipx;->F3d(LX/krO;)V@169",
+                    "LX/ipx;->F3d(LX/krO;)V@54",
+                    "LX/ipx;->F3d(LX/krO;)V@67",
+                    "LX/ipx;->F3d(LX/krO;)V@79",
+                    "LX/ipx;->F3d(LX/krO;)V@82",
+                    "LX/irr;->DFS(LX/6F1;I)V@171",
+                    "LX/irr;->DFS(LX/6F1;I)V@228",
+                    "LX/irr;->DFS(LX/6F1;I)V@33",
+                    "LX/jcv;->A04(LX/jcv;LX/jzT;)V@11",
+                    "LX/jsb;-><init>(Landroid/content/Context;)V@112",
+                    "LX/jsb;->A0f()V@36",
+                    "LX/nZb;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
                 ),
             ),
         )

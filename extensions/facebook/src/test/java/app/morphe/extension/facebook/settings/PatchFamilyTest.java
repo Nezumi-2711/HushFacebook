@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -365,34 +366,45 @@ public class PatchFamilyTest {
                 PatchFamily.staysWhilePausedSummary(EnumSet.of(PatchFamily.SPONSORED_POSTS, PatchFamily.EXTERNAL_BROWSER)));
         // Each item names the patch Morphe Manager lists it under, so the reader knows which one
         // to leave out.
-        assertEquals("The block on downloading ads in the background (" + L10n.isolate("Block background ad prefetch")
-                        + "). It was set when you patched, so Pause can't turn it off. To rule it out, patch again "
-                        + "and leave out that patch.",
+        assertEquals("Set when you patched, so Pause can't turn it off:\n• No ads downloaded in advance ("
+                        + L10n.isolate("Block background ad prefetch") + ")\nTo rule it out, patch again and leave out "
+                        + "its patch.",
                 PatchFamily.staysWhilePausedSummary(EnumSet.of(PatchFamily.AD_PREFETCH)));
         // Every download asks its switch before it goes in, so a pause takes them out whole.
         assertNull(PatchFamily.staysWhilePausedSummary(EnumSet.of(PatchFamily.REEL_DOWNLOAD, PatchFamily.STORY_DOWNLOAD,
                 PatchFamily.VIDEO_DOWNLOAD)));
-        // Alone, a family's text is followed by "It was set", so a text naming several parts still
-        // has to be one thing. 4a7bba9 made the Reels one plural and this sentence stopped reading.
-        assertEquals("The part of the Reels ad blocking built in when you patched (" + L10n.isolate("Hide sponsored reels")
-                        + "). It was set when you patched, so Pause can't turn it off. To rule it out, patch again "
-                        + "and leave out that patch.",
-                PatchFamily.staysWhilePausedSummary(EnumSet.of(PatchFamily.SPONSORED_REELS)));
-        assertEquals("The part of the Reels ad blocking built in when you patched (" + L10n.isolate("Hide sponsored reels")
-                        + ") and the block on reports of ad screenshots and app installs ("
-                        + L10n.isolate("Block ad telemetry") + "). They were set "
-                        + "when you patched, so Pause can't turn them off. To rule one out, patch again and leave out "
-                        + "the patch in brackets after it.",
-                PatchFamily.staysWhilePausedSummary(EnumSet.of(PatchFamily.SPONSORED_REELS, PatchFamily.AD_TELEMETRY,
-                        PatchFamily.SPONSORED_POSTS, PatchFamily.STORY_DOWNLOAD)));
+        // One line per item, in the order the families are declared. An item that is its patch's
+        // name goes without brackets: "AMOLED black theme (AMOLED black theme)" said it twice.
+        assertEquals("Set when you patched, so Pause can't turn these off:\n• Part of the Reels ad blocking ("
+                        + L10n.isolate("Hide sponsored reels") + ")\n• No ad tracking (" + L10n.isolate("Block ad telemetry")
+                        + ")\n• AMOLED black theme\nTo rule one out, patch again and leave out its patch.",
+                PatchFamily.staysWhilePausedSummary(EnumSet.of(PatchFamily.AMOLED_THEME, PatchFamily.SPONSORED_REELS,
+                        PatchFamily.AD_TELEMETRY, PatchFamily.SPONSORED_POSTS, PatchFamily.STORY_DOWNLOAD)));
 
         String everything = PatchFamily.staysWhilePausedSummary(EnumSet.allOf(PatchFamily.class));
         for (PatchFamily family : PatchFamily.values()) {
             if (family.staysWhilePaused == null) continue;
             assertTrue(family.patchName + " is missing from: " + everything,
-                    everything.toLowerCase().contains(family.staysWhilePaused.toLowerCase()));
-            assertTrue(family.patchName + " isn't named in: " + everything,
+                    everything.contains("• " + family.staysWhilePaused));
+            assertEquals(family.patchName + " is named in brackets only when the item isn't the name: " + everything,
+                    !family.staysWhilePaused.equals(family.patchName),
                     everything.contains("(" + L10n.isolate(family.patchName) + ")"));
+        }
+    }
+
+    /**
+     * Set when you patched and the Pause list call each thing by one name: the rows there take
+     * their titles from the same field, and Privacy's map names the same three ad blocks without
+     * the "No".
+     */
+    @Test
+    public void theAdBlocksSetWhenYouPatchedMatchPrivacysNames() {
+        Map<PatchFamily, String> titles = new EnumMap<>(PatchFamily.class);
+        for (AdsMap.Line line : AdsMap.lines()) titles.put(line.family, line.title);
+        for (PatchFamily family : EnumSet.of(PatchFamily.AD_PREFETCH, PatchFamily.AD_TELEMETRY,
+                PatchFamily.AUDIENCE_NETWORK)) {
+            assertTrue(family.staysWhilePaused + " vs " + titles.get(family),
+                    family.staysWhilePaused.equalsIgnoreCase("No " + titles.get(family)));
         }
     }
 
@@ -406,9 +418,8 @@ public class PatchFamilyTest {
         assertEquals(Arrays.asList(
                 "Hide sponsored posts: on (hushfacebook_hide_sponsored_posts=on, hushfacebook_hide_promoted_posts=off)",
                 "Hide sponsored reels: on (hushfacebook_hide_sponsored_reels=on); stays in while paused: "
-                        + "the part of the Reels ad blocking built in when you patched",
-                "Block background ad prefetch: no switch, stays in while paused: the block on downloading ads in "
-                        + "the background",
+                        + "Part of the Reels ad blocking",
+                "Block background ad prefetch: no switch, stays in while paused: No ads downloaded in advance",
                 "not in this build: Hide suggested and promoted posts, Hide Stories tray, Hide Reels in the feed, "
                         + "Block background-return feed refresh, Hide AI-detected posts, Hide posts by words, Hide "
                         + "post prompts, Hide seen posts, Hide Meta AI questions under posts, Keep post dates, Turn "
@@ -490,10 +501,12 @@ public class PatchFamilyTest {
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.VIDEO_DOWNLOAD), false).get(0));
         Settings.DOWNLOAD_VIDEOS.resetToDefault();
         Settings.CLIPBOARD_DOWNLOAD.resetToDefault();
-        // The Menu's two groups and its Muse card have a switch each, and the report names all three.
+        // The Menu's two groups, its Muse card and its Meta AI shortcut have a switch each, and the
+        // report names all four.
         Settings.HIDE_MENU_ALSO_FROM_META.save(false);
         assertEquals("Hide Menu promotions: on (hushfacebook_hide_menu_upgrades=on, "
-                        + "hushfacebook_hide_menu_also_from_meta=off, hushfacebook_hide_menu_muse=on)",
+                        + "hushfacebook_hide_menu_also_from_meta=off, hushfacebook_hide_menu_muse=on, "
+                        + "hushfacebook_hide_menu_meta_ai=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.MENU_PROMOTIONS), false).get(0));
         // Every notification switch starts off, so the patch reads off until one of them is turned on.
         assertEquals("Block promotional notifications: disabled by its switch ("
@@ -533,8 +546,7 @@ public class PatchFamilyTest {
         assertEquals("Hide sponsored posts: disabled while paused (saved "
                 + "hushfacebook_hide_sponsored_posts=on, hushfacebook_hide_promoted_posts=off)", paused.get(0));
         assertEquals("Hide sponsored reels: disabled while paused (saved "
-                + "hushfacebook_hide_sponsored_reels=on); stays in while paused: the part of the Reels ad "
-                + "blocking built in when you patched",
+                + "hushfacebook_hide_sponsored_reels=on); stays in while paused: Part of the Reels ad blocking",
                 paused.get(1));
         assertEquals("a patch with no switch reads the same paused", running.get(2), paused.get(2));
         assertEquals(running.get(3), paused.get(3));

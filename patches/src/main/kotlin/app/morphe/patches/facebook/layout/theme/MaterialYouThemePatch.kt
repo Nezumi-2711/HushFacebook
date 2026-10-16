@@ -464,18 +464,39 @@ val materialYouThemePatch = bytecodePatch(
 
 /**
  * The MobileConfig colour the box under a link post's picture takes in Facebook's dark mode (issue
- * #37). On 582 ten methods read it, one for each kind of link attachment: the attachment footer's
- * (arm64 `LX/4sz;->A0E` and `A0J`), FDSPostLinkAttachment's render (`LX/Vzq;->render`) and seven
+ * #37). On 583 ten methods read it, one for each kind of link attachment: the attachment footer's
+ * (arm64 `LX/4vd;->A0E` and `A0J`), FDSPostLinkAttachment's render (`LX/S3r;->render`) and seven
  * more renders. In dark mode each reads this config's string first and parses it when it isn't
  * empty, and only then falls back to a grey a second config picks or to CARD_BACKGROUND_FLAT's
  * token, which route one already themes. The string came out #333334, a grey light mode draws too,
  * so route four's parser leaves it. The fallbacks that route one doesn't reach are in
- * LinkBoxFallbacks.kt.
+ * LinkBoxFallbacks.kt. Facebook renumbers MobileConfig ids between builds: 582 had it at
+ * `0x103074c000203a8`, and 583's ten readers, with the same shapes, load it as the id below.
  */
-internal const val LINK_BOX_COLOUR_CONFIG = 0x103074c000203a8L
+internal const val LINK_BOX_COLOUR_CONFIG = 0x1030747000203a7L
 
 /** Where the parse of [LINK_BOX_COLOUR_CONFIG]'s string goes instead of route four's parser. */
 internal const val PARSE_LINK_BOX = "$MATERIAL_YOU->parseLinkBox(Ljava/lang/String;)I"
+
+/**
+ * Whether [method] asks [darkCheck]: it calls it, or calls a short static method answering a
+ * boolean that does. 583's armeabi-v7a link attachment asks the second way, through a wrapper that
+ * reads the context off its argument and hands it on, so the check still runs and is hooked.
+ */
+internal fun BytecodePatchContext.asksDarkCheck(method: Method, darkCheck: String): Boolean =
+    method.implementation?.instructions?.any { instruction ->
+        if (instruction.referenceText() == darkCheck) return@any true
+        val call = (instruction as? ReferenceInstruction)?.reference as? MethodReference ?: return@any false
+        (instruction.opcode == Opcode.INVOKE_STATIC || instruction.opcode == Opcode.INVOKE_STATIC_RANGE) &&
+            call.returnType == "Z" &&
+            classDefByOrNull(call.definingClass)?.methods?.any { wrapper ->
+                wrapper.name == call.name &&
+                    wrapper.parameterTypes.map(CharSequence::toString) == call.parameterTypes.map(CharSequence::toString) &&
+                    wrapper.implementation?.instructions?.toList()?.let { body ->
+                        body.size <= 6 && body.any { it.referenceText() == darkCheck }
+                    } == true
+            } == true
+    } == true
 
 /** Whether [method] loads [LINK_BOX_COLOUR_CONFIG]. */
 internal fun readsLinkBoxColour(method: Method): Boolean =
@@ -486,8 +507,9 @@ internal fun readsLinkBoxColour(method: Method): Boolean =
  * [PARSE_LINK_BOX] on the same register. Runs after route four, so the call is already Material
  * You's stand-in, AMOLED's included. Answers how many it changed. A method that reads the config
  * with no parser call, or more than one, is refused: the parse to change would be a guess. So is
- * one that never asks [darkCheck], Facebook's own dark check: the extension takes the parse for a
- * dark-mode colour from before Facebook's first answer on, which only that check makes true.
+ * one that never asks [darkCheck], Facebook's own dark check ([asksDarkCheck]): the extension takes
+ * the parse for a dark-mode colour from before Facebook's first answer on, which only that check
+ * makes true.
  */
 internal fun BytecodePatchContext.hookLinkBoxColour(darkCheck: String): Int {
     val parser = standIn(MATERIAL_YOU, PARSE_COLOR)
@@ -499,7 +521,7 @@ internal fun BytecodePatchContext.hookLinkBoxColour(darkCheck: String): Int {
     var changed = 0
     for (type in owners) {
         for (method in mutableClassDefBy(type).methods.filter(::readsLinkBoxColour)) {
-            check(method.implementation!!.instructions.any { it.referenceText() == darkCheck }) {
+            check(asksDarkCheck(method, darkCheck)) {
                 "${method.definingClass}->${method.name} reads the link box's colour without asking $darkCheck"
             }
             method.sendOneParse(parser, PARSE_LINK_BOX, "the link box's colour")

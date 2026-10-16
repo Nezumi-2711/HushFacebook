@@ -11,6 +11,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.namesString
+import app.morphe.patches.facebook.feed.tableStringAt
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
@@ -366,11 +367,13 @@ private fun MethodReference.takes(vararg types: String) = parameterTypes.map { i
  * The calls [method] makes to publish a bucket's seen flag, or null when it doesn't: after it gets
  * the consistency from a session, it loads [BUCKET_TYPE] and makes a builder of it from that name,
  * sets the builder's id, loads [BUCKET_SEEN_FIELD] and sets that flag on the builder, builds it,
- * and publishes what it built with full consistency.
+ * and publishes what it built with full consistency. Either name can come from a string table
+ * [resolve] finds instead (583's 32-bit build asks one for the flag's).
  */
-internal fun seenPublisher(method: Method): SeenPublisher? {
+internal fun seenPublisher(method: Method, resolve: (MethodReference) -> Method? = { null }): SeenPublisher? {
     val code = method.implementation?.instructions?.toList() ?: return null
-    val type = code.indexOfFirst { it.string() == BUCKET_TYPE }
+    fun names(at: Int, literal: String) = code[at].string() == literal || tableStringAt(code, at, resolve) == literal
+    val type = code.indices.firstOrNull { names(it, BUCKET_TYPE) } ?: -1
     if (type < 0) return null
     val consistency = code.subList(0, type).mapNotNull { it.call(Opcode.INVOKE_STATIC, Opcode.INVOKE_STATIC_RANGE) }
         .lastOrNull { it.returnType == CONSISTENCY && it.takes(FB_USER_SESSION) } ?: return null
@@ -389,7 +392,7 @@ internal fun seenPublisher(method: Method): SeenPublisher? {
     } ?: return null
     val builder = factory.returnType
     val (named, setId) = first(made + 1, static) { it.takes(TREE_BUILDER, STRING) && it.returnType == "V" } ?: return null
-    val field = (named + 1 until code.size).firstOrNull { code[it].string() == BUCKET_SEEN_FIELD } ?: return null
+    val field = (named + 1 until code.size).firstOrNull { names(it, BUCKET_SEEN_FIELD) } ?: return null
     val (flagged, setFlag) = first(field + 1, virtual) {
         it.definingClass == builder && it.takes(STRING, "Z") && it.returnType == "V"
     } ?: return null

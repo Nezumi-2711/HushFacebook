@@ -18,7 +18,7 @@ GitHub doesn't let the person who opened an issue reopen it once a maintainer cl
 
 Hushfacebook is a Morphe patch source for Facebook's Android app, package `com.facebook.katana`. It publishes a `.mpp` bundle for Morphe Manager. The bundle contains patch definitions and extension code, not Facebook's source or a ready-to-install Facebook APK. Manager starts from Facebook's original APKM, applies the selected patches and signs the result with its existing key. Keep that key when updating the installed copy.
 
-The current declared target is Facebook 582.0.0.50.54 on Android 11 or newer. `AppCompatibilities.kt` holds its version codes and the Facebook signing certificates. It declares build 475417104 for arm64-v8a and 475417036 for armeabi-v7a. Fixtures for older builds can still help when tracing a rename, but the current catalog declares only 582. Read the README's unsupported-version section before promising that an undeclared build works, and rerun the full fixture check before changing that claim.
+The current declared target is Facebook 583.0.0.39.55 on Android 11 or newer. `AppCompatibilities.kt` holds its version codes and the Facebook signing certificates. It declares build 475614366 for arm64-v8a and 475614365 for armeabi-v7a. Fixtures for older builds can still help when tracing a rename, but the current catalog declares only 583. Read the README's unsupported-version section before promising that an undeclared build works, and rerun the full fixture check before changing that claim.
 
 The bundle uses Morphe patcher 1.15.1 and needs Morphe Manager 1.34.0 or newer. `scripts/validate-release-facts.ps1` holds both numbers here to the pins in `gradle/libs.versions.toml`. The Gradle wrapper, dependency pins, and verification data live under `gradle/`. The Morphe plugin version is in `settings.gradle.kts`. Keep those pins aligned when updating the patcher.
 
@@ -76,6 +76,8 @@ Patch presence, a saved switch value, and global Pause are separate states. `Set
 Most runtime features need the patch selected and their setting on. The Pause control gates runtime behavior separately. It does not undo bytecode or resource changes already installed, and patches that change colors or other build-time resources stay in place while paused.
 
 Patch success has two separate checks. A successful apply shows that the patch found its targets and produced an APK. It doesn't show that Facebook served the screen or content the hook expects. Runtime hooks report missing, ambiguous, or thrown states through `HookStatus`, and `scripts/phone-smoke.ps1` checks those reports while opening common screens.
+
+`scripts/device-audit.ps1` goes further and needs no taps from you. It turns on nearly every switch, walks Facebook, compares the hook report with `scripts/device-audit-expectations.json`, and screenshots every settings page in dark and light (`-Locales de` adds a language). When it's done it puts your switches back. It drives Hushfacebook through a folder only adb can create (`Android/data/com.facebook.katana/files/hushfacebook-audit`), so the extras it sends do nothing on a phone that hasn't been set up for an audit. After a move to a new Facebook version, run it on a build you trust and add `-WriteBaseline` to record which hooks the walk reaches. Open `index.html` in its output folder to look through the screens.
 
 ## Adding or changing a patch
 

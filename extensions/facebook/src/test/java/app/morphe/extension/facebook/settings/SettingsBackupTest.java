@@ -1467,7 +1467,7 @@ public class SettingsBackupTest {
      */
     @Test
     public void theStartTabRoundTripsAndComesBackOnlyAsOneThisBuildOffers() throws Exception {
-        for (StartTab tab : StartTab.values()) {
+        for (StartTab tab : StartTab.choices()) {
             Settings.START_TAB.save(tab);
             String file = SettingsBackup.create();
             assertEquals(tab.fileValue, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.START.key));

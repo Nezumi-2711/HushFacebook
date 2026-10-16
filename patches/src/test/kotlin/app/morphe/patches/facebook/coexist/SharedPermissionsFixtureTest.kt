@@ -127,13 +127,14 @@ class SharedPermissionsFixtureTest {
 
                 val moved = document.renameSharedPermissions()
 
-                // FB_APP_COMMUNICATION guards 46 components on both builds (27 activities, 14 receivers,
-                // 4 services and a provider on 580). The other guards only the device id receiver.
-                assertEquals("${bundle.name}: FB_APP_COMMUNICATION", Mentions(1, 1, 46), moved[APP_COMMUNICATION])
+                // FB_APP_COMMUNICATION guards 47 components on 583, one more than 582 and 580 had (27
+                // activities, 14 receivers, 4 services and a provider on 580). The other guards only
+                // the device id receiver.
+                assertEquals("${bundle.name}: FB_APP_COMMUNICATION", Mentions(1, 1, 47), moved[APP_COMMUNICATION])
                 assertEquals("${bundle.name}: receiver.permission.ACCESS", Mentions(1, 1, 1), moved[RECEIVER_ACCESS])
                 val values = document.values()
                 assertEquals("${bundle.name}: shared names left", emptyList<String>(), values.filter { it in SHARED_PERMISSIONS })
-                assertEquals(48, values.count { it == renamed(APP_COMMUNICATION) })
+                assertEquals(49, values.count { it == renamed(APP_COMMUNICATION) })
                 assertEquals(3, values.count { it == renamed(RECEIVER_ACCESS) })
                 checked += version
             }
@@ -517,31 +518,31 @@ class SharedPermissionsFixtureTest {
         const val APP_MANAGER = "com.facebook.appmanager"
 
         /** Loads of an own authority per build, counted off the fixtures with a separate dex scan. */
-        val AUTHORITY_LOADS = mapOf("582.0.0.50.54" to 13)
+        val AUTHORITY_LOADS = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 13)
 
         /**
-         * Loads of Facebook's package that only build RemoteViews, per build: the 14 notification
-         * template sites a dump of the arm64 582 dex showed (2026-10-14).
+         * Loads of Facebook's package that only build RemoteViews, per build. 582 had 14 notification
+         * template sites (2026-10-14). 583 builds all but one from the running package itself, and
+         * the check after the patch still finds none left spelled out (2026-10-16).
          */
-        val REMOTE_VIEWS_LOADS = mapOf("582.0.0.50.54" to 14)
+        val REMOTE_VIEWS_LOADS = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 1)
 
         /**
          * Loads of Facebook's package that only name this app to Android, per build, from a dump of
-         * the arm64 582 dex (2026-10-14): FirebaseMessagingService's two setPackage, one launch
-         * intent and three meta-data reads, and one chat notification's setPackage.
+         * the arm64 582 dex (2026-10-14), the same on 583: FirebaseMessagingService's two setPackage,
+         * one launch intent and three meta-data reads, and one chat notification's setPackage.
          */
-        val OWN_PACKAGE_CALL_LOADS = mapOf("582.0.0.50.54" to 7)
+        val OWN_PACKAGE_CALL_LOADS = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 7)
 
         /** Of those, the ones in Firebase's notification code. */
-        val FIREBASE_LOADS = mapOf("582.0.0.50.54" to 6)
+        val FIREBASE_LOADS = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 6)
 
         /**
          * How many setPackage calls still take Facebook's package from a literal, per build, because
          * there it means Meta's Facebook app: Messenger's warm-start hint (ThreadSettingsActivity),
-         * sent to Facebook's WarmStartBroadcastReceiver once it has checked Facebook is installed,
-         * and Messenger's deep link launcher, which hands a link to Facebook or Lite after the same
-         * check.
+         * sent to Facebook's WarmStartBroadcastReceiver once it has checked Facebook is installed.
+         * 582 also had Messenger's deep link launcher, which 583 no longer spells out.
          */
-        val SETS_REAL_FACEBOOK = mapOf("582.0.0.50.54" to 2)
+        val SETS_REAL_FACEBOOK = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 1)
     }
 }

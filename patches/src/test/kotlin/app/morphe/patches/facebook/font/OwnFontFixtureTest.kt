@@ -417,9 +417,12 @@ class OwnFontFixtureTest {
                         builtTextView(prior) != null || prior.opcode == Opcode.MOVE_RESULT_OBJECT && makesView(body[hook - 2]))
                     assertEquals("$where: one register", 1, (body[hook] as RegisterRangeInstruction).registerCount)
                 }
-                // The assembler pads a payload that follows the hook to its alignment with a nop.
-                val was = code.map { it.opcode }.filter { it != Opcode.NOP }
-                val left = body.filterIndexed { index, _ -> index !in at }.map { it.opcode }.filter { it != Opcode.NOP }
+                // The assembler pads a payload that follows the hook to its alignment with a nop, and
+                // widens a goto the hook pushes out of reach (583's FbShortsMidcardPreviewRenderActivity
+                // onActivityCreate: its loop's goto back grows to goto/16), which is the same jump.
+                fun Opcode.normal() = if (this == Opcode.GOTO_16 || this == Opcode.GOTO_32) Opcode.GOTO else this
+                val was = code.map { it.opcode }.filter { it != Opcode.NOP }.map { it.normal() }
+                val left = body.filterIndexed { index, _ -> index !in at }.map { it.opcode }.filter { it != Opcode.NOP }.map { it.normal() }
                 val first = (0 until maxOf(was.size, left.size)).firstOrNull { was.getOrNull(it) != left.getOrNull(it) }
                 assertEquals("$where: nothing else changed, first difference at", null, first)
             }

@@ -57,10 +57,11 @@ class LinkBoxFallbackFixtureTest {
                     }
                 }
                 val darkCheck = fdsDarkCheckOf(bundle)
+                val pool = owners + darkCheckWrappers(bundle, owners.flatMap { it.methods }.filter(::readsLinkBoxColour), darkCheck)
 
                 for (amoled in listOf(false, true)) {
                     val themes = "$name, AMOLED $amoled"
-                    val context = PatchContexts.of(owners)
+                    val context = PatchContexts.of(pool)
                     val before = mutableMapOf<String, List<Instruction>>()
                     with(context) {
                         if (amoled) rerouteColourCalls(AMOLED_COLOUR_CALLS)

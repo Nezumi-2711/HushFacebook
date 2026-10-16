@@ -47,6 +47,7 @@ import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.handleTargets
 import app.morphe.patches.facebook.misc.extension.javaName
+import app.morphe.patches.facebook.misc.extension.patchLog
 import app.morphe.patches.facebook.misc.extension.requireLocals
 import app.morphe.patches.shared.compat.AppCompatibilities
 import app.morphe.patches.facebook.misc.settings.settingsPatch
@@ -173,6 +174,12 @@ val hideSuggestedPostsPatch = bytecodePatch(
 
         // The carousel on your own profile is a section of its own, not a feed unit.
         hideProfileSuggestions()
+        // The list of more posts under a post opened from a notification is asked for with the post, not a feed unit (#163).
+        try {
+            hookNotificationFooter()
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so posts opened from a notification keep their list of more posts.")
+        }
         enableStatus("suggestedPosts")
     }
 }

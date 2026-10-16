@@ -14,6 +14,7 @@ final class SwitchLabels {
 
     static String title(BooleanSetting setting) {
         if (setting == Settings.MARKETPLACE_ONLY) return L10n.t("Marketplace only");
+        if (setting == Settings.EVENTS_ONLY) return L10n.t("Events only");
         if (setting == Settings.MARKETPLACE_QUIET_NOTIFICATIONS) return L10n.t("Quiet social notifications");
         if (setting == Settings.MARKETPLACE_SKIP_FEED_PREFETCH) return L10n.t("Skip feed preloading");
         if (setting == Settings.OPEN_ON_CHOSEN_TAB) return L10n.t("Open on a chosen tab");
@@ -30,6 +31,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_FEED_MEMORIES) return L10n.t("Hide Memories in the feed");
         if (setting == Settings.HIDE_FEED_FRIEND_REQUESTS) return L10n.t("Hide friend requests in the feed");
         if (setting == Settings.HIDE_FRIENDS_LOCATIONS) return L10n.t("Hide friends' locations");
+        if (setting == Settings.HIDE_NOTIFICATION_POST_FOOTER) return L10n.t("Hide more posts under notification posts");
         if (setting == Settings.HIDE_TOP_STORIES_TRAY) return L10n.t("Hide the Stories tray");
         if (setting == Settings.HIDE_STORIES_BETWEEN_POSTS) return L10n.t("Hide Stories between posts");
         if (setting == Settings.HIDE_HOME_COMPOSER) return L10n.t("Hide the composer row");
@@ -163,6 +165,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_MENU_UPGRADES) return L10n.t("Hide Upgrades");
         if (setting == Settings.HIDE_MENU_ALSO_FROM_META) return L10n.t("Hide Also from Meta");
         if (setting == Settings.HIDE_MENU_MUSE) return L10n.t("Hide the Muse card");
+        if (setting == Settings.HIDE_MENU_META_AI) return L10n.t("Hide the Meta AI shortcut");
         if (setting == Settings.HIDE_EDITS_UPSELLS) return L10n.t("Hide Edits promotions");
         if (setting == Settings.HIDE_THREADS_CROSS_POSTING) return L10n.t("Hide Threads cross-posting prompts");
         if (setting == Settings.HIDE_THREADS_SHARE_BUTTON) return L10n.t("Hide Threads in the share sheet");
@@ -199,6 +202,7 @@ final class SwitchLabels {
         if (setting == Settings.USE_SYSTEM_FONT) return L10n.t("Use the system font");
         if (setting == Settings.USE_SYSTEM_EMOJI) return L10n.t("Use the phone's emoji");
         if (setting == Settings.BOTTOM_TAB_BAR) return L10n.t("Tab bar at the bottom");
+        if (setting == Settings.TOP_TAB_BAR) return L10n.t("Tab bar at the top");
         if (setting == Settings.TAB_BAR_SCROLL_AWAY) return L10n.t("Hide the tab bar while scrolling");
         if (setting == Settings.KEEP_TAB_BAR) return L10n.t("Keep the tab bar on screen");
         if (setting == Settings.KEEP_TOP_BAR) return L10n.t("Keep the top bar on screen");

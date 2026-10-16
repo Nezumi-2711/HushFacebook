@@ -68,11 +68,12 @@ final class AppPages {
                 chats.addPreference(toggle(context, Settings.OPEN_MESSENGER_APP,
                         L10n.t("Tapping the Messenger icon at the top of Facebook opens the Messenger app instead of Chats. Without "
                                 + "Messenger, Chats opens as before.")));
-                // Read on every call and chat notification, so a change applies without a restart.
+                // The restart refreshes Facebook's MQTT call capability; the local drops also read it live.
                 chats.addPreference(toggle(context, Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER,
-                        L10n.t("Facebook stops ringing for calls and notifying you about chats while Messenger is installed, "
-                                + "so only Messenger does. Without Messenger, or with it turned off, Facebook rings and notifies "
-                                + "as before. If you're signed out of Messenger, you'll miss calls and messages.")));
+                        L10n.t("Facebook leaves calls and chat notifications to Messenger while Messenger is installed and "
+                                + "enabled. Restart Facebook after changing this switch, or after installing, removing, enabling "
+                                + "or disabling Messenger, so call routing updates. If you're signed out of Messenger, you'll "
+                                + "miss calls and messages.")));
             }
             if (build.contains(PatchFamily.ORIGINAL_CHAT_MEDIA)) {
                 chats.addPreference(toggle(context, Settings.ORIGINAL_CHAT_MEDIA,
@@ -132,6 +133,9 @@ final class AppPages {
                             + "and its ads for Meta's devices. Your own shortcuts stay.")));
             menu.addPreference(toggle(context, Settings.HIDE_MENU_MUSE,
                     L10n.t("The Muse card, Meta's ad for its AI agent app, leaves the top of Facebook's Menu.")));
+            menu.addPreference(toggle(context, Settings.HIDE_MENU_META_AI,
+                    L10n.t("The Meta AI shortcut leaves the Menu's list with Feeds, Marketplace, Reels and Groups, "
+                            + "and the next shortcut moves up into its place.")));
         }
         if (build.contains(PatchFamily.GAME_ADS)) {
             menu.addPreference(toggle(context, Settings.BLOCK_GAME_ADS,
@@ -348,7 +352,7 @@ final class AppPages {
 
     /** The row's summary: the items kept out, by the names the list gives them, or none. */
     static String shareItemsSummary(Set<String> hidden) {
-        if (hidden.isEmpty()) return L10n.t("None. The share sheet shows everything Facebook offers.");
+        if (hidden.isEmpty()) return L10n.t("None picked yet.");
         List<String> names = new ArrayList<>();
         for (String type : hidden) names.add(ShareSheetItems.label(type));
         return L10n.f("Hidden: %s", L10n.join(names));

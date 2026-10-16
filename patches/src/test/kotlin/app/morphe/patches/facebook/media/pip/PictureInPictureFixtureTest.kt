@@ -253,6 +253,16 @@ class PictureInPictureFixtureTest {
                 assertEquals("$name: the stub returns it", Opcode.RETURN, stub[2].opcode)
                 assertEquals("$name: the stub returns what it took", (stub[1] as OneRegisterInstruction).registerA,
                     (stub[2] as OneRegisterInstruction).registerA)
+                // #126: the view stub reads the one public ViewGroup the player's attach writes.
+                val viewField = context.playerViewField(Player(play, pause!!))
+                assertEquals("$name: the view field's owner", play.definingClass, viewField.definingClass)
+                val viewStub = context.mutableClassDefBy(PICTURE_IN_PICTURE).methods.single { it.name == PLAYER_VIEW_STUB }.code()
+                assertEquals("$name: the view stub's shape", listOf(Opcode.CHECK_CAST, Opcode.IGET_OBJECT, Opcode.RETURN_OBJECT),
+                    viewStub.take(3).map { it.opcode })
+                assertEquals("$name: the view stub casts to the player", play.definingClass,
+                    (viewStub[0] as ReferenceInstruction).reference.toString())
+                assertEquals("$name: the view stub reads the attached view", viewField.toString(),
+                    (viewStub[1] as ReferenceInstruction).reference.toString())
                 for (disarm in disarms) {
                     assertEquals("$name: ${disarm.name}'s first call", DISARMED, patchedOf(disarm).code()[0].call.toString())
                 }

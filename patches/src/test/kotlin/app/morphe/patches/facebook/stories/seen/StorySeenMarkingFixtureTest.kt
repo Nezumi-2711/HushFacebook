@@ -9,13 +9,16 @@ import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.facebook.feed.FixtureDex
+import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.isStringTableCall
+import app.morphe.patches.facebook.feed.namesString
 import app.morphe.patches.facebook.feed.resolveStatic
 import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
+import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
@@ -91,8 +94,16 @@ class StorySeenMarkingFixtureTest {
     @Test
     fun `each declared build has one bucket publisher and the bucket members the marking calls`() = bundles { bundle ->
         val name = bundle.name
-        val publishers = FixtureDex.classesHolding(bundle, BUCKET_SEEN_FIELD)
-            .flatMap { classDef -> classDef.methods.mapNotNull(::seenPublisher) }.toSet()
+        // 583's 32-bit publisher asks a string table for the flag's name, so the table's callers count too.
+        val holders = (FixtureDex.classesHolding(bundle, BUCKET_SEEN_FIELD) + FixtureDex.classesHolding(bundle, BUCKET_TYPE))
+            .distinctBy { it.type }
+        val tables = holders.associateBy { it.type }
+        val resolve: (MethodReference) -> Method? = { call -> tables[call.definingClass]?.let { resolveStatic(it, call) } }
+        val asking = FixtureDex.methodsWhere(bundle, { dex -> dex.methodSection.any { it.definingClass in tables } }) {
+            !holdsString(it, BUCKET_SEEN_FIELD) && namesString(it, BUCKET_SEEN_FIELD, resolve)
+        }
+        val sources = (holders + FixtureDex.classes(bundle, asking.map { it.definingClass }.toSet()).values).distinctBy { it.type }
+        val publishers = sources.flatMap { it.methods }.mapNotNull { seenPublisher(it, resolve) }.toSet()
         assertEquals("$name: ways of publishing $BUCKET_SEEN_FIELD", 1, publishers.size)
         val publisher = publishers.single()
         val publishing = listOf(publisher.consistency, publisher.factory, publisher.setId, publisher.setFlag, publisher.build)
@@ -114,7 +125,7 @@ class StorySeenMarkingFixtureTest {
         }
 
         // The same, found the way the patch finds it, from the classes involved.
-        val context = PatchContexts.of((FixtureDex.classesHolding(bundle, BUCKET_SEEN_FIELD) + classes.values).distinctBy { it.type })
+        val context = PatchContexts.of((sources + classes.values).distinctBy { it.type })
         val marking = context.seenMarking()
         assertEquals("$name: the patch's publisher", publisher, marking.publisher)
         assertEquals("$name: the patch's cards", buckets!!.cards.name, marking.buckets.cards.name)

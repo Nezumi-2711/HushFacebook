@@ -113,7 +113,7 @@ final class SettingsNavigation extends BaseAdapter {
         source = screen.getRootAdapter();
         Context context = screen.getContext();
         // Stable English route IDs survive a locale change; the displayed names are localized.
-        section("Opening Facebook", L10n.t("Opening Facebook"), L10n.t("Marketplace only and your start tab"), SettingsIcons.OPENING, true);
+        section("Opening Facebook", L10n.t("Opening Facebook"), L10n.t("Marketplace only, Events only and your start tab"), SettingsIcons.OPENING, true);
         section("News feed", L10n.t("News feed"), L10n.t("Ads, suggestions and word filters"), SettingsIcons.FEED, true);
         section("Stories", L10n.t("Stories"), L10n.t("Suggestions, saving, auto-advance and viewing anonymously"), SettingsIcons.STORIES, true);
         section("Reels and Watch", L10n.t("Reels and Watch"), L10n.t("Cleaner reels and video controls"), SettingsIcons.REELS, true);
@@ -643,7 +643,7 @@ final class SettingsNavigation extends BaseAdapter {
 
     private int dp(int value) { return Math.round(value * screen.getContext().getResources().getDisplayMetrics().density); }
 
-    private Object group(Preference item) {
+    Object group(Preference item) {
         if (item == more || item == support || item == browse || item == screen.getPreference(0)
                 || item == restart || item == quickSetups || item == report) return item;
         for (Section section : sections) if (item == section.link) return section.primary ? sections : more;

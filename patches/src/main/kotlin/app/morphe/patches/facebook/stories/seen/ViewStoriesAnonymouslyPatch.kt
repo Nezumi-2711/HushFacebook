@@ -9,6 +9,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
+import app.morphe.patches.facebook.feed.methodsNaming
 import app.morphe.patches.facebook.feed.resolveStatic
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.enableStatus
@@ -160,8 +161,10 @@ internal class SeenMarking(val constructor: Method, val publisher: SeenPublisher
  * public in a public class, since the extension's stubs make them from another package.
  */
 internal fun BytecodePatchContext.seenMarking(): SeenMarking {
-    val publishers = classDefByStrings(BUCKET_SEEN_FIELD, StringComparisonType.EQUALS)
-        .flatMap { classDef -> classDef.methods.mapNotNull(::seenPublisher) }.toSet()
+    // 583's 32-bit publisher asks a string table for the flag's name, so publishers are found by naming it.
+    val resolve = { call: MethodReference -> classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) } }
+    val publishers = methodsNaming(BUCKET_SEEN_FIELD) { it.implementation != null }
+        .mapNotNull { seenPublisher(it, resolve) }.toSet()
     val publisher = publishers.singleOrNull() ?: throw PatchException(
         "$PATCH: expected one way of publishing \"$BUCKET_SEEN_FIELD\" on a \"$BUCKET_TYPE\" with $PUBLISH, " +
             "found ${publishers.size}",

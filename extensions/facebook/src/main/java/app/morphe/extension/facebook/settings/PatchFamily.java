@@ -46,7 +46,7 @@ public enum PatchFamily {
     SUGGESTED_POSTS(FamilyNames.SUGGESTED_POSTS, "suggestedPosts", null,
             Settings.HIDE_SUGGESTED_POSTS, Settings.HIDE_SUGGESTED_FOR_YOU, Settings.HIDE_PEOPLE_YOU_MAY_KNOW,
             Settings.HIDE_SUGGESTED_GROUPS, Settings.HIDE_STORIES_YOU_MIGHT_LIKE, Settings.HIDE_FEED_MEMORIES,
-            Settings.HIDE_FEED_FRIEND_REQUESTS, Settings.HIDE_FRIENDS_LOCATIONS),
+            Settings.HIDE_FEED_FRIEND_REQUESTS, Settings.HIDE_FRIENDS_LOCATIONS, Settings.HIDE_NOTIFICATION_POST_FOOTER),
     STORIES_TRAY(FamilyNames.STORIES_TRAY, "storiesTray", null,
             Settings.HIDE_TOP_STORIES_TRAY, Settings.HIDE_STORIES_BETWEEN_POSTS, Settings.HIDE_HOME_COMPOSER),
     FEED_REELS(FamilyNames.FEED_REELS, "feedReels", null,
@@ -82,8 +82,7 @@ public enum PatchFamily {
             Settings.VIEW_STORIES_ANONYMOUSLY, Settings.MARK_STORIES_SEEN),
     STORY_UPLOAD_HD(FamilyNames.STORY_UPLOAD_HD, "storyUploadHd", null,
             Settings.UPLOAD_STORIES_IN_HD),
-    SPONSORED_REELS(FamilyNames.SPONSORED_REELS, "sponsoredReels",
-            "the part of the Reels ad blocking built in when you patched",
+    SPONSORED_REELS(FamilyNames.SPONSORED_REELS, "sponsoredReels", "Part of the Reels ad blocking",
             Settings.HIDE_SPONSORED_REELS),
     SPONSORED_SEARCH(FamilyNames.SPONSORED_SEARCH, "sponsoredSearch", null,
             Settings.HIDE_SPONSORED_SEARCH_RESULTS),
@@ -166,7 +165,8 @@ public enum PatchFamily {
     FOLLOWING_HOME(FamilyNames.FOLLOWING_HOME, "followingHome", null,
             Settings.FOLLOWING_FEED_HOME),
     MARKETPLACE_ONLY(FamilyNames.MARKETPLACE_ONLY, "marketplaceOnly", null,
-            Settings.MARKETPLACE_ONLY, Settings.MARKETPLACE_QUIET_NOTIFICATIONS, Settings.MARKETPLACE_SKIP_FEED_PREFETCH),
+            Settings.MARKETPLACE_ONLY, Settings.EVENTS_ONLY, Settings.MARKETPLACE_QUIET_NOTIFICATIONS,
+            Settings.MARKETPLACE_SKIP_FEED_PREFETCH),
     SELLER_VIEW_PROFILE(FamilyNames.SELLER_VIEW_PROFILE, "sellerViewProfile", null,
             Settings.SHOW_SELLER_VIEW_PROFILE),
     REELS_TAB(FamilyNames.REELS_TAB, "reelsTab", null,
@@ -183,7 +183,8 @@ public enum PatchFamily {
             Settings.HIDE_PROFESSIONAL_DASHBOARD_TAB, Settings.HIDE_SAVED_TAB, Settings.HIDE_AD_CENTER_TAB,
             Settings.HIDE_CREATE_TAB, Settings.HIDE_EXPLORE_TAB, Settings.HIDE_JOBS_TAB),
     BOTTOM_TAB_BAR(FamilyNames.BOTTOM_TAB_BAR, "bottomTabBar", null,
-            Settings.BOTTOM_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR, Settings.KEEP_TOP_BAR,
+            Settings.BOTTOM_TAB_BAR, Settings.TOP_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR,
+            Settings.KEEP_TOP_BAR,
             Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS),
     FORCE_DARK_MODE(FamilyNames.FORCE_DARK_MODE, "forceDarkMode", null,
             Settings.FORCE_DARK_MODE),
@@ -194,7 +195,8 @@ public enum PatchFamily {
     MESSENGER_ICON(FamilyNames.MESSENGER_ICON, "messengerIcon", null,
             Settings.OPEN_MESSENGER_APP, Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER),
     MENU_PROMOTIONS(FamilyNames.MENU_PROMOTIONS, "menuPromotions", null,
-            Settings.HIDE_MENU_UPGRADES, Settings.HIDE_MENU_ALSO_FROM_META, Settings.HIDE_MENU_MUSE),
+            Settings.HIDE_MENU_UPGRADES, Settings.HIDE_MENU_ALSO_FROM_META, Settings.HIDE_MENU_MUSE,
+            Settings.HIDE_MENU_META_AI),
     META_UPSELLS(FamilyNames.META_UPSELLS, "metaUpsells", null,
             Settings.HIDE_EDITS_UPSELLS, Settings.HIDE_THREADS_CROSS_POSTING, Settings.HIDE_THREADS_SHARE_BUTTON,
             Settings.HIDE_MUSE_SHARE_BUTTON, Settings.HIDE_META_VERIFIED_UPSELLS, Settings.HIDE_AVATAR_UPSELLS, Settings.HIDE_META_AI_IMAGINE,
@@ -222,26 +224,26 @@ public enum PatchFamily {
             Settings.BLOCK_ACCOUNT_SETUP_NOTIFICATIONS, Settings.BLOCK_GROUP_ACTIVITY_NOTIFICATIONS,
             Settings.BLOCK_EVENT_NOTIFICATIONS, Settings.BLOCK_LIVE_VIDEO_NOTIFICATIONS,
             Settings.BLOCK_REACTION_NOTIFICATIONS, Settings.NOTIFICATION_QUIET_HOURS),
-    AD_PREFETCH(FamilyNames.AD_PREFETCH, "adPrefetch", "the block on downloading ads in the background"),
-    AD_TELEMETRY(FamilyNames.AD_TELEMETRY, "adTelemetry", "the block on reports of ad screenshots and app installs"),
-    AUDIENCE_NETWORK(FamilyNames.AUDIENCE_NETWORK, "audienceNetwork", "the Audience Network block"),
-    AMOLED_THEME(FamilyNames.AMOLED_THEME, "amoledTheme", "the black background in dark mode"),
-    MATERIAL_YOU_THEME(FamilyNames.MATERIAL_YOU_THEME, "materialYouTheme", "the recolored dark mode"),
+    AD_PREFETCH(FamilyNames.AD_PREFETCH, "adPrefetch", "No ads downloaded in advance"),
+    AD_TELEMETRY(FamilyNames.AD_TELEMETRY, "adTelemetry", "No ad tracking"),
+    AUDIENCE_NETWORK(FamilyNames.AUDIENCE_NETWORK, "audienceNetwork", "No Facebook ads in other apps"),
+    AMOLED_THEME(FamilyNames.AMOLED_THEME, "amoledTheme", FamilyNames.AMOLED_THEME),
+    MATERIAL_YOU_THEME(FamilyNames.MATERIAL_YOU_THEME, "materialYouTheme", FamilyNames.MATERIAL_YOU_THEME),
     // No switch: a list picks the accent, and Pause makes it read Facebook's blue, so nothing stays in.
     ACCENT_COLOR(FamilyNames.ACCENT_COLOR, "accentColor", Settings.ACCENT_COLOR),
-    RESTORE_TRUST(FamilyNames.RESTORE_TRUST, "restoreTrust", "the re-signed build fix"),
+    RESTORE_TRUST(FamilyNames.RESTORE_TRUST, "restoreTrust", "Profiles and posts work again"),
     // Runs while the application is built, before a switch can be read, and keeps Facebook starting.
-    TRANSLATED_START(FamilyNames.TRANSLATED_START, "translatedStart", "the start-up fix for x86 devices"),
+    TRANSLATED_START(FamilyNames.TRANSLATED_START, "translatedStart", "Start-up fix for x86 phones"),
     // A manifest can't be switched at run time: the permissions are renamed in the APK, and Facebook's
     // code has to keep using the names this install holds whether or not Hushfacebook is paused.
     INSTALL_BESIDE_META_APPS(FamilyNames.INSTALL_BESIDE_META_APPS, "installBesideMetaApps",
-            "the new names for shared permissions"),
+            "Meta's apps can install beside this one"),
     // The version code is in the manifest, and Facebook's reads of it have to keep answering the
     // real one whether or not Hushfacebook is paused.
-    PLAY_STORE_UPDATES(FamilyNames.PLAY_STORE_UPDATES, "playStoreUpdates", "the version number Google Play sees"),
+    PLAY_STORE_UPDATES(FamilyNames.PLAY_STORE_UPDATES, "playStoreUpdates", "Version number Google Play sees"),
     // The settings entry's own way in, like the logo long press and the launcher shortcut, which
     // stay reachable while paused because the settings screen is where a pause is lifted.
-    MENU_SETTINGS_ROW(FamilyNames.MENU_SETTINGS_ROW, "menuSettingsRow", "the settings row in Facebook's Menu");
+    MENU_SETTINGS_ROW(FamilyNames.MENU_SETTINGS_ROW, "menuSettingsRow", FamilyNames.MENU_SETTINGS_ROW);
 
     /** The patch's name in Morphe Manager. */
     public final String patchName;
@@ -250,11 +252,11 @@ public enum PatchFamily {
     final String statusMethod;
 
     /**
-     * What of this patch stays in while Hushfacebook is paused, or null when nothing does. One
-     * thing, never a plural: alone on the screen it's followed by its patch's name in brackets and
-     * "It was set when you patched".
-     * It says what stays in, not what the patch is called. The name follows it in brackets, so an
-     * item that was the name read it twice: "the AMOLED black theme (AMOLED black theme)".
+     * What of this patch stays in while Hushfacebook is paused, or null when nothing does: the
+     * same name its row on Set when you patched has, so the two pages never call one thing two
+     * names. On Pause it's one line of a list, followed by its patch's name in brackets unless
+     * it is that name. Never a near copy of the name ("Hushfacebook row in the Menu (Hushfacebook
+     * in the Menu)"): it's either the name or words of its own.
      * The English is also a key of {@link L10n}: the screen shows it translated, and the report
      * keeps it in English.
      */
@@ -373,29 +375,33 @@ public enum PatchFamily {
     }
 
     /**
-     * What of these families stays in while Hushfacebook is paused, as a sentence in the phone's
-     * language, or null when a pause turns every one of them off. The list leads the sentence, so
-     * its first letter is raised the way that language does it.
+     * What of these families stays in while Hushfacebook is paused, in the phone's language, or
+     * null when a pause turns every one of them off: a line saying why, one line per item, and
+     * how to rule one out.
      *
      * <p>Each item is followed by its patch's name in brackets, the name Morphe Manager lists it
-     * under, which stays English there. "The part of the Reels ad block patched into the app" is
-     * found in Manager as Hide sponsored reels, and nothing in the item's own words said so.
+     * under, which stays English there, unless the item is that name. "Part of the Reels ad
+     * blocking" is found in Manager as Hide sponsored reels, and nothing in its own words says so.
      */
     @Nullable
     static String staysWhilePausedSummary(Set<PatchFamily> inBuild) {
-        List<String> parts = new ArrayList<>();
+        List<String> lines = new ArrayList<>();
         for (PatchFamily family : values()) {
             if (inBuild.contains(family) && family.staysWhilePaused != null) {
-                parts.add(L10n.t(family.staysWhilePaused) + " (" + L10n.isolate(family.patchName) + ")");
+                String item = "• " + L10n.t(family.staysWhilePaused);
+                if (!family.staysWhilePaused.equals(family.patchName)) item += " (" + L10n.isolate(family.patchName) + ")";
+                lines.add(item);
             }
         }
-        if (parts.isEmpty()) return null;
-        return L10n.capitalize(L10n.quantity(parts.size(),
-                "%1$s. It was set when you patched, so Pause can't turn it off. To rule it out, patch again "
-                        + "and leave out that patch.",
-                "%1$s. They were set when you patched, so Pause can't turn them off. To rule one out, patch "
-                        + "again and leave out the patch in brackets after it.",
-                L10n.join(parts)));
+        if (lines.isEmpty()) return null;
+        // Joined before the call: every literal inside an L10n call is read as text to translate.
+        String list = String.join("\n", lines);
+        return L10n.quantity(lines.size(),
+                "Set when you patched, so Pause can't turn it off:\n%1$s\nTo rule it out, patch again and leave out "
+                        + "its patch.",
+                "Set when you patched, so Pause can't turn these off:\n%1$s\nTo rule one out, patch again and leave "
+                        + "out its patch.",
+                list);
     }
 
     /**
@@ -455,7 +461,7 @@ public enum PatchFamily {
         boolean anyOn = false;
         for (BooleanSetting setting : switches) anyOn |= setting.savedValue();
         // Options cannot enable these families without their main switch.
-        if (this == MARKETPLACE_ONLY) anyOn = Settings.MARKETPLACE_ONLY.savedValue();
+        if (this == MARKETPLACE_ONLY) anyOn = Settings.MARKETPLACE_ONLY.savedValue() || Settings.EVENTS_ONLY.savedValue();
         if (this == VIDEO_DOWNLOAD) anyOn = Settings.DOWNLOAD_VIDEOS.savedValue();
         if (this == TAP_TO_PLAY) anyOn = Settings.TAP_TO_PLAY.savedValue();
         // The time switch starts on, and does nothing without the bar kept; Tap the bar to seek works alone.

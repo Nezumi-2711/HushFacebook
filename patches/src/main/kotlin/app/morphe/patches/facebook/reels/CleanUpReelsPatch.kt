@@ -144,7 +144,8 @@ private fun BytecodePatchContext.hideFollowButtons() {
         .flatMap { methodsHolding(it, WATCH_FEED_DUMP) }
     val dumper = dumpers.singleOrNull()
         ?: throw PatchException("$PATCH: expected one method holding \"$WATCH_FEED_DUMP\", found ${dumpers.size}")
-    val found = followButtonGetter(dumper)
+    val found = followButtonGetter(dumper) { classDefByOrNull(it) }
+    if (found.flags.isNotEmpty()) return hideFollowButtonsByFlags(found.flags)
     val getter = found.getter ?: throw PatchException("$PATCH: ${found.problem}")
 
     val readers = mutableListOf<Method>()
@@ -162,6 +163,39 @@ private fun BytecodePatchContext.hideFollowButtons() {
     } ?: throw PatchException("$PATCH: ${getter.definingClass} declares no ${getter.name}()Z with a body")
     method.returnTrueWhen(HIDE_FOLLOWING_BUTTON)
     mutableClassDefBy(check.definingClass).methods.first { it.sameSignatureAs(check) }.returnFalseWhen(HIDE_FOLLOW_BUTTON)
+}
+
+/**
+ * The same two buttons on 583, where the Following button's config is two flag reads in a merged
+ * lambda rather than one getter: each read answers true when the switch is on, and the author row,
+ * the one method holding [AUTHOR_COMPONENT], asks the Follow check as before.
+ */
+private fun BytecodePatchContext.hideFollowButtonsByFlags(flags: List<MethodReference>) {
+    val authors = classDefByStrings(AUTHOR_COMPONENT, StringComparisonType.EQUALS).flatMap { methodsHolding(it, AUTHOR_COMPONENT) }
+    val author = authors.singleOrNull()
+        ?: throw PatchException("$PATCH: expected one method holding \"$AUTHOR_COMPONENT\", found ${authors.size}")
+    val asked = followCheck(author) { call -> classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) } }
+    val check = asked.check ?: throw PatchException("$PATCH: ${asked.problem}")
+    for (flag in flags) {
+        mutableClassDefBy(flag.definingClass).methods.first { it.sameSignatureAs(flag) }.returnTrueObjectWhen(HIDE_FOLLOWING_BUTTON)
+    }
+    mutableClassDefBy(check.definingClass).methods.first { it.sameSignatureAs(check) }.returnFalseWhen(HIDE_FOLLOW_BUTTON)
+}
+
+/** Asks [hook] first thing and answers a boxed true when it says so. v0 is free there, as in [answerWhen]. */
+internal fun MutableMethod.returnTrueObjectWhen(hook: String) {
+    requireLocals(PATCH, 1)
+    addInstructionsWithLabels(
+        0,
+        """
+            invoke-static { }, $hook
+            move-result v0
+            if-eqz v0, :facebooks_answer
+            sget-object v0, Ljava/lang/Boolean;->TRUE:Ljava/lang/Boolean;
+            return-object v0
+        """,
+        ExternalLabel("facebooks_answer", getInstruction(0)),
+    )
 }
 
 /** Asks [hook] first thing and answers true when it says so. */
@@ -236,6 +270,6 @@ private fun BytecodePatchContext.hideThreadsCards() {
     reelPages(PATCH).addPage.filterSectionsFirst(card.item.toBinaryName(), THREADS_CARD_SECTION_FILTER, PATCH)
 }
 
-private fun MutableMethod.sameSignatureAs(other: Method) =
+private fun MutableMethod.sameSignatureAs(other: MethodReference) =
     name == other.name && returnType == other.returnType &&
         parameterTypes.map { it.toString() } == other.parameterTypes.map { it.toString() }

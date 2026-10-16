@@ -17,6 +17,9 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.facebook.downloads.reel.moreSheet
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.feed.holdsString
+import app.morphe.patches.facebook.media.framestep.VIEW_GROUP
+import app.morphe.patches.facebook.media.framestep.grootAttaches
+import app.morphe.patches.facebook.media.framestep.playerViewFields
 import app.morphe.patches.facebook.media.taptoplay.GROOT_PLAY
 import app.morphe.patches.facebook.media.taptoplay.grootPauses
 import app.morphe.patches.facebook.media.taptoplay.grootPlays
@@ -204,6 +207,12 @@ val pictureInPicturePatch = bytecodePatch(
         applyArming(arming, player.play.definingClass, videoParams)
         disarms.forEach { applyDisarm(it) }
         applyPlayer(player)
+        // Without the view, every player that plays is the reel on screen, as before (#126).
+        try {
+            fillPlayerView(playerViewField(player))
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so the window may follow the reel Facebook readies next to the one on screen.")
+        }
         applyStateChange(stateChange)
         applyViewerId(opening)
         applyTopicFlag(topic)
@@ -539,6 +548,48 @@ internal fun BytecodePatchContext.applyPlayer(player: Player) {
     if (trace < 0) refuse("${play.definingClass}->${play.name} no longer loads \"$GROOT_PLAY\"")
     play.requireThisIntact(PATCH, listOf(trace + 1))
     play.addInstruction(trace + 1, "invoke-static/range { p0 .. p0 }, $PLAYER_PLAYING")
+}
+
+/** The extension's stub the patch fills with a read of the player's view. */
+internal const val PLAYER_VIEW_STUB = "playerView"
+
+/**
+ * The view FbGrootPlayer's video is attached to (582 `LX/58B;->A04`), as Frame step finds it: the
+ * one public ViewGroup field of the player that its static attach holding
+ * "FbGrootPlayer.attachPlayerViewInternal" writes. Changes nothing.
+ */
+internal fun BytecodePatchContext.playerViewField(player: Player): FieldReference {
+    val owner = classDefBy(player.play.definingClass)
+    val attach = grootAttaches(owner).singleOrNull()
+        ?: refuse("expected one static attach in ${owner.type} holding the attach trace, found ${grootAttaches(owner).size}")
+    val fields = playerViewFields(owner, attach)
+    val field = fields.singleOrNull()
+        ?: refuse("expected the attach to write one $VIEW_GROUP field of ${owner.type}, found ${fields.map { it.name }}")
+    if (!AccessFlags.PUBLIC.isSet(owner.accessFlags) ||
+        owner.fields.none { it.name == field.name && AccessFlags.PUBLIC.isSet(it.accessFlags) }
+    ) {
+        refuse("${owner.type}->${field.name} isn't public, so the extension can't read it")
+    }
+    return field
+}
+
+/**
+ * Fills the extension's view stub with a read of [field]: a play from a player whose video is off
+ * screen, the reel Facebook readies next to the one on screen, then leaves the window alone (#126).
+ */
+internal fun BytecodePatchContext.fillPlayerView(field: FieldReference) {
+    val stub = mutableClassDefBy(PICTURE_IN_PICTURE).methods.singleOrNull {
+        it.name == PLAYER_VIEW_STUB && it.returnType == VIEW_GROUP && AccessFlags.STATIC.isSet(it.accessFlags) &&
+            it.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/Object;")
+    } ?: refuse("$PICTURE_IN_PICTURE has no static $VIEW_GROUP $PLAYER_VIEW_STUB(Object)")
+    stub.addInstructions(
+        0,
+        """
+            check-cast p0, ${field.definingClass}
+            iget-object p0, p0, ${field.definingClass}->${field.name}:$VIEW_GROUP
+            return-object p0
+        """,
+    )
 }
 
 /** The types ReelsPipUtil builds from an activity and a boolean: the runnable its state change posts. */

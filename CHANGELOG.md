@@ -4,6 +4,14 @@ Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Fixed
+
+* **Tooling:** The script contract tests pass on a published index again. Their check that the release facts refuse a second Facebook build swapped one into the CHANGELOG part of the index, which the facts check skips on purpose, so it failed as soon as a changelog bullet named the target build. It now swaps it into the facts.
+
+## 0.14.0 (2026-10-16)
+
+* **Facebook:** This release moves Hushfacebook to Facebook 583.0.0.39.55. There are new patches to skip the quiet stretches in videos and to post Stories in HD, plus switches that put the tab bar back at the top, keep a reel's original sound instead of a Meta AI dub, give tablets the phone layout and hide the Meta AI shortcut in the Menu. Picture-in-picture got a round of fixes, and dark mode with Material You shouldn't crash Facebook on Android 12 and newer anymore.
+
 ### Added
 
 * **Facebook:** **Settings shortcut on the app icon**, a new switch under Menu, takes Hushfacebook settings out of the menu you get by holding Facebook's icon (issue #146). It starts on. The Menu row and the logo long press open settings either way, and Pause leaves the choice alone.
@@ -20,18 +28,27 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** **See-through bars**, a new switch under Appearance, lets the feed show through the top bar and the tab bar as you scroll, frosted on Android 12 and newer (issue #124). It starts off. The status bar strip above Facebook's top bar stays solid.
 * **Facebook:** A **Restart Facebook** row now sits at the end of the settings home page, just above Support Hushfacebook, so you can restart Facebook from settings whenever you like (issue #155). It steps aside while a changed switch is waiting for its own restart row.
 * **Facebook:** The settings now come in Vietnamese when Facebook runs in Vietnamese (issue #152). Every row, switch name and description is translated. Some of Facebook's own feature names may read a little differently from the app's, and a better wording is welcome on the issue.
+* **Facebook:** **Hide more posts under notification posts**, a new switch under News feed, opens a post from a notification without the "More from your friends" list Facebook adds under it, which can carry ads (issue #163). It starts off and takes effect from the next post you open.
+* **Facebook:** **Tab bar at the top**, a new switch under Appearance, puts Facebook's tab bar back at the top, under the search row, as older Facebook had it (issue #166). It starts off and needs a restart. With **Tab bar at the bottom** on too, the bottom one wins and this one greys out.
+* **Facebook:** **Events only**, a new switch under Opening Facebook, does for Events what Marketplace only does for Marketplace (issue #164). After a restart the tab bar keeps Events, Notifications and Profile/Menu, and Facebook opens on Events. Pin Events under Settings, Tab bar, Customize the bar first if your bar doesn't show it. It starts off. If Marketplace only is on too, that one wins and this one greys out. Return to regular Facebook turns both off.
+* **Facebook:** **Hide the Meta AI shortcut**, a new switch under Menu, takes the Meta AI shortcut out of the Menu's list beside Feeds, Marketplace, Reels and Groups. The shortcut after it moves up into its place. It starts off.
 
 ### Changed
 
-* **Build:** Source attribution now records the Material You styleable-token tracer as original Hushfacebook work, so the provenance check no longer assigns it to the older theme port.
-* **Testing:** The captured Report a problem link opened in an authenticated isolated browser with its version, device, five problem-template line breaks and all 42 enabled switch names intact. The draft was canceled, and no GitHub issue was created.
-* **Testing:** A signed-in Facebook 582 clone now passes the native Dark mode and Active status checks. Each changed value survived reopening, then Dark mode was restored to Off and Active status to On without losing the clone login.
-* **Testing:** The signed-in Facebook 582 acceptance pass now covers safe profile navigation from a private group post and both DASH and progressive video saves. Each saved video opened in Photos and reached Android's share chooser without sending it, and the test files and temporary settings were removed afterward.
+* **Facebook:** Hushfacebook now targets Facebook 583.0.0.39.55 only, the newest stable release. That's build 475614366 for 64-bit phones (the arm64-v8a 480-640dpi Android 11+ bundle) and 475614365 for 32-bit ones. If you're on 582.0.0.50.54, update Facebook to 583 before you patch.
+* **Tooling:** Source attribution now records the Material You styleable-token tracer as original Hushfacebook work, so the provenance check no longer assigns it to the older theme port.
 * **Facebook:** With `View stories anonymously` on, a story you watch to the end now shows as watched on your phone until that person posts a new one (issue #61). Facebook still isn't told you saw it.
 * **Facebook:** Patching no longer prints six warnings for the feed units Facebook took out before 582 (issue #162). `Hide suggested and promoted posts` says it in one plain line instead, so a warning in the patch log now means something is missing that shouldn't be.
 
 ### Fixed
 
+* **Facebook:** `Hide GIF and sticker buttons` now also clears those two buttons from the comment bar under a video in the full-screen video viewer. Before, it only reached the comment box in the comment sheet.
+* **Facebook:** A switch that another one overrides now says which one to turn off, the way rows that need another switch already said which one to turn on. That covers `Events only` under `Marketplace only`, `Tab bar at the top` under `Tab bar at the bottom` and `Keep the tab bar on screen` under `Hide the tab bar while scrolling`. `Loop stories` and `Lock after` now grey out while `Stop Story auto-advance` or `Lock Facebook` is off, since they do nothing without them. With `Events only` on, the `Marketplace only` row no longer reports Events' state as its own, and the other way around. On Opening Facebook, `Marketplace only`'s two follow-up switches now sit right under it. The share sheet list says "None picked yet" instead of claiming the share sheet shows everything, which wasn't true with the share sheet switches on.
+* **Facebook:** What Pause can't turn off is now a short list on the Pause page, one line per item, instead of a long paragraph of patch names. Each thing set when you patched has one name across the Pause page, `Set when you patched` and the ads list under Privacy, so "Ad tracking blocked" and "Block ad telemetry" no longer read like two different things.
+* **Facebook:** Switches that start off because they haven't been tried somewhere yet say "Off by default, since it hasn't been tried on a real feed yet" (or a big screen, or a real account) instead of "Untested…, so it starts off".
+* **Facebook:** `Return to regular Facebook` says what it's for while it's greyed out. It's there for when `Marketplace only` or `Events only` is on.
+* **Facebook:** Rows in one card line up again. `Forget seen posts` and `Hide reaction counts` had an icon that pushed their text in past the switches around them, so they lost it, and the two cards that were short one icon (`Changing these` and the list of what Pause can't reach) got one.
+* **Facebook:** `Leave calls and chats to Messenger` no longer leaves incoming calls silent in both apps (issue #157). When the switch is on and Messenger is installed and enabled, Facebook stops registering itself for Messenger calls at its next start, so the call reaches Messenger instead. Facebook's local call blocks stay as a fallback for calls already sent its way. Restart Facebook after changing the switch or installing, enabling or disabling Messenger.
 * **Facebook:** `Keep the top bar on screen` no longer leaves the top bar sitting over the Reels tab (issue #159). Facebook hides its bars itself as it opens Reels or a full-screen page and brings them back on the feed, and the kept bar now goes along with that. On the feed it stays put as before.
 * **Facebook:** Picking an alternate app icon now changes the Facebook wordmark at the top of Home to the same icon without changing the top bar's height (issue #160). The normal blue choice keeps Facebook's wordmark.
 * **Facebook:** With `Material You theme` in your build, dark mode no longer crashes Facebook as the feed loads on Android 12 and newer (issue #154). The likes line under a post reads its text color as a plain number, and the theme had turned that color into a day and night pair it couldn't read. The colors Facebook reads that way now get the nearest plain wallpaper tone instead. Light mode and the rest of dark mode look as they did.
@@ -41,6 +58,8 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** With `Tap to play` on, tapping a reel in the Reels row on Home plays that reel right away, since the tap already asked for it (issue #106). Reels sitting in the feed still wait for a tap.
 * **Facebook:** Home keeps loading posts when Hushfacebook hides most of a page. Once the end of the list is on screen, it asks Facebook for the next page again, at most every 2 seconds, and stays stock while paused.
 * **Facebook:** Home no longer stops showing new posts while it keeps loading them after the phone's accessibility state changes, for example when a screen reader or another accessibility service turns on or off. The diagnostic report counts the rows and layouts Facebook would have held back after such a change.
+* **Facebook:** Picture-in-picture no longer opens on the reel next to the one you were watching (issue #126). Facebook gets the next reel ready by playing it for a split second off screen, and the window used to follow it there. It now stays with the reel on screen.
+* **Facebook:** Picture-in-picture no longer opens on Facebook's whole screen with a purple block where the reel should be, which could happen after you'd opened the window back up full screen (issue #126). Facebook doesn't always get the window ready again after that, so when it doesn't, the patch does it for the reel you're watching.
 * **Facebook:** Picture-in-picture opens each reel in its own shape after a swipe, so a landscape reel no longer opens a tall window around a wide video (issue #126). Like Facebook's own window, it opens none for a reel wider than square.
 * **Facebook:** With `Keep the progress bar` on, a reel's bar and time don't stay frozen on the last reel when Facebook moves on without handing the bar over, and they no longer read 0:00 over the old length (issues #90 and #120). The bar hides until the new reel takes it, then comes back with that reel's own time. After a fast double swipe, the bar no longer sits at the start with no time while the new reel plays. When Facebook's update stops before it has drawn the new reel, the patch starts it again until it does.
 * **Facebook:** The Mark as seen eye on a story shows with the story's header right away, instead of half a second later, and hides with the header while you hold the story (issue #150).
@@ -52,6 +71,37 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** With `AMOLED black theme` or `Material You theme` in your build, the time on Facebook's older comment row (left of Like and Reply) can't come out too dark to read on a dark page anymore (issue #138). It falls back to Facebook's own gray, themed like the rest. Light mode looks as it did.
 * **Facebook:** With `Material You theme`, the box under a link post (the site and title) takes your wallpaper's colors when Facebook doesn't send that box a color of its own (issue #37). Light mode stays as it was.
 * **Tooling:** A fixture test holds every declared build to the chime that `Save Facebook's notification sound` copies, so a Facebook build that renames or drops it stops the release (issue #83).
+
+### Reported issues
+
+* **Facebook:** #146 Settings showing up from a long press on the app icon: the new **Settings shortcut on the app icon** switch under Menu takes them out of that menu.
+* **Facebook:** #70 The Data mode header and its buy mobile data button: the new `Hide carrier data banners` patch hides it, and the purple Free mode bar too. My carrier doesn't use Facebook Flex, so please say on the issue whether it works on yours.
+* **Facebook:** #44 Picture in Picture: a reel's More menu has a **Picture-in-picture** row now.
+* **Facebook:** #141 and #65 Material You in light mode: `Material You theme` colors light mode as well.
+* **Facebook:** #144 Skip silence: there's a new patch for it, `Skip silent parts`, under Playback.
+* **Facebook:** #140 Comment expansion: **Load whole reply threads** under Comment sheet options keeps an open reply thread loading as you scroll.
+* **Facebook:** #123 Stories in original quality: new patch, `Upload Stories in HD`, under Stories. I haven't been able to try posting one yet.
+* **Facebook:** #148 Original audio language: **Keep the original audio** under Reels and Watch.
+* **Facebook:** #149 Moving the tab bar on a folding phone: **Phone layout on big screens** under Appearance.
+* **Facebook:** #66 Turning off HDR playback: **Play SDR versions of HDR videos** under Playback. HDR videos don't show up for me, so please say on the issue how it goes.
+* **Facebook:** #93 HDR still bright with Turn off HDR brightness on: HLG reels get the same treatment as HDR10 ones now. Same story here, I can't get one served to test with.
+* **Facebook:** #124 Frosted or see-through bars: **See-through bars** under Appearance.
+* **Facebook:** #155 A restart button: a **Restart Facebook** row sits at the end of the settings home page.
+* **Facebook:** #152 Vietnamese: the settings are translated.
+* **Facebook:** #163 Ads under a post opened from a notification: **Hide more posts under notification posts** under News feed. Facebook hasn't shown me that list, so please say on the issue if it still turns up.
+* **Facebook:** #166 Tab bar at the top: **Tab bar at the top** under Appearance.
+* **Facebook:** #164 Events only: **Events only** under Opening Facebook. Pin Events in Facebook's Customize the bar first.
+* **Facebook:** #61 Local read state for anonymous story views: a story you watch to the end shows as watched on your phone, and Facebook still isn't told.
+* **Facebook:** #154 Frequent crashes: dark mode with `Material You theme` no longer crashes as the feed loads on Android 12 and newer. I couldn't make it crash here, so please say on the issue if it still does.
+* **Facebook:** #113 Chat crash in the Facebook app: tapping the chat icon in a Clone app copy no longer closes it.
+* **Facebook:** #126 Picture-in-Picture display issue: the window now stays on the reel you were watching and opens in that reel's shape. The purple block after going back full screen is fixed too.
+* **Facebook:** #90 and #120 The progress bar resetting: with `Keep the progress bar` on, the bar and time follow each reel instead of freezing on the last one.
+* **Facebook:** #73 Keeping the progress bar visible: turning it on or off while Reels is open changes the reel you're watching right away.
+* **Facebook:** #150 Story eye button bugs: the eye shows with the story's header right away and hides with it while you hold the story.
+* **Facebook:** #147 White background behind reaction icons: the ring between them shows the page through it with AMOLED black or Material You.
+* **Facebook:** #138 Dark comment dates not showing: the time on the older comment row stays readable on a dark page.
+* **Facebook:** #96 Fonts for Facebook: with `Use the system font` on, letter tails and Bengali vowel signs aren't cut off in Reels captions anymore.
+* **Facebook:** #48 The Ask Meta AI bar: `Hide Meta AI questions under posts` also hides the question chips under some photos and captions.
 
 ## 0.13.0 (2026-10-14)
 

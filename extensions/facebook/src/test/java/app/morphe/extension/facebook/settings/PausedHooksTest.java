@@ -78,6 +78,7 @@ import app.morphe.extension.facebook.feed.FollowingHome;
 import app.morphe.extension.facebook.feed.ReturnRefresh;
 import app.morphe.extension.facebook.feed.FeedGuardForTests;
 import app.morphe.extension.facebook.feed.MetaAiQuestions;
+import app.morphe.extension.facebook.feed.NotificationFooter;
 import app.morphe.extension.facebook.feed.PostDates;
 import app.morphe.extension.facebook.feed.PostPrompts;
 import app.morphe.extension.facebook.feed.ProfileSuggestionsForTests;
@@ -329,7 +330,9 @@ public class PausedHooksTest {
                 // A row of Stories from people you aren't connected to.
                 () -> FeedGuardForTests.hides(Category.ORGANIC, FeedGuardForTests.storiesRow(true)),
                 // Your own profile's People you may know carousel builds nothing.
-                ProfileSuggestionsForTests::hidesTheCarousel));
+                ProfileSuggestionsForTests::hidesTheCarousel,
+                // A post opened from a notification is asked for without its list of more posts.
+                () -> !NotificationFooter.show(true)));
         // Each of the feed's two Stories tray adapters, and the composer row's, new to the hook,
         // counts no rows.
         probes.put(PatchFamily.STORIES_TRAY, Arrays.asList(

@@ -28,7 +28,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  *
  * <p>The comment box draws its buttons through a socket that asks a check of each button, by
  * number, whether it shows. The patch asks {@link #holdsButton} first in that check with the
- * button's name, and a yes answers no for that button. What comes after a post's comments is drawn
+ * button's name, and a yes answers no for that button. The comment bar under a video in the
+ * full-screen viewer builds its sticker and GIF buttons itself, and the patch asks
+ * {@link #holdsViewerButtons} once they're built; a yes drops both. What comes after a post's comments is drawn
  * through another socket of the same kind, and the patch asks {@link #holdsBottomContent} first in
  * its check. A long press on Like opens the reaction
  * picker through one method, and the patch asks {@link #skipReactionPicker} first there; a yes
@@ -83,6 +85,9 @@ public final class CommentSheetOptions {
     /** The member the report names once the comment box's socket has asked about the GIF or sticker button. */
     static final String BUTTONS = "comment box buttons";
 
+    /** The member the report names once the video viewer's comment bar has built its GIF and sticker buttons. */
+    static final String VIEWER_BUTTONS = "video viewer comment buttons";
+
     /** The member the report names once the socket under a post's comments has asked about Related groups. */
     static final String BOTTOM = "related groups under comments";
 
@@ -121,6 +126,25 @@ public final class CommentSheetOptions {
             return true;
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "comment box button check", failure);
+            return false;
+        }
+    }
+
+    /**
+     * The hook, in the comment bar under a video in the full-screen viewer, once it has built its
+     * sticker and GIF buttons. That bar is its own component, not the comment box's socket, so
+     * {@link #holdsButton} never hears of it. True drops both buttons while the switch is on;
+     * false keeps the bar as Facebook built it.
+     */
+    public static boolean holdsViewerButtons() {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, VIEWER_BUTTONS);
+            if (!Utils.settingsReady() || !Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.get()) return false;
+            HookStatus.counted(FAMILY, BUTTON_HIDDEN);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "video viewer comment bar", failure);
             return false;
         }
     }

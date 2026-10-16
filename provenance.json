@@ -592,6 +592,15 @@
     },
     {
       "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/suggested/NotificationFooter.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the list of more posts under a post opened from a notification. A post opened from Notifications is fetched with a query whose builder sets show_notification_permalink_footer to a MobileConfig answer, once per query variant, and with it true the server adds a footer of more posts that never passes the feed's edge filter. The patch hands each answer to the extension right where the builder reads it, and the extension answers false while the switch is on."
+    },
+    {
+      "paths": [
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredreels/ReelItemStory.kt"
       ],
       "origin": "original",

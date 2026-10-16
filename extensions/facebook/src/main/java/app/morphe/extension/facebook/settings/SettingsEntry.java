@@ -134,6 +134,8 @@ public final class SettingsEntry {
                 AppLock.watch(context);
                 return;
             }
+            // First, so a settings file an audit pushed is saved before anything below reads it.
+            AuditMode.onApplicationCreate(context);
             NetworkUsage.start(context);
             if (context instanceof Application && !callbacksRegistered) {
                 ((Application) context).registerActivityLifecycleCallbacks(new OpenWhenResumed());
@@ -439,7 +441,8 @@ public final class SettingsEntry {
         MenuLayoutDump.screenCreated(activity);
         try {
             SavedFileActions.receive(activity.getIntent());
-            noteIntent(activity.getIntent());
+            AuditMode.noteIntent(activity, activity.getIntent());
+            noteIntent(activity, activity.getIntent());
         } catch (Throwable ex) {
             Logger.printException(() -> "Settings entry: onActivityCreate failure", ex);
         }
@@ -449,7 +452,8 @@ public final class SettingsEntry {
     public static void onNewIntent(Activity activity, Intent intent) {
         try {
             SavedFileActions.receive(intent);
-            noteIntent(intent);
+            AuditMode.noteIntent(activity, intent);
+            noteIntent(activity, intent);
         } catch (Throwable ex) {
             Logger.printException(() -> "Settings entry: onNewIntent failure", ex);
         }
@@ -750,7 +754,7 @@ public final class SettingsEntry {
         requestedPage = null;
     }
 
-    private static void noteIntent(Intent intent) {
+    private static void noteIntent(Context context, Intent intent) {
         if (intent != null && intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false)) {
             intent.removeExtra(EXTRA_OPEN_SETTINGS);
             String asked = intent.getStringExtra(EXTRA_SHOW_SETTING);
@@ -759,7 +763,8 @@ public final class SettingsEntry {
             String key = asked != null && asked.matches("[a-z0-9_]{1,64}") ? asked : null;
             requestedAt = SystemClock.elapsedRealtime();
             requestedSetting = key;
-            requestedPage = null;
+            // Null unless an audit asked for a page (AuditMode).
+            requestedPage = AuditMode.page(context, intent);
             openPending = true;
             Logger.printInfo(() -> key == null ? "Settings requested by the launcher shortcut"
                     : "Settings requested at " + key);

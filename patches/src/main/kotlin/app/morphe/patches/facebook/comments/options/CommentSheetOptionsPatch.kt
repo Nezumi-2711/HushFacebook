@@ -28,6 +28,7 @@ import app.morphe.patches.facebook.misc.extension.requireStatusMethod
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
 import app.morphe.util.ControlFlow
+import app.morphe.util.RegisterLiveness
 import app.morphe.util.namedRegisters
 import app.morphe.util.readsAfter
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -58,6 +59,12 @@ internal const val GIF_BUTTON =
 /** The comment box's sticker button, in the same name table. */
 internal const val STICKER_BUTTON =
     "com.facebook.feedback.comments.plugins.commentcomposer.attachmentbutton.sticker.StickerAttachmentButtonPlugin"
+
+/** The name the comment bar under a video in the full-screen viewer gives its sticker button, where it builds it. */
+internal const val VIEWER_STICKER = "FbShortsComposerAttachmentComponentSpec_STICKER"
+
+/** The name the same bar gives its GIF button. */
+internal const val VIEWER_GIF = "FbShortsComposerAttachmentComponentSpec_GIF"
 
 /** The name the socket under a post's comments gives itself, in the methods that go through its plugins. */
 internal const val BOTTOM_SOCKET = "FeedbackSurfaceBottomContentSocket"
@@ -96,6 +103,7 @@ private const val OBJECTS = "[Ljava/lang/Object;"
 
 internal const val COMMENT_SHEET_OPTIONS = "$EXTENSION_PACKAGE/comments/CommentSheetOptions;"
 internal const val HOLDS_BUTTON = "$COMMENT_SHEET_OPTIONS->holdsButton(Ljava/lang/String;)Z"
+internal const val HOLDS_VIEWER_BUTTONS = "$COMMENT_SHEET_OPTIONS->holdsViewerButtons()Z"
 internal const val HOLDS_BOTTOM_CONTENT = "$COMMENT_SHEET_OPTIONS->holdsBottomContent(Ljava/lang/String;)Z"
 internal const val SKIP_PICKER = "$COMMENT_SHEET_OPTIONS->skipReactionPicker()Z"
 internal const val OPEN_REPLY_THREADS = "$COMMENT_SHEET_OPTIONS->openReplyThreads(Z)Z"
@@ -116,6 +124,12 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * class, so it's found as the one static boolean the socket calls with an int last and a switch
  * over the table's numbers. The extension goes first in it with the plugin's name, and while the
  * switch is on the GIF and sticker buttons get a no. Photo, mention and every other button stay.
+ * The comment bar under a video in the full-screen viewer (fb://watch) is its own component and
+ * never asks that socket. Its render (582 `LX/AET;->render`) builds the mention, sticker and GIF
+ * buttons one after another, the last two through a helper handed [VIEWER_STICKER] and
+ * [VIEWER_GIF], then passes all three to a builder whose child list skips a missing one (582
+ * `LX/9xu;->A1H` into `LX/1bP;->A00`). Once the GIF button is built the extension is asked, and
+ * while the switch is on both buttons' registers are cleared, so the bar keeps only mention.
  *
  * Hide related groups: what comes after a post's comments is drawn through another socket, the one
  * that names itself [BOTTOM_SOCKET] in the two comment surfaces' methods going through its plugins
@@ -195,6 +209,7 @@ val commentSheetOptionsPatch = bytecodePatch(
         ) { types -> types.mapNotNull { classDefByOrNull(it) }.associateBy { it.type } }
         val drawn = commentDraw(holders(COMMENT_SECTION))
         val replyList = replyList(holders(EXPANDED_REPLIES), holders(COMMENT_LIST))
+        val viewer = viewerButtons(holders(VIEWER_GIF))
 
         mutableClassDefBy(buttons.check.definingClass).methods.single { it.descriptor() == buttons.check.descriptor() }
             .holdButtons(buttons.table)
@@ -209,6 +224,8 @@ val commentSheetOptionsPatch = bytecodePatch(
             .hideComments(drawn)
         mutableClassDefBy(replyList.build.definingClass).methods.single { it.descriptor() == replyList.build.descriptor() }
             .loadWholeReplyThreads(replyList)
+        mutableClassDefBy(viewer.render.definingClass).methods.single { it.descriptor() == viewer.render.descriptor() }
+            .holdViewerButtons(viewer)
         enableStatus("commentSheetOptions")
     }
 }
@@ -649,5 +666,85 @@ internal fun MutableMethod.loadWholeReplyThreads(list: ReplyList) {
             invoke-static/range { v$value .. v$value }, $LOAD_WHOLE_REPLY_THREADS
             move-result v$value
         """,
+    )
+}
+
+/**
+ * Where the video viewer's comment bar builds its buttons: its [render], the registers its sticker
+ * and GIF buttons land in, [sticker] and [gif], the instruction the hook goes in front of, [at], and
+ * a register nothing reads from there, [free].
+ */
+internal class ViewerButtons(val render: Method, val sticker: Int, val gif: Int, val at: Int, val free: Int)
+
+/**
+ * The video viewer's comment bar, from [holders], the classes loading [VIEWER_GIF]. Its render is
+ * the one method naming both [VIEWER_STICKER] and [VIEWER_GIF]. Each name is loaded once and handed
+ * to the next call, whose result, the button, is moved straight into a register. The hook goes after
+ * the later of the two, so it must be reached only from there, neither button's register may be
+ * written in between, and a local register other than theirs must be free there. Refuses unless
+ * each holds.
+ */
+internal fun viewerButtons(holders: List<ClassDef>): ViewerButtons {
+    val renders = holders.flatMap { methodsHolding(it, VIEWER_GIF) }.filter { holdsString(it, VIEWER_STICKER) }
+        .distinctBy { it.descriptor() }
+    val render = renders.singleOrNull()
+        ?: refuse("expected one method naming \"$VIEWER_STICKER\" and \"$VIEWER_GIF\", found ${renders.size}")
+    val where = render.descriptor()
+    val code = render.implementation!!.instructions.toList()
+
+    /** The index of the move-result that keeps the button built from [name]. */
+    fun built(name: String): Int {
+        val loads = code.indices.filter { ((code[it] as? ReferenceInstruction)?.reference as? StringReference)?.string == name }
+        val load = loads.singleOrNull() ?: refuse("$where loads \"$name\" ${loads.size} times, not once")
+        val named = (code[load] as OneRegisterInstruction).registerA
+        val call = (load + 1 until code.size).firstOrNull { code[it].opcode.name.startsWith("invoke") }
+            ?: refuse("$where makes nothing of \"$name\"")
+        if ((load + 1 until call).any { code[it].writes(named) } || named !in code[call].namedRegisters()) {
+            refuse("$where doesn't hand \"$name\" to the call after it")
+        }
+        if (code.getOrNull(call + 1)?.opcode != Opcode.MOVE_RESULT_OBJECT) refuse("$where doesn't keep what it builds from \"$name\"")
+        return call + 1
+    }
+    val stickerKept = built(VIEWER_STICKER)
+    val gifKept = built(VIEWER_GIF)
+    val sticker = (code[stickerKept] as OneRegisterInstruction).registerA
+    val gif = (code[gifKept] as OneRegisterInstruction).registerA
+    if (sticker == gif) refuse("$where keeps both buttons in v$gif")
+    val at = maxOf(stickerKept, gifKept) + 1
+    if (at >= code.size) refuse("$where ends with its buttons")
+    if ((stickerKept + 1 until at).any { code[it].writes(sticker) } || (gifKept + 1 until at).any { code[it].writes(gif) }) {
+        refuse("$where writes over a button before the hook")
+    }
+
+    val flow = ControlFlow.of(render)
+    for (index in code.indices) {
+        for (next in flow.normal[index] + flow.exceptional[index]) {
+            if (next == at && index != at - 1) refuse("$where has a jump to instruction $at, where the hook goes")
+        }
+    }
+    if (flow.normal[at - 1] != listOf(at)) refuse("$where doesn't run straight from its buttons to instruction $at")
+    val live = RegisterLiveness.of(render).liveInto(at)
+    val free = (0 until render.localRegisterCount()).firstOrNull { it !in live && it != sticker && it != gif }
+        ?: refuse("$where has no free local register at instruction $at")
+    return ViewerButtons(render, sticker, gif, at, free)
+}
+
+/**
+ * Once the video viewer's comment bar has built its sticker and GIF buttons, ask the extension,
+ * and on a yes clear both registers, so the bar is put together without them. Every register the
+ * hook names can be past v15, so the clears pick the form that reaches it.
+ */
+internal fun MutableMethod.holdViewerButtons(buttons: ViewerButtons) {
+    fun clear(register: Int) = if (register < 16) "const/4 v$register, 0x0" else "const/16 v$register, 0x0"
+    addInstructionsWithLabels(
+        buttons.at,
+        """
+            invoke-static {}, $HOLDS_VIEWER_BUTTONS
+            move-result v${buttons.free}
+            if-eqz v${buttons.free}, :bar
+            ${clear(buttons.sticker)}
+            ${clear(buttons.gif)}
+        """,
+        ExternalLabel("bar", getInstruction(buttons.at)),
     )
 }

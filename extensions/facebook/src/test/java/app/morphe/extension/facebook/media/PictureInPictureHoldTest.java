@@ -29,6 +29,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,10 +58,32 @@ public class PictureInPictureHoldTest {
     public static final class Screen extends Activity {
         final List<Boolean> autoEnter = new ArrayList<>();
 
+        /** Whether the screen floats in the window, which Robolectric can't take back once entered. */
+        boolean inWindow;
+
         @Override
         public void setPictureInPictureParams(PictureInPictureParams params) {
             autoEnter.add(params.isAutoEnterEnabled());
         }
+
+        @Override
+        public boolean isInPictureInPictureMode() {
+            return inWindow || super.isInPictureInPictureMode();
+        }
+    }
+
+    /** The window opens, then is opened full screen again: the screen pauses into it and resumes. */
+    private void floatAndComeBack() {
+        PictureInPicture.Arrivals arrivals = new PictureInPicture.Arrivals();
+        screen.inWindow = true;
+        arrivals.onActivityPaused(screen);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PictureInPicture.FLOAT_CHECK_MS));
+        screen.inWindow = false;
+        arrivals.onActivityResumed(screen);
+    }
+
+    private void waitForFacebooksArming() {
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PictureInPicture.REARM_AFTER_WINDOW_MS));
     }
 
     private final Object player = new Object();
@@ -79,6 +102,7 @@ public class PictureInPictureHoldTest {
     @After
     public void restore() {
         PauseForTests.resume();
+        PictureInPicture.views = PictureInPicture::playerView;
         Settings.PICTURE_IN_PICTURE.resetToDefault();
         PictureInPicture.forget();
         HookStatus.clear();
@@ -241,6 +265,69 @@ public class PictureInPictureHoldTest {
         PictureInPicture.playerPaused(other);
         PictureInPicture.playerPlaying(other);
         assertEquals("after Facebook's arming, pause and play", Arrays.asList(false, false, false, true), screen.autoEnter);
+    }
+
+    /**
+     * #126: Facebook readies the reel next to the one on screen by playing it for a moment while its
+     * video is off screen. That play leaves the window with the reel on screen, whose pause still holds.
+     */
+    @Test
+    public void aPlayerPlayingOffScreenLeavesTheWindowWithTheReelOnScreen() {
+        View offScreen = new View(screen);
+        PictureInPicture.views = played -> played == other ? offScreen : null;
+        PictureInPicture.armed(screen, player, null);
+        PictureInPicture.playerPlaying(other);
+        PictureInPicture.playerPaused(other);
+        assertEquals("the readied reel took the window", Collections.emptyList(), screen.autoEnter);
+        PictureInPicture.playerPaused(player);
+        PictureInPicture.playerPlaying(player);
+        assertEquals("the reel on screen's pause and play", Arrays.asList(false, true), screen.autoEnter);
+        assertTrue(statusLine(), statusLine().contains(PictureInPicture.OFF_SCREEN + " 1"));
+    }
+
+    @Test
+    public void withNoViewToReadEveryPlayerThatPlaysIsTheReelOnScreen() {
+        PictureInPicture.views = played -> null;
+        PictureInPicture.armed(screen, player, null);
+        PictureInPicture.playerPlaying(other);
+        PictureInPicture.playerPaused(player);
+        PictureInPicture.playerPaused(other);
+        assertEquals("the next reel's pause held", Collections.singletonList(false), screen.autoEnter);
+    }
+
+    /**
+     * #126: opened full screen, the window is sometimes not armed again by Facebook, and its last
+     * arming then opened the window on Facebook's whole screen with a purple block. It's armed again
+     * for the reel on screen; the stub can't arm here, so the reel is kept out as one it doesn't take.
+     */
+    @Test
+    public void aWindowFacebookDoesntArmAgainAfterItClosesIsArmedOrKeptClosed() {
+        PictureInPicture.armed(screen, player, new Object[0]);
+        floatAndComeBack();
+        assertEquals("before Facebook's moment to arm", Collections.emptyList(), screen.autoEnter);
+        waitForFacebooksArming();
+        assertEquals("the stale arming left auto-enter on", Collections.singletonList(false), screen.autoEnter);
+        assertTrue(statusLine(), statusLine().contains(PictureInPicture.KEPT_OUT + " 1"));
+    }
+
+    @Test
+    public void facebookArmingAgainAfterTheWindowClosesIsLeftAlone() {
+        PictureInPicture.armed(screen, player, new Object[0]);
+        floatAndComeBack();
+        PictureInPicture.armed(screen, player, new Object[0]);
+        waitForFacebooksArming();
+        assertEquals("auto-enter changed after Facebook's own arming", Collections.emptyList(), screen.autoEnter);
+    }
+
+    @Test
+    public void aPauseAndResumeOutsideTheWindowChangesNothing() {
+        PictureInPicture.Arrivals arrivals = new PictureInPicture.Arrivals();
+        PictureInPicture.armed(screen, player, new Object[0]);
+        arrivals.onActivityPaused(screen);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(PictureInPicture.FLOAT_CHECK_MS));
+        arrivals.onActivityResumed(screen);
+        waitForFacebooksArming();
+        assertEquals("a resume outside the window changed auto-enter", Collections.emptyList(), screen.autoEnter);
     }
 
     /** The window's shape for a reel, as Facebook works it out when it arms: tall up to square, nothing wider. */

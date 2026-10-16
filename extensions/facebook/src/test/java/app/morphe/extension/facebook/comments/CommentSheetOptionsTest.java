@@ -92,6 +92,16 @@ public class CommentSheetOptionsTest {
     }
 
     @Test
+    public void onTheVideoViewersCommentBarDropsItsButtonsUnderTheSameSwitch() {
+        Settings.LIKE_ONLY.save(true);
+        assertFalse("Like only dropped the viewer bar's buttons", CommentSheetOptions.holdsViewerButtons());
+        Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.save(true);
+        assertTrue("the viewer bar kept its GIF and sticker buttons", CommentSheetOptions.holdsViewerButtons());
+        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 2, 1 found, 0 missing. Counted: "
+                + CommentSheetOptions.BUTTON_HIDDEN + " 1", statusLine());
+    }
+
+    @Test
     public void onEveryReplyThreadStartsOpenAndIsCounted() {
         Settings.OPEN_REPLY_THREADS.save(true);
         assertTrue("a comment started with its replies closed", CommentSheetOptions.openReplyThreads(false));
@@ -241,6 +251,7 @@ public class CommentSheetOptionsTest {
         assertFalse("the button switch doesn't start off", Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.get());
         assertFalse("off, the GIF button was held", CommentSheetOptions.holdsButton(CommentSheetOptions.GIF_BUTTON));
         assertFalse("off, the picker was kept closed", CommentSheetOptions.skipReactionPicker());
+        assertFalse("off, the viewer bar lost its buttons", CommentSheetOptions.holdsViewerButtons());
 
         Settings.LIKE_ONLY.save(true);
         Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.save(true);
@@ -252,6 +263,8 @@ public class CommentSheetOptionsTest {
                     CommentSheetOptions.holdsButton(CommentSheetOptions.STICKER_BUTTON));
             assertFalse("a Hushfacebook paused by " + reason + " kept the picker closed",
                     CommentSheetOptions.skipReactionPicker());
+            assertFalse("a Hushfacebook paused by " + reason + " dropped the viewer bar's buttons",
+                    CommentSheetOptions.holdsViewerButtons());
             PauseForTests.resume();
         }
         SettingsContextRule.withoutContext(() -> {
@@ -259,6 +272,8 @@ public class CommentSheetOptionsTest {
                     CommentSheetOptions.holdsButton(CommentSheetOptions.GIF_BUTTON));
             assertFalse("the picker was kept closed before the settings were ready",
                     CommentSheetOptions.skipReactionPicker());
+            assertFalse("the viewer bar lost its buttons before the settings were ready",
+                    CommentSheetOptions.holdsViewerButtons());
         });
 
         String line = statusLine();

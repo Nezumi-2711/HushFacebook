@@ -109,8 +109,11 @@ class HideMetaAiQuestionsFixtureTest {
                     it.name == socket.method.name && it.parameterTypes == socket.method.parameterTypes
                 }
                 val patched = patchedMethod.code()
+                // The nop that aligns a switch payload comes and goes as code ahead of it moves (583's
+                // arm64 build lost one here and its armeabi-v7a build gained one), so nops don't count.
+                fun List<Instruction>.counted() = count { it.opcode != Opcode.NOP }
                 assertEquals("$name: two instructions after each check and five for the default way",
-                    original.size + 2 * socket.answers.size + 5, patched.size)
+                    original.counted() + 2 * socket.answers.size + 5, patched.counted())
                 val calls = patched.withIndex().filter { (it.value as? ReferenceInstruction)?.reference?.toString() == KEEP }
                 assertEquals("$name: calls of the extension", socket.answers.size, calls.size)
                 for ((at, call) in calls) {
@@ -192,7 +195,7 @@ class HideMetaAiQuestionsFixtureTest {
 
     /** Where each declared build's default way keeps the pill's type, and the stars name's register. */
     private val expectedPill = mapOf(
-        "582.0.0.50.54" to (1 to 8),
+        AppCompatibilities.FACEBOOK_TARGET_VERSION to (3 to 0),
     )
 
     /**
