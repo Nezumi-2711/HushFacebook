@@ -9,6 +9,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.view.View;
 
 import org.robolectric.Robolectric;
 import org.robolectric.RuntimeEnvironment;
@@ -100,6 +101,27 @@ public final class PictureInPictureForTests {
         try {
             Activity activity = Robolectric.buildActivity(Activity.class).get();
             return PictureInPicture.allowed(activity);
+        } finally {
+            PictureInPicture.apiLevel = was;
+        }
+    }
+
+    /**
+     * Takes [views] through the window on [apiLevel] the way Facebook does: the viewer, opened
+     * [openings] times on the way in, hides each one, and its picture-in-picture handler shows each
+     * one again on the way back.
+     */
+    static void throughTheWindow(int apiLevel, int openings, View... views) {
+        int was = PictureInPicture.apiLevel;
+        PictureInPicture.apiLevel = apiLevel;
+        try {
+            for (int opened = 0; opened < openings; opened++) {
+                for (View view : views) {
+                    PictureInPicture.hiding(view);
+                    view.setVisibility(View.GONE);
+                }
+            }
+            for (View view : views) PictureInPicture.shownAgain(view, View.VISIBLE);
         } finally {
             PictureInPicture.apiLevel = was;
         }

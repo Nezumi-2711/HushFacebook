@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import app.morphe.extension.shared.Logger;
+import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.settings.BooleanSetting;
 import app.morphe.extension.shared.settings.preference.LogBufferManager;
@@ -103,6 +104,7 @@ public final class AuditMode {
             File request = new File(folder, "settings.json");
             if (!request.isFile()) return;
             String outcome = importFile(read(request));
+            if (outcome.startsWith("applied ")) write(new File(folder, "applied.json"), SettingsBackup.create());
             File done = new File(folder, "settings.done.json");
             if (done.exists() && !done.delete()) outcome += "\nCould not remove the last settings.done.json";
             if (!request.renameTo(done) && !request.delete()) outcome += "\nCould not move settings.json aside";
@@ -130,6 +132,19 @@ public final class AuditMode {
             return "failed: " + failed.getMessage();
         } catch (JSONException ex) {
             return "refused: " + ex.getMessage();
+        }
+    }
+
+    /** Records the page actually attached by settings navigation, with its displayed title. */
+    static void pageShown(Context context, String route, CharSequence title) {
+        File folder = folder(context);
+        if (folder == null) return;
+        try {
+            write(new File(folder, "page.json"), new JSONObject().put("schema", 2)
+                    .put("route", route).put("title", title.toString())
+                    .put("locale", L10n.locale(context).toLanguageTag()).toString());
+        } catch (Throwable failure) {
+            Logger.printException(() -> "Audit: could not record the displayed page", failure);
         }
     }
 

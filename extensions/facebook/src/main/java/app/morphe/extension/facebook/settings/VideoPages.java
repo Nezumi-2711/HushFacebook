@@ -124,6 +124,10 @@ final class VideoPages {
                     L10n.t("Reels and videos play with the sound they were made with, not a version Facebook dubbed "
                             + "into your language with Meta AI. Off by default, since it hasn't been tried on a real "
                             + "account yet.")));
+            // The pill is built as each reel's footer is, so a change shows from the next reel.
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_SEARCH_PILL,
+                    L10n.t("Hides the search suggestion under a reel's caption, the magnifier with a question to look up. "
+                            + "Off by default, since it hasn't been tried on a real account yet.")));
         }
         if (build.contains(PatchFamily.REEL_WATCH_HISTORY)) {
             reels.addPreference(toggle(context, Settings.DONT_SEND_REEL_WATCH_HISTORY,

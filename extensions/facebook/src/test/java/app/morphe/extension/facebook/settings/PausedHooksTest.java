@@ -113,6 +113,7 @@ import app.morphe.extension.facebook.misc.ExternalBrowser;
 import app.morphe.extension.facebook.misc.LinkCleaner;
 import app.morphe.extension.facebook.misc.OwnPostLink;
 import app.morphe.extension.facebook.misc.ShareSheetGroups;
+import app.morphe.extension.facebook.misc.ShareSheetPeople;
 import app.morphe.extension.facebook.navigation.BottomTabBar;
 import app.morphe.extension.facebook.navigation.TabBarScrollAway;
 import app.morphe.extension.facebook.navigation.TranslucentBarsForTests;
@@ -489,7 +490,9 @@ public class PausedHooksTest {
                 () -> ReelCleanMode.startClean(false),
                 ReelLoopForTests::stopsAReel,
                 // A video whose audio Facebook would pick in Spanish is asked for no language.
-                () -> !"es".equals(OriginalAudio.language("es"))));
+                () -> !"es".equals(OriginalAudio.language("es")),
+                // The search pill is answered as empty only while the patch runs.
+                ReelDeclutter::hideSearchPill));
         // A reel that would get the interest prompt is answered as one that doesn't.
         probes.put(PatchFamily.REEL_PROMPTS, Collections.singletonList(() -> !ReelPrompts.keep(true)));
         // The Reels batcher's send of the reels you watched never reaches its executor.
@@ -651,7 +654,8 @@ public class PausedHooksTest {
                 () -> CommentSheetOptions.loadWholeReplyThreads(false),
                 () -> CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS),
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("https://s.shopee.vn/9zKs")),
-                () -> CommentSheetOptions.hidesComment(new GraphQLComment("Big SPOILER inside"))));
+                () -> CommentSheetOptions.hidesComment(new GraphQLComment("Big SPOILER inside")),
+                () -> CommentSheetOptions.incomingTypers(3) == 0));
         // A word without @ in a post or comment box looks nobody up, and a list of people left open
         // by an earlier @ is closed.
         probes.put(PatchFamily.TAG_SUGGESTIONS, Arrays.asList(
@@ -701,7 +705,8 @@ public class PausedHooksTest {
         // The share sheet's footer is built without Send to group, and a new-group entry answers off.
         probes.put(PatchFamily.SHARE_SHEET_ITEMS, Arrays.asList(
                 () -> ShareSheetGroups.sendToGroupButton(new Object()) == null,
-                () -> !ShareSheetGroups.offerNewGroup(true)));
+                () -> !ShareSheetGroups.offerNewGroup(true),
+                () -> !ShareSheetPeople.addRow(new java.util.ArrayList<>(), new Object())));
         // Search leaves out its Meta AI answer and its prompt modules, and a suggestion set to open
         // Meta AI opens the results.
         probes.put(PatchFamily.META_AI_SEARCH, Arrays.asList(

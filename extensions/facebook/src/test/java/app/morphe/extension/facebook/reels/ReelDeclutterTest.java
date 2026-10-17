@@ -236,6 +236,22 @@ public class ReelDeclutterTest {
         assertTrue("the Follow hook didn't come back once its switch could be read", ReelDeclutter.hideFollowButton());
     }
 
+    /** The search pill switch starts off, builds the pill while off, and answers the empty component while on. */
+    @Test
+    public void theSearchPillIsBuiltUntilItsSwitchIsOn() {
+        assertFalse(Settings.HIDE_REEL_SEARCH_PILL.defaultValue);
+        assertFalse(ReelDeclutter.hideSearchPill());
+        Settings.HIDE_REEL_SEARCH_PILL.save(true);
+        try {
+            assertTrue(ReelDeclutter.hideSearchPill());
+        } finally {
+            Settings.HIDE_REEL_SEARCH_PILL.resetToDefault();
+        }
+        assertEquals(ReelDeclutter.SEARCH_ROUTE + ": 2 lists, 2 items, 1 removed. Last reason: " + ReelDeclutter.SEARCH_PILL
+                + ". Removed: " + ReelDeclutter.SEARCH_PILL + " 1. Kinds: " + ReelDeclutter.SEARCH_PILL + " 2",
+                line(ReelDeclutter.SEARCH_ROUTE));
+    }
+
     @Test
     public void bothFooterQueriesAreSkippedWhileTheirSwitchIsOn() {
         assertTrue(ReelDeclutter.skipHotComment());

@@ -181,11 +181,11 @@ val commentSheetOptionsPatch = bytecodePatch(
     name = "Comment sheet options",
     description = "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and " +
         "sticker buttons, show every reply without tapping View replies, load a whole reply thread as you " +
-        "scroll, hide Related groups under group posts, and hide comments with shop links or your words. Starts off. Turn on the parts you want in " +
+        "scroll, hide Related groups under group posts, hide comments with shop links or your words, and hide who is typing. Starts off. Turn on the parts you want in " +
         "Hushfacebook settings > Comments.",
 ) {
     category("Comments")
-    dependsOn(settingsPatch, facebookExtensionPatch)
+    dependsOn(settingsPatch, facebookExtensionPatch, incomingCommentTypingPatch)
     compatibleWith(*AppCompatibilities.facebook())
 
     execute {

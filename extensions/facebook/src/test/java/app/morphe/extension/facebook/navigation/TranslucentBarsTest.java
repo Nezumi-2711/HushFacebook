@@ -12,10 +12,13 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.view.SurfaceView;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +40,8 @@ import app.morphe.extension.shared.settings.PauseForTests;
 /**
  * See-through bars (#124): each background that spans a bar gets its alpha scaled, small ones and
  * touch ripples keep theirs, Facebook setting a fill again is scaled again, and off, paused or a
- * hidden bar gives Facebook's own alpha back. Android 11 here, so no frost.
+ * hidden bar gives Facebook's own alpha back. With the tab bar at the top both stacked rows count
+ * (#171). Android 11 here, so no frost: where it may go is checked on its own.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -111,6 +115,53 @@ public class TranslucentBarsTest {
         screen.bars.update();
         assertEquals(SEE_THROUGH, screen.topHolder.getBackground().getAlpha());
         assertTrue(statusLine(), statusLine().contains(TranslucentBars.MADE_SEE_THROUGH + " 2"));
+    }
+
+    @Test
+    public void withTheTabBarAtTheTopBothRowsOfTheOneHolderGoSeeThrough() {
+        TranslucentBarsForTests.TabBarOnTop screen = new TranslucentBarsForTests.TabBarOnTop();
+        assertSame("one holder for both rows", screen.header, TranslucentBars.barOf(screen.topBar, 1600));
+        assertSame(screen.header, TranslucentBars.barOf(screen.tabBar, 1600));
+
+        screen.bars.update();
+
+        assertEquals(SEE_THROUGH, screen.topRow.getBackground().getAlpha());
+        assertEquals(SEE_THROUGH, screen.tabBar.getBackground().getAlpha());
+        assertEquals("the line under the rows keeps its colour", 255, screen.line.getBackground().getAlpha());
+        assertEquals("the page under the header is left alone", 255, screen.page.getBackground().getAlpha());
+        assertEquals(2, screen.bars.fills.size());
+        assertTrue(statusLine(), statusLine().contains(TranslucentBars.MADE_SEE_THROUGH + " 2"));
+    }
+
+    @Test
+    public void theFrostStaysInsideTheRowsOnTheFeedsSide() {
+        // A tab bar at the bottom whose holder reaches 100 pixels above its tabs.
+        Rect area = new Rect(0, 1340, 720, 1600);
+        TranslucentBars.keepInside(area, new Rect(0, 1440, 720, 1600), 1600);
+        assertEquals(new Rect(0, 1440, 720, 1600), area);
+
+        // A header at the top: the status bar above its rows stays frosted, nothing below them.
+        area = new Rect(0, 0, 720, 260);
+        TranslucentBars.keepInside(area, new Rect(0, 48, 720, 226), 1600);
+        assertEquals(new Rect(0, 0, 720, 226), area);
+
+        area = new Rect(0, 1340, 720, 1600);
+        TranslucentBars.keepInside(area, new Rect(), 1600);
+        assertEquals("no rows on screen leaves it as it was", new Rect(0, 1340, 720, 1600), area);
+    }
+
+    @Test
+    public void aPageHoldingASurfaceViewIsSeenAnywhereInIt() {
+        TranslucentBarsForTests screen = new TranslucentBarsForTests();
+        assertFalse(TranslucentBars.holdsSurface(screen.page));
+        FrameLayout reel = new FrameLayout(screen.activity);
+        reel.addView(new SurfaceView(screen.activity));
+        FrameLayout pageOfReels = new FrameLayout(screen.activity);
+        pageOfReels.addView(new View(screen.activity));
+        pageOfReels.addView(reel);
+        screen.page.addView(pageOfReels);
+        assertTrue(TranslucentBars.holdsSurface(screen.page));
+        assertTrue(TranslucentBars.holdsSurface(new SurfaceView(screen.activity)));
     }
 
     @Test

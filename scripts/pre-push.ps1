@@ -502,6 +502,7 @@ try {
     $phoneSmokePaths = @(
         'scripts/phone-smoke.ps1',
         'scripts/test-phone-smoke.ps1',
+        'scripts/test-device-audit.ps1',
         'scripts/device-audit.ps1',
         'scripts/device-audit-expectations.json'
     )

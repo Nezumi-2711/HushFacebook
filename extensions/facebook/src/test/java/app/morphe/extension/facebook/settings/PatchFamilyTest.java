@@ -467,20 +467,20 @@ public class PatchFamilyTest {
                         + "color, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
                         + "apps, Hushfacebook in the Menu"),
                 running);
-        // Clean up Reels has seven switches, all off to start, and the report names each one.
+        // Clean up Reels has eight switches, all off to start, and the report names each one.
         Settings.HIDE_REEL_FOLLOW_BUTTON.save(true);
         assertEquals("Clean up Reels: on (hushfacebook_hide_reel_chips=off, hushfacebook_hide_reel_follow_button=on, "
                         + "hushfacebook_hide_reel_social_footer=off, hushfacebook_hide_reel_threads_cards=off, "
                         + "hushfacebook_reel_clean_mode=off, hushfacebook_play_reels_once=off, "
-                        + "hushfacebook_original_audio=off)",
+                        + "hushfacebook_original_audio=off, hushfacebook_hide_reel_search_pill=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);
         assertEquals("Share sheet items: set by its list (hushfacebook_hidden_share_items=, "
-                        + "hushfacebook_hide_share_group_buttons=on)",
+                        + "hushfacebook_hide_share_group_buttons=on, hushfacebook_hide_share_people_row=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.SHARE_SHEET_ITEMS), false).get(0));
         assertEquals("Share sheet items: disabled while paused (saved hushfacebook_hidden_share_items=, "
-                        + "hushfacebook_hide_share_group_buttons=on)",
+                        + "hushfacebook_hide_share_group_buttons=on, hushfacebook_hide_share_people_row=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.SHARE_SHEET_ITEMS), true).get(0));
         Settings.HIDE_SHARE_GROUP_BUTTONS.resetToDefault();
         // The reel button has a switch now, so the report says what it's set to.

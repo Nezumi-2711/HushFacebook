@@ -4,7 +4,25 @@ Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Added
+
+* **Facebook:** **Hide people to send to in the share sheet**, a new switch under Share sheet items, takes the row of profile pictures off the share sheet, so it doesn't keep showing people you've lost touch with (issue #169). The search box and the other ways to share stay. It starts off.
+
+* **Facebook:** **Hide who is typing in comments**, a new switch under Comment sheet options, takes away the line that says someone is typing a comment (issue #170). Your own typing stays a separate switch under Privacy. It starts off.
+
+* **Facebook:** **Hide the search pill on reels**, a new switch under Reels and Watch, takes the search suggestion out from under a reel's caption (issue #173). It starts off and shows from the next reel. Part of `Clean up Reels`.
+
 ### Fixed
+
+* **Facebook:** **See-through bars** work with the tab bar at the top now (issue #171). Facebook stacks the top bar and the tab bar in one holder there, and neither bar's color was big enough to count. The blur behind a bar also stays inside the bar on phones whose tab bar holder reaches above the tabs, where it showed as a blurred strip of the feed. Pages that play video on their own surface skip the blur and keep just the see-through color, since drawing that video a second time could turn the Reels tab black.
+
+* **Facebook:** Coming back from the **Picture-in-picture** window no longer puts a purple button over the top right of the reel (issue #126). That was Facebook Flex's switch button. Facebook hides everything on the screen while the window is open, then shows all of it again on the way back, even parts that were never meant to show, and that built the switcher bar and a few other pieces in the reel viewer. Now everything comes back the way it was before the window opened.
+
+* **Facebook:** The diagnostics report keeps every Picture-in-picture count again. It had room for 16 named counts per feature, and Picture-in-picture has more than that, so whichever came last in a session were left out. It keeps 24 now.
+
+* **Facebook:** Picking an app icon no longer replaces the Facebook wordmark at the top of Home (issue #172). **Use the icon at the top of Home**, a new switch under Appearance, puts your picked icon there instead. It starts off and needs a restart.
+
+* **Tooling:** The device audit now checks its device lease and input window before sending input. Failed imports, missing pages and unproved destinations fail the run. Settings, language and theme restore independently, with recovery files kept if anything fails. A baseline is replaced only after the full run and recovery pass.
 
 * **Tooling:** The script contract tests pass on a published index again. Their check that the release facts refuse a second Facebook build swapped one into the CHANGELOG part of the index, which the facts check skips on purpose, so it failed as soon as a changelog bullet named the target build. It now swaps it into the facts.
 

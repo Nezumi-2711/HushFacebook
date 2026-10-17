@@ -325,6 +325,9 @@ final class AppPages {
             links.addPreference(toggle(context, Settings.HIDE_SHARE_GROUP_BUTTONS,
                     L10n.t("Takes away Send to group when you pick two or more people, and the share sheet's own ways to start "
                             + "a new group, so nothing you share makes a group chat by accident. Send separately stays.")));
+            links.addPreference(toggle(context, Settings.HIDE_SHARE_PEOPLE_ROW,
+                    L10n.t("Takes the row of profile pictures off the share sheet, the people Facebook suggests sending a post "
+                            + "to. The search box and the other ways to share stay.")));
         }
         links.addPreference(page.supportedLinksRow(context));
         for (Preference holder : page.linkHolderRows(context)) links.addPreference(holder);

@@ -91,3 +91,4 @@ if ($failures.Count -gt 0) {
     throw "$($failures.Count) phone-smoke report check(s) failed."
 }
 Write-Host '[phone-smoke] report reading checks passed'
+& (Join-Path $PSScriptRoot 'test-device-audit.ps1')

@@ -26,14 +26,19 @@
     the next run to be held to: run it once on a build you trust after Facebook's version changes.
 
 .EXAMPLE
-    scripts/device-audit.ps1 -Serial emulator-5554 -Apk out/hushfacebook.apk
+    scripts/device-audit.ps1 -Serial emulator-5554 -ExpectedDevice Hushfacebook_API36 -Apk out/hushfacebook.apk
 
 .EXAMPLE
-    scripts/device-audit.ps1 -Serial emulator-5554 -SkipPages -WriteBaseline
+    scripts/device-audit.ps1 -Serial emulator-5554 -ExpectedDevice Hushfacebook_API36 -WriteBaseline
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
     [string]$Serial = $env:HUSHFACEBOOK_DEVICE_SERIAL,
+    # The leased emulator's AVD name, or the physical device's ro.product.model.
+    [string]$ExpectedDevice,
+    # Existing whole-device lease. This runner borrows it and never releases it.
+    [string]$LeaseTokenFile = $env:HUSHFACEBOOK_DEVICE_LEASE_TOKEN_FILE,
+    [string]$LeaseDirectory = $env:HUSHFACEBOOK_DEVICE_LEASE_DIR,
     [string]$Apk,
     [string]$OutDir,
     # The walk, step by step. A link is opened and swiped -Swipes times. "tap:<label>" taps the
@@ -45,6 +50,8 @@ param(
     [string[]]$Visit = @('fb://feed', 'tap:Comment', 'back', 'fb://watch', 'fb://fb_shorts/viewer', 'longpress',
         'fb://notifications', 'fb://marketplace', 'fb://profile', 'fb://search',
         'fb://bookmarks', 'tap:Settings and privacy', 'fb://bookmarks', 'tap:Feeds', 'fb://feed'),
+    # Only these explicitly optional steps may be absent without failing the requested scope.
+    [string[]]$OptionalVisit = @('tap:Comment', 'tap:Feeds'),
     [int]$Swipes = 4,
     [int]$SettleSeconds = 4,
     # Setting keys to turn on or off on top of the all-on profile.
@@ -73,10 +80,23 @@ $Package = 'com.facebook.katana'
 $Entry = "$Package/.LoginActivity"
 $Extra = 'app.morphe.extension.facebook'
 $AuditDir = "/sdcard/Android/data/$Package/files/hushfacebook-audit"
+$translationTables = Join-Path $PSScriptRoot '..\extensions\shared\library\src\main\l10n'
 
 if (-not $Serial) { throw 'Pass -Serial or set HUSHFACEBOOK_DEVICE_SERIAL.' }
+if ($Serial -cnotmatch '\A[A-Za-z0-9_.:-]+\z') { throw 'Invalid device serial.' }
+if ([string]::IsNullOrWhiteSpace($ExpectedDevice)) { throw 'Pass -ExpectedDevice with the AVD name or device model.' }
+if (-not $LeaseDirectory -or -not $LeaseTokenFile) { throw 'Pass -LeaseDirectory and -LeaseTokenFile, or set the HUSHFACEBOOK_DEVICE_LEASE_DIR and HUSHFACEBOOK_DEVICE_LEASE_TOKEN_FILE variables.' }
+$identityVerified = $false
 if (-not $OutDir) {
     $OutDir = Join-Path ([IO.Path]::GetTempPath()) ("hushfacebook-audit-" + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+}
+$OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
+$LeaseDirectory = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($LeaseDirectory)
+$LeaseTokenFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($LeaseTokenFile)
+$Expectations = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Expectations)
+if ((Test-Path -LiteralPath $OutDir) -and
+        (-not (Test-Path -LiteralPath $OutDir -PathType Container) -or @(Get-ChildItem -LiteralPath $OutDir -Force).Count -gt 0)) {
+    throw 'Choose a new or empty -OutDir. Existing audit backups must not be reused.'
 }
 New-Item -ItemType Directory -Force $OutDir | Out-Null
 
@@ -88,8 +108,104 @@ foreach ($root in @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, (Join-Path $env:LO
 }
 if (-not $adb) { throw 'No adb found. Put it on the PATH or set ANDROID_HOME.' }
 
+function Assert-AuditLease {
+    if (-not (Test-Path -LiteralPath $LeaseTokenFile -PathType Leaf)) { throw 'A caller-owned lease token file is required.' }
+    $token = [IO.File]::ReadAllText([IO.Path]::GetFullPath($LeaseTokenFile)).Trim()
+    if ([string]::IsNullOrWhiteSpace($token)) { throw 'The lease token is empty.' }
+    $leasePath = Join-Path $LeaseDirectory "$Serial.json"
+    # Keep ownership validation and renewal under the same exclusive file handle.
+    $stream = [IO.File]::Open($leasePath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    try {
+        $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8, $true, 1024, $true)
+        try { $lease = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
+        if (($lease.schemaVersion -isnot [int] -and $lease.schemaVersion -isnot [long]) -or $lease.schemaVersion -ne 1 -or
+                $lease.serial -isnot [string] -or $lease.project -isnot [string] -or
+                $lease.chatIdentity -isnot [string] -or $lease.ownershipToken -isnot [string] -or
+                $lease.serial -cne $Serial -or $lease.project -ine 'Hushfacebook' -or
+                [string]::IsNullOrWhiteSpace($lease.chatIdentity) -or $lease.ownershipToken -cne $token) {
+            throw 'The device lease belongs to another caller or has invalid identity.'
+        }
+        # ConvertFrom-Json may already have parsed an ISO timestamp. Do not stringify a DateTime
+        # and lose its UTC offset before checking expiry.
+        if ($lease.expiresUtc -isnot [DateTime] -and $lease.expiresUtc -isnot [DateTimeOffset] -and
+                $lease.expiresUtc -isnot [string]) { throw 'The lease expiry is not a scalar timestamp.' }
+        $expires = if ($lease.expiresUtc -is [DateTime]) { [DateTimeOffset]$lease.expiresUtc }
+            else { [DateTimeOffset]::Parse([string]$lease.expiresUtc, [Globalization.CultureInfo]::InvariantCulture) }
+        $now = [DateTimeOffset]::UtcNow
+        if ($expires -le $now) { throw 'The device lease expired. Confirm the previous test stopped before renewing it.' }
+        if ($expires -lt $now.AddMinutes(10)) {
+            $lease.expiresUtc = $now.AddMinutes(25).ToString('o')
+            $bytes = [Text.Encoding]::UTF8.GetBytes(($lease | ConvertTo-Json -Depth 5))
+            $stream.Position = 0
+            $stream.Write($bytes, 0, $bytes.Length)
+            $stream.SetLength($bytes.Length)
+            $stream.Flush($true)
+        }
+    } finally { $stream.Dispose() }
+}
+
+function Assert-AuditSteps {
+    $allowed = @('fb://feed', 'fb://watch', 'fb://fb_shorts/viewer', 'fb://notifications',
+        'fb://marketplace', 'fb://profile', 'fb://search', 'fb://bookmarks',
+        'tap:Comment', 'tap:Settings and privacy', 'tap:Feeds', 'back', 'longpress')
+    foreach ($step in $Visit) {
+        if ($allowed -cnotcontains $step) { throw "Not a permitted audit navigation step: $step" }
+    }
+    foreach ($optional in $OptionalVisit) {
+        if ($allowed -cnotcontains $optional) { throw "Not a permitted optional navigation step: $optional" }
+    }
+}
+
+function Assert-AuditForeground {
+    $activity = (Invoke-Adb shell dumpsys activity activities) -join "`n"
+    $resumed = @($activity -split "`n" | Where-Object { $_ -match '(?:mResumedActivity|topResumedActivity)[:=]' } |
+        ForEach-Object { if ($_ -match '\s([\w.]+/[\w.$]+)(?:\s|\})') { $Matches[1] } } | Sort-Object -Unique)
+    if ($resumed.Count -ne 1 -or -not $resumed[0].StartsWith("$Package/", [StringComparison]::Ordinal)) {
+        throw 'Facebook is not the single foreground activity. No input was sent.'
+    }
+    $windows = (Invoke-Adb shell dumpsys window) -join "`n"
+    $focused = @($windows -split "`n" | Where-Object { $_ -match '^\s*mCurrentFocus=' } |
+        ForEach-Object { if ($_ -match '\s([\w.]+/[\w.$]+)(?:\s|\})') { $Matches[1] } } | Sort-Object -Unique)
+    if ($focused.Count -ne 1 -or -not $focused[0].StartsWith("$Package/", [StringComparison]::Ordinal)) {
+        throw 'Facebook does not own the focused input window. No input was sent.'
+    }
+    $windowId = [regex]::Match($windows, '(?m)^\s*mCurrentFocus=Window\{([A-Za-z0-9]+)\s')
+    if (-not $windowId.Success) { throw 'The focused window has no verifiable identity. No input was sent.' }
+    $script:auditWindowIdentity = $resumed[0] + '|' + $windowId.Groups[1].Value
+}
+
 function Invoke-Adb {
     $arguments = $args
+    Assert-AuditLease
+    if ($arguments.Count -gt 2 -and $arguments[0] -eq 'shell' -and $arguments[1] -eq 'input') {
+        if (-not $identityVerified) { throw 'Device identity has not been verified. No input was sent.' }
+        if (-not ($arguments.Count -eq 4 -and $arguments[2] -eq 'keyevent' -and $arguments[3] -eq 'KEYCODE_WAKEUP')) {
+            Assert-AuditForeground
+            $fresh = @(Get-UiNodes)
+            if ($fresh.Count -eq 0) { throw 'No fresh Facebook UI nodes. No input was sent.' }
+            $nodeWindow = $script:auditWindowIdentity
+            if ($arguments[2] -eq 'tap') {
+                if ($inputNodeLabel -cnotin @('Comment', 'Settings and privacy', 'Feeds')) {
+                    throw 'No permitted navigation node was selected. No tap was sent.'
+                }
+                $hits = @($fresh | Where-Object {
+                    ($_.text -ceq $inputNodeLabel -or $_.'content-desc' -ceq $inputNodeLabel) -and
+                    $_.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' -and
+                    [int]$arguments[3] -ge [int]$Matches[1] -and [int]$arguments[3] -lt [int]$Matches[3] -and
+                    [int]$arguments[4] -ge [int]$Matches[2] -and [int]$arguments[4] -lt [int]$Matches[4]
+                })
+                if ($hits.Count -ne 1) { throw 'The navigation node moved or became ambiguous. No tap was sent.' }
+            }
+            # A dump can take seconds. An overlay may have taken input while it was running.
+            Assert-AuditForeground
+            if ($nodeWindow -cne $script:auditWindowIdentity) {
+                throw 'The window changed after collecting navigation nodes. No input was sent.'
+            }
+            if ($inputWindow -and $inputWindow -cne $script:auditWindowIdentity) {
+                throw 'The verified destination window changed. No input was sent.'
+            }
+        }
+    }
     $preference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
@@ -108,11 +224,18 @@ function Write-Step([string]$Text) { Write-Host "[audit] $Text" }
 function Format-Shell([string]$Text) { "'" + $Text.Replace("'", "'\''") + "'" }
 
 function Get-UiNodes {
+    Assert-AuditForeground
+    $windowBefore = $script:auditWindowIdentity
     for ($try = 1; $try -le 4; $try++) {
         $dump = (Invoke-Adb shell 'rm -f /sdcard/hushfacebook-audit.xml; uiautomator dump /sdcard/hushfacebook-audit.xml >/dev/null 2>&1; cat /sdcard/hushfacebook-audit.xml; rm -f /sdcard/hushfacebook-audit.xml') -join "`n"
         $start = $dump.IndexOf('<?xml')
         if ($start -ge 0) {
-            try { return ([xml]$dump.Substring($start)).SelectNodes('//node') } catch { }
+            try {
+                $nodes = @(([xml]$dump.Substring($start)).SelectNodes('//node') | Where-Object { $_.package -ceq $Package })
+                Assert-AuditForeground
+                if ($script:auditWindowIdentity -cne $windowBefore) { throw 'The window changed during its UI dump.' }
+                return $nodes
+            } catch { }
         }
         Start-Sleep -Milliseconds 800
     }
@@ -124,6 +247,32 @@ function Get-ScreenText {
         foreach ($value in @($node.text, $node.'content-desc')) { if ($value) { $value } }
     }
     return @($lines)
+}
+
+function Test-AuditDestination([string]$Route, [object[]]$Nodes) {
+    $own = @($Nodes | Where-Object { $_.package -ceq $Package })
+    $labels = @($own | ForEach-Object { $_.text; $_.'content-desc' } | Where-Object { $_ })
+    # Known English accessibility markers on the supported Facebook build. An unknown language
+    # or layout fails closed instead of counting a successful intent dispatch as a visit.
+    switch -CaseSensitive ($Route) {
+        'fb://feed' {
+            return ($labels -ccontains "What's on your mind?" -and $labels -ccontains 'Go to profile') -or
+                @($own | Where-Object { $_.'content-desc' -ceq 'Facebook logo' }).Count -gt 0
+        }
+        'fb://watch' { return $labels -ccontains 'Reels tab details' -or $labels -ccontains 'Reel details' }
+        'fb://fb_shorts/viewer' { return $labels -ccontains 'Reel details' }
+        'fb://notifications' {
+            return @($own | Where-Object { $_.text -ceq 'Notifications' -and $_.'content-desc' -ceq 'Notifications' }).Count -gt 0
+        }
+        'fb://marketplace' { return $labels -ccontains 'Marketplace' -and $labels -ccontains 'Search Marketplace' }
+        'fb://profile' { return $labels -ccontains 'Edit profile' -and $labels -ccontains 'Edit profile picture' }
+        'fb://search' {
+            return @($own | Where-Object { $_.class -ceq 'android.widget.EditText' -and
+                ($_.text -cmatch '^Search(?:\s|$)' -or $_.'content-desc' -cmatch '^Search(?:\s|$)') }).Count -gt 0
+        }
+        'fb://bookmarks' { return $labels -ccontains 'Menu' -and $labels -ccontains 'Settings and privacy' }
+    }
+    return $false
 }
 
 function Save-Screenshot([string]$Path) {
@@ -141,16 +290,150 @@ function Start-Facebook {
 function Send-Profile([string]$Json) {
     $local = Join-Path $OutDir 'settings.json'
     [IO.File]::WriteAllText($local, $Json)
-    Invoke-Adb push $local "$AuditDir/settings.json" | Out-Null
+    Invoke-Adb shell am force-stop $Package | Out-Null
     Invoke-Adb shell rm -f "$AuditDir/import.txt" | Out-Null
+    Invoke-Adb shell rm -f "$AuditDir/applied.json" | Out-Null
+    Invoke-Adb push $local "$AuditDir/settings.json" | Out-Null
     Start-Facebook
     $import = ''
-    for ($wait = 0; $wait -lt 10 -and -not $import; $wait++) {
+    for ($wait = 0; $wait -lt 30 -and -not $import; $wait++) {
         $import = ((Invoke-Adb shell "cat $AuditDir/import.txt 2>/dev/null; true") -join "`n").Trim()
         if (-not $import) { Start-Sleep -Seconds 1 }
     }
     if (-not $import) { throw 'Facebook never read the settings file. Is this a build with the audit folder in it?' }
     return $import
+}
+
+function New-AuditBaseline([string]$Report, [string[]]$Ran, [string[]]$Idle) {
+    $identity = [regex]::Match($Report, '(?m)^patch_build: (sha256=[a-f0-9]{64}; source=(?:clean|dirty|unknown):[^\r\n]+)\r?$')
+    if (-not $identity.Success) { throw 'The installed build has no verifiable patch identity.' }
+    $app = [regex]::Match($Report, '(?m)^app: ' + [regex]::Escape($Package) + ' ([^ \r\n]+) \(([0-9]+)\)\r?$')
+    if (-not $app.Success -or $app.Groups[1].Value -cne $version) { throw 'The report does not identify the installed Facebook version.' }
+    return [ordered]@{
+        schema = 2; facebook = $version; written = (Get-Date -Format 'yyyy-MM-dd')
+        patchBuild = $identity.Groups[1].Value; installedApkSha256 = $installedHash
+        abi = $installedAbi; sdk = $sdk; device = $deviceIdentity
+        settingsSha256 = (Get-FileHash -LiteralPath (Join-Path $OutDir 'applied.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+        profile = [ordered]@{ name = 'all-on'; on = @($On | Sort-Object -Unique); off = @($Off | Sort-Object -Unique)
+            visit = @($Visit); optionalVisit = @($OptionalVisit | Sort-Object -Unique); swipes = $Swipes
+            locales = @($Locales); maxScrolls = $MaxScrolls }
+        visit = @($Visit); ranOnWalk = @($Ran | Sort-Object); notOnWalk = @($Idle | Sort-Object)
+    }
+}
+
+function Test-AuditBaseline($Expected, $Actual) {
+    if (($Expected.schema -isnot [int] -and $Expected.schema -isnot [long]) -or $Expected.schema -ne 2 -or
+            ($Expected.sdk -isnot [int] -and $Expected.sdk -isnot [long]) -or $Expected.sdk -ne $Actual.sdk) { return $false }
+    foreach ($field in @('facebook', 'patchBuild', 'installedApkSha256', 'abi', 'device', 'settingsSha256')) {
+        if ($Expected.$field -isnot [string] -or $Expected.$field -cne $Actual.$field) { return $false }
+    }
+    if (($Expected.profile -isnot [Collections.IDictionary] -and $Expected.profile -isnot [pscustomobject]) -or
+            $Expected.ranOnWalk -isnot [Array] -or $Expected.ranOnWalk.Count -eq 0 -or
+            @($Expected.ranOnWalk | Where-Object { $_ -isnot [string] -or [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) { return $false }
+    return (ConvertTo-Json -InputObject $Expected.profile -Depth 5 -Compress) -ceq
+        (ConvertTo-Json -InputObject $Actual.profile -Depth 5 -Compress)
+}
+
+function Publish-AuditBaseline($Candidate) {
+    if (-not $WriteBaseline -or $problems.Count -ne 0 -or -not $recovered -or $SkipWalk -or $SkipPages -or $KeepSettings) { return $false }
+    if (-not (Test-AuditBaseline $Candidate $Candidate)) { return $false }
+    $destination = [IO.Path]::GetFullPath($Expectations)
+    $temporary = $destination + '.' + [Guid]::NewGuid().ToString('N') + '.candidate'
+    try {
+        [IO.File]::WriteAllText($temporary, ($Candidate | ConvertTo-Json -Depth 6) + "`n")
+        if (Test-Path -LiteralPath $destination) { [IO.File]::Replace($temporary, $destination, [NullString]::Value) }
+        else { [IO.File]::Move($temporary, $destination) }
+    } finally {
+        if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary }
+    }
+    return $true
+}
+
+function Get-AuditNightMode {
+    $answer = ((Invoke-Adb shell cmd uimode night) -join '').Trim()
+    if ($answer -notmatch '\ANight mode:\s*(yes|no|auto|custom)\s*\z') { throw 'Could not read the original night mode.' }
+    return $Matches[1]
+}
+
+function Test-AuditLocaleList($Value) {
+    if ($Value -isnot [string]) { return $false }
+    if ($Value -ceq '') { return $true }
+    # RFC 5646 section 2.1. Preserve private use and extensions, but refuse truncated tags that
+    # Android would silently shorten. Variant and extension-singleton repeats are not well formed.
+    $pattern = '\A(?:(?:[a-z]{2,3}(?:-[a-z]{3}){0,3}|[a-z]{4}|[a-z]{5,8})' +
+        '(?:-[a-z]{4})?(?:-(?:[a-z]{2}|[0-9]{3}))?(?:-(?<variant>[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*' +
+        '(?:-(?<singleton>[0-9a-wy-z])(?:-[a-z0-9]{2,8})+)*(?:-x(?:-[a-z0-9]{1,8})+)?' +
+        '|x(?:-[a-z0-9]{1,8})+|en-gb-oed|i-(?:ami|bnn|default|enochian|hak|klingon|lux|mingo|navajo|pwn|tao|tay|tsu)' +
+        '|sgn-(?:be-fr|be-nl|ch-de))\z'
+    foreach ($tag in $Value.Split(',')) {
+        if ($tag -cnotmatch '\A[A-Za-z0-9-]+\z') { return $false }
+        $parsed = [regex]::Match($tag.ToLowerInvariant(), $pattern)
+        if (-not $parsed.Success) { return $false }
+        foreach ($group in @('variant', 'singleton')) {
+            $parts = @($parsed.Groups[$group].Captures | ForEach-Object { $_.Value })
+            if (@($parts | Sort-Object -Unique).Count -ne $parts.Count) { return $false }
+        }
+    }
+    return $true
+}
+
+function Get-AuditLocales {
+    $answer = ((Invoke-Adb shell cmd locale get-app-locales $Package) -join '').Trim()
+    if ($answer -notmatch ('\ALocales for ' + [regex]::Escape($Package) + '.*\[([A-Za-z0-9,-]*)\]\s*\z')) {
+        throw 'Could not read the original app locales.'
+    }
+    $locales = $Matches[1]
+    if (-not (Test-AuditLocaleList $locales)) {
+        throw 'The original app locale list is malformed.'
+    }
+    return $locales
+}
+
+function Restore-AuditState {
+    $restored = $true
+    # Each part must run even if another fails. Keep both backups until all parts are verified.
+    foreach ($part in @('settings', 'locale', 'night')) {
+        try {
+            switch ($part) {
+                'settings' {
+                    if ($KeepSettings) { break }
+                    $backup = Join-Path $OutDir 'before.json'
+                    if (-not (Test-Path -LiteralPath $backup)) {
+                        Invoke-Adb pull "$AuditDir/before.json" $backup | Out-Null
+                    }
+                    $restore = Send-Profile ([IO.File]::ReadAllText($backup))
+                    if ($restore -cnotmatch '\Aapplied [0-9]+\z') { throw "Settings restore was not applied: $restore" }
+                    $confirmed = Join-Path $OutDir 'restored.json'
+                    Invoke-Adb pull "$AuditDir/applied.json" $confirmed | Out-Null
+                    if ([IO.File]::ReadAllText($confirmed).Trim() -cne [IO.File]::ReadAllText($backup).Trim()) {
+                        throw 'The applied settings snapshot does not match the original backup.'
+                    }
+                }
+                'locale' {
+                    if ($null -eq $stateBefore.locales) { break }
+                    Invoke-Adb shell "cmd locale set-app-locales $Package --locales $(Format-Shell $stateBefore.locales)" | Out-Null
+                    if ((Get-AuditLocales) -cne $stateBefore.locales) { throw 'App locales did not return to their original value.' }
+                }
+                'night' {
+                    Invoke-Adb shell cmd uimode night $stateBefore.night | Out-Null
+                    if ((Get-AuditNightMode) -cne $stateBefore.night) { throw 'Night mode did not return to its original value.' }
+                }
+            }
+        } catch {
+            $problems.Add("Could not restore ${part}: $($_.Exception.Message)")
+            $restored = $false
+        }
+    }
+    if ($restored -and -not $KeepSettings) {
+        try {
+            Start-Facebook
+            Invoke-Adb shell rm -rf $AuditDir | Out-Null
+        } catch {
+            $problems.Add("Could not finish recovery; backups retained: $($_.Exception.Message)")
+            $restored = $false
+        }
+    }
+    return $restored
 }
 
 function Get-Report([string]$Path) {
@@ -179,28 +462,55 @@ function Get-SettingsPages {
 function Close-Settings {
     for ($i = 0; $i -lt 3; $i++) {
         $text = Get-ScreenText
-        if (-not ($text -contains 'Hushfacebook' -or $text -contains 'Search settings')) { return }
+        $record = ((Invoke-Adb shell "cat $AuditDir/page.json 2>/dev/null; true") -join "`n").Trim()
+        $shown = if ($record) { $record | ConvertFrom-Json } else { $null }
+        if (-not ($text -contains 'Hushfacebook' -or $text -contains 'Search settings' -or
+                ($shown -and $shown.schema -eq 2 -and $text -contains $shown.title))) { return }
         Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
         Start-Sleep -Milliseconds 900
     }
 }
 
-function Save-SettingsPages([string]$Pass) {
+function Save-SettingsPages([string]$Pass, [string]$RequestedLocale = '') {
     $dir = Join-Path $OutDir "pages-$Pass"
     New-Item -ItemType Directory -Force $dir | Out-Null
     $results = New-Object System.Collections.Generic.List[object]
+    $translations = @{}
+    if ($RequestedLocale) {
+        $tag = $RequestedLocale.ToLowerInvariant() -replace '^id(?=-|$)', 'in'
+        $table = @(Get-ChildItem -LiteralPath $translationTables -Filter '*.tsv' | Where-Object {
+            ($_.BaseName -replace '-r', '-').ToLowerInvariant() -ceq $tag
+        } | Select-Object -First 1)
+        if (-not $table) {
+            $table = @(Get-ChildItem -LiteralPath $translationTables -Filter '*.tsv' | Where-Object {
+                $_.BaseName.ToLowerInvariant() -ceq $tag.Split('-')[0]
+            } | Select-Object -First 1)
+        }
+        if (-not $table -and $tag -notmatch '^en(?:-|$)') { throw "No translation table for requested audit locale: $RequestedLocale" }
+        if ($table) {
+            foreach ($line in [IO.File]::ReadAllLines($table[0].FullName)) {
+                if ($line.StartsWith('#') -or -not $line.Contains("`t")) { continue }
+                $parts = $line.Split("`t", 2)
+                $translations[$parts[0]] = $parts[1]
+            }
+        }
+    }
     foreach ($page in Get-SettingsPages) {
         $name = if ($page) { ($page -replace "[^A-Za-z0-9]+", '-').Trim('-').ToLowerInvariant() } else { 'home' }
         Close-Settings
+        Invoke-Adb shell rm -f "$AuditDir/page.json" | Out-Null
         $command = "am start -W -n $Entry --ez $Extra.OPEN_SETTINGS true"
         if ($page) { $command += " --es $Extra.AUDIT_PAGE $(Format-Shell $page)" }
         Invoke-Adb shell $command | Out-Null
         Start-Sleep -Seconds $SettleSeconds
+        $pageRecord = ((Invoke-Adb shell "cat $AuditDir/page.json 2>/dev/null; true") -join "`n").Trim()
+        $shown = if ($pageRecord) { $pageRecord | ConvertFrom-Json } else { $null }
         $allText = New-Object System.Collections.Generic.List[string]
         $last = $null
         $shots = 0
         for ($scroll = 0; $scroll -le $MaxScrolls; $scroll++) {
-            $text = Get-ScreenText
+            $text = @(Get-ScreenText)
+            if ($text.Count -eq 0) { throw "No fresh Facebook UI nodes on $Pass/$name." }
             $signature = $text -join "`n"
             if ($signature -eq $last) { break }
             $last = $signature
@@ -211,9 +521,19 @@ function Save-SettingsPages([string]$Pass) {
             Start-Sleep -Milliseconds 900
         }
         [IO.File]::WriteAllLines((Join-Path $dir "$name.txt"), [string[]]$allText)
-        $title = if ($page -eq 'more') { 'More settings' } else { $page }
-        $opened = (-not $page) -or $allText.Contains($title) -or $Pass -notmatch '^(dark|light)$'
-        $results.Add([pscustomobject]@{ Page = $(if ($page) { $page } else { 'Home' }); Name = $name; Shots = $shots; Opened = $opened })
+        $localeMatches = $true
+        if ($RequestedLocale) {
+            $requestedTag = $RequestedLocale.ToLowerInvariant() -replace '^in(?=-|$)', 'id'
+            $actualTag = ([string]$shown.locale).ToLowerInvariant() -replace '^in(?=-|$)', 'id'
+            $localeMatches = $actualTag -ceq $requestedTag -or $actualTag.StartsWith("$requestedTag-", [StringComparison]::Ordinal)
+            $titleKey = if (-not $page) { 'Hushfacebook' } elseif ($page -ceq 'more') { 'More settings' } else { $page }
+            $expectedTitle = if ($translations.ContainsKey($titleKey)) { $translations[$titleKey] } else { $titleKey }
+            $localeMatches = $localeMatches -and $shown.title -ceq $expectedTitle
+        }
+        $opened = $null -ne $shown -and $shown.schema -eq 2 -and $shown.route -ceq $page -and $localeMatches -and
+            -not [string]::IsNullOrWhiteSpace($shown.title) -and $allText.Contains($shown.title)
+        $results.Add([pscustomobject]@{ Page = $(if ($page) { $page } else { 'Home' }); Name = $name; Shots = $shots
+            Opened = $opened; Locale = $shown.locale })
         Write-Step ("{0} {1}: {2} screen(s){3}" -f $Pass, $(if ($page) { $page } else { 'Home' }), $shots, $(if ($opened) { '' } else { ', NOT OPENED' }))
     }
     Close-Settings
@@ -222,7 +542,18 @@ function Save-SettingsPages([string]$Pass) {
 
 # --- Checks before anything changes ---------------------------------------------------------
 
+Assert-AuditSteps
+Assert-AuditLease
+foreach ($locale in $Locales) {
+    if (-not $locale -or $locale.Contains(',') -or -not (Test-AuditLocaleList $locale)) { throw "Invalid app locale: $locale" }
+}
+if ($WriteBaseline -and ($SkipWalk -or $SkipPages -or $KeepSettings)) { throw 'Baseline promotion requires the full walk, all pages and verified restoration.' }
 if (((Invoke-Adb get-state) -join '') -ne 'device') { throw "$Serial is not ready." }
+$deviceIdentity = if ($Serial.StartsWith('emulator-', [StringComparison]::Ordinal)) {
+    @((Invoke-Adb emu avd name) | Where-Object { $_ -and $_ -cne 'OK' }) -join ''
+} else { ((Invoke-Adb shell getprop ro.product.model) -join '').Trim() }
+if ($deviceIdentity -cne $ExpectedDevice) { throw "Device identity mismatch on $Serial. No device changes were made." }
+$identityVerified = $true
 if (@(Get-AndroidPackagePaths -Adb $adb -Serial $Serial -PackageName $Package).Count -eq 0) { throw "$Package is not installed on $Serial." }
 Invoke-Adb shell input keyevent KEYCODE_WAKEUP | Out-Null
 $keyguard = (Invoke-Adb shell dumpsys window) -join "`n"
@@ -233,14 +564,44 @@ $size = (Invoke-Adb shell wm size) -join ' '
 if ($size -notmatch '(\d+)x(\d+)\s*$') { throw "Could not read the screen size: $size" }
 $width = [int]$Matches[1]; $height = [int]$Matches[2]
 $swipeX = [int]($width / 2); $swipeFrom = [int]($height * 0.75); $swipeTo = [int]($height * 0.3)
-$nightBefore = ((Invoke-Adb shell cmd uimode night) -join '') -replace '^Night mode:\s*', ''
+$sdk = [int](((Invoke-Adb shell getprop ro.build.version.sdk) -join '').Trim())
+if ($Locales.Count -gt 0 -and $sdk -lt 33) { throw 'App-locale passes require Android 13 or newer.' }
+$stateBefore = [ordered]@{ schema = 1; serial = $Serial; device = $deviceIdentity; package = $Package
+    night = Get-AuditNightMode; locales = $(if ($sdk -ge 33) { Get-AuditLocales } else { $null }) }
+# A previous unfinished run owns its original snapshot. Do not overwrite it with audit settings.
+$previousState = ((Invoke-Adb shell "cat $AuditDir/state-before.json 2>/dev/null; true") -join "`n").Trim()
+$previousBackup = ((Invoke-Adb shell "ls $AuditDir/before.json 2>/dev/null; true") -join '').Trim()
+if ($previousState) {
+    $savedState = $previousState | ConvertFrom-Json
+    if (($savedState.schema -isnot [int] -and $savedState.schema -isnot [long]) -or $savedState.schema -ne 1 -or
+            $savedState.serial -isnot [string] -or $savedState.device -isnot [string] -or $savedState.package -isnot [string] -or
+            $savedState.night -isnot [string] -or $savedState.serial -cne $Serial -or $savedState.device -cne $deviceIdentity -or
+            $savedState.package -cne $Package -or $savedState.night -cnotmatch '\A(yes|no|auto|custom)\z' -or
+            ($sdk -ge 33 -and $savedState.locales -isnot [string]) -or
+            ($null -ne $savedState.locales -and -not (Test-AuditLocaleList $savedState.locales))) {
+        throw 'Invalid recovery snapshot. Existing device backups were left untouched.'
+    }
+    $stateBefore = $savedState
+} elseif ($previousBackup) {
+    throw 'An older audit backup has no locale/theme snapshot. Restore it before starting another audit; it was left untouched.'
+}
+$statePath = Join-Path $OutDir 'state-before.json'
+[IO.File]::WriteAllText($statePath, ($stateBefore | ConvertTo-Json))
 
 if ($Apk) {
     Write-Step "installing $(Split-Path -Leaf $Apk)"
     $install = (Invoke-Adb install -r -d -g $Apk) -join ' '
     if ($install -notmatch 'Success') { throw "adb install failed: $install" }
 }
-$version = ((Invoke-Adb shell dumpsys package $Package) | Where-Object { $_ -match '^\s*versionName=' } | Select-Object -First 1) -replace '^\s*versionName=', ''
+$packageInfo = @(Invoke-Adb shell dumpsys package $Package)
+$version = ($packageInfo | Where-Object { $_ -match '^\s*versionName=' } | Select-Object -First 1) -replace '^\s*versionName=', ''
+$installedAbi = (($packageInfo | Where-Object { $_ -match '^\s*primaryCpuAbi=' } | Select-Object -First 1) -replace '^\s*primaryCpuAbi=', '').Trim()
+if ($installedAbi -notin @('arm64-v8a', 'armeabi-v7a')) { throw 'The installed package ABI is unavailable or unsupported.' }
+$basePath = @((Get-AndroidPackagePaths -Adb $adb -Serial $Serial -PackageName $Package) | Where-Object { $_.EndsWith('/base.apk') })
+if ($basePath.Count -ne 1) { throw 'Could not identify one installed base APK.' }
+$apkHash = ((Invoke-Adb shell "sha256sum $(Format-Shell $basePath[0].Substring(8))") -join '').Trim()
+if ($apkHash -cnotmatch '\A([a-f0-9]{64})\s') { throw 'Could not hash the installed APK.' }
+$installedHash = $Matches[1]
 Write-Step "Facebook $version on $Serial, results in $OutDir"
 
 $problems = New-Object System.Collections.Generic.List[string]
@@ -250,6 +611,7 @@ $summary.Add("Facebook $version on $Serial, $(Get-Date -Format 'yyyy-MM-dd HH:mm
 try {
     # --- Every switch on ----------------------------------------------------------------------
     Invoke-Adb shell mkdir -p $AuditDir | Out-Null
+    Invoke-Adb push $statePath "$AuditDir/state-before.json" | Out-Null
     # A before.json already there is from a run that never put things back, and still holds the
     # switches from before it, so it stays.
     Invoke-Adb shell rm -f "$AuditDir/report.txt" | Out-Null
@@ -257,18 +619,27 @@ try {
     $import = Send-Profile ($allOn | ConvertTo-Json -Compress)
     Write-Step "profile: $import"
     $summary.Add("Profile all-on: $import")
-    if ($import -notlike 'applied*') { $problems.Add("The profile was not applied: $import") }
     Invoke-Adb pull "$AuditDir/before.json" (Join-Path $OutDir 'before.json') | Out-Null
+    if ($import -cnotmatch '\Aapplied [0-9]+\z') { throw "The profile was not applied: $import" }
+    Invoke-Adb pull "$AuditDir/applied.json" (Join-Path $OutDir 'applied.json') | Out-Null
     $startedEpoch = [long]((Invoke-Adb shell date +%s) -join '').Trim()
     Start-Facebook
 
     # --- The walk -----------------------------------------------------------------------------
     if (-not $SkipWalk) {
         $stepNumber = 0
+        $routeVerified = $false
+        $skipBack = $false
         foreach ($step in $Visit) {
             $stepNumber++
             Write-Step $step
+            if (-not $step.StartsWith('fb://', [StringComparison]::Ordinal) -and -not $routeVerified) {
+                $summary.Add("Walk: no verified destination for step $stepNumber ($step). No input sent.")
+                if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required step $stepNumber has no verified destination: $step") }
+                continue
+            }
             if ($step -like 'tap:*') {
+                $skipBack = $false
                 $label = $step.Substring(4)
                 $node = $null
                 for ($look = 0; $look -le 5 -and -not $node; $look++) {
@@ -277,27 +648,49 @@ try {
                         Start-Sleep -Milliseconds 1200
                     }
                     $node = Get-UiNodes | Where-Object { $_.text -eq $label -or $_.'content-desc' -eq $label } |
-                        Where-Object { $_.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' } | Select-Object -First 1
+                        Where-Object { $_.package -ceq $Package -and $_.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' }
+                    if (@($node).Count -ne 1) { $node = $null }
                 }
                 if ($node -and $node.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$') {
-                    Invoke-Adb shell input tap ([int](([int]$Matches[1] + [int]$Matches[3]) / 2)) ([int](([int]$Matches[2] + [int]$Matches[4]) / 2)) | Out-Null
+                    if ([int]$Matches[1] -lt 0 -or [int]$Matches[2] -lt 0 -or
+                            [int]$Matches[3] -gt $width -or [int]$Matches[4] -gt $height -or
+                            [int]$Matches[3] -le [int]$Matches[1] -or [int]$Matches[4] -le [int]$Matches[2]) {
+                        throw "The $label node has invalid screen bounds. No tap was sent."
+                    }
+                    $inputNodeLabel = $label
+                    try {
+                        Invoke-Adb shell input tap ([int](([int]$Matches[1] + [int]$Matches[3]) / 2)) ([int](([int]$Matches[2] + [int]$Matches[4]) / 2)) | Out-Null
+                    } finally { $inputNodeLabel = $null }
                     Start-Sleep -Seconds $SettleSeconds
                 } else {
+                    $skipBack = $true
                     $summary.Add("Walk: no '$label' to tap at step $stepNumber.")
+                    if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required step $stepNumber was not reached: $step") }
                 }
             } elseif ($step -eq 'longpress') {
                 Invoke-Adb shell input swipe $swipeX ([int]($height / 2)) $swipeX ([int]($height / 2)) 2500 | Out-Null
                 Start-Sleep -Seconds 1
             } elseif ($step -eq 'back') {
+                if ($skipBack) { $skipBack = $false; continue }
                 Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
                 Start-Sleep -Seconds 1
             } else {
-                Invoke-Adb shell am start -W -a android.intent.action.VIEW -d $step -p $Package | Out-Null
+                $routeVerified = $false
+                $launch = (Invoke-Adb shell am start -W -a android.intent.action.VIEW -d $step -p $Package) -join "`n"
                 Start-Sleep -Seconds $SettleSeconds
+                $routeVerified = $launch -cmatch '(?m)^Status: ok\r?$' -and (Test-AuditDestination $step @(Get-UiNodes))
+                if (-not $routeVerified) {
+                    $summary.Add("Walk: destination not proved at step $stepNumber ($step). No input sent.")
+                    if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required destination not reached at step ${stepNumber}: $step") }
+                    continue
+                }
+                $routeWindow = $script:auditWindowIdentity
                 # Before the swipes too, while a tab bar that slides away is still on screen.
                 Save-Screenshot (Join-Path $OutDir ('walk-{0:00}-{1}-top.png' -f $stepNumber, ($step -replace '[^A-Za-z0-9]+', '-').Trim('-')))
                 for ($i = 0; $i -lt $Swipes; $i++) {
-                    Invoke-Adb shell input swipe $swipeX $swipeFrom $swipeX $swipeTo 300 | Out-Null
+                    $inputWindow = $routeWindow
+                    try { Invoke-Adb shell input swipe $swipeX $swipeFrom $swipeX $swipeTo 300 | Out-Null }
+                    finally { $inputWindow = $null }
                     Start-Sleep -Milliseconds 1500
                 }
             }
@@ -318,27 +711,21 @@ try {
         $idle = @($allFamilies + @($result.Families | ForEach-Object { $_.Name }) | Sort-Object -Unique |
             Where-Object { $ran -notcontains $_ })
         $summary.Add("$($allFamilies.Count) hook families, $($ran.Count) ran on the walk")
+        $baseline = New-AuditBaseline -Report $text -Ran $ran -Idle $idle
+        [IO.File]::WriteAllText((Join-Path $OutDir 'baseline-candidate.json'), ($baseline | ConvertTo-Json -Depth 6))
 
         if (Test-Path -LiteralPath $Expectations) {
             $expected = Get-Content -Raw -LiteralPath $Expectations | ConvertFrom-Json
+            if (-not $WriteBaseline -and -not (Test-AuditBaseline $expected $baseline)) {
+                $problems.Add('The baseline identifies a different build, device or audit profile. A reviewed full baseline run is required.')
+            }
             foreach ($name in @($expected.ranOnWalk)) {
                 if ($ran -notcontains $name) { $problems.Add("$name ran on the baseline's walk ($($expected.facebook)) and didn't now.") }
             }
             $new = @($ran | Where-Object { @($expected.ranOnWalk) -notcontains $_ })
             if ($new) { $summary.Add("Ran now and not in the baseline: $($new -join ', ')") }
         } elseif (-not $WriteBaseline) {
-            $summary.Add("No baseline at $Expectations. Run once with -WriteBaseline on a build you trust.")
-        }
-        if ($WriteBaseline) {
-            $baseline = [ordered]@{
-                facebook   = $version
-                written    = (Get-Date -Format 'yyyy-MM-dd')
-                visit      = @($Visit)
-                ranOnWalk  = @($ran | Sort-Object)
-                notOnWalk  = @($idle | Sort-Object)
-            }
-            [IO.File]::WriteAllText($Expectations, ($baseline | ConvertTo-Json -Depth 4) + "`n")
-            Write-Step "baseline written to $Expectations"
+            $problems.Add("No baseline at $Expectations. Run once with -WriteBaseline on a build you trust.")
         }
         $summary.Add('Never ran on the walk: ' + $(if ($idle) { $idle -join ', ' } else { 'none' }))
 
@@ -362,10 +749,10 @@ try {
         Invoke-Adb shell cmd uimode night yes | Out-Null
         foreach ($locale in $Locales) {
             Invoke-Adb shell cmd locale set-app-locales $Package --locales $locale | Out-Null
+            if ((Get-AuditLocales) -ine $locale) { throw "Android did not apply the requested app locale: $locale" }
             Start-Facebook
-            $passes.Add([pscustomobject]@{ Name = "dark-$locale"; Pages = Save-SettingsPages "dark-$locale" })
+            $passes.Add([pscustomobject]@{ Name = "dark-$locale"; Pages = Save-SettingsPages "dark-$locale" $locale })
         }
-        if ($Locales) { Invoke-Adb shell cmd locale set-app-locales $Package --locales "''" | Out-Null }
 
         foreach ($pass in $passes) {
             foreach ($page in $pass.Pages) {
@@ -391,22 +778,22 @@ try {
         [IO.File]::WriteAllText((Join-Path $OutDir 'index.html'), $html.ToString())
         $summary.Add("Settings pages: $(($passes | ForEach-Object { "$($_.Name) $($_.Pages.Count)" }) -join ', '), see index.html")
     }
+} catch {
+    $problems.Add("Audit failed: $($_.Exception.Message)")
 } finally {
     # --- Put things back ----------------------------------------------------------------------
-    try {
-        if ($nightBefore) { Invoke-Adb shell cmd uimode night $nightBefore | Out-Null }
-        if (-not $KeepSettings -and (Test-Path -LiteralPath (Join-Path $OutDir 'before.json'))) {
-            $restore = Send-Profile ([IO.File]::ReadAllText((Join-Path $OutDir 'before.json')))
-            Write-Step "switches put back: $restore"
-            Invoke-Adb shell rm -rf $AuditDir | Out-Null
-            Start-Facebook
-        }
-    } catch {
-        $problems.Add("Could not put the phone back as it was: $($_.Exception.Message)")
-    }
+    $recovered = Restore-AuditState
 }
 
-if ($problems.Count -eq 0) { $summary.Add('PASS') }
+if ($problems.Count -eq 0 -and $WriteBaseline) {
+    try {
+        if (-not (Publish-AuditBaseline $baseline)) { throw 'The baseline candidate did not meet promotion requirements.' }
+        Write-Step "baseline written to $Expectations"
+    } catch { $problems.Add("Could not promote the baseline: $($_.Exception.Message)") }
+}
+if ($problems.Count -eq 0) {
+    $summary.Add($(if ($SkipWalk -or $SkipPages -or $KeepSettings) { 'PARTIAL: requested scope passed; full audit not established' } else { 'PASS' }))
+}
 else {
     $summary.Add("FAIL ($($problems.Count))")
     foreach ($problem in $problems) { $summary.Add("  $problem") }

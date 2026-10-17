@@ -79,6 +79,12 @@ public final class CommentSheetOptions {
     /** Counted each time a comment is left out for a phrase from Words to hide. */
     static final String WORDS_HIDDEN = "Comment with your words left out";
 
+    /** Counted each time a count of people typing is answered as nobody. */
+    static final String TYPING_HIDDEN = "Incoming typing kept out";
+
+    /** The member the report names once a count of people typing has been through the hook. */
+    static final String TYPING = "incoming typing";
+
     /** The member the report names once a comment has been drawn through the hook. */
     static final String COMMENTS = "comments";
 
@@ -109,6 +115,24 @@ public final class CommentSheetOptions {
     private static final String FAMILY = FamilyNames.COMMENT_SHEET_OPTIONS;
 
     private CommentSheetOptions() {
+    }
+
+    /**
+     * The hook, right after Facebook reads how many people are typing a comment on a post. With the
+     * switch on it answers zero, so the comment box only hears that nobody is typing; otherwise,
+     * and for a count of zero or a throw, it hands back what Facebook read.
+     */
+    public static int incomingTypers(int typers) {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, TYPING);
+            if (typers <= 0 || !Utils.settingsReady() || !Settings.HIDE_INCOMING_COMMENT_TYPING.get()) return typers;
+            HookStatus.counted(FAMILY, TYPING_HIDDEN);
+            return 0;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "incoming comment typing", failure);
+            return typers;
+        }
     }
 
     /**

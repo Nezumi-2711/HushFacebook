@@ -69,6 +69,10 @@ public final class ReelDeclutter {
     static final String FOLLOW_ROUTE = "Reel Follow button";
     static final String FOOTER_ROUTE = "Reel footer queries";
 
+    /** Counted under its own name each time the search pill isn't built. */
+    static final String SEARCH_ROUTE = "Reel search pill";
+    static final String SEARCH_PILL = "search pill";
+
     /** The kind a chip is counted under when its type can't be read. It stays. */
     static final String UNREADABLE = "unreadable type";
 
@@ -199,6 +203,29 @@ public final class ReelDeclutter {
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.REEL_DECLUTTER, kind + " query", failure);
             Logger.printException(() -> "Reel footer: could not read its switch", failure);
+            return false;
+        }
+    }
+
+    /**
+     * Injection point, first thing in the builder of the search pill under a reel's caption (#173).
+     * True makes the builder answer with Facebook's own empty component, so no pill is drawn.
+     * Never throws: false builds the pill as before.
+     */
+    public static boolean hideSearchPill() {
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            FeedFilterCounters.sawList(SEARCH_ROUTE, 1);
+            FeedFilterCounters.sawKind(SEARCH_ROUTE, SEARCH_PILL);
+            boolean hide = Utils.settingsReady() && Settings.HIDE_REEL_SEARCH_PILL.get();
+            if (hide) {
+                FeedFilterCounters.removed(SEARCH_ROUTE, 1, SEARCH_PILL);
+                logOnce(SEARCH_PILL, () -> "Reel search pill: not built");
+            }
+            return hide;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, SEARCH_PILL, failure);
+            Logger.printException(() -> "Reel search pill: could not read its switch", failure);
             return false;
         }
     }

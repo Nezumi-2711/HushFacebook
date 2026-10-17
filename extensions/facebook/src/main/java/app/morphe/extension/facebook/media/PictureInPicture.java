@@ -18,11 +18,15 @@ import android.os.SystemClock;
 import android.util.Rational;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewStub;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
 import app.morphe.extension.facebook.settings.Settings;
@@ -55,6 +59,11 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * <p>In the window, Facebook's viewer opens in a container with a new view id, which a React
  * Native view on the main screen can already hold. The extension swaps such an id for a free one,
  * or the viewer opens hidden and the window stays black.
+ *
+ * <p>That viewer hides every view of the screen as it opens, and on the way back Facebook shows
+ * them all again, whatever they were before. The spots for views Facebook builds only once they're
+ * shown are among them, so the reel viewer got Facebook Flex's switcher bar over the reel (#126).
+ * The extension keeps how each view showed and puts that back.
  *
  * <p>Facebook's full-screen Watch viewer arms the same window for the video on screen, behind a
  * server flag of its own. With the switch on, the extension answers that flag yes, and Facebook's
@@ -142,6 +151,9 @@ public final class PictureInPicture {
     /** Counted each time the More sheet's Picture-in-picture row opened the window. */
     static final String FROM_MENU = "opened from the More menu";
 
+    /** Counted each time a view back from the window shows as it did before, not as Facebook asked. */
+    static final String AS_BEFORE = "view kept as before the window";
+
     /** How many new view ids the viewer may go through for one nothing on screen holds. */
     private static final int VIEWER_ID_TRIES = 64;
 
@@ -184,6 +196,9 @@ public final class PictureInPicture {
 
     /** Goes up with each arming and disarm, so a later look can tell whether Facebook did either. */
     private static int armings;
+
+    /** How each view the window's viewer hid showed before, until it's shown again. */
+    private static final Map<View, Integer> beforeWindow = Collections.synchronizedMap(new WeakHashMap<>());
 
     /** Reads the view a player's video is attached to. Tests stand in their own. */
     interface Views {
@@ -451,8 +466,8 @@ public final class PictureInPicture {
 
     /**
      * Facebook mostly arms the window again once it's opened full screen, but not every time, and
-     * then its last arming stays on: leaving Facebook opened the window on its whole screen, with a
-     * purple block where the reel should be (#126). Unless Facebook armed or disarmed since [seen],
+     * then its last arming stays on, for a reel that may not be the one on screen anymore (#126).
+     * Unless Facebook armed or disarmed since [seen],
      * the window is armed again for the reel on screen, as a swipe arms it, or kept closed for a
      * reel it doesn't take. A pause holding auto-enter still holds it.
      */
@@ -569,8 +584,7 @@ public final class PictureInPicture {
      * the reel on screen from now on: a held auto-enter goes back on, switch or no switch, since it
      * was the extension that turned it off, and a reel other than the armed one gets the window
      * armed again for it. Unless that other player's video is off screen: Facebook getting the next
-     * reel ready plays it for a moment, and the window then opened on that reel, or on a purple
-     * block where its video wasn't drawn (#126).
+     * reel ready plays it for a moment, and the window then opened on that reel (#126).
      */
     public static void playerPlaying(Object player) {
         try {
@@ -792,6 +806,49 @@ public final class PictureInPicture {
             HookStatus.threw(FAMILY, hook, failure);
             return answer;
         }
+    }
+
+    /**
+     * The hook, in the opening of the window's viewer, as it hides each view of the screen but its
+     * own container: keeps how [view] showed, for {@link #shownAgain} on the way back. The viewer
+     * can open twice on the way into the window, so a hidden view keeps what was kept for it.
+     */
+    public static void hiding(View view) {
+        try {
+            if (view == null || !on()) return;
+            HookStatus.bound(FAMILY, "screen hidden");
+            int now = view.getVisibility();
+            if (now != View.GONE || !beforeWindow.containsKey(view)) beforeWindow.put(view, now);
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "screen hidden", failure);
+        }
+    }
+
+    /**
+     * The hook, in place of Facebook's call that shows each view of the screen again on the way
+     * back from the window, with the [visibility] Facebook asks for: shown, whatever the view was
+     * before. A view the viewer hid goes back to how it showed before instead. Among them are the
+     * spots for views Facebook builds only once they're shown (ViewStubs), and showing one builds
+     * it: the reel viewer got Facebook Flex's switcher bar, a purple button over the top right of
+     * the reel, and four more views it never shows (#126). A spot hidden before stays hidden, and so
+     * does a spot the viewer didn't hide.
+     */
+    public static void shownAgain(View view, int visibility) {
+        int shown = visibility;
+        try {
+            if (view != null && on()) {
+                HookStatus.bound(FAMILY, "screen shown again");
+                Integer before = beforeWindow.remove(view);
+                int kept = before != null ? before : view instanceof ViewStub ? view.getVisibility() : visibility;
+                if (kept != visibility) {
+                    HookStatus.counted(FAMILY, AS_BEFORE);
+                    shown = kept;
+                }
+            }
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "screen shown again", failure);
+        }
+        view.setVisibility(shown);
     }
 
     /** Whether a window is armed with a reel on screen. */

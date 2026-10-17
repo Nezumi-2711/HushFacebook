@@ -442,6 +442,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_original_audio", FALSE);
 
     /**
+     * The search pill under a reel's caption, Facebook's "search this" prompt with a suggested
+     * query ({@link app.morphe.extension.facebook.reels.ReelDeclutter#hideSearchPill}, #173). The
+     * component that draws it isn't built. Off until it's turned on, since the pill depends on a
+     * server setting and nobody has seen it go on a signed-in Reels feed yet.
+     */
+    public static final BooleanSetting HIDE_REEL_SEARCH_PILL =
+            new BooleanSetting("hushfacebook_hide_reel_search_pill", FALSE);
+
+    /**
      * The batches of watched reels the Reels viewer sends as FbShortsSeenStateMutation: only their
      * ids, the record Facebook ranks the Reels feed with, which nobody else sees. Held back, reels
      * already watched may come back in the feed.
@@ -481,6 +490,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting UNLOCK_APP_ICONS =
             new BooleanSetting("hushfacebook_unlock_app_icons", FALSE);
+
+    /**
+     * The picked app icon stands in for the Facebook wordmark at the top of Home
+     * ({@link app.morphe.extension.facebook.misc.AppIcons#dressLogo}, #172). Starts off, so Facebook's
+     * wordmark stays. Needs {@link #UNLOCK_APP_ICONS}. Facebook builds the header once, so a change
+     * waits for a restart. It never changes which launcher alias is on.
+     */
+    public static final BooleanSetting USE_APP_ICON_IN_HEADER =
+            new BooleanSetting("hushfacebook_use_app_icon_in_header", FALSE, true, Setting.parent(UNLOCK_APP_ICONS));
 
     /**
      * Facebook's haptics on its own taps and gestures ({@link app.morphe.extension.facebook.misc.Haptics}).
@@ -668,6 +686,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_COMMENTS_WITH_WORDS =
             new BooleanSetting("hushfacebook_hide_comments_with_words", FALSE);
+
+    /**
+     * The "someone is typing" line under a comment box is never shown: the typer count that arrives
+     * for a post is answered as zero
+     * ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}, #170). Sending your own
+     * typing is {@link #HIDE_COMMENT_TYPING}. Off by default.
+     */
+    public static final BooleanSetting HIDE_INCOMING_COMMENT_TYPING =
+            new BooleanSetting("hushfacebook_hide_incoming_comment_typing", FALSE);
 
     /**
      * Facebook's text boxes (posts, comments, captions, a story's text) look people up to tag only
@@ -963,6 +990,13 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_SHARE_GROUP_BUTTONS =
             new BooleanSetting("hushfacebook_hide_share_group_buttons", FALSE);
+
+    /**
+     * The share sheet's row of round profile pictures of people to send the post to, and its
+     * loading placeholder. The search box and the other ways to share stay. Off until it's turned on.
+     */
+    public static final BooleanSetting HIDE_SHARE_PEOPLE_ROW =
+            new BooleanSetting("hushfacebook_hide_share_people_row", FALSE);
 
     /**
      * The Meta Verified offer sheet after you post, and the Meta Verified label under some posts'

@@ -395,7 +395,7 @@
     },
     {
       "name": "Clean up Reels",
-      "description": "Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template buttons and Threads cards between reels, so more of the video shows, and can play each reel once instead of over and over or keep its original audio instead of a Meta AI dub. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
+      "description": "Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template buttons and Threads cards between reels, so more of the video shows, and can play each reel once instead of over and over, keep its original audio instead of a Meta AI dub or drop the search pill under the caption. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
       "category": "Reels",
       "use": true,
       "dependencies": [
@@ -433,7 +433,7 @@
     },
     {
       "name": "Comment sheet options",
-      "description": "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and sticker buttons, show every reply without tapping View replies, load a whole reply thread as you scroll, hide Related groups under group posts, and hide comments with shop links or your words. Starts off. Turn on the parts you want in Hushfacebook settings > Comments.",
+      "description": "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and sticker buttons, show every reply without tapping View replies, load a whole reply thread as you scroll, hide Related groups under group posts, hide comments with shop links or your words, and hide who is typing. Starts off. Turn on the parts you want in Hushfacebook settings > Comments.",
       "category": "Comments",
       "use": true,
       "dependencies": [
@@ -2749,7 +2749,7 @@
     },
     {
       "name": "Share sheet items",
-      "description": "Lets you hide items you never use from Facebook's share sheet, such as WhatsApp, Meta AI or Copy link, so the ones you want are easier to reach. Nothing is hidden until you pick. Choose them in Hushfacebook settings > Links, where a switch that starts off also takes away the buttons that send to the people you picked as a new group chat.",
+      "description": "Lets you hide items you never use from Facebook's share sheet, such as WhatsApp, Meta AI or Copy link, so the ones you want are easier to reach. Nothing is hidden until you pick. Choose them in Hushfacebook settings > Links, where two switches that start off also take away the buttons that send to the people you picked as a new group chat and the row of people Facebook suggests sending to.",
       "category": "Interface",
       "use": true,
       "dependencies": [
@@ -3275,7 +3275,7 @@
     },
     {
       "name": "Unlock app icons",
-      "description": "Lets you pick the app icons Facebook keeps for Facebook Plus on its App icon page (Menu > Settings and privacy > App icon), so your home screen icon and the logo at the top of Home match your pick. The normal blue icon keeps Facebook's wordmark. Starts off. Turn it on in Hushfacebook settings > Appearance.",
+      "description": "Lets you pick the app icons Facebook keeps for Facebook Plus on its App icon page (Menu > Settings and privacy > App icon), so your home screen icon can be any of them. A second switch, Use the icon at the top of Home, puts your pick at the top of Home too. Both start off. Turn them on in Hushfacebook settings > Appearance.",
       "category": "Theme",
       "use": true,
       "dependencies": [

@@ -77,6 +77,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS) return L10n.t("Hide related groups");
         if (setting == Settings.HIDE_SHOP_LINK_COMMENTS) return L10n.t("Hide comments with shop links");
         if (setting == Settings.HIDE_COMMENTS_WITH_WORDS) return L10n.t("Hide comments with your words");
+        if (setting == Settings.HIDE_INCOMING_COMMENT_TYPING) return L10n.t("Hide who is typing in comments");
         if (setting == Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT) return L10n.t("Tag suggestions only after @");
         if (setting == Settings.HIDE_REELS_TAB) return L10n.t("Hide the Reels tab");
         if (setting == Settings.HIDE_REELS_TAB_DOT) return L10n.t("Hide the Reels tab dot");
@@ -111,6 +112,7 @@ final class SwitchLabels {
         if (setting == Settings.REEL_CLEAN_MODE) return L10n.t("Always use Clean mode");
         if (setting == Settings.PLAY_REELS_ONCE) return L10n.t("Play reels once");
         if (setting == Settings.ORIGINAL_AUDIO) return L10n.t("Keep the original audio");
+        if (setting == Settings.HIDE_REEL_SEARCH_PILL) return L10n.t("Hide the search pill on reels");
         if (setting == Settings.DONT_SEND_REEL_WATCH_HISTORY) return L10n.t("Don't send reel watch history");
         if (setting == Settings.HOLD_ANALYTICS_UPLOADS) return L10n.t("Hold back analytics uploads");
         if (setting == Settings.HOLD_CAMERA_ROLL_PROCESSING) return L10n.t("Hold back camera roll processing");
@@ -120,6 +122,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_FREE_MODE_BANNER) return L10n.t("Hide the Free mode banner");
         if (setting == Settings.TURN_OFF_SCREEN_TRANSITIONS) return L10n.t("Turn off screen transitions");
         if (setting == Settings.UNLOCK_APP_ICONS) return L10n.t("Unlock app icons");
+        if (setting == Settings.USE_APP_ICON_IN_HEADER) return L10n.t("Use the icon at the top of Home");
         if (setting == Settings.BLOCK_SCREENSHOT_DETECTION) return L10n.t("Block screenshot detection");
         if (setting == Settings.HIDE_CHAT_TYPING) return L10n.t("Hide typing in chats");
         if (setting == Settings.HIDE_COMMENT_TYPING) return L10n.t("Hide typing in comments");
@@ -197,6 +200,7 @@ final class SwitchLabels {
         if (setting == Settings.SANITIZE_SHARING_LINKS) return L10n.t("Remove tracking from shared links");
         if (setting == Settings.SHARE_POST_OWN_LINK) return L10n.t("Share the post's own link");
         if (setting == Settings.HIDE_SHARE_GROUP_BUTTONS) return L10n.t("Hide group buttons in the share sheet");
+        if (setting == Settings.HIDE_SHARE_PEOPLE_ROW) return L10n.t("Hide people to send to in the share sheet");
         if (setting == Settings.STOP_UPDATE_PROMPTS) return L10n.t("Stop update prompts");
         if (setting == Settings.CHECK_FOR_RELEASES) return L10n.t("Check for new Hushfacebook releases");
         if (setting == Settings.USE_SYSTEM_FONT) return L10n.t("Use the system font");

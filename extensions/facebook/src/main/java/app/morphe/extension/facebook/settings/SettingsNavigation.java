@@ -222,7 +222,7 @@ final class SettingsNavigation extends BaseAdapter {
             return true;
         });
         rebuild();
-        host.showPage(title(), route.isEmpty(), query);
+        showPage();
         if (state != null) showAt(state.getInt("position"), state.getInt("offset"));
     }
 
@@ -263,6 +263,15 @@ final class SettingsNavigation extends BaseAdapter {
         return section == null ? "Hushfacebook" : section.category.getTitle();
     }
 
+    private void showPage() {
+        host.showPage(title(), route.isEmpty(), query);
+        String shownRoute = route;
+        list.post(() -> {
+            if (host.getDialog() != null && host.getDialog().isShowing() && list.isAttachedToWindow() && list.getAdapter() == this
+                    && shownRoute.equals(route)) AuditMode.pageShown(list.getContext(), route, title());
+        });
+    }
+
     void navigate(String destination) {
         refocus = null;
         rememberIndex();
@@ -270,7 +279,7 @@ final class SettingsNavigation extends BaseAdapter {
         route = destination;
         if (!MORE.equals(route) && selected() == null) route = "";
         rebuild();
-        host.showPage(title(), route.isEmpty(), query);
+        showPage();
         showAt(0, 0);
         list.sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
@@ -300,7 +309,7 @@ final class SettingsNavigation extends BaseAdapter {
     boolean back() {
         if (!query.isEmpty()) {
             search("");
-            host.showPage(title(), true, "");
+            showPage();
             return true;
         }
         if (route.isEmpty()) return false;
@@ -308,7 +317,7 @@ final class SettingsNavigation extends BaseAdapter {
         Preference left = section != null ? section.link : more;
         route = section != null && !section.primary ? MORE : "";
         rebuild();
-        host.showPage(title(), route.isEmpty(), query);
+        showPage();
         showAt(MORE.equals(route) ? morePosition : homePosition,
                 MORE.equals(route) ? moreOffset : homeOffset);
         refocus = left;

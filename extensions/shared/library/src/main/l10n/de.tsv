@@ -996,10 +996,12 @@ Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard a
 Turn off screen transitions	Bildschirmübergänge ausschalten
 Tabs, the Menu and screens that open over Facebook appear at once instead of sliding in. Swiping between tabs still works.	Tabs, das Menü und Seiten, die sich über Facebook öffnen, erscheinen sofort, ohne einzugleiten. Das Wischen zwischen Tabs funktioniert weiterhin.
 Unlock app icons	App-Symbole freischalten
-Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick also replaces the Facebook wordmark at the top of Home. Your pick stays if you turn this off, so pick the blue one first to go back.	Du kannst auch die App-Symbole wählen, die Facebook für Facebook Plus vorbehält, auf Facebooks Seite „App-Symbol“. Die Zeile „App-Symbol wählen“ öffnet sie. Deine Wahl ersetzt auch den Facebook-Schriftzug oben auf der Startseite. Deine Wahl bleibt, wenn du das ausschaltest. Wähle also zuerst das blaue, um zurückzuwechseln.
+Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	Du kannst auch die App-Symbole wählen, die Facebook für Facebook Plus vorbehält, auf Facebooks Seite „App-Symbol“. Die Zeile „App-Symbol wählen“ öffnet sie. Deine Wahl bleibt, wenn du das ausschaltest. Wähle also zuerst das blaue, um zurückzuwechseln.
 # context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
 Pick an app icon	App-Symbol wählen
 Opens Facebook's App icon page, even on accounts where Facebook doesn't list it in Settings and privacy.	Öffnet Facebooks Seite „App-Symbol“, auch bei Konten, bei denen Facebook sie nicht unter Einstellungen und Privatsphäre anzeigt.
+Use the icon at the top of Home	Symbol oben auf der Startseite verwenden
+Shows the app icon you picked at the top of Home instead of the Facebook wordmark. Needs Unlock app icons and a pick other than the blue one. Restart Facebook to see the change.	Zeigt oben auf der Startseite das gewählte App-Symbol statt des Facebook-Schriftzugs. Braucht „App-Symbole freischalten“ und eine andere Wahl als das blaue Symbol. Starte Facebook neu, um die Änderung zu sehen.
 # context: toast when the row above finds no App icon page in this Facebook build
 This Facebook build has no App icon page.	Diese Facebook-Version hat keine Seite „App-Symbol“.
 # context: switch title under Playback; Android's own name for the floating video window
@@ -1570,3 +1572,9 @@ Set when you patched, so Pause can't turn these off:\n%1$s\nTo rule one out, pat
 For when Marketplace only or Events only is on. Neither is on now.	Für den Fall, dass Nur Marketplace oder Nur Veranstaltungen an ist. Gerade ist keins davon an.
 Hide the Meta AI shortcut	Meta-AI-Verknüpfung ausblenden
 The Meta AI shortcut leaves the Menu's list with Feeds, Marketplace, Reels and Groups, and the next shortcut moves up into its place.	Die Meta-AI-Verknüpfung verschwindet aus der Liste im Menü mit Feeds, Marketplace, Reels und Gruppen, und die nächste Verknüpfung rückt an ihre Stelle.
+Hide people to send to in the share sheet	Vorgeschlagene Personen beim Teilen ausblenden
+Takes the row of profile pictures off the share sheet, the people Facebook suggests sending a post to. The search box and the other ways to share stay.	Entfernt die Reihe mit Profilbildern aus dem Teilen-Menü, also die Leute, denen Facebook vorschlägt, einen Beitrag zu schicken. Das Suchfeld und die anderen Wege zum Teilen bleiben.
+Hide who is typing in comments	Wer gerade kommentiert, ausblenden
+Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.	Entfernt die Zeile, die anzeigt, dass jemand gerade einen Kommentar schreibt. Dein eigenes Tippen hat einen eigenen Schalter unter Datenschutz.
+Hide the search pill on reels	Suchvorschlag bei Reels ausblenden
+Hides the search suggestion under a reel's caption, the magnifier with a question to look up. Off by default, since it hasn't been tried on a real account yet.	Blendet den Suchvorschlag unter der Beschreibung eines Reels aus, die Lupe mit einer Frage zum Nachschlagen. Standardmäßig aus, da es noch nicht mit einem echten Konto getestet wurde.

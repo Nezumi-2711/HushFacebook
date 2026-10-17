@@ -17,6 +17,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONObject;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import app.morphe.extension.shared.SettingsContextRule;
+import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.settings.BooleanSetting;
 
 /**
@@ -128,6 +130,32 @@ public class AuditModeTest {
         AuditMode.writeReport(folder);
         assertFalse(read("report.txt").isEmpty());
         assertFalse(new File(folder, "report.txt.part").exists());
+    }
+
+    @Test
+    public void theAppliedSnapshotReportsActualChoicesAndRefusedImportsCannotRefreshIt() throws Exception {
+        folder.mkdirs();
+        write(new File(folder, "settings.json"), "{\"format\":\"hushfacebook-audit\",\"profile\":\"defaults\"}");
+        AuditMode.onApplicationCreate(context);
+        String applied = read("applied.json");
+        assertEquals(SettingsBackup.create(), applied);
+        write(new File(folder, "settings.json"), "{\"format\":\"hushfacebook-audit\",\"profile\":\"invalid\"}");
+        AuditMode.onApplicationCreate(context);
+        assertEquals(applied, read("applied.json"));
+        assertTrue(read("import.txt").startsWith("refused:"));
+    }
+
+    @Test
+    public void aDisplayedPageRecordsItsCanonicalRouteAndTranslatedTitleOnlyDuringAnAudit() throws Exception {
+        AuditMode.pageShown(context, "News feed", "Actualités");
+        assertFalse(new File(folder, "page.json").exists());
+        folder.mkdirs();
+        AuditMode.pageShown(context, "News feed", "Actualités");
+        JSONObject recorded = new JSONObject(read("page.json"));
+        assertEquals("News feed", recorded.getString("route"));
+        assertEquals("Actualités", recorded.getString("title"));
+        assertEquals(2, recorded.getInt("schema"));
+        assertEquals(L10n.locale(context).toLanguageTag(), recorded.getString("locale"));
     }
 
     private static Intent pageIntent(String page) {

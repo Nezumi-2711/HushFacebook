@@ -399,6 +399,8 @@ final class FeedPages {
                         L10n.t("Hides comments containing a word from your Words to hide list in News feed, along with their "
                                 + "replies. Words that keep a post keep a comment too.")));
             }
+            comments.addPreference(toggle(context, Settings.HIDE_INCOMING_COMMENT_TYPING,
+                    L10n.t("Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.")));
             comments.addPreference(reactionCountsRow(context));
         }
     }
