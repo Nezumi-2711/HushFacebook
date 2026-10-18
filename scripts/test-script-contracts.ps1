@@ -2753,13 +2753,25 @@ try {
 
     # And the README's version badge and the sentence naming the latest release, which a release
     # moves with the index: the fixture's version, and its catalog's count.
+    # Every other sentence giving the published count moves with them. Between releases the catalog
+    # grows past it (2026-10-18, 0.14.0's 91), and when only the latest-release sentence carried the
+    # catalog's count, the case changing that count tripped the README count check first and never
+    # reached the check it covers.
     function Sync-FixtureReadme {
         $fixtureVersion = ((Get-Content -LiteralPath (Join-Path $factsRoot 'gradle.properties')) `
             -match '^version\s*=' | Select-Object -First 1) -replace '^version\s*=\s*', ''
         $count = @((Get-Content -LiteralPath (Join-Path $factsRoot 'patches-list.json') -Raw | ConvertFrom-Json).patches).Count
         $readmePath = Join-Path $factsRoot 'README.md'
         $text = Get-Content -LiteralPath $readmePath -Raw
-        $synced = $text -replace 'badge/version-\d+(?:\.\d+)+-', "badge/version-$fixtureVersion-" `
+        $publishedCount = [regex]::Match($text, '(?i)latest (?:published )?release is (?:still )?\[v[^\]]*\]\([^)\s]*\), with (\d+) patches')
+        if (-not $publishedCount.Success) {
+            throw 'Sync-FixtureReadme found no "The latest release is [vX](link), with N patches" sentence to read the published count from.'
+        }
+        $synced = $text
+        if ([int]$publishedCount.Groups[1].Value -ne $count) {
+            $synced = $synced -replace ('(?<!\d)' + $publishedCount.Groups[1].Value + ' patches\b'), "$count patches"
+        }
+        $synced = $synced -replace 'badge/version-\d+(?:\.\d+)+-', "badge/version-$fixtureVersion-" `
             -replace 'alt="Version \d+(?:\.\d+)+"', "alt=`"Version $fixtureVersion`"" `
             -replace '(latest (?:published )?release is (?:still )?\[?v)\d+(?:\.\d+)+', "`${1}$fixtureVersion" `
             -replace '(latest release is \[v[^\]]*\]\([^)\s]*/tag/v)\d+(?:\.\d+)+', "`${1}$fixtureVersion" `

@@ -94,9 +94,82 @@ public class MenuSettingsRowTest {
     @After
     public void restore() {
         Settings.SAVED_SHORTCUT.resetToDefault();
+        Settings.SETTINGS_SHORTCUT.resetToDefault();
+        Settings.SETTINGS_LOGO_PRESS.resetToDefault();
+        Settings.SETTINGS_MENU_ROW.resetToDefault();
         PauseForTests.resume();
         MenuSettingsRow.forget();
         HookStatus.clear();
+    }
+
+    /** PausedHooksTest's probe: a list from Facebook comes back with the Hushfacebook row in it. */
+    public static boolean aListGetsTheRow() {
+        MenuSettingsRow.forget();
+        for (Object row : MenuSettingsRow.withRow(Collections.singletonList(new Row("Settings", 17, null, 1L)))) {
+            if (((Row) row).id == MenuSettingsRow.ROW_ID) return true;
+        }
+        return false;
+    }
+
+    private static boolean hasOurRow(List<?> rows) {
+        for (Object row : rows) {
+            if (((Row) row).id == MenuSettingsRow.ROW_ID) return true;
+        }
+        return false;
+    }
+
+    /** Switched off, the row isn't added. Facebook's rows come back as they were (#146). */
+    @Test
+    public void withTheSwitchOffTheRowIsNotAdded() {
+        Settings.SETTINGS_MENU_ROW.save(false);
+        List<Object> facebooks = Arrays.asList(settings, language);
+        List<?> rows = MenuSettingsRow.withRow(facebooks);
+        assertSame(facebooks, rows);
+        assertFalse(hasOurRow(rows));
+    }
+
+    /** A list Facebook hands back with the row still in it, once the switch is off, loses the row. */
+    @Test
+    public void withTheSwitchOffTheRowLeavesAListThatHasIt() {
+        List<?> withRow = MenuSettingsRow.withRow(Arrays.asList(settings, language));
+        assertTrue(hasOurRow(withRow));
+        Settings.SETTINGS_MENU_ROW.save(false);
+        List<?> rows = MenuSettingsRow.withRow(withRow);
+        assertFalse(hasOurRow(rows));
+        assertEquals(2, rows.size());
+        assertSame(settings, rows.get(0));
+        Settings.SETTINGS_MENU_ROW.save(true);
+        assertTrue("on again didn't bring the row back", hasOurRow(MenuSettingsRow.withRow(rows)));
+    }
+
+    /** The Saved row doesn't depend on the settings row's switch. */
+    @Test
+    public void withTheSwitchOffTheSavedRowStillComes() {
+        addSavedRoute(RuntimeEnvironment.getApplication());
+        Settings.SAVED_SHORTCUT.save(true);
+        Settings.SETTINGS_MENU_ROW.save(false);
+        List<?> rows = MenuSettingsRow.withRow(Arrays.asList(settings, language));
+        assertEquals(3, rows.size());
+        assertEquals(MenuSettingsRow.SAVED_ROW_ID, ((Row) rows.get(2)).id);
+        assertFalse(hasOurRow(rows));
+    }
+
+    /** Every way in stored off, as a backup could leave it: the row still goes in. */
+    @Test
+    public void withEveryWayInStoredOffTheRowStillGoesIn() {
+        Settings.SETTINGS_SHORTCUT.save(false);
+        Settings.SETTINGS_LOGO_PRESS.save(false);
+        Settings.SETTINGS_MENU_ROW.save(false);
+        assertTrue("no way in was left", hasOurRow(MenuSettingsRow.withRow(Arrays.asList(settings, language))));
+    }
+
+    /** The row keeps its switch while paused: off stays off, on stays on. */
+    @Test
+    public void aPauseLeavesTheRowAsItsSwitchSays() {
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertTrue("a pause took the row out", aListGetsTheRow());
+        Settings.SETTINGS_MENU_ROW.save(false);
+        assertFalse("a pause brought a switched-off row back", aListGetsTheRow());
     }
 
     private static String statusLine() {

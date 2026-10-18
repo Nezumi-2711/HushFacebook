@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.morphe.extension.shared.SettingsContextRule;
+import app.morphe.extension.shared.settings.BooleanSetting;
 import app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 
 import org.junit.After;
@@ -50,6 +51,8 @@ public class SettingsEntryTest {
         HushfacebookPreferenceFragment.failNextInitialization = null;
         PatchFamily.inBuildForTests = null;
         Settings.SETTINGS_SHORTCUT.resetToDefault();
+        Settings.SETTINGS_LOGO_PRESS.resetToDefault();
+        Settings.SETTINGS_MENU_ROW.resetToDefault();
     }
 
     /** PausedHooksTest's probe: a start publishes the settings shortcut. */
@@ -95,6 +98,85 @@ public class SettingsEntryTest {
         assertNotNull("on didn't put it back", ours);
         org.junit.Assert.assertEquals(0, ours.getRank());
         assertNotNull(shortcut(manager, "reels"));
+    }
+
+    private static void waysIn(boolean shortcut, boolean logo, boolean menuRow) {
+        Settings.SETTINGS_SHORTCUT.save(shortcut);
+        Settings.SETTINGS_LOGO_PRESS.save(logo);
+        Settings.SETTINGS_MENU_ROW.save(menuRow);
+    }
+
+    /** Each of the three ways into the settings goes off alone and the other two carry on (#146). */
+    @Test public void eachWayInSwitchesOffAlone() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.of(PatchFamily.MENU_SETTINGS_ROW);
+
+        waysIn(true, true, true);
+        assertTrue(SettingsEntry.logoPressOn());
+        assertTrue(SettingsEntry.menuRowOn());
+
+        waysIn(true, false, true);
+        assertFalse("the logo press stayed on", SettingsEntry.logoPressOn());
+        assertTrue(SettingsEntry.menuRowOn());
+        assertTrue(Settings.SETTINGS_SHORTCUT.get());
+
+        waysIn(true, true, false);
+        assertTrue(SettingsEntry.logoPressOn());
+        assertFalse("the Menu row stayed on", SettingsEntry.menuRowOn());
+        assertTrue(Settings.SETTINGS_SHORTCUT.get());
+
+        waysIn(false, true, true);
+        assertTrue(SettingsEntry.logoPressOn());
+        assertTrue(SettingsEntry.menuRowOn());
+        assertFalse("the shortcut stayed on", Settings.SETTINGS_SHORTCUT.get());
+    }
+
+    /** With one off, nothing is locked. With two off, the third is the last way in and can't be turned off. */
+    @Test public void theLastWayInIsLocked() {
+        waysIn(true, true, true);
+        for (BooleanSetting way : new BooleanSetting[]{Settings.SETTINGS_SHORTCUT, Settings.SETTINGS_LOGO_PRESS, Settings.SETTINGS_MENU_ROW}) {
+            org.junit.Assert.assertFalse(SettingsEntry.isLastWayIn(way, true));
+        }
+        waysIn(true, false, true);
+        assertFalse(SettingsEntry.isLastWayIn(Settings.SETTINGS_SHORTCUT, true));
+        assertFalse(SettingsEntry.isLastWayIn(Settings.SETTINGS_MENU_ROW, true));
+        assertFalse("an off switch is never the last one on", SettingsEntry.isLastWayIn(Settings.SETTINGS_LOGO_PRESS, true));
+
+        waysIn(false, false, true);
+        assertTrue(SettingsEntry.isLastWayIn(Settings.SETTINGS_MENU_ROW, true));
+        assertFalse(SettingsEntry.isLastWayIn(Settings.SETTINGS_SHORTCUT, true));
+        waysIn(false, true, false);
+        assertTrue(SettingsEntry.isLastWayIn(Settings.SETTINGS_LOGO_PRESS, true));
+        waysIn(true, false, false);
+        assertTrue(SettingsEntry.isLastWayIn(Settings.SETTINGS_SHORTCUT, true));
+    }
+
+    /** A build without the Menu row has two ways in, so the second to last is already the last. */
+    @Test public void aBuildWithoutTheMenuRowLocksOneSoonerAndNeverCountsTheRow() {
+        waysIn(true, true, true);
+        assertFalse(SettingsEntry.isLastWayIn(Settings.SETTINGS_SHORTCUT, false));
+        waysIn(false, true, true);
+        assertTrue("the row isn't in this build, so the logo is the last way in", SettingsEntry.isLastWayIn(Settings.SETTINGS_LOGO_PRESS, false));
+        PatchFamily.inBuildForTests = java.util.Collections.emptySet();
+        waysIn(false, false, true);
+        assertTrue("a stored Menu row switch counted as a way in on a build without the row", SettingsEntry.logoPressOn());
+    }
+
+    /** Stored off in all three, as a backup import can leave it, the reads still leave a way in. */
+    @Test public void theReadPathNeverReportsEveryWayInOff() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.of(PatchFamily.MENU_SETTINGS_ROW);
+        waysIn(false, false, false);
+        assertTrue("no way in was left", SettingsEntry.logoPressOn());
+        assertTrue("no way in was left", SettingsEntry.menuRowOn());
+        assertFalse("the shortcut was forced on", Settings.SETTINGS_SHORTCUT.get());
+        assertFalse("the stored choice was rewritten", Settings.SETTINGS_LOGO_PRESS.savedValue());
+    }
+
+    /** Before the settings are read, a long press and the Menu row are Facebook's own. */
+    @Test public void untilTheSettingsAreReadyBothAreFacebooks() {
+        SettingsContextRule.withoutContext(() -> {
+            assertFalse(SettingsEntry.logoPressOn());
+            assertFalse(SettingsEntry.menuRowOn());
+        });
     }
 
     /** The switch is kept while paused: a pause neither brings the shortcut back nor takes it away. */

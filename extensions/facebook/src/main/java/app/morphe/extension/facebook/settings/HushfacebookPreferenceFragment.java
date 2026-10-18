@@ -57,6 +57,7 @@ import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.menu.MenuTiles;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.theme.AccentColor;
@@ -579,7 +580,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         if (pause instanceof SwitchPreference) ((SwitchPreference) pause).setChecked(BaseSettings.PAUSED.savedValue());
         if (still == HushfacebookPause.Reason.MARKER_FILE) {
             String file = L10n.isolate(HushfacebookPause.MARKER_FILE_NAME);
-            String folder = L10n.isolate(markerFolder(context.getPackageName()));
+            String folder = L10n.isolate(markerFolder(context));
             // The switches stay as they were until the file goes, so say when they still pause.
             String left = BaseSettings.PAUSED.savedValue() || BaseSettings.SAFE_MODE.savedValue()
                     ? L10n.f("The file %1$s couldn't be removed. Delete it from %2$s, then tap Resume again.", file, folder)
@@ -609,7 +610,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         if (!HushfacebookPause.isPaused()) {
             status = L10n.t(pausedNext ? "Hushfacebook pauses when Facebook restarts." : "Your controls are active.");
         } else if (pausedNext) {
-            status = pausedSummary(HushfacebookPause.reason(), context.getPackageName())
+            status = pausedSummary(HushfacebookPause.reason(), markerFolder(context))
                     + " " + L10n.t("Tap to turn it back on.");
         } else {
             status = L10n.t("Hushfacebook turns back on when Facebook restarts.");
@@ -815,6 +816,14 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         showMarketplaceSettings();
         showSaveFolder();
         showShareItemsSummary();
+        showMenuTilesSummary();
+    }
+
+    /** No setting is behind the Menu tiles row's key, so its summary is redone here after an import. */
+    private void showMenuTilesSummary() {
+        if (getPreferenceScreen() == null) return;
+        Preference row = findPreference(AppPages.MENU_TILES_ROW);
+        if (row != null) row.setSummary(AppPages.menuTilesSummary(MenuTiles.hidden()));
     }
 
     /** No setting is behind the share sheet row's key, so its summary is redone here after an import. */
@@ -959,9 +968,9 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
 
     /**
      * Why this start runs paused, what a pause does and doesn't reach, and that nothing the reader
-     * saved has changed.
+     * saved has changed. {@code folder} is where the marker file is ({@link #markerFolder(Context)}).
      */
-    static String pausedSummary(HushfacebookPause.Reason reason, String packageName) {
+    static String pausedSummary(HushfacebookPause.Reason reason, String folder) {
         String why;
         switch (reason) {
             case CRASH_LOOP:
@@ -971,7 +980,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 break;
             case MARKER_FILE:
                 why = L10n.f("A file named %1$s in %2$s paused Hushfacebook.",
-                        L10n.isolate(HushfacebookPause.MARKER_FILE_NAME), L10n.isolate(markerFolder(packageName)));
+                        L10n.isolate(HushfacebookPause.MARKER_FILE_NAME), L10n.isolate(folder));
                 break;
             default:
                 why = L10n.t("You paused Hushfacebook.");
@@ -987,6 +996,19 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
      */
     static String markerFolder(String packageName) {
         return "Android/data/" + packageName + "/files";
+    }
+
+    /** The marker's other folder, the one adb can write on Android 11. */
+    static String mediaMarkerFolder(String packageName) {
+        return "Android/media/" + packageName;
+    }
+
+    /** The folder of the marker that is there now, the files folder when neither is. */
+    static String markerFolder(Context context) {
+        java.io.File present = HushfacebookPause.presentMarker(context);
+        String packageName = context.getPackageName();
+        return present != null && present.equals(HushfacebookPause.mediaMarkerFile(context))
+                ? mediaMarkerFolder(packageName) : markerFolder(packageName);
     }
 
     /**

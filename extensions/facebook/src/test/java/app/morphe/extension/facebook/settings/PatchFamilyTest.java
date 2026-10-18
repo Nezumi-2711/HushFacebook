@@ -273,15 +273,17 @@ public class PatchFamilyTest {
         Set<PatchFamily> joined = EnumSet.of(PatchFamily.STORIES_TRAY, PatchFamily.FEED_REELS,
                 PatchFamily.RETURN_REFRESH, PatchFamily.SEEN_POSTS, PatchFamily.STORY_AUTO_ADVANCE,
                 PatchFamily.STORY_SEEN, PatchFamily.REEL_DECLUTTER, PatchFamily.REEL_WATCH_HISTORY,
-                PatchFamily.DOUBLE_TAP_LIKE, PatchFamily.REEL_HOLD, PatchFamily.DEFAULT_COMMENT_ORDER,
-                PatchFamily.COMMENT_SHEET_OPTIONS, PatchFamily.TAG_SUGGESTIONS, PatchFamily.TAP_TO_PLAY,
+                PatchFamily.DOUBLE_TAP_LIKE, PatchFamily.REEL_GESTURES, PatchFamily.REEL_HOLD,
+                PatchFamily.DEFAULT_COMMENT_ORDER,
+                PatchFamily.COMMENT_SHEET_OPTIONS, PatchFamily.FULL_HEIGHT_COMMENTS, PatchFamily.TAG_SUGGESTIONS,
+                PatchFamily.TAP_TO_PLAY,
                 PatchFamily.PLAYBACK_QUALITY, PatchFamily.PICTURE_IN_PICTURE, PatchFamily.HDR_BRIGHTNESS,
                 PatchFamily.SYSTEM_FONT, PatchFamily.SYSTEM_EMOJI, PatchFamily.HAPTICS,
                 PatchFamily.SCREEN_TRANSITIONS, PatchFamily.VIDEO_DOWNLOAD, PatchFamily.START_TAB,
                 PatchFamily.REELS_TAB, PatchFamily.META_UPSELLS, PatchFamily.SHARE_SHEET_ITEMS,
                 PatchFamily.ANALYTICS_UPLOADS, PatchFamily.SCREENSHOTS, PatchFamily.SCREENSHOT_DETECTION,
                 PatchFamily.TYPING_INDICATOR, PatchFamily.READ_RECEIPTS, PatchFamily.ACCENT_COLOR);
-        assertEquals(32, joined.size());
+        assertEquals(34, joined.size());
         for (PatchFamily family : joined) {
             assertTrue(family.patchName + " isn't in the default selection",
                     PatchFamily.DEFAULT_SELECTION.contains(family));
@@ -427,9 +429,9 @@ public class PatchFamilyTest {
                         + "stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Hide sponsored search results, "
                         + "Hide sponsored profile posts, Hide sponsored Marketplace listings, Block Instant Games "
                         + "ads, Hide affiliate product links, Clean up Reels, Hide reel interest prompts, Don't send "
-                        + "reel watch history, Turn off double tap to like, Keep the reel speed, Hold a reel for 2x, "
-                        + "Default comment order, Hide Meta AI comment summaries, Comment sheet options, Tag "
-                        + "suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback quality, "
+                        + "reel watch history, Turn off double tap to like, Open comments with a gesture, Keep the reel speed, Hold a reel for 2x, "
+                        + "Default comment order, Hide Meta AI comment summaries, Comment sheet options, Open comments "
+                        + "at full height, Tag suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback quality, "
                         + "Picture-in-picture, Turn off HDR brightness, Skip silent parts, Keep the progress bar, Use the system font, "
                         + "Use the phone's emoji, Turn off haptics, Hide carrier data banners, Turn off screen transitions, Unlock app icons, Open links in "
                         + "external browser, Sanitize sharing links, Stop update prompts, Download any story, "
@@ -450,9 +452,9 @@ public class PatchFamilyTest {
                         + "Hide suggested stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Hide sponsored "
                         + "search results, Hide sponsored profile posts, Hide sponsored Marketplace listings, Block "
                         + "Instant Games ads, Hide affiliate product links, Clean up Reels, Hide reel interest "
-                        + "prompts, Don't send reel watch history, Turn off double tap to like, Keep the reel speed, "
+                        + "prompts, Don't send reel watch history, Turn off double tap to like, Open comments with a gesture, Keep the reel speed, "
                         + "Hold a reel for 2x, Default comment order, Hide Meta AI comment summaries, Comment sheet "
-                        + "options, Tag suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback "
+                        + "options, Open comments at full height, Tag suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback "
                         + "quality, Picture-in-picture, Turn off HDR brightness, Skip silent parts, Keep the progress bar, Use the "
                         + "system font, Use the phone's emoji, Turn off haptics, Hide carrier data banners, Turn off screen transitions, Unlock app icons, Open "
                         + "links in external browser, Sanitize sharing links, Stop update prompts, Download any "
@@ -467,12 +469,13 @@ public class PatchFamilyTest {
                         + "color, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
                         + "apps, Hushfacebook in the Menu"),
                 running);
-        // Clean up Reels has eight switches, all off to start, and the report names each one.
+        // Clean up Reels has ten switches, all off to start, and the report names each one.
         Settings.HIDE_REEL_FOLLOW_BUTTON.save(true);
         assertEquals("Clean up Reels: on (hushfacebook_hide_reel_chips=off, hushfacebook_hide_reel_follow_button=on, "
                         + "hushfacebook_hide_reel_social_footer=off, hushfacebook_hide_reel_threads_cards=off, "
                         + "hushfacebook_reel_clean_mode=off, hushfacebook_play_reels_once=off, "
-                        + "hushfacebook_original_audio=off, hushfacebook_hide_reel_search_pill=off)",
+                        + "hushfacebook_original_audio=off, hushfacebook_hide_reel_search_pill=off, "
+                        + "hushfacebook_hide_reel_counts=off, hushfacebook_feed_videos_alone=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);
@@ -489,15 +492,15 @@ public class PatchFamilyTest {
         // So has the video menu's item, and a pause takes it out whole.
         // Its copied-link offer is an option of that item: on alone, it doesn't turn the patch on.
         Settings.DOWNLOAD_VIDEOS.save(true);
-        assertEquals("Download any video: on (hushfacebook_download_videos=on, hushfacebook_clipboard_download=off)",
+        assertEquals("Download any video: on (hushfacebook_download_videos=on, hushfacebook_clipboard_download=off, hushfacebook_post_menu_download_first=off, hushfacebook_open_in_another_app=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.VIDEO_DOWNLOAD), false).get(0));
         assertEquals("Download any video: disabled while paused (saved hushfacebook_download_videos=on, "
-                        + "hushfacebook_clipboard_download=off)",
+                        + "hushfacebook_clipboard_download=off, hushfacebook_post_menu_download_first=off, hushfacebook_open_in_another_app=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.VIDEO_DOWNLOAD), true).get(0));
         Settings.DOWNLOAD_VIDEOS.save(false);
         Settings.CLIPBOARD_DOWNLOAD.save(true);
         assertEquals("Download any video: disabled by its switch (hushfacebook_download_videos=off, "
-                        + "hushfacebook_clipboard_download=on)",
+                        + "hushfacebook_clipboard_download=on, hushfacebook_post_menu_download_first=off, hushfacebook_open_in_another_app=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.VIDEO_DOWNLOAD), false).get(0));
         Settings.DOWNLOAD_VIDEOS.resetToDefault();
         Settings.CLIPBOARD_DOWNLOAD.resetToDefault();

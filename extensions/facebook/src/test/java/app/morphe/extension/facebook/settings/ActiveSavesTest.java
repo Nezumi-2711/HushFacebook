@@ -316,6 +316,8 @@ public class ActiveSavesTest {
         SavesForTests.end(id);
         layout();
         TreeSet<String> after = new TreeSet<>(Arrays.asList(prefs.list() == null ? new String[0] : prefs.list()));
+        // Opening the settings stores which rows were seen; that is no part of a save.
+        after.remove(NewRowDots.FILE + ".xml");
         assertEquals("a save stored something", before, after);
     }
 

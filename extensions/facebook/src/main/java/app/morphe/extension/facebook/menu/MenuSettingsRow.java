@@ -37,9 +37,10 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * press does. The row's two loggers ask {@link #isRow} and skip it, so Facebook never records a
  * row it didn't make.
  *
- * <p>Like the logo and the launcher shortcut, the row has no switch and stays while Hushfacebook
- * is paused: the settings screen is where a pause is lifted. Any failure in here leaves Facebook's
- * list as it was.
+ * <p>Like the logo and the launcher shortcut, the row has a switch ({@code SETTINGS_MENU_ROW},
+ * read by {@link SettingsEntry#menuRowOn}) and stays while Hushfacebook is paused: the settings
+ * screen is where a pause is lifted. Off, the row isn't added and is taken out of a list that
+ * still has it. Any failure in here leaves Facebook's list as it was.
  *
  * <p>With the Saved shortcut switch on, a Saved row ({@link #SAVED_ROW_ID}) goes just before it and
  * opens Facebook's own Saved route. One UI's launcher hides the appended launcher entry, so this
@@ -118,15 +119,17 @@ public final class MenuSettingsRow {
                         FACTORY + " or " + ID_READER);
                 return rows;
             }
+            boolean wanted = SettingsEntry.menuRowOn();
             for (Object row : rows) {
                 if (row != null && row.getClass() == found.type && isRow((long) found.idReader.invoke(null, row))) {
-                    return rows;
+                    return wanted ? rows : withoutSettingsRow(rows, found);
                 }
             }
             Context context = Utils.getContext();
             if (context == null) return rows;
-            Object ours = found.factory.invoke(null, template, L10n.t(context, "Hushfacebook settings"), ROW_ID);
-            if (ours == null) return rows;
+            // Switched off, the row stays out and the Saved and Watch history rows go in as they would.
+            Object ours = wanted ? found.factory.invoke(null, template, L10n.t(context, "Hushfacebook settings"), ROW_ID) : null;
+            if (wanted && ours == null) return rows;
             HookStatus.bound(FamilyNames.MENU_SETTINGS_ROW, LIST_HOOK);
             List<Object> withOurs = new ArrayList<>(rows.size() + 3);
             withOurs.addAll(rows);
@@ -139,12 +142,26 @@ public final class MenuSettingsRow {
                         WATCH_HISTORY_ROW_ID);
                 if (watched != null) withOurs.add(watched);
             }
-            withOurs.add(ours);
-            return withOurs;
+            if (ours != null) withOurs.add(ours);
+            return withOurs.size() == rows.size() ? rows : withOurs;
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.MENU_SETTINGS_ROW, LIST_HOOK, failure);
             return rows;
         }
+    }
+
+    /**
+     * [rows] without the Hushfacebook row, for a list Facebook hands back with it still in, after
+     * its switch went off. The list as it was when the row isn't there.
+     */
+    private static List<?> withoutSettingsRow(List<?> rows, Helpers found) throws ReflectiveOperationException {
+        List<Object> kept = new ArrayList<>(rows.size());
+        for (Object row : rows) {
+            boolean ours = row != null && row.getClass() == found.type
+                    && (long) found.idReader.invoke(null, row) == ROW_ID;
+            if (!ours) kept.add(row);
+        }
+        return kept.size() == rows.size() ? rows : kept;
     }
 
     /**

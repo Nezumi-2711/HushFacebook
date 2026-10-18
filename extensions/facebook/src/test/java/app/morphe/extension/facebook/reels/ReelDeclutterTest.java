@@ -65,6 +65,7 @@ public class ReelDeclutterTest {
         Settings.HIDE_REEL_CHIPS.resetToDefault();
         Settings.HIDE_REEL_FOLLOW_BUTTON.resetToDefault();
         Settings.HIDE_REEL_SOCIAL_FOOTER.resetToDefault();
+        Settings.HIDE_REEL_COUNTS.resetToDefault();
         BaseSettings.DEBUG.resetToDefault();
         FeedFilterCounters.clear();
         HookStatus.clear();
@@ -250,6 +251,79 @@ public class ReelDeclutterTest {
         assertEquals(ReelDeclutter.SEARCH_ROUTE + ": 2 lists, 2 items, 1 removed. Last reason: " + ReelDeclutter.SEARCH_PILL
                 + ". Removed: " + ReelDeclutter.SEARCH_PILL + " 1. Kinds: " + ReelDeclutter.SEARCH_PILL + " 2",
                 line(ReelDeclutter.SEARCH_ROUTE));
+    }
+
+    /**
+     * The sidebar counts (#180): the switch starts off, so every button keeps its text. On, a text
+     * holding a number becomes one zero-width space, which keeps the text row and so the icons'
+     * places, while a word, a missing text and an empty one stay as they came. Off again, the
+     * numbers are back.
+     */
+    @Test
+    public void theReelCountsStayUntilTheirSwitchIsOn() {
+        assertFalse(Settings.HIDE_REEL_COUNTS.defaultValue);
+        assertEquals("1.2K", ReelDeclutter.countText("1.2K"));
+
+        Settings.HIDE_REEL_COUNTS.save(true);
+        String hidden = ReelDeclutter.countText("1.2K");
+        assertEquals(ReelDeclutter.NO_COUNT, hidden);
+        assertEquals("the hidden count isn't one character", 1, hidden.length());
+        assertEquals("the hidden count isn't a zero-width space", 0x200B, hidden.charAt(0));
+        assertEquals(ReelDeclutter.NO_COUNT, ReelDeclutter.countText("0"));
+        assertEquals(ReelDeclutter.NO_COUNT, ReelDeclutter.countText("12 M"));
+        // A count in Eastern Arabic digits, as Arabic shows them.
+        assertEquals(ReelDeclutter.NO_COUNT, ReelDeclutter.countText(String.valueOf((char) 0x0661) + (char) 0x0662));
+        assertEquals("a word lost its text", "Share", ReelDeclutter.countText("Share"));
+        assertEquals("Like", ReelDeclutter.countText("Like"));
+        assertEquals("", ReelDeclutter.countText(""));
+        assertNull("a missing text got one", ReelDeclutter.countText(null));
+        assertEquals(ReelDeclutter.COUNTS_ROUTE + ": 4 lists, 4 items, 4 removed. Last reason: " + ReelDeclutter.COUNT
+                + ". Removed: " + ReelDeclutter.COUNT + " 4. Kinds: " + ReelDeclutter.COUNT + " 4",
+                line(ReelDeclutter.COUNTS_ROUTE));
+
+        Settings.HIDE_REEL_COUNTS.save(false);
+        assertEquals("turning the switch off didn't bring the count back", "1.2K", ReelDeclutter.countText("1.2K"));
+    }
+
+    @Test
+    public void pausedOrNotReadyTheReelCountsStay() {
+        Settings.HIDE_REEL_COUNTS.save(true);
+        for (HushfacebookPause.Reason why : new HushfacebookPause.Reason[]{
+                HushfacebookPause.Reason.SWITCH, HushfacebookPause.Reason.CRASH_LOOP,
+                HushfacebookPause.Reason.MARKER_FILE}) {
+            PauseForTests.pause(why);
+            assertEquals(why + " hid a reel count", "345", ReelDeclutter.countText("345"));
+            PauseForTests.resume();
+        }
+        SettingsContextRule.withoutContext(() -> assertEquals("345", ReelDeclutter.countText("345")));
+        assertEquals("the count didn't go again after the pause", ReelDeclutter.NO_COUNT, ReelDeclutter.countText("345"));
+    }
+
+    /** A counts switch that can't be read leaves the text, and the report names the hook that threw. */
+    @Test
+    public void aCountsSwitchThatCantBeReadLeavesTheText() {
+        SettingReadsForTests.breakReads(Settings.HIDE_REEL_COUNTS);
+        try {
+            assertEquals("27", ReelDeclutter.countText("27"));
+        } finally {
+            SettingReadsForTests.mend(Settings.HIDE_REEL_COUNTS);
+        }
+        assertEquals(Arrays.asList("a working '" + ReelDeclutter.COUNT + "' hook (it threw "
+                + NullPointerException.class.getName() + ")"), HookStatus.missing(FamilyNames.REEL_DECLUTTER));
+    }
+
+    /** The counts switch answers for nothing else, and the other switches don't answer for it. */
+    @Test
+    public void theCountsSwitchRunsOnlyItsOwnHook() {
+        assertEquals("the other switches hid a count", "9", ReelDeclutter.countText("9"));
+        Settings.HIDE_REEL_CHIPS.save(false);
+        Settings.HIDE_REEL_FOLLOW_BUTTON.save(false);
+        Settings.HIDE_REEL_SOCIAL_FOOTER.save(false);
+        Settings.HIDE_REEL_COUNTS.save(true);
+        assertFalse("the counts switch hid the Follow button", ReelDeclutter.hideFollowButton());
+        assertFalse("the counts switch skipped a footer query", ReelDeclutter.skipHotComment());
+        assertFalse("the counts switch hid the search pill", ReelDeclutter.hideSearchPill());
+        assertEquals(ReelDeclutter.NO_COUNT, ReelDeclutter.countText("9"));
     }
 
     @Test

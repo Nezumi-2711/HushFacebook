@@ -243,10 +243,11 @@ public final class ResumePlayback {
 
     // ------------------------------------------------------------------ hooks
 
-    /** The hook, first thing in FbGrootPlayer's maybeTrackVideoStart. */
+    /** The hook, first thing in FbGrootPlayer's maybeTrackVideoStart. Recently watched shares it. */
     public static void started(Object player, Object trigger) {
         try {
             HookStatus.invoked(FAMILY);
+            RecentlyWatched.started(player);
             if (!on() || player == null) return;
             HookStatus.bound(FAMILY, "player start");
             start(player, trigger, SystemClock.uptimeMillis(), System.currentTimeMillis());

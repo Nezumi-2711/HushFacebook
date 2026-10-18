@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
+import app.morphe.extension.shared.settings.BooleanSetting;
 import app.morphe.extension.shared.settings.HushfacebookPause;
 import app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 import app.morphe.extension.facebook.download.ClipboardLink;
@@ -55,9 +56,11 @@ import app.morphe.extension.facebook.misc.AppIcons;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.ScreenTransitions;
 import app.morphe.extension.facebook.misc.TextSize;
+import app.morphe.extension.facebook.navigation.HiddenStatusBar;
 import app.morphe.extension.facebook.navigation.ReelsTab;
 import app.morphe.extension.facebook.navigation.TranslucentBars;
 import app.morphe.extension.facebook.notifications.PushDiagnostics;
+import app.morphe.extension.facebook.reels.FeedVideoAlone;
 import app.morphe.extension.facebook.stories.StorySeenButton;
 import app.morphe.extension.facebook.theme.AccentResources;
 import app.morphe.extension.facebook.theme.MaterialYouTheme;
@@ -75,7 +78,8 @@ import app.morphe.extension.facebook.theme.MaterialYouTheme;
  * has to be rebuilt to get here. The shortcut is kept first among Facebook's own, because a
  * launcher shows only the first few, and some launchers have no shortcut menu at all (#2). Its
  * switch ({@link Settings#SETTINGS_SHORTCUT}) takes it out of that menu for someone who opens the
- * screen from Facebook's Menu instead (#146).
+ * screen from Facebook's Menu instead. The logo's long press and the Menu row have switches too, and
+ * the last of the three still on can't be turned off, so there is always a way in (#146).
  */
 @SuppressWarnings("unused")
 public final class SettingsEntry {
@@ -154,7 +158,12 @@ public final class SettingsEntry {
             // Accent color's route five, for the colours views inflated from XML read themselves.
             if (SettingsStatus.accentColor()) AccentResources.watchActivities(context);
             // See-through bars, a switch of the tab bar patch: each main screen as it resumes.
-            if (SettingsStatus.bottomTabBar()) TranslucentBars.watch(context);
+            if (SettingsStatus.bottomTabBar()) {
+                TranslucentBars.watch(context);
+                HiddenStatusBar.watch(context);
+            }
+            // Open feed videos on their own, a Clean up Reels switch: which screen is in front.
+            if (SettingsStatus.reelDeclutter()) FeedVideoAlone.watch(context);
             // Last, so nothing above waits on it. The open itself waits for the first screen to resume.
             ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn);
         } catch (Throwable ex) {
@@ -469,8 +478,10 @@ public final class SettingsEntry {
      * itself (its World Cup mode takes a double tap there, and a long press that opens its game),
      * so its listener goes on as it was and the long press stays Facebook's.
      *
-     * <p>No switch reads this, so Pause leaves it working: it's the way back to the switch that
-     * resumes Hushfacebook. Anything that goes wrong leaves the logo with Facebook's listener.
+     * <p>The logo press has a switch ({@link Settings#SETTINGS_LOGO_PRESS}) that a pause leaves as it
+     * is, since this is a way back to the switch that resumes Hushfacebook. The listener reads it on
+     * every touch, and off, every touch is Facebook's. Anything that goes wrong leaves the logo with
+     * Facebook's listener.
      */
     public static void setLogoTouchListener(View logo, View.OnTouchListener facebooks) {
         View.OnTouchListener listener = facebooks;
@@ -486,6 +497,41 @@ public final class SettingsEntry {
         }
         // Facebook's own call, with Facebook's listener or the one above.
         logo.setOnTouchListener(listener);
+    }
+
+    /**
+     * Whether a long press on the Facebook logo opens the settings. Its switch, except that when
+     * every one of the three ways in is stored off (a backup imported that way, say) the press
+     * stays on, so there is always a way back in. The Menu row only counts as a way in on a build
+     * that carries it. Until the settings are read, the press is Facebook's.
+     */
+    public static boolean logoPressOn() {
+        if (!Utils.settingsReady()) return false;
+        if (Settings.SETTINGS_LOGO_PRESS.get()) return true;
+        return !(Settings.SETTINGS_SHORTCUT.get()
+                || (Settings.SETTINGS_MENU_ROW.get() && PatchFamily.MENU_SETTINGS_ROW.inBuild()));
+    }
+
+    /**
+     * Whether the Hushfacebook row goes in the Menu: its switch, or on when the shortcut and the
+     * logo press are both stored off, for the same reason as {@link #logoPressOn}.
+     */
+    public static boolean menuRowOn() {
+        if (!Utils.settingsReady()) return false;
+        return Settings.SETTINGS_MENU_ROW.get() || !(Settings.SETTINGS_SHORTCUT.get() || Settings.SETTINGS_LOGO_PRESS.get());
+    }
+
+    /**
+     * Whether [way], one of the three switches that open the settings, is on and the only one that
+     * is, so the screen shows it on and greyed out. [menuRowInBuild] is whether this build has the
+     * Menu row, which counts as a way in only when it does.
+     */
+    static boolean isLastWayIn(BooleanSetting way, boolean menuRowInBuild) {
+        if (!way.savedValue()) return false;
+        int on = (Settings.SETTINGS_SHORTCUT.savedValue() ? 1 : 0)
+                + (Settings.SETTINGS_LOGO_PRESS.savedValue() ? 1 : 0)
+                + (menuRowInBuild && Settings.SETTINGS_MENU_ROW.savedValue() ? 1 : 0);
+        return on <= 1;
     }
 
     /**
@@ -508,6 +554,11 @@ public final class SettingsEntry {
         /** This touch opened the screen, so the rest of it isn't the logo's. */
         private boolean opened;
 
+        /** Whether a press on the logo is being timed for a long press. Package-visible for tests. */
+        boolean timing() {
+            return pressed != null;
+        }
+
         @Override
         public boolean onTouch(View logo, MotionEvent event) {
             try {
@@ -515,6 +566,8 @@ public final class SettingsEntry {
                     case MotionEvent.ACTION_DOWN:
                         stop();
                         opened = false;
+                        // Switched off, the press is Facebook's, and nothing here times it.
+                        if (!logoPressOn()) return false;
                         // A long press Facebook gave the logo itself stays Facebook's.
                         if (logo.isLongClickable()) return false;
                         pressed = logo;
@@ -559,6 +612,8 @@ public final class SettingsEntry {
             pressed = null;
             if (logo == null || !logo.isAttachedToWindow()) return;
             try {
+                // Switched off while the finger was down: still Facebook's.
+                if (!logoPressOn()) return;
                 // Not asked for, and letting go is Facebook's tap, as it is on a Facebook without this.
                 if (!requestFromLogo(logo)) return;
                 opened = true;
@@ -632,6 +687,7 @@ public final class SettingsEntry {
             ClipboardLink.onPaused(activity);
             StorySeenButton.activityPaused(activity);
             ScreenTransitions.activityPaused(activity);
+            ScreenLog.paused(activity);
             if (resumed != null && resumed.get() == activity) resumed = null;
             LastScreen.read(activity);
         }

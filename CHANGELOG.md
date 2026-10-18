@@ -6,13 +6,54 @@ Changes in each Hushfacebook version, newest first.
 
 ### Added
 
+* **Facebook:** New switch under Comment sheet options, `Hide the new comments pop-up`. The "3 new comments" bubble stops popping up over the comments while you read them, and new comments still land in the list. It starts off (issue #185).
+* **Facebook:** New switch in Clean up Reels, `Open feed videos on their own`. A video you tap in the feed opens full screen by itself, and no more reels load after it, so a swipe up can't lead into an endless reels feed. The Reels tab keeps scrolling as before. It also catches a reel someone shared to your feed, which some accounts open straight in the reels viewer. It starts off (issue #161).
+* **Facebook:** New switch, `Hide the status bar`, under Appearance with the other bar switches. The phone's status bar with the time and battery goes from Facebook's main screen, so the feed gets the whole screen, and a swipe down from the top edge shows it for a moment. It starts off (issue #124).
+
+* **Facebook:** New patch, `Open comments at full height`. With its switch under Comments on, the comment sheet opens all the way up instead of stopping part way, on posts, videos, reels and stories. On reels and videos, the Comment button opens that sheet instead of the split view with the video on top, and the reel Facebook keeps showing above the comments, on the Reels tab too, is hidden so they get the whole sheet. It starts off (issue #179).
+
+* **Facebook:** The settings now come in Simplified Chinese when Facebook runs in it. Every row, switch name and description is translated, and Facebook's own feature names follow the words its Simplified Chinese app uses. Traditional Chinese still gets English for now. If a line reads oddly, a better wording is welcome on the issue tracker.
+
+* **Facebook:** Settings added since you last looked now carry a small dot, on the switch and on its section's row on the home page. A switch's dot goes once you've left its page, and a section's dot once you've opened that section. Nothing shows on a fresh install or in search results.
+* **Facebook:** **Remember what you watch**, a new switch under Playback, keeps a list on your phone of the reels, videos and stories you watch, so one that vanished when the feed refreshed is easy to find again. **Recently watched**, the row right under it, shows them newest first with a chip for each kind, and a tap opens one in Facebook. Clear empties the list. A video you watched as a reel and again in the video player shows up once, as whichever you watched last. A reel or video counts once it's played for about three seconds, and the list keeps the last 500. Stories are listed when the `View stories anonymously` patch is in your build, with its switch on or off. Nothing on the list leaves your phone, and it starts off. Part of `Resume long videos` (issue #183).
+
+* **Facebook:** **Open videos in another app**, a new switch under Downloads, adds Open in another app to the menu of a feed or Watch video, beside Download to phone. It hands the video's file to whatever player or casting app you pick, like VLC or Web Video Caster, so you can watch it elsewhere or send it to a TV. A video with no single file to hand over says so, and it starts off (issue #182).
+
+* **Facebook:** **Menu tiles to hide**, a new list under Menu, takes the tiles you tick out of the Menu's shortcut grid, Marketplace and Gaming for example. Tiles are matched by where they open, not by their name, so it works in any language. The next tile moves up, and See more and the sections above the grid stay. Pull to refresh the Menu after you change it (issue #153).
+
+* **Facebook:** **Download first in post menus**, a new switch under Downloads, moves Download to phone and Save photo from the end of a post's three-dot menu to the start of its options list. Facebook's own top rows stay above them, and on photo posts that list is the More options page. The row under a post only has room for icons and counts, so the menu is where a post's download lives. A post with nothing to save gets no row, and it starts off (issue #151).
+
+* **Facebook:** New patch, `Open comments with a gesture`. Two switches under Reels and Watch let a double tap or a press and hold on a reel open its comments instead of liking it or holding it. The sheet is the one the Comment button opens. A double tap that opens comments doesn't send a like, and `Turn off double tap to like` and `Hold a reel for 2x` keep working as they did when this is off. Both start off. It covers reels, not feed posts (issue #179).
+
+* **Facebook:** Three new switches under Appearance clean up the top bar on Home: **Hide the Messenger button** takes the button out and the buttons beside it close up, **Hide the Messenger count** keeps the button but drops its unread count, and **Hide the Facebook logo** leaves an empty spot of the same size that still opens Hushfacebook settings when you press and hold it. They start off, and the button and logo need a restart. Part of `Tab bar at the bottom` (issue #181).
+
 * **Facebook:** **Hide people to send to in the share sheet**, a new switch under Share sheet items, takes the row of profile pictures off the share sheet, so it doesn't keep showing people you've lost touch with (issue #169). The search box and the other ways to share stay. It starts off.
 
 * **Facebook:** **Hide who is typing in comments**, a new switch under Comment sheet options, takes away the line that says someone is typing a comment (issue #170). Your own typing stays a separate switch under Privacy. It starts off.
 
 * **Facebook:** **Hide the search pill on reels**, a new switch under Reels and Watch, takes the search suggestion out from under a reel's caption (issue #173). It starts off and shows from the next reel. Part of `Clean up Reels`.
 
+* **Facebook:** **Hide counts on posts**, a new switch under News feed, takes the numbers off the Like, Comment and Share buttons under posts, so each button shows just its word. **Hide counts on reels**, a new switch under Reels and Watch, takes the numbers away from under a reel's Like, Comment and Share icons, and the icons stay put. Both start off and show on what's drawn after the change. They're part of `Hide post prompts` and `Clean up Reels` (issue #180).
+
+* **Facebook:** **Hide the reaction preview on posts**, a new switch under News feed, stops drawing the stacked reaction icons at the end of the button row and the reactions count under a post (issue #158). The space stays where it was. It starts off. Part of `Hide post prompts`.
+
+* **Facebook:** **Hide the reaction preview on comments**, a new switch under Comments, stops drawing a comment's reaction icons, whether they sit in the corner of the comment or next to its reaction count on Facebook's newer comment layout (issue #158). The space stays, so a tap where they were still opens the list of reactions. It starts off and shows on the comments drawn after you change it. The switch for posts leaves comments alone, and this one leaves posts alone. Part of `Hide post prompts`.
+* **Facebook:** An empty `hushfacebook-safe-mode` file in `Android/media/com.facebook.katana` now pauses Hushfacebook too, like the one in `Android/data`. Android 11 doesn't let adb write in `Android/data`, and the media folder is the way around that. The settings name whichever folder the file is in, and `Resume` deletes both.
+* **Facebook:** Two new switches under Menu, **Open settings from the logo** and **Settings row in Menu**, sit next to `Settings shortcut on the app icon`, so you pick which ways into the settings stay (issue #146). Both start on. The last one still on stays on and greys out, so there's always a way back in.
+* **Facebook:** **Picture-in-picture button**, a new switch under Playback, floats a small button at the left edge of a reel or video that has the window ready. Tap it and the window opens right away, the same one the More menu row opens (issue #44). It starts off, needs Picture-in-picture on, and goes away while the window is open.
+* **Facebook:** With Debug logging on, the diagnostic report says why a game didn't open. When Facebook's download screen for a game closes, the screens list gets what it was downloading and the error Facebook kept, so a game that shuts right away can be traced from one report (issue #168).
+* **Tooling:** The source ledger is settled for 2026-10-18: new pins for the moved Facebook sources, Messenger-Z and Messenger-Pro, the NexAlloyNext port and five new forks recorded, and the deleted anemia004 repository and Shuhaib's removed Lite patch marked unavailable and retired. The audit now reads the Morphe Patch Tracker's mixed-case keys and Jman's new registry API, retries a request that times out, waits out a rate limit for longer (as long as the server asks, up to 15 minutes), and checks release fixtures by build and version code. GitLab sources are now read from a local mirror that keeps commits and folder names but no file contents, so a census sends gitlab.com a handful of requests per source instead of a few hundred. A repository an index files under a Facebook package it doesn't patch stays settled once its record names that package, and comes back up if the index names another one.
+* **Tooling:** A source audit that skips GitLab's global code search can stamp the census again. GitLab.com doesn't offer that search at all, so since 2026-10-03 no census could ever be refreshed and every release would have stopped at the 14-day check. The census still lists `gitlab-code-search` under skipped each time, the report keeps the reason, and a search that runs and gets refused, or any other gap, still fails the audit.
+
 ### Fixed
+
+* **Facebook:** With a reel floating in the **Picture-in-picture** window, opening Facebook again from the home screen no longer lets a video playing on Home take the window over. The window stays with the reel that's floating.
+
+* **Facebook:** `Hide Upgrades` and `Hide Also from Meta` now bring up the restart button when you flip them (issue #184). A Menu Facebook already built kept both sections on screen until Facebook started again, so turning either switch on looked like it did nothing.
+
+* **Facebook:** `Tap the bar to seek` jumps to where you tap on Facebook 583 again (issue #120). Facebook now starts a scrub a moment after the drag begins, and the tap's seek landed before that start, which put the video right back where it was.
+
+* **Facebook:** With `View stories anonymously` on, a story you watched to the end now stays watched when Facebook restarts or reloads the story tray (issues #61 and #165). Facebook builds the tray a few times over as it starts, the last time from its servers, and only the first of those got marked, so the ring came back blue.
 
 * **Facebook:** **See-through bars** work with the tab bar at the top now (issue #171). Facebook stacks the top bar and the tab bar in one holder there, and neither bar's color was big enough to count. The blur behind a bar also stays inside the bar on phones whose tab bar holder reaches above the tabs, where it showed as a blurred strip of the feed. Pages that play video on their own surface skip the blur and keep just the see-through color, since drawing that video a second time could turn the Reels tab black.
 
@@ -20,11 +61,43 @@ Changes in each Hushfacebook version, newest first.
 
 * **Facebook:** The diagnostics report keeps every Picture-in-picture count again. It had room for 16 named counts per feature, and Picture-in-picture has more than that, so whichever came last in a session were left out. It keeps 24 now.
 
+* **Facebook:** A saved video whose sample description gives its size as 0 now gets the description's real size. Read on its own, 0 means "to the end", but players reading the box it sits in take it as no size and refuse the whole file. The parser fuzzer found this on its third MP4 hour.
+
 * **Facebook:** Picking an app icon no longer replaces the Facebook wordmark at the top of Home (issue #172). **Use the icon at the top of Home**, a new switch under Appearance, puts your picked icon there instead. It starts off and needs a restart.
 
 * **Tooling:** The device audit now checks its device lease and input window before sending input. Failed imports, missing pages and unproved destinations fail the run. Settings, language and theme restore independently, with recovery files kept if anything fails. A baseline is replaced only after the full run and recovery pass.
 
+* **Tooling:** The device audit starts Facebook through the launcher entry the phone has turned on, so a run, and the phone smoke walk, still work after you pick another app icon. They read the entry from the phone, never change a component, and stop before touching any setting if they find none or more than one.
+
+* **Tooling:** The device audit's walk gets through a test account with no profile picture and the pages Facebook's links open now. Notifications restored partway down, the profile's Add profile picture button and the Menu opened as a page of its own all count as arrived. A row that repeats its label on a part inside it, like the Menu's Settings and privacy, can be tapped, and the tap still has to land inside that row.
+
 * **Tooling:** The script contract tests pass on a published index again. Their check that the release facts refuse a second Facebook build swapped one into the CHANGELOG part of the index, which the facts check skips on purpose, so it failed as soon as a changelog bullet named the target build. It now swaps it into the facts.
+
+### Reported issues
+
+* **Facebook:** #185 The new comments notification: **Hide the new comments pop-up** under Comment sheet options. The pop-up didn't come up while I watched a busy post, so I haven't seen this one live yet. Please say on the issue whether it works for you.
+* **Facebook:** #161 Feed videos opening the reels scroller: **Open feed videos on their own** under Reels and Watch keeps a video you tap in the feed to itself.
+* **Facebook:** #124 The status bar over the feed: **Hide the status bar** under Appearance gives the feed the whole screen, and a swipe down from the top brings the bar back for a moment.
+* **Facebook:** #179 Comments at full height, and from a double tap or a long press: `Open comments at full height` under Comments, plus two switches under Reels and Watch for the gestures.
+* **Facebook:** #183 Finding a reel again after the feed refreshes: **Remember what you watch** under Playback, with the list right under it.
+* **Facebook:** #182 A cast button on videos: **Open videos in another app** under Downloads hands the video to a casting app or player.
+* **Facebook:** #153 Filtering the Menu: **Menu tiles to hide** under Menu.
+* **Facebook:** #151 A download button on posts: **Download first in post menus** under Downloads puts it at the top of the post's menu.
+* **Facebook:** #181 Hiding the Messenger icon, its count and the Facebook logo: three switches under Appearance, one for each.
+* **Facebook:** #169 People in the share sheet: **Hide people to send to in the share sheet** under Share sheet items.
+* **Facebook:** #170 Someone is typing in comments: **Hide who is typing in comments** under Comment sheet options. I haven't seen this one live yet, so please say on the issue whether it works for you.
+* **Facebook:** #173 Questions under reels: **Hide the search pill on reels** under Reels and Watch.
+* **Facebook:** #180 Like, comment and share counts: **Hide counts on posts** under News feed and **Hide counts on reels** under Reels and Watch.
+* **Facebook:** #158 Reaction previews on posts and comments: a switch for each, under News feed and Comments.
+* **Facebook:** #44 Picture in picture: **Picture-in-picture button** under Playback opens the window with one tap.
+* **Facebook:** #184 Hide Upgrades and Hide Also from Meta doing nothing: both bring up the restart button now.
+* **Facebook:** #120 Tap to seek: `Tap the bar to seek` jumps where you tap on Facebook 583 again.
+* **Facebook:** #61 and #165 Watched stories with `View stories anonymously`: a story you finished stays grey after Facebook restarts.
+* **Facebook:** #171 See-through bars with the tab bar at the top: they work there now, and the blur stays inside the bar.
+* **Facebook:** #172 The Facebook wordmark disappearing: a picked app icon leaves it alone, and **Use the icon at the top of Home** under Appearance puts your icon there if you want it.
+* **Facebook:** #126 The purple button after Picture-in-picture: coming back from the window leaves the reel as it was.
+* **Facebook:** #16 Spotting new settings: a small dot marks the switches added since you last looked.
+* **Facebook:** #146 Choosing how the settings open: **Open settings from the logo** and **Settings row in Menu** under Menu join the app icon switch, and the last one on always stays.
 
 ## 0.14.0 (2026-10-16)
 

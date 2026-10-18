@@ -71,7 +71,10 @@ public final class VideoMenuItem {
     public static void add(Menu menu, View anchor, Object item, int icon,
                            String attachmentsGetter, String mediaGetter, String attachedStoryGetter) {
         try {
-            if (!Utils.settingsReady() || !Settings.DOWNLOAD_VIDEOS.get()) return;
+            if (!Utils.settingsReady()) return;
+            boolean download = Settings.DOWNLOAD_VIDEOS.get();
+            boolean handOff = Settings.OPEN_IN_ANOTHER_APP.get();
+            if (!download && !handOff) return;
             if (menu == null) return;
             HookStatus.invoked(FamilyNames.VIDEO_DOWNLOAD);
 
@@ -81,14 +84,25 @@ public final class VideoMenuItem {
             Video video = Video.of(media, postOf(item, attachedStoryGetter));
             if (!video.offered()) return;
 
-            MenuItem entry = menu.add(SendLink.sending() ? L10n.t("Send to app") : L10n.t("Download to phone"));
-            if (entry == null) return;
-            if (icon != 0) entry.setIcon(icon);
             Context context = anchor == null ? null : anchor.getContext();
-            entry.setOnMenuItemClickListener(tapped -> {
-                tap(context, video);
-                return true;
-            });
+            if (download) {
+                MenuItem entry = MenuTop.add(menu, SendLink.sending() ? L10n.t("Send to app") : L10n.t("Download to phone"));
+                if (entry == null) return;
+                if (icon != 0) entry.setIcon(icon);
+                entry.setOnMenuItemClickListener(tapped -> {
+                    tap(context, video);
+                    return true;
+                });
+            }
+            if (handOff) {
+                MenuItem entry = MenuTop.add(menu, L10n.t("Open in another app"));
+                if (entry != null) {
+                    entry.setOnMenuItemClickListener(tapped -> {
+                        OpenInAnotherApp.open(context, video);
+                        return true;
+                    });
+                }
+            }
             HookStatus.bound(FamilyNames.VIDEO_DOWNLOAD, "video menu item");
         } catch (Throwable t) {
             HookStatus.threw(FamilyNames.VIDEO_DOWNLOAD, "video menu", t);

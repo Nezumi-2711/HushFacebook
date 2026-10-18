@@ -1539,10 +1539,18 @@ Your phone couldn't put this video together. Try another Download quality.	Telef
 The file couldn't be copied into your phone's gallery. Try again in a moment.	Dosya telefonunun galerisine kopyalanamadı. Birazdan tekrar dene.
 # context: title of a switch on the Menu settings page: whether the Hushfacebook settings shortcut shows when you hold Facebook's launcher icon
 Settings shortcut on the app icon	Uygulama simgesinde ayarlar kısayolu
-# context: summary of that switch when the build has the Hushfacebook settings row in Facebook's Settings and privacy
-Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu, and you can still open these settings from the Hushfacebook settings row in Settings and privacy or with a long press on the Facebook logo.	Facebook simgesine basılı tutunca açılan menüye Hushfacebook ayarlarını koyar. Kapalıyken bu menüden çıkar. Bu ayarları yine Ayarlar ve gizlilik içindeki Hushfacebook ayarları satırından ya da Facebook logosuna basılı tutarak açabilirsin.
-# context: summary of that switch when the build has no settings row in Facebook's Menu
-Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu, and you can still open these settings with a long press on the Facebook logo.	Facebook simgesine basılı tutunca açılan menüye Hushfacebook ayarlarını koyar. Kapalıyken bu menüden çıkar. Bu ayarları yine Facebook logosuna basılı tutarak açabilirsin.
+# context: title of a switch on the Menu settings page: whether a long press on the Facebook logo opens the Hushfacebook settings
+Open settings from the logo	Ayarları logodan aç
+# context: title of a switch on the Menu settings page: whether the Hushfacebook settings row shows at the end of Settings and privacy in Facebook's Menu
+Settings row in Menu	Menüde ayarlar satırı
+# context: summary of the switch for the Hushfacebook settings shortcut in the launcher icon's menu
+Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu.	Facebook simgesine basılı tutunca açılan menüye Hushfacebook ayarlarını koyar. Kapalıyken bu menüden çıkar.
+# context: summary of the switch for opening the settings with a long press on the Facebook logo
+A long press on the Facebook logo at the top of the home feed opens these settings. Off, the long press goes back to Facebook.	Ana akışın üstündeki Facebook logosuna basılı tutmak bu ayarları açar. Kapalıyken basılı tutma yeniden Facebook'a ait olur.
+# context: summary of the switch for the Hushfacebook settings row in Facebook's Menu
+Adds a Hushfacebook settings row at the end of Settings and privacy in Facebook's Menu. Off, the row leaves the Menu.	Facebook Menüsünde Ayarlar ve gizlilik bölümünün sonuna Hushfacebook ayarları satırı ekler. Kapalıyken satır Menüden çıkar.
+# context: summary shown instead of a switch's usual one while it is the only one of the three ways into the settings still on, so it is greyed out
+The last way into these settings stays on.	Bu ayarlara giden son yol açık kalır.
 # context: switch title on the Appearance settings page: hides Facebook Flex's Data mode bar under the top bar; Data mode is Facebook's own name for paid mode on Flex carriers
 Hide the Data mode banner	Veri modu bannerını gizle
 # context: switch title on the Appearance settings page: hides Facebook Flex's purple Free mode bar; Free mode is Facebook's own name for the free text-only mode
@@ -1555,6 +1563,10 @@ On carriers with Facebook Flex, hides the purple Free mode bar. That bar is also
 Only from a reel's More menu	Yalnızca bir reel'in menüsünden
 # context: summary of that switch; Picture-in-picture is the name of the row in the reel's menu, translated as the row is; the three dots are the reel's own menu button
 Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu (the three dots) when you want one. That row is there whenever Picture-in-picture is on.	Facebook'tan çıkmak pencereyi açmaz. İstediğinde bir reel'in menüsünde (üç nokta) Pencere içinde pencere'ye dokun. Pencere içinde pencere açık olduğu sürece bu satır orada olur.
+# context: switch title under Picture-in-picture on the Playback page; the button floats over a reel or video and opens the small window when tapped
+Picture-in-picture button	Pencere içinde pencere düğmesi
+# context: summary of that switch; "the window" is the small picture-in-picture window
+Shows a small button at the left edge of a reel or video that has the window ready. Tap it to open the window right away. Works with Picture-in-picture on.	Penceresi hazır olan bir reel veya videonun sol kenarında küçük bir düğme gösterir. Pencereyi hemen açmak için dokun. Pencere içinde pencere açıkken çalışır.
 # context: switch title under Stories; it makes videos you post to your own Story ask for high quality when they upload
 Upload Stories in HD	Hikayeleri HD yükle
 # context: summary of that switch; standard is the normal upload quality, high the better one
@@ -1577,4 +1589,119 @@ Takes the row of profile pictures off the share sheet, the people Facebook sugge
 Hide who is typing in comments	Yorumlarda kimin yazdığını gizle
 Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.	Birinin yorum yazdığını gösteren satırı kaldırır. Senin yazman için Gizlilik altında ayrı bir anahtar var.
 Hide the search pill on reels	Reels'te arama önerisini gizle
-Hides the search suggestion under a reel's caption, the magnifier with a question to look up. Off by default, since it hasn't been tried on a real account yet.	Bir reel'in açıklamasının altındaki arama önerisini, yani aranacak bir soru içeren büyüteci gizler. Henüz gerçek bir hesapta denenmediği için varsayılan olarak kapalıdır.
+Hides the search suggestion under a reel's caption, the magnifier with a question to look up.	Bir reel'in açıklamasının altındaki arama önerisini, yani aranacak bir soru içeren büyüteci gizler.
+# context: switch title under Appearance; the button is Facebook's Messenger icon in the top bar of Home
+Hide the Messenger button	Messenger düğmesini gizle
+# context: summary of that switch; the other top bar buttons move over to fill the space; Hushfacebook is the app's name
+Takes the Messenger button out of the top bar, and the buttons beside it close up the gap. Restart Facebook to see the change.	Messenger düğmesini üst çubuktan kaldırır, yanındaki düğmeler boşluğu kapatacak şekilde yaklaşır. Değişikliği görmek için Facebook'u yeniden başlatın.
+# context: switch title under Appearance; the count is the unread number badge on the Messenger icon
+Hide the Messenger count	Messenger sayacını gizle
+# context: summary of that switch; the Messenger icon stays in the top bar
+Keeps the Messenger button but drops the unread count on it.	Messenger düğmesi yerinde kalır, ancak üzerindeki okunmamış mesaj sayısı kaldırılır.
+# context: switch title under Appearance; the logo is the Facebook wordmark or icon at the left of the top bar
+Hide the Facebook logo	Facebook logosunu gizle
+# context: summary of that switch; Hushfacebook is the app's name and stays as it is; press and hold is a long press
+Hides the Facebook logo in the top bar. The empty spot is the same size and still opens Hushfacebook settings when you press and hold it. Restart Facebook to see the change.	Üst çubuktaki Facebook logosunu gizler. Boş alan aynı boyuttadır ve uzun basıldığında yine Hushfacebook ayarlarını açar. Değişikliği görmek için Facebook'u yeniden başlatın.
+# context: switch title under News feed; the counts are the numbers on the Like, Comment and Share buttons under a post
+Hide counts on posts	Gönderilerdeki sayıları gizle
+# context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
+Takes the numbers off the Like, Comment and Share buttons under posts, so each shows just its word. The buttons stay where they are. A change shows on the posts drawn after it.	Gönderilerin altındaki Beğen, Yorum Yap ve Paylaş düğmelerindeki sayıları kaldırır, böylece her düğme yalnızca kendi adını gösterir. Düğmeler yerinde kalır. Değişiklik, sonrasında yüklenen gönderilerde görünür.
+# context: switch title under Reels and Watch; the counts are the numbers under the Like, Comment and Share icons down a reel's right side
+Hide counts on reels	Reels'teki sayıları gizle
+# context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
+Takes the numbers away from under a reel's Like, Comment and Share icons. The icons stay where they are. A change shows from the next reel.	Bir reel'in Beğen, Yorum Yap ve Paylaş simgelerinin altındaki sayıları kaldırır. Simgeler yerinde kalır. Değişiklik bir sonraki reel'den itibaren görünür.
+# context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
+Hide the reaction preview on posts	Gönderilerdeki tepki önizlemesini gizle
+# context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
+Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions.	Gönderilerin altındaki üst üste dizilmiş tepki simgelerini ve tepki sayısını gizler. Boşluk yerinde kalır, bu yüzden eskiden oldukları yere dokunmak yine tepki listesini açar.
+# context: switch title under Comments; the reaction preview is the stack of reaction icons in the corner of a comment
+Hide the reaction preview on comments	Yorumlardaki tepki önizlemesini gizle
+# context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
+Hides the stacked reaction icons in the corner of a comment. The space stays, so a tap where they were still opens the list of reactions.	Bir yorumun köşesindeki üst üste dizilmiş tepki simgelerini gizler. Boşluk yerinde kalır, bu yüzden eskiden oldukları yere dokunmak yine tepki listesini açar.
+# context: switch title under Downloads; "Download" is the post menu row "Download to phone" and "post menus" are the three-dot menus under posts
+Download first in post menus	Gönderi menülerinde önce İndir
+# context: summary of that switch; "Download to phone" and "Save photo" are the menu rows, translate them as elsewhere; "More options" is the title of Facebook's own page, use Facebook's wording
+Moves Download to phone and Save photo from the end of a post's three-dot menu to the start of its options list. Facebook's own top rows stay above them (on photo posts the list is the More options page). A post with nothing to save gets neither.	Telefona indir ve Fotoğrafı kaydet satırlarını bir gönderinin üç nokta menüsünün sonundan seçenekler listesinin başına taşır. Facebook'un kendi üst satırları bunların üstünde kalır (fotoğraf gönderilerinde liste Diğer seçenekler sayfasıdır). Kaydedilecek bir şey olmayan gönderide ikisi de görünmez.
+# context: row title under Menu; opens a list of the Menu's tiles to hide, such as Marketplace and Gaming
+Menu tiles to hide	Gizlenecek Menü kutucukları
+# context: title of the list of Menu tiles to hide
+Hide from the Menu	Menüden gizle
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's short videos
+Reels	Reels
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the games section
+Gaming	Oyun
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the look-back posts from past years
+Memories	Anılar
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the friends' birthdays page
+Birthdays	Doğum günleri
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the charity fundraisers page
+Fundraisers	Bağış kampanyaları
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; job listings
+Jobs	İş ilanları
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's dating feature
+Dating	Flört
+# context: import preview and toast, no Menu tile will be in that list after the import
+Your list of Menu tiles to hide will be empty.	Gizlenecek Menü kutucukları listen boş olacak.
+# context: import preview and toast, one Menu tile will be in that list after the import
+Your list of Menu tiles to hide will hold %1$d tile.	Gizlenecek Menü kutucukları listen %1$d kutucuk içerecek.
+# context: import preview and toast, several Menu tiles will be in that list after the import
+Your list of Menu tiles to hide will hold %1$d tiles.	Gizlenecek Menü kutucukları listen %1$d kutucuk içerecek.
+# context: switch title under Reels and Watch; on, a double tap on a reel opens its comments
+Double tap opens comments	Çift dokunma yorumları açar
+# context: switch title under Reels and Watch; on, holding a reel opens its comments
+Long press opens comments	Basılı tutma yorumları açar
+# context: summary of the double tap switch
+A double tap on a reel opens its comments instead of liking it. Turn off double tap to like still wins when it's on. Off by default, since it hasn't been tried on a real account yet.	Bir reel'e çift dokunmak, onu beğenmek yerine yorumlarını açar. "Beğenmek için çift dokunmayı kapat" açıksa o ayar önceliklidir. Varsayılan olarak kapalıdır, çünkü henüz gerçek bir hesapta denenmedi.
+# context: summary of the long press switch
+Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Off by default, since it hasn't been tried on a real account yet.	Bir reel'i basılı tutmak, Facebook'un uzun basma menüsü veya 2x tutma yerine yorumlarını açar. Reel'in daha fazla düğmesi o menüyü açmaya devam eder. Varsayılan olarak kapalıdır, çünkü henüz gerçek bir hesapta denenmedi.
+# context: switch title under Downloads; the switch adds the post menu row "Open in another app" to feed and Watch videos
+Open videos in another app	Videoları başka uygulamada aç
+# context: summary of that switch; "Open in another app" is the menu row; VLC and Web Video Caster are app names, keep them
+Adds Open in another app to feed and Watch video menus. It hands the video to a player or casting app, such as VLC or Web Video Caster. A video with no single file to hand over says so.	Akış ve Watch videolarının menülerine Başka uygulamada aç satırını ekler. Video, VLC veya Web Video Caster gibi bir oynatıcı ya da yayın uygulamasına gider. Verilecek tek bir dosyası olmayan video bunu söyler.
+# context: post menu row that hands the video to a player or casting app, next to the row "Download to phone"
+Open in another app	Başka uygulamada aç
+# context: title of Android's app chooser, shown over the apps that can play a video
+Open the video with	Videoyu şununla aç
+# context: toast when the video has no single file to hand to another app
+Couldn't find a file for this video. Play it for a moment, then try again.	Bu video için bir dosya bulunamadı. Biraz oynatıp tekrar dene.
+# context: toast when Android has no app that plays a video file
+No app on this phone can open this video	Bu telefondaki hiçbir uygulama bu videoyu açamıyor
+New	Yeni
+# context: label of the switch that keeps a list of the reels, videos and stories you watched
+Remember what you watch	İzlediklerini hatırla
+# context: summary of the Remember what you watch switch
+Keeps a list on this phone of the reels, videos and stories you watch, so you can find one again after the feed refreshes. Nothing leaves your phone.	İzlediğin reellerin, videoların ve hikayelerin listesini bu telefonda tutar, böylece akış yenilendikten sonra birini yeniden bulabilirsin. Hiçbir şey telefonundan çıkmaz.
+# context: title of the row and the list of the reels, videos and stories you watched, newest first; not Facebook's own Watch history
+Recently watched	Son izlenenler
+# context: summary of the Recently watched row
+Reels, videos and stories you watched, newest first. Tap one to open it again.	İzlediğin reeller, videolar ve hikayeler, en yenisi en üstte. Yeniden açmak için birine dokun.
+# context: chip in the Recently watched list that shows only videos
+Videos	Videolar
+# context: kind of one entry in the Recently watched list: a reel
+Reel	Reel
+# context: kind of one entry in the Recently watched list: a story
+Story	Hikaye
+# context: button that empties the Recently watched list at once
+Clear	Temizle
+Just now	Az önce
+# context: toast after Clear empties the Recently watched list
+List cleared	Liste temizlendi
+# context: shown in the Recently watched list while it's empty; names the Remember what you watch switch
+Nothing here yet. With Remember what you watch on, the reels, videos and stories you watch show up here.	Henüz bir şey yok. İzlediklerini hatırla açıkken izlediğin reeller, videolar ve hikayeler burada görünür.
+# context: shown in the Recently watched list when the picked chip has no entries
+Nothing of this kind yet.	Bu türden henüz bir şey yok.
+# context: switch title under Comments; on, the comment sheet opens at the full height of the screen
+Open comments at full height	Yorumları tam yükseklikte aç
+# context: summary of that switch; Comment is the button under a reel or video, the split view shows the video above the comments
+Comments open on a sheet that fills the screen instead of stopping part way up. On reels and videos, Comment opens that sheet in place of the split view with the video on top.	Yorumlar, yarıda durmak yerine tüm ekranı kaplayan bir sayfada açılır. Reels ve videolarda Yorum Yap, videonun üstte olduğu bölünmüş görünüm yerine bu sayfayı açar.
+# context: switch title under Appearance; on, Android's status bar (clock, battery) is hidden on Facebook's main screen
+Hide the status bar	Durum çubuğunu gizle
+# context: summary of that switch; a swipe down from the top edge shows the bar briefly
+Takes the phone's status bar, with the time and battery, off Facebook's main screen, so the app gets the whole screen. Swipe down from the top edge to see it for a moment.	Telefonun saat ve pil gösteren durum çubuğunu Facebook'un ana ekranından kaldırır, böylece uygulama tüm ekranı kullanır. Kısa bir süre görmek için üst kenardan aşağı kaydırın.
+# context: switch title under Reels and Watch; on, a video tapped in the news feed opens alone in the full-screen player instead of leading into endless reels
+Open feed videos on their own	Akıştaki videoları tek başına aç
+# context: summary of that switch; the Reels tab itself still scrolls normally
+A video you tap in the feed opens full screen by itself, with no reels to swipe to after it. The Reels tab keeps scrolling. Off by default, since it hasn't been tried on a real account yet.	Akışta dokunduğun bir video, ardından kaydırılacak reels olmadan tam ekranda tek başına açılır. Reels sekmesi kaymaya devam eder. Henüz gerçek bir hesapta denenmediği için varsayılan olarak kapalıdır.
+Hide the new comments pop-up	Yeni yorumlar açılır bildirimini gizle
+# context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
+The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	Yorumları okurken “yeni yorumlar” baloncuğu artık çıkmaz. Yeni yorumlar listede görünmeye devam eder.

@@ -93,6 +93,25 @@ public final class PictureInPictureForTests {
         }
     }
 
+    /**
+     * Whether a screen just armed, on Android 12 with the phone's feature, is the one the floating
+     * button belongs on. Forgets the arming after.
+     */
+    public static boolean offersTheButton() {
+        shadowOf(RuntimeEnvironment.getApplication().getPackageManager())
+                .setSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE, true);
+        int was = PictureInPicture.apiLevel;
+        PictureInPicture.apiLevel = Build.VERSION_CODES.S;
+        try {
+            Activity activity = Robolectric.buildActivity(Activity.class).setup().get();
+            PictureInPicture.armed(activity, new Object(), null);
+            return PictureInPicture.buttonScreen() == activity;
+        } finally {
+            PictureInPicture.forget();
+            PictureInPicture.apiLevel = was;
+        }
+    }
+
     static boolean allows(int apiLevel, boolean feature) {
         shadowOf(RuntimeEnvironment.getApplication().getPackageManager())
                 .setSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE, feature);

@@ -173,7 +173,10 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * [GRAPHQL_COMMENT]. First thing there, the extension is handed that comment, and a yes returns
  * no children, as Facebook's own comment list section does when it has nothing to draw.
  *
- * In the default selection with all seven switches off, so nothing changes until one is turned on.
+ * Hide who is typing in comments (#170) and Hide the new comments pop-up (#185) are nameless patches
+ * this one carries, [incomingCommentTypingPatch] and [newCommentsPillPatch].
+ *
+ * In the default selection with every switch off, so nothing changes until one is turned on.
  */
 @Suppress("unused")
 val commentSheetOptionsPatch = bytecodePatch(
@@ -181,11 +184,11 @@ val commentSheetOptionsPatch = bytecodePatch(
     name = "Comment sheet options",
     description = "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and " +
         "sticker buttons, show every reply without tapping View replies, load a whole reply thread as you " +
-        "scroll, hide Related groups under group posts, hide comments with shop links or your words, and hide who is typing. Starts off. Turn on the parts you want in " +
+        "scroll, hide Related groups under group posts, hide comments with shop links or your words, and hide who is typing and the new comments pop-up. Starts off. Turn on the parts you want in " +
         "Hushfacebook settings > Comments.",
 ) {
     category("Comments")
-    dependsOn(settingsPatch, facebookExtensionPatch, incomingCommentTypingPatch)
+    dependsOn(settingsPatch, facebookExtensionPatch, incomingCommentTypingPatch, newCommentsPillPatch)
     compatibleWith(*AppCompatibilities.facebook())
 
     execute {

@@ -285,6 +285,28 @@ public class PictureInPictureHoldTest {
         assertTrue(statusLine(), statusLine().contains(PictureInPicture.OFF_SCREEN + " 1"));
     }
 
+    /**
+     * Once the reel viewer floats, Facebook opened from the launcher shows Home full screen beside it.
+     * A Home video playing there neither releases the floating reel's hold nor arms the window for
+     * itself; the armed reel's own play still does.
+     */
+    @Test
+    public void aPlayerOnAnotherScreenLeavesTheWindowWithTheArmedScreensReel() {
+        Activity home = Robolectric.buildActivity(Activity.class).setup().get();
+        View homeVideo = new View(home);
+        PictureInPicture.views = played -> played == other ? homeVideo : null;
+        PictureInPicture.armed(screen, player, new Object[0]);
+        PictureInPicture.playerPaused(player);
+        PictureInPicture.playerPlaying(other);
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals("Home's video released the hold or armed the window", Collections.singletonList(false), screen.autoEnter);
+        PictureInPicture.playerPaused(other);
+        PictureInPicture.playerPlaying(player);
+        assertEquals("the armed reel's own play", Arrays.asList(false, true), screen.autoEnter);
+        assertTrue(statusLine(), statusLine().contains(PictureInPicture.OTHER_SCREEN + " 1"));
+        assertFalse(statusLine(), statusLine().contains(PictureInPicture.KEPT_OUT));
+    }
+
     @Test
     public void withNoViewToReadEveryPlayerThatPlaysIsTheReelOnScreen() {
         PictureInPicture.views = played -> null;

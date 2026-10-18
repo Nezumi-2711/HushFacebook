@@ -85,6 +85,12 @@ public final class CommentSheetOptions {
     /** The member the report names once a count of people typing has been through the hook. */
     static final String TYPING = "incoming typing";
 
+    /** Counted each time the "new comments" pill's text is answered empty, so the pill never shows. */
+    static final String PILL_HIDDEN = "New comments pill kept out";
+
+    /** The member the report names once the "new comments" pill's text has been through the hook. */
+    static final String PILL = "new comments pill";
+
     /** The member the report names once a comment has been drawn through the hook. */
     static final String COMMENTS = "comments";
 
@@ -132,6 +138,25 @@ public final class CommentSheetOptions {
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "incoming comment typing", failure);
             return typers;
+        }
+    }
+
+    /**
+     * The hook, right after Facebook writes the "3 new comments" text for the pill that shows while
+     * a comment list is open. With the switch on it answers an empty text, and Facebook's own check
+     * skips the pill when its text is empty; otherwise, and for a throw, it hands back what
+     * Facebook wrote.
+     */
+    public static String newCommentsPill(String text) {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, PILL);
+            if (text == null || text.isEmpty() || !Utils.settingsReady() || !Settings.HIDE_NEW_COMMENTS_PILL.get()) return text;
+            HookStatus.counted(FAMILY, PILL_HIDDEN);
+            return "";
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "new comments pill", failure);
+            return text;
         }
     }
 

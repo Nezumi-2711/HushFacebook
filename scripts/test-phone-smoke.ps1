@@ -86,6 +86,27 @@ if (Test-Path -LiteralPath $expectations) {
     Assert-That (@($baseline.ranOnWalk).Count -gt 0 -and $baseline.facebook) 'device-audit-expectations.json has no families or no Facebook version.'
 }
 
+# The launcher entry the smoke walk starts: default, alternate icon, none and several.
+. (Join-Path $PSScriptRoot 'device-install.ps1')
+$pkg = 'com.facebook.katana'
+$main = 'com.facebook.katana.LoginActivity'
+$alias = 'com.facebook.katana.LoginActivity.fab_ic'
+function Get-TestLauncher([string[]]$Lines) { Select-AndroidLauncher -Lines $Lines -PackageName $pkg -LauncherClass $main }
+function Test-LauncherRefused([string[]]$Lines) {
+    try { Get-TestLauncher $Lines | Out-Null; return $false } catch { return $true }
+}
+Assert-That ((Get-TestLauncher @('1 activities found:', "  $pkg/.LoginActivity")) -ceq $main) 'The default launcher was not resolved.'
+Assert-That ((Get-TestLauncher @('1 activities found:', "  $pkg/$alias")) -ceq $alias) 'The enabled alternate launcher alias was not resolved.'
+Assert-That ((Get-TestLauncher @("  $pkg/.LoginActivity.fab_ic")) -ceq $alias) 'A short alias name was not expanded.'
+Assert-That ((Get-TestLauncher @("1 activities found:`r", "  $pkg/$alias`r")) -ceq $alias) 'A CRLF launcher line was not resolved.'
+Assert-That (Test-LauncherRefused @('No activities found')) 'A missing launcher passed.'
+Assert-That (Test-LauncherRefused @()) 'An empty launcher query passed.'
+Assert-That (Test-LauncherRefused @("  $pkg/com.facebook.katana.OtherActivity", '  com.other.app/.Main')) 'Unrelated activities passed as a launcher.'
+Assert-That (Test-LauncherRefused @("  $pkg/.LoginActivity", "  $pkg/$alias")) 'Two enabled launchers passed as one.'
+$smokeText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'phone-smoke.ps1'))
+Assert-That (-not $smokeText.Contains('/.LoginActivity"')) 'phone-smoke.ps1 hardcodes the default launcher again.'
+Assert-That ($smokeText.IndexOf('Select-AndroidLauncher') -lt $smokeText.IndexOf('am force-stop')) 'The launcher is not resolved before Facebook is started.'
+Assert-That ([regex]::Matches($smokeText, 'am start -W -n \$Entry').Count -eq 2) 'A launch in phone-smoke.ps1 bypasses the resolved launcher.'
 if ($failures.Count -gt 0) {
     $failures | ForEach-Object { Write-Host "[phone-smoke] FAIL $_" }
     throw "$($failures.Count) phone-smoke report check(s) failed."

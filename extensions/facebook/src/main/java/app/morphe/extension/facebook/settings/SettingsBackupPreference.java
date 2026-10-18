@@ -50,6 +50,7 @@ import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
 import app.morphe.extension.facebook.feed.PostSources;
 import app.morphe.extension.facebook.feed.PostWords;
+import app.morphe.extension.facebook.menu.MenuTiles;
 import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.notifications.QuietHour;
@@ -394,6 +395,7 @@ public class SettingsBackupPreference extends Preference {
                     snapshot.lockAfterChange(), snapshot.textSizeChange(), snapshot.accentChange()));
             if (snapshot.ceilingChange() != null) parts.add(ceilingSentence(snapshot.ceilingChange()));
             if (snapshot.shareItemsChange() != null) parts.add(shareItemsSentence(snapshot.shareItemsChange()));
+            if (snapshot.menuTilesChange() != null) parts.add(menuTilesSentence(snapshot.menuTilesChange()));
             if (snapshot.homeFeedChange() != null) parts.add(homeFeedSentence(snapshot.homeFeedChange()));
             if (snapshot.seenKeep != null && snapshot.changes().containsKey(SettingsBackup.SEEN_KEEP)) {
                 parts.add(L10n.f("Posts you've seen will stay hidden for %1$s.",
@@ -667,6 +669,14 @@ public class SettingsBackupPreference extends Preference {
                 "Your list of share sheet items to hide will hold %1$d items.", items);
     }
 
+    /** The sentence that says how many Menu tiles will be hidden after an import. */
+    static String menuTilesSentence(String list) {
+        int tiles = MenuTiles.count(list);
+        if (tiles == 0) return L10n.t("Your list of Menu tiles to hide will be empty.");
+        return L10n.quantity(tiles, "Your list of Menu tiles to hide will hold %1$d tile.",
+                "Your list of Menu tiles to hide will hold %1$d tiles.", tiles);
+    }
+
     /** A sentence for each setting that isn't a switch an import changes, with no word list among them. */
     static List<String> valueSentences(@Nullable String folder, @Nullable DownloadQuality quality,
                                        @Nullable String fileName, @Nullable StartTab start,
@@ -877,6 +887,7 @@ public class SettingsBackupPreference extends Preference {
                     snapshot.lockAfterChange(), snapshot.textSizeChange(), snapshot.accentChange())
                     + (snapshot.ceilingChange() == null ? "" : " " + ceilingSentence(snapshot.ceilingChange()))
                     + (snapshot.shareItemsChange() == null ? "" : " " + shareItemsSentence(snapshot.shareItemsChange()))
+                    + (snapshot.menuTilesChange() == null ? "" : " " + menuTilesSentence(snapshot.menuTilesChange()))
                     + (snapshot.homeFeedChange() == null ? "" : " " + homeFeedSentence(snapshot.homeFeedChange()));
             accepted = Utils.runOnBackgroundThread(() -> {
                 try {

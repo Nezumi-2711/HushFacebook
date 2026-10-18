@@ -154,6 +154,7 @@
       "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/DownloadQuality.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/FileNameTemplate.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/OpenInAnotherApp.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/PostDetails.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/SaveFolder.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/SaveTo.java",
@@ -602,6 +603,33 @@
     },
     {
       "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/postprompts/PostCounts.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the numbers on a post's Like, Comment and Share buttons. In Facebook 583 one static builder turns a button's count into its text, answering an empty text for a missing or zero count, and the Share button plugin (a kept class name) calls it. The patch finds the builder through that plugin by its shape and holds it to the empty answer and its plural lookup, then has it ask the extension first thing. While the switch is on the builder answers its own empty text, so each button shows its word."
+    },
+    {
+      "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/postprompts/ReactionPreview.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the reaction preview under a post. Two draw methods paint it, the facepile drawable that the FDSInlineReactions component's static factory returns and the onDraw of PillsBlingBarView (a kept class name). The patch finds each by its shape and has it ask the extension first thing, returning before it paints while the switch is on, so the views keep their size and their taps."
+    },
+    {
+      "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/postprompts/CommentReactionPreview.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the reaction preview on comments. Comments draw the same facepile drawable as posts, so the patch marks the FDSInlineReactions component a comment builds (found by the kept strings FDSComment and inline_reaction_transition_key) and copies that mark onto the drawable the one paired method makes from it, letting the drawable's draw ask the comment switch instead of the post switch."
+    },
+    {
+      "paths": [
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredreels/ReelItemStory.kt"
       ],
       "origin": "original",
@@ -971,6 +999,7 @@
     {
       "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/PhotoFormat.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/MenuTop.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/PhotoMenuItem.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/PhotoSave.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/downloads/photo/DownloadPhotoPatch.kt",

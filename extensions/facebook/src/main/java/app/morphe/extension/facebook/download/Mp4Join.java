@@ -371,6 +371,14 @@ final class Mp4Join {
             // Up to the end of the last entry it counts: stray bytes or boxes after that would be
             // read as more entries by the players that walk the box to its end.
             descriptions = slice(stsd.data, 0, 8 + entries.get(descriptionCount - 1).end);
+            // An entry sized 0 is read here as running to the end of the stsd, but inside a box
+            // players take 0 as an entry of no size and refuse the file, so the copy says its size.
+            int lastStart = 8 + (descriptionCount == 1 ? 0 : entries.get(descriptionCount - 2).end);
+            if (descriptions.getInt(lastStart) == 0) {
+                byte[] copy = new byte[descriptions.limit()];
+                descriptions.duplicate().get(copy);
+                descriptions = ByteBuffer.wrap(copy).putInt(lastStart, copy.length - lastStart);
+            }
             Box stsz = find(tables, STSZ);
             Box stts = find(tables, STTS);
             if ((stsz != null && stsz.data.getInt(8) != 0) || (stts != null && stts.data.getInt(4) != 0)) {

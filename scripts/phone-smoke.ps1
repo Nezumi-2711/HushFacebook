@@ -41,7 +41,9 @@ param(
 )
 
 $Package = 'com.facebook.katana'
-$Entry = "$Package/.LoginActivity"
+$LauncherClass = 'com.facebook.katana.LoginActivity'
+# Resolved from the phone before anything starts: an alternate app icon turns .LoginActivity off.
+$Entry = $null
 # Reports go next to the crash files; builds before that saved them in Download/Morphe.
 $ReportGlob = '/sdcard/Download/Hushfacebook/morphe-diagnostics-*.txt /sdcard/Download/Morphe/morphe-diagnostics-*.txt'
 
@@ -200,6 +202,8 @@ if ($Apk) {
     $install = (Invoke-Adb install -r -g $Apk) -join ' '
     if ($install -notmatch 'Success') { throw "adb install failed: $install" }
 }
+
+$Entry = "$Package/$(Select-AndroidLauncher -Lines @(Invoke-Adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER $Package) -PackageName $Package -LauncherClass $LauncherClass)"
 
 Invoke-Adb shell input keyevent KEYCODE_WAKEUP | Out-Null
 $keyguard = (Invoke-Adb shell dumpsys window) -join "`n"

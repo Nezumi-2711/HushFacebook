@@ -61,7 +61,8 @@ public enum PatchFamily {
             Settings.HIDE_PHOTO_POSTS, Settings.HIDE_VIDEO_POSTS, Settings.HIDE_LINK_POSTS,
             Settings.HIDE_BACKGROUND_POSTS, Settings.HIDE_REPOSTS),
     POST_PROMPTS(FamilyNames.POST_PROMPTS, "postPrompts", null,
-            Settings.HIDE_POST_PROMPTS, Settings.HIDE_POST_FOLLOW_LINK),
+            Settings.HIDE_POST_PROMPTS, Settings.HIDE_POST_FOLLOW_LINK, Settings.HIDE_POST_COUNTS,
+            Settings.HIDE_POST_REACTIONS, Settings.HIDE_COMMENT_REACTIONS),
     SEEN_POSTS(FamilyNames.SEEN_POSTS, "seenPosts", null,
             Settings.HIDE_SEEN_POSTS),
     META_AI_QUESTIONS(FamilyNames.META_AI_QUESTIONS, "metaAiQuestions", null,
@@ -97,13 +98,16 @@ public enum PatchFamily {
     REEL_DECLUTTER(FamilyNames.REEL_DECLUTTER, "reelDeclutter", null,
             Settings.HIDE_REEL_CHIPS, Settings.HIDE_REEL_FOLLOW_BUTTON, Settings.HIDE_REEL_SOCIAL_FOOTER,
             Settings.HIDE_REEL_THREADS_CARDS, Settings.REEL_CLEAN_MODE, Settings.PLAY_REELS_ONCE,
-            Settings.ORIGINAL_AUDIO, Settings.HIDE_REEL_SEARCH_PILL),
+            Settings.ORIGINAL_AUDIO, Settings.HIDE_REEL_SEARCH_PILL, Settings.HIDE_REEL_COUNTS,
+            Settings.FEED_VIDEOS_ALONE),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
             Settings.DONT_SEND_REEL_WATCH_HISTORY),
     DOUBLE_TAP_LIKE(FamilyNames.DOUBLE_TAP_LIKE, "doubleTapLike", null,
             Settings.TURN_OFF_DOUBLE_TAP_LIKE),
+    REEL_GESTURES(FamilyNames.REEL_GESTURES, "reelGestures", null,
+            Settings.DOUBLE_TAP_OPENS_COMMENTS, Settings.LONG_PRESS_OPENS_COMMENTS),
     KEEP_REEL_SPEED(FamilyNames.KEEP_REEL_SPEED, "keepReelSpeed", null,
             Settings.KEEP_REEL_SPEED, Settings.KEEP_VIDEO_SPEED, Settings.SLOWER_REEL_SPEEDS),
     REEL_HOLD(FamilyNames.HOLD_REEL_FOR_2X, "reelHold", null,
@@ -116,19 +120,21 @@ public enum PatchFamily {
             Settings.LIKE_ONLY, Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS, Settings.OPEN_REPLY_THREADS,
             Settings.LOAD_WHOLE_REPLY_THREADS, Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS,
             Settings.HIDE_SHOP_LINK_COMMENTS, Settings.HIDE_COMMENTS_WITH_WORDS,
-            Settings.HIDE_INCOMING_COMMENT_TYPING),
+            Settings.HIDE_INCOMING_COMMENT_TYPING, Settings.HIDE_NEW_COMMENTS_PILL),
+    FULL_HEIGHT_COMMENTS(FamilyNames.FULL_HEIGHT_COMMENTS, "fullHeightComments", null,
+            Settings.OPEN_COMMENTS_FULL_HEIGHT),
     TAG_SUGGESTIONS(FamilyNames.TAG_SUGGESTIONS, "tagSuggestions", null,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT),
     TAP_TO_PLAY(FamilyNames.TAP_TO_PLAY, "tapToPlay", null,
             Settings.TAP_TO_PLAY, Settings.TAP_TO_PLAY_REELS_AFTER_FIRST),
     RESUME_LONG_VIDEOS(FamilyNames.RESUME_LONG_VIDEOS, "resumeLongVideos", null,
-            Settings.RESUME_LONG_VIDEOS),
+            Settings.RESUME_LONG_VIDEOS, Settings.RECENTLY_WATCHED),
     FRAME_STEP(FamilyNames.FRAME_STEP, "frameStep", null,
             Settings.FRAME_STEP),
     PLAYBACK_QUALITY(FamilyNames.PLAYBACK_QUALITY, "defaultPlaybackQuality", null,
             Settings.DEFAULT_PLAYBACK_QUALITY),
     PICTURE_IN_PICTURE(FamilyNames.PICTURE_IN_PICTURE, "pictureInPicture", null,
-            Settings.PICTURE_IN_PICTURE, Settings.PICTURE_IN_PICTURE_FROM_MENU),
+            Settings.PICTURE_IN_PICTURE, Settings.PICTURE_IN_PICTURE_FROM_MENU, Settings.PICTURE_IN_PICTURE_BUTTON),
     HDR_BRIGHTNESS(FamilyNames.HDR_BRIGHTNESS, "turnOffHdrBrightness", null,
             Settings.TURN_OFF_HDR_BRIGHTNESS, Settings.PREFER_SDR_RENDITIONS),
     SKIP_SILENCE(FamilyNames.SKIP_SILENCE, "skipSilentParts", null,
@@ -158,7 +164,8 @@ public enum PatchFamily {
     REEL_DOWNLOAD(FamilyNames.REEL_DOWNLOAD, "reelDownload", null,
             Settings.DOWNLOAD_REELS),
     VIDEO_DOWNLOAD(FamilyNames.VIDEO_DOWNLOAD, "videoDownload", null,
-            Settings.DOWNLOAD_VIDEOS, Settings.CLIPBOARD_DOWNLOAD),
+            Settings.DOWNLOAD_VIDEOS, Settings.CLIPBOARD_DOWNLOAD, Settings.POST_MENU_DOWNLOAD_FIRST,
+            Settings.OPEN_IN_ANOTHER_APP),
     PHOTO_DOWNLOAD(FamilyNames.PHOTO_DOWNLOAD, "photoDownload", null,
             Settings.DOWNLOAD_PHOTOS, Settings.POST_MENU_PHOTO_SAVE),
     START_TAB(FamilyNames.START_TAB, "startTab", null,
@@ -186,7 +193,8 @@ public enum PatchFamily {
     BOTTOM_TAB_BAR(FamilyNames.BOTTOM_TAB_BAR, "bottomTabBar", null,
             Settings.BOTTOM_TAB_BAR, Settings.TOP_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR,
             Settings.KEEP_TOP_BAR,
-            Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS),
+            Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS, Settings.HIDE_STATUS_BAR,
+            Settings.HIDE_MESSENGER_BUTTON, Settings.HIDE_MESSENGER_COUNT, Settings.HIDE_FACEBOOK_LOGO),
     FORCE_DARK_MODE(FamilyNames.FORCE_DARK_MODE, "forceDarkMode", null,
             Settings.FORCE_DARK_MODE),
     MESSENGER_CARD(FamilyNames.MESSENGER_CARD, "messengerCard", null,
@@ -276,13 +284,15 @@ public enum PatchFamily {
 
     /**
      * The switches of the settings entry itself, which no family owns: every build with this screen
-     * carries them. These are the release check, the Saved, Watch history and settings shortcuts and Lock
-     * Facebook. Pause turns them off like a family's switches, so the screen draws them above the Pause row
-     * with the rest, but for Lock Facebook and the settings shortcut, which a pause leaves as they are.
+     * carries them. These are the release check, the Saved, Watch history and settings shortcuts, the logo
+     * press and Menu row that open the settings, and Lock Facebook. Pause turns them off like a family's
+     * switches, so the screen draws them above the Pause row with the rest, but for Lock Facebook and the
+     * three ways into the settings, which a pause leaves as they are.
      */
     static final List<BooleanSetting> ENTRY_SWITCHES = Collections.unmodifiableList(
             java.util.Arrays.asList(Settings.CHECK_FOR_RELEASES, Settings.SAVED_SHORTCUT,
-                    Settings.WATCH_HISTORY_SHORTCUT, Settings.SETTINGS_SHORTCUT, Settings.APP_LOCK,
+                    Settings.WATCH_HISTORY_SHORTCUT, Settings.SETTINGS_SHORTCUT, Settings.SETTINGS_LOGO_PRESS,
+                    Settings.SETTINGS_MENU_ROW, Settings.APP_LOCK,
                     Settings.SAVE_CRASH_FILE));
 
     /**
@@ -463,7 +473,7 @@ public enum PatchFamily {
         for (BooleanSetting setting : switches) anyOn |= setting.savedValue();
         // Options cannot enable these families without their main switch.
         if (this == MARKETPLACE_ONLY) anyOn = Settings.MARKETPLACE_ONLY.savedValue() || Settings.EVENTS_ONLY.savedValue();
-        if (this == VIDEO_DOWNLOAD) anyOn = Settings.DOWNLOAD_VIDEOS.savedValue();
+        if (this == VIDEO_DOWNLOAD) anyOn = Settings.DOWNLOAD_VIDEOS.savedValue() || Settings.OPEN_IN_ANOTHER_APP.savedValue();
         if (this == TAP_TO_PLAY) anyOn = Settings.TAP_TO_PLAY.savedValue();
         // The time switch starts on, and does nothing without the bar kept; Tap the bar to seek works alone.
         if (this == PROGRESS_BAR) anyOn = Settings.KEEP_PROGRESS_BAR.savedValue() || Settings.TAP_TO_SEEK.savedValue();

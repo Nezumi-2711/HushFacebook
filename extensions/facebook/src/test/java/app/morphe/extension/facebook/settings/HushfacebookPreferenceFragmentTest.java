@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
@@ -309,19 +310,35 @@ public class HushfacebookPreferenceFragmentTest {
     @Test
     public void thePausedCardSaysWhatStaysInForEveryReason() {
         for (HushfacebookPause.Reason why : HushfacebookPause.Reason.values()) {
-            String summary = HushfacebookPreferenceFragment.pausedSummary(why, "com.facebook.katana");
+            String summary = HushfacebookPreferenceFragment.pausedSummary(why,
+                    HushfacebookPreferenceFragment.markerFolder("com.facebook.katana"));
             assertFalse(why + ": " + summary, UNPATCHED.matcher(summary).find());
             assertTrue(why + ": " + summary, summary.contains("what was set when you patched stays in"));
             // Debug logging and Lock Facebook keep working while paused, so the card can't say every switch is off.
             assertTrue(why + ": " + summary, summary.contains("Every switch but Debug logging and Lock Facebook"));
         }
 
-        // The marker counts only in the app's own files folder, and the card names that folder,
-        // not the one above it a person finds first. The folder is isolated, so a right-to-left
-        // sentence keeps the path in the order it was written.
-        String pkg = RuntimeEnvironment.getApplication().getPackageName();
-        assertTrue(HushfacebookPreferenceFragment.pausedSummary(HushfacebookPause.Reason.MARKER_FILE, pkg)
+        // The marker counts in the app's own files folder, and the card names that folder, not the
+        // one above it a person finds first. The folder is isolated, so a right-to-left sentence
+        // keeps the path in the order it was written.
+        Context app = RuntimeEnvironment.getApplication();
+        String pkg = app.getPackageName();
+        assertTrue(HushfacebookPreferenceFragment.pausedSummary(HushfacebookPause.Reason.MARKER_FILE,
+                HushfacebookPreferenceFragment.markerFolder(app))
                 .contains("in " + L10n.isolate("Android/data/" + pkg + "/files") + " paused Hushfacebook"));
+        // The one adb can make on Android 11, in Android/media, is named where it is.
+        java.io.File media = HushfacebookPause.mediaMarkerFile(app);
+        try {
+            assertTrue(media.getParentFile().exists() || media.getParentFile().mkdirs());
+            assertTrue(media.createNewFile());
+            assertTrue(HushfacebookPreferenceFragment.pausedSummary(HushfacebookPause.Reason.MARKER_FILE,
+                    HushfacebookPreferenceFragment.markerFolder(app))
+                    .contains("in " + L10n.isolate("Android/media/" + pkg) + " paused Hushfacebook"));
+        } catch (java.io.IOException failure) {
+            throw new AssertionError(failure);
+        } finally {
+            media.delete();
+        }
 
         PauseForTests.pause(HushfacebookPause.Reason.CRASH_LOOP);
         // A crash-loop pause comes from safe mode, which stays on for the next start too. The card
@@ -330,7 +347,7 @@ public class HushfacebookPreferenceFragmentTest {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Preference card = rowsOf(controller).get(0);
             assertEquals("Hushfacebook is paused", String.valueOf(card.getTitle()));
-            assertEquals(HushfacebookPreferenceFragment.pausedSummary(HushfacebookPause.Reason.CRASH_LOOP, RuntimeEnvironment.getApplication().getPackageName())
+            assertEquals(HushfacebookPreferenceFragment.pausedSummary(HushfacebookPause.Reason.CRASH_LOOP, HushfacebookPreferenceFragment.markerFolder(app))
                     + " Tap to turn it back on.\n" + HushfacebookPreferenceFragment.overviewBuildDetails(), String.valueOf(card.getSummary()));
         }
     }

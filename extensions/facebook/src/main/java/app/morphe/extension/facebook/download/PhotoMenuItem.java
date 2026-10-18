@@ -86,7 +86,7 @@ public final class PhotoMenuItem {
             List<Photo> photos = photosOf(item, attachmentsGetter, mediaGetter, attachedStoryGetter, subattachmentsGetter);
             if (photos.isEmpty()) return;
 
-            MenuItem entry = menu.add(photos.size() == 1 ? L10n.t("Save photo") : L10n.t("Save all photos"));
+            MenuItem entry = MenuTop.add(menu, photos.size() == 1 ? L10n.t("Save photo") : L10n.t("Save all photos"));
             if (entry == null) return;
             if (icon != 0) entry.setIcon(icon);
             Context context = anchor == null ? null : anchor.getContext();

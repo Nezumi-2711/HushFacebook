@@ -189,6 +189,12 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.HIDE_POST_FOLLOW_LINK,
                         L10n.t("Hides the \"Follow\" link next to the name on posts from Pages and people you don't follow. "
                                 + "Tapping the name still opens the profile. A change shows on the posts drawn after it.")));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_COUNTS,
+                        L10n.t("Takes the numbers off the Like, Comment and Share buttons under posts, so each shows "
+                                + "just its word. The buttons stay where they are. A change shows on the posts drawn after it.")));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_REACTIONS,
+                        L10n.t("Hides the stacked reaction icons and the reactions count under posts. The space stays, "
+                                + "so a tap where they were still opens the list of reactions.")));
             }
             if (build.contains(PatchFamily.SEEN_POSTS)) {
                 seenPosts(feed, context);
@@ -359,15 +365,17 @@ final class FeedPages {
     }
 
     /**
-     * Comments: the order they open in, Meta AI's summaries of them, and what the comment box and
-     * the Like button offer.
+     * Comments: the order they open in, Meta AI's summaries of them, what the comment box and the
+     * Like button offer, and how far up the sheet opens.
      */
     static void comments(HushfacebookPreferenceFragment page, PreferenceScreen screen, Context context,
             Set<PatchFamily> build) {
         boolean order = build.contains(PatchFamily.DEFAULT_COMMENT_ORDER);
         boolean summaries = build.contains(PatchFamily.META_AI_SUMMARIES);
         boolean options = build.contains(PatchFamily.COMMENT_SHEET_OPTIONS);
-        if (!order && !summaries && !options) return;
+        boolean reactions = build.contains(PatchFamily.POST_PROMPTS);
+        boolean fullHeight = build.contains(PatchFamily.FULL_HEIGHT_COMMENTS);
+        if (!order && !summaries && !options && !reactions && !fullHeight) return;
         PreferenceCategory comments = category(screen, L10n.t("Comments"));
         if (order) {
             comments.addPreference(toggle(context, Settings.DEFAULT_COMMENT_ORDER,
@@ -378,6 +386,11 @@ final class FeedPages {
             comments.addPreference(toggle(context, Settings.HIDE_META_AI_SUMMARIES,
                     L10n.t("Hides Meta AI's summary at the top of comments and the comment summary under a post's buttons. The "
                             + "comments themselves stay.")));
+        }
+        if (reactions) {
+            comments.addPreference(toggle(context, Settings.HIDE_COMMENT_REACTIONS,
+                    L10n.t("Hides the stacked reaction icons in the corner of a comment. The space stays, so a tap "
+                            + "where they were still opens the list of reactions.")));
         }
         if (options) {
             comments.addPreference(toggle(context, Settings.LIKE_ONLY,
@@ -401,7 +414,14 @@ final class FeedPages {
             }
             comments.addPreference(toggle(context, Settings.HIDE_INCOMING_COMMENT_TYPING,
                     L10n.t("Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.")));
+            comments.addPreference(toggle(context, Settings.HIDE_NEW_COMMENTS_PILL,
+                    L10n.t("The \"new comments\" bubble no longer pops up while you read comments. New comments still show in the list.")));
             comments.addPreference(reactionCountsRow(context));
+        }
+        if (fullHeight) {
+            comments.addPreference(toggle(context, Settings.OPEN_COMMENTS_FULL_HEIGHT,
+                    L10n.t("Comments open on a sheet that fills the screen instead of stopping part way up. On reels and "
+                            + "videos, Comment opens that sheet in place of the split view with the video on top.")));
         }
     }
 

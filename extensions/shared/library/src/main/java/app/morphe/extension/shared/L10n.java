@@ -310,12 +310,33 @@ public final class L10n {
                 String regional = language + "-r" + country.toLowerCase(Locale.ROOT);
                 if (!tags.contains(regional)) tags.add(regional);
             }
+            // The one Chinese table is Simplified, and Chinese is told apart by script as much
+            // as by region (zh-Hans-MY, plain zh), so every Simplified phone also tries it.
+            if (simplifiedChinese(locale, language) && !tags.contains(SIMPLIFIED_CHINESE)) {
+                tags.add(SIMPLIFIED_CHINESE);
+            }
             if (!tags.contains(language)) tags.add(language);
         }
         if (tags.isEmpty()) {
             tags.add(Locale.getDefault().getLanguage().toLowerCase(Locale.ROOT));
         }
         return tags;
+    }
+
+    private static final String SIMPLIFIED_CHINESE = "zh-rcn";
+
+    /**
+     * Whether a Chinese locale reads Simplified. A Hans script says so and any other script
+     * (Hant) says no. With no script, China, Singapore and Malaysia (or no region at all) are
+     * Simplified, while Taiwan, Hong Kong and Macau are Traditional and get English.
+     */
+    private static boolean simplifiedChinese(Locale locale, String language) {
+        if (!"zh".equals(language)) return false;
+        String script = locale.getScript();
+        if (script != null && !script.isEmpty()) return "Hans".equalsIgnoreCase(script);
+        String country = locale.getCountry();
+        if (country == null || country.isEmpty()) return true;
+        return "CN".equalsIgnoreCase(country) || "SG".equalsIgnoreCase(country) || "MY".equalsIgnoreCase(country);
     }
 
     /**

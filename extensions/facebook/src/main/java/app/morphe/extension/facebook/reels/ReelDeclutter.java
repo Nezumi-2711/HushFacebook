@@ -40,6 +40,9 @@ import app.morphe.extension.shared.settings.BaseSettings;
  *   <li>The comment Facebook picks to show under a reel and the bubbles of friends who reacted each
  *       come from a query a runnable starts. {@link #skipHotComment} and {@link #skipSocialBubbles}
  *       are asked first thing in each, and true makes the runnable return before it queries.
+ *   <li>Each button down a reel's right side is one vertical button component whose constructor
+ *       takes the text under the icon. {@link #countText} is handed that text first thing in the
+ *       constructor and answers what the button keeps (#180).
  * </ul>
  *
  * <p>Every hook fails open: until the settings are ready, while Hushfacebook is paused, with a
@@ -72,6 +75,17 @@ public final class ReelDeclutter {
     /** Counted under its own name each time the search pill isn't built. */
     static final String SEARCH_ROUTE = "Reel search pill";
     static final String SEARCH_PILL = "search pill";
+
+    /** Counted under its own name each time a sidebar button's number is taken away. */
+    static final String COUNTS_ROUTE = "Reel counts";
+    static final String COUNT = "button count";
+
+    /**
+     * What a hidden count becomes: one zero-width space. The button still has a text row, so it
+     * keeps the height it has with a number and the icons above and below it don't move, but the
+     * row shows nothing. A null text would drop the row and pull every icon under it up.
+     */
+    static final String NO_COUNT = String.valueOf((char) 0x200B);
 
     /** The kind a chip is counted under when its type can't be read. It stays. */
     static final String UNREADABLE = "unreadable type";
@@ -228,6 +242,38 @@ public final class ReelDeclutter {
             Logger.printException(() -> "Reel search pill: could not read its switch", failure);
             return false;
         }
+    }
+
+    /**
+     * Injection point, first thing in the constructor of the vertical button a reel's sidebar is
+     * made of (Like, Comment, Share and the rest), handed the text the button shows under its icon.
+     * A text holding a number becomes {@link #NO_COUNT} while the switch is on, so the icon stays
+     * and nothing shows under it. A word such as "Share" stays, and so does a missing text. Never
+     * throws: off, paused, before the settings are ready or on a failure the text comes back as it
+     * was handed in.
+     */
+    public static String countText(String text) {
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            if (text == null || !Utils.settingsReady() || !Settings.HIDE_REEL_COUNTS.get()) return text;
+            if (!holdsDigit(text)) return text;
+            FeedFilterCounters.sawList(COUNTS_ROUTE, 1);
+            FeedFilterCounters.sawKind(COUNTS_ROUTE, COUNT);
+            FeedFilterCounters.removed(COUNTS_ROUTE, 1, COUNT);
+            logOnce(COUNT, () -> "Reel counts: a sidebar button's number was taken away");
+            return NO_COUNT;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, COUNT, failure);
+            return text;
+        }
+    }
+
+    /** Whether the text has a digit in any script, which a count always has and a word doesn't. */
+    static boolean holdsDigit(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            if (Character.isDigit(text.charAt(i))) return true;
+        }
+        return false;
     }
 
     /**

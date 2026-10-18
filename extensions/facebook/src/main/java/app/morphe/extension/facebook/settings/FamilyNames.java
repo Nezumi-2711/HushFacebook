@@ -51,11 +51,13 @@ public final class FamilyNames {
     public static final String REEL_PROMPTS = "Hide reel interest prompts";
     public static final String REEL_WATCH_HISTORY = "Don't send reel watch history";
     public static final String DOUBLE_TAP_LIKE = "Turn off double tap to like";
+    public static final String REEL_GESTURES = "Open comments with a gesture";
     public static final String KEEP_REEL_SPEED = "Keep the reel speed";
     public static final String HOLD_REEL_FOR_2X = "Hold a reel for 2x";
     public static final String DEFAULT_COMMENT_ORDER = "Default comment order";
     public static final String META_AI_SUMMARIES = "Hide Meta AI comment summaries";
     public static final String COMMENT_SHEET_OPTIONS = "Comment sheet options";
+    public static final String FULL_HEIGHT_COMMENTS = "Open comments at full height";
     public static final String TAG_SUGGESTIONS = "Tag suggestions only after @";
     public static final String TAP_TO_PLAY = "Tap to play";
     public static final String RESUME_LONG_VIDEOS = "Resume long videos";

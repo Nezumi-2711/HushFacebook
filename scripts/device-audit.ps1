@@ -77,7 +77,10 @@ $smokeReader = $smokeAst.Find({ param($node)
 . (Join-Path $PSScriptRoot 'device-install.ps1')
 
 $Package = 'com.facebook.katana'
-$Entry = "$Package/.LoginActivity"
+# The launcher entry that's on, resolved from the phone by Get-AuditLauncher before any change.
+# Picking an alternate app icon turns .LoginActivity off, and Android starts nothing for it then.
+$LauncherClass = 'com.facebook.katana.LoginActivity'
+$Entry = $null
 $Extra = 'app.morphe.extension.facebook'
 $AuditDir = "/sdcard/Android/data/$Package/files/hushfacebook-audit"
 $translationTables = Join-Path $PSScriptRoot '..\extensions\shared\library\src\main\l10n'
@@ -188,13 +191,13 @@ function Invoke-Adb {
                 if ($inputNodeLabel -cnotin @('Comment', 'Settings and privacy', 'Feeds')) {
                     throw 'No permitted navigation node was selected. No tap was sent.'
                 }
-                $hits = @($fresh | Where-Object {
-                    ($_.text -ceq $inputNodeLabel -or $_.'content-desc' -ceq $inputNodeLabel) -and
-                    $_.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' -and
-                    [int]$arguments[3] -ge [int]$Matches[1] -and [int]$arguments[3] -lt [int]$Matches[3] -and
-                    [int]$arguments[4] -ge [int]$Matches[2] -and [int]$arguments[4] -lt [int]$Matches[4]
-                })
-                if ($hits.Count -ne 1) { throw 'The navigation node moved or became ambiguous. No tap was sent.' }
+                # The label must still name one target on the fresh screen, and the tap must land in it.
+                $target = Select-AuditTapNode $inputNodeLabel $fresh
+                if ($null -eq $target -or $target.bounds -notmatch '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' -or
+                        [int]$arguments[3] -lt [int]$Matches[1] -or [int]$arguments[3] -ge [int]$Matches[3] -or
+                        [int]$arguments[4] -lt [int]$Matches[2] -or [int]$arguments[4] -ge [int]$Matches[4]) {
+                    throw 'The navigation node moved or became ambiguous. No tap was sent.'
+                }
             }
             # A dump can take seconds. An overlay may have taken input while it was running.
             Assert-AuditForeground
@@ -262,17 +265,48 @@ function Test-AuditDestination([string]$Route, [object[]]$Nodes) {
         'fb://watch' { return $labels -ccontains 'Reels tab details' -or $labels -ccontains 'Reel details' }
         'fb://fb_shorts/viewer' { return $labels -ccontains 'Reel details' }
         'fb://notifications' {
-            return @($own | Where-Object { $_.text -ceq 'Notifications' -and $_.'content-desc' -ceq 'Notifications' }).Count -gt 0
+            # The link opens a page whose title isn't a node and which a warm app restores scrolled
+            # down, so a row's own settings button counts too.
+            return @($own | Where-Object { $_.text -ceq 'Notifications' -and $_.'content-desc' -ceq 'Notifications' }).Count -gt 0 -or
+                $labels -ccontains "Manage the notification$([char]0x2019)s settings"
         }
         'fb://marketplace' { return $labels -ccontains 'Marketplace' -and $labels -ccontains 'Search Marketplace' }
-        'fb://profile' { return $labels -ccontains 'Edit profile' -and $labels -ccontains 'Edit profile picture' }
+        # An account with no profile picture offers to add one instead.
+        'fb://profile' {
+            return $labels -ccontains 'Edit profile' -and
+                ($labels -ccontains 'Edit profile picture' -or $labels -ccontains 'Add profile picture')
+        }
         'fb://search' {
             return @($own | Where-Object { $_.class -ceq 'android.widget.EditText' -and
                 ($_.text -cmatch '^Search(?:\s|$)' -or $_.'content-desc' -cmatch '^Search(?:\s|$)') }).Count -gt 0
         }
-        'fb://bookmarks' { return $labels -ccontains 'Menu' -and $labels -ccontains 'Settings and privacy' }
+        # The link opens the menu as a page with a Settings button and no Menu title.
+        'fb://bookmarks' {
+            return $labels -ccontains 'Settings and privacy' -and ($labels -ccontains 'Menu' -or $labels -ccontains 'Settings')
+        }
     }
     return $false
+}
+
+# The one node a "tap:<label>" step may tap, or $null. A row can repeat its label on a child that
+# isn't clickable (the menu's Settings and privacy row on the S22), so several matches still
+# name one target when exactly one is clickable and every other match sits inside it.
+function Select-AuditTapNode([string]$Label, [object[]]$Nodes) {
+    $boundsPattern = '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$'
+    $found = @($Nodes | Where-Object { $_.text -ceq $Label -or $_.'content-desc' -ceq $Label } |
+        Where-Object { $_.package -ceq $Package -and $_.bounds -match $boundsPattern })
+    if ($found.Count -eq 1) { return $found[0] }
+    $rows = @($found | Where-Object { $_.clickable -ceq 'true' })
+    if ($found.Count -lt 2 -or $rows.Count -ne 1) { return $null }
+    $null = $rows[0].bounds -match $boundsPattern
+    $outer = @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3], [int]$Matches[4])
+    foreach ($other in $found) {
+        if ([object]::ReferenceEquals($other, $rows[0])) { continue }
+        $null = $other.bounds -match $boundsPattern
+        if ([int]$Matches[1] -lt $outer[0] -or [int]$Matches[2] -lt $outer[1] -or
+                [int]$Matches[3] -gt $outer[2] -or [int]$Matches[4] -gt $outer[3]) { return $null }
+    }
+    return $rows[0]
 }
 
 function Save-Screenshot([string]$Path) {
@@ -281,7 +315,16 @@ function Save-Screenshot([string]$Path) {
     Invoke-Adb shell rm -f /sdcard/hushfacebook-audit.png | Out-Null
 }
 
+# The one MAIN/LAUNCHER entry the phone lists for Facebook: the default LoginActivity, or the
+# alias an alternate icon turned on (Android lists only enabled components). Zero or several
+# fail the run before anything changes. Component states are read, never set.
+function Get-AuditLauncher {
+    $lines = @(Invoke-Adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER $Package)
+    return Select-AndroidLauncher -Lines $lines -PackageName $Package -LauncherClass $LauncherClass
+}
+
 function Start-Facebook {
+    if (-not $Entry) { throw 'The launcher entry was not resolved. No app start was sent.' }
     Invoke-Adb shell am force-stop $Package | Out-Null
     Invoke-Adb shell am start -W -n $Entry | Out-Null
     Start-Sleep -Seconds ($SettleSeconds * 2)
@@ -437,6 +480,7 @@ function Restore-AuditState {
 }
 
 function Get-Report([string]$Path) {
+    if (-not $Entry) { throw 'The launcher entry was not resolved. No report request was sent.' }
     Invoke-Adb shell rm -f "$AuditDir/report.txt" | Out-Null
     Invoke-Adb shell am start -W -n $Entry --ez "$Extra.AUDIT_REPORT" true | Out-Null
     for ($wait = 0; $wait -lt 20; $wait++) {
@@ -474,6 +518,7 @@ function Close-Settings {
 function Save-SettingsPages([string]$Pass, [string]$RequestedLocale = '') {
     $dir = Join-Path $OutDir "pages-$Pass"
     New-Item -ItemType Directory -Force $dir | Out-Null
+    if (-not $Entry) { throw 'The launcher entry was not resolved. No settings page was opened.' }
     $results = New-Object System.Collections.Generic.List[object]
     $translations = @{}
     if ($RequestedLocale) {
@@ -602,7 +647,8 @@ if ($basePath.Count -ne 1) { throw 'Could not identify one installed base APK.' 
 $apkHash = ((Invoke-Adb shell "sha256sum $(Format-Shell $basePath[0].Substring(8))") -join '').Trim()
 if ($apkHash -cnotmatch '\A([a-f0-9]{64})\s') { throw 'Could not hash the installed APK.' }
 $installedHash = $Matches[1]
-Write-Step "Facebook $version on $Serial, results in $OutDir"
+$Entry = "$Package/$(Get-AuditLauncher)"
+Write-Step "Facebook $version on $Serial, launching $Entry, results in $OutDir"
 
 $problems = New-Object System.Collections.Generic.List[string]
 $summary = New-Object System.Collections.Generic.List[string]
@@ -647,9 +693,7 @@ try {
                         Invoke-Adb shell input swipe $swipeX $swipeTo $swipeX $swipeFrom 300 | Out-Null
                         Start-Sleep -Milliseconds 1200
                     }
-                    $node = Get-UiNodes | Where-Object { $_.text -eq $label -or $_.'content-desc' -eq $label } |
-                        Where-Object { $_.package -ceq $Package -and $_.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' }
-                    if (@($node).Count -ne 1) { $node = $null }
+                    $node = Select-AuditTapNode $label @(Get-UiNodes)
                 }
                 if ($node -and $node.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$') {
                     if ([int]$Matches[1] -lt 0 -or [int]$Matches[2] -lt 0 -or

@@ -37,7 +37,7 @@ import app.morphe.extension.shared.settings.PauseForTests;
 /**
  * Marking watched buckets on the phone (#61): a bucket watched to its newest story is published as
  * watched when its batch of views is held back, and again each time Facebook builds it with the
- * same newest story, until a new one arrives. A peek, a story short of the newest, the switch off
+ * same newest story, until a new one arrives, a few times a window at most. A peek, a story short of the newest, the switch off
  * or a pause marks nothing, and the switch saved off forgets what was kept.
  */
 @RunWith(RobolectricTestRunner.class)
@@ -92,7 +92,7 @@ public class StorySeenMarkingTest {
         shadowOf(Looper.getMainLooper()).idle();
     }
 
-    /** Past the time a bucket isn't published twice in. */
+    /** Past a bucket's window of marks. */
     private static void later() {
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(StorySeen.REMARK_MS + 1));
     }
@@ -142,11 +142,9 @@ public class StorySeenMarkingTest {
         idle();
         assertEquals(1, published.size());
 
-        // Facebook builds the bucket again from its servers, which still send it as unwatched.
-        // Within moments of the last mark, once is enough.
-        built(new Bucket("b1", "s1", "s2"));
-        assertEquals(1, published.size());
-        later();
+        // Facebook builds the bucket again from its servers, which still send it as unwatched. A
+        // copy built moments after the mark carries that too and gets its own (#165: a cold start
+        // builds the tray four times in under a second, and the last one came after the mark).
         Bucket reloaded = new Bucket("b1", "s1", "s2");
         built(reloaded);
         assertEquals(Arrays.asList("b1", "b1"), published);
@@ -170,6 +168,26 @@ public class StorySeenMarkingTest {
         seen.unwatched = false;
         built(seen);
         assertEquals(3, published.size());
+    }
+
+    @Test
+    public void aBucketBuiltUnwatchedOverAndOverIsMarkedAFewTimesAWindow() {
+        Bucket friend = new Bucket("b1", "s1");
+        StorySeen.viewed(friend, "s1", helper, false);
+        heldBack();
+        idle();
+        for (int i = 0; i < StorySeen.MARKS_PER_WINDOW * 3; i++) built(new Bucket("b1", "s1"));
+        assertEquals(StorySeen.MARKS_PER_WINDOW, published.size());
+
+        // Another bucket has its own window.
+        StorySeen.viewed(new Bucket("b2", "t1"), "t1", helper, false);
+        heldBack();
+        idle();
+        assertEquals(StorySeen.MARKS_PER_WINDOW + 1, published.size());
+
+        later();
+        built(new Bucket("b1", "s1"));
+        assertEquals(StorySeen.MARKS_PER_WINDOW + 2, published.size());
     }
 
     @Test

@@ -78,8 +78,72 @@ public class MenuShortcutsTest {
     public void restore() {
         PauseForTests.resume();
         Settings.HIDE_MENU_META_AI.resetToDefault();
+        Settings.HIDDEN_MENU_TILES.resetToDefault();
         FeedFilterCounters.clear();
         HookStatus.clear();
+    }
+
+    private static TreeJNI tile(String name, String link) {
+        return new TreeJNI().with("name", name).with("url", link);
+    }
+
+    /** The rows as a phone showed them, each with the deep link it opens. */
+    private static List<Object> linkedMenu() {
+        return new ArrayList<>(Arrays.asList(tile("Feeds", "fb://feeds"), tile("Marketplace", "fb://marketplace_tab"),
+                tile("Reels", "fb://reels_tab"), tile("Gaming", "https://www.facebook.com/gaming/"),
+                tile("Meta AI", "fb://meta_ai"), tile("Events", "fb://events")));
+    }
+
+    /** Marketplace and Gaming go by their links, whatever the Menu calls them, and the rest keep their order. */
+    @Test
+    public void pickedTilesLeaveByTheirLinkAndTheRestKeepTheirOrder() {
+        Settings.HIDE_MENU_META_AI.save(false);
+        MenuTiles.hide(Arrays.asList("marketplace", "gaming"));
+        assertEquals(Arrays.asList("Feeds", "Reels", "Meta AI", "Events"), names(MenuShortcuts.kept(linkedMenu())));
+        List<Object> translated = new ArrayList<>(Arrays.asList(tile("Mercado", "fb://marketplace"), tile("Feeds", "fb://feeds")));
+        assertEquals(Collections.singletonList("Feeds"), names(MenuShortcuts.kept(translated)));
+        List<Object> sameLabelOtherLink = new ArrayList<>(Arrays.asList(tile("Marketplace", "fb://other"), tile("Feeds", "fb://feeds")));
+        assertSame("a tile with the label but another link went", sameLabelOtherLink, MenuShortcuts.kept(sameLabelOtherLink));
+    }
+
+    /** Unticking brings the tile back, and a list with none of the picked tiles comes back as it is. */
+    @Test
+    public void untickedTheTileIsBackAndNoMatchLeavesTheListAlone() {
+        Settings.HIDE_MENU_META_AI.save(false);
+        List<Object> bookmarks = linkedMenu();
+        assertSame(bookmarks, MenuShortcuts.kept(bookmarks));
+        MenuTiles.hide(Collections.singletonList("marketplace"));
+        assertEquals(5, MenuShortcuts.kept(bookmarks).size());
+        MenuTiles.hide(Collections.<String>emptyList());
+        assertSame(bookmarks, MenuShortcuts.kept(bookmarks));
+        MenuTiles.hide(Collections.singletonList("jobs"));
+        assertSame(bookmarks, MenuShortcuts.kept(bookmarks));
+    }
+
+    /** Both ways work in one pass, each counted under its own name. */
+    @Test
+    public void metaAiAndPickedTilesLeaveTogetherAndAreCountedApart() {
+        MenuTiles.hide(Collections.singletonList("gaming"));
+        assertEquals(Arrays.asList("Feeds", "Marketplace", "Reels", "Events"), names(MenuShortcuts.kept(linkedMenu())));
+        String counters = line(FeedFilterCounters.report(), MenuShortcuts.ROUTE);
+        assertNotNull(counters);
+        assertTrue(counters, counters.contains(MenuShortcuts.HIDDEN + " 1"));
+        assertTrue(counters, counters.contains(MenuShortcuts.TILE_HIDDEN + " 1"));
+    }
+
+    /** Paused, or a released model, and the picked tiles stay too. */
+    @Test
+    public void pausedOrReleasedPickedTilesStay() {
+        Settings.HIDE_MENU_META_AI.save(false);
+        MenuTiles.hide(Collections.singletonList("marketplace"));
+        List<Object> bookmarks = linkedMenu();
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertSame(bookmarks, MenuShortcuts.kept(bookmarks));
+        PauseForTests.resume();
+        TreeJNI released = tile("Marketplace", "fb://marketplace").releasedTree();
+        List<Object> one = new ArrayList<>(Arrays.asList(tile("Feeds", "fb://feeds"), released));
+        assertSame(one, MenuShortcuts.kept(one));
+        assertFalse("a released model was read", released.readAfterRelease);
     }
 
     @Test

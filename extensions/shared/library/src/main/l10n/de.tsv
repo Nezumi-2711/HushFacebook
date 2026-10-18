@@ -1539,10 +1539,18 @@ Your phone couldn't put this video together. Try another Download quality.	Dein 
 The file couldn't be copied into your phone's gallery. Try again in a moment.	Die Datei ließ sich nicht in die Galerie deines Handys kopieren. Versuche es gleich erneut.
 # context: title of a switch on the Menu settings page: whether the Hushfacebook settings shortcut shows when you hold Facebook's launcher icon
 Settings shortcut on the app icon	Einstellungsverknüpfung am App-Symbol
-# context: summary of that switch when the build has the Hushfacebook settings row in Facebook's Settings and privacy
-Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu, and you can still open these settings from the Hushfacebook settings row in Settings and privacy or with a long press on the Facebook logo.	Zeigt die Hushfacebook-Einstellungen im Menü, das beim langen Drücken des Facebook-Symbols erscheint. Aus verschwinden sie aus diesem Menü, und du kannst die Einstellungen weiter über die Zeile Hushfacebook-Einstellungen unter Einstellungen und Privatsphäre oder durch langes Drücken des Facebook-Logos öffnen.
-# context: summary of that switch when the build has no settings row in Facebook's Menu
-Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu, and you can still open these settings with a long press on the Facebook logo.	Zeigt die Hushfacebook-Einstellungen im Menü, das beim langen Drücken des Facebook-Symbols erscheint. Aus verschwinden sie aus diesem Menü, und du kannst die Einstellungen weiter durch langes Drücken des Facebook-Logos öffnen.
+# context: title of a switch on the Menu settings page: whether a long press on the Facebook logo opens the Hushfacebook settings
+Open settings from the logo	Einstellungen über das Logo öffnen
+# context: title of a switch on the Menu settings page: whether the Hushfacebook settings row shows at the end of Settings and privacy in Facebook's Menu
+Settings row in Menu	Einstellungszeile im Menü
+# context: summary of the switch for the Hushfacebook settings shortcut in the launcher icon's menu
+Puts Hushfacebook settings in the menu you get by holding Facebook's icon. Off, it leaves that menu.	Zeigt die Hushfacebook-Einstellungen im Menü, das beim langen Drücken des Facebook-Symbols erscheint. Aus verschwinden sie aus diesem Menü.
+# context: summary of the switch for opening the settings with a long press on the Facebook logo
+A long press on the Facebook logo at the top of the home feed opens these settings. Off, the long press goes back to Facebook.	Langes Drücken des Facebook-Logos oben im Home-Feed öffnet diese Einstellungen. Aus gehört das lange Drücken wieder Facebook.
+# context: summary of the switch for the Hushfacebook settings row in Facebook's Menu
+Adds a Hushfacebook settings row at the end of Settings and privacy in Facebook's Menu. Off, the row leaves the Menu.	Fügt am Ende von Einstellungen und Privatsphäre in Facebooks Menü eine Zeile Hushfacebook-Einstellungen hinzu. Aus verschwindet die Zeile aus dem Menü.
+# context: summary shown instead of a switch's usual one while it is the only one of the three ways into the settings still on, so it is greyed out
+The last way into these settings stays on.	Der letzte Weg zu diesen Einstellungen bleibt eingeschaltet.
 # context: switch title on the Appearance settings page: hides Facebook Flex's Data mode bar under the top bar; Data mode is Facebook's own name for paid mode on Flex carriers
 Hide the Data mode banner	Datenmodus-Banner ausblenden
 # context: switch title on the Appearance settings page: hides Facebook Flex's purple Free mode bar; Free mode is Facebook's own name for the free text-only mode
@@ -1555,6 +1563,10 @@ On carriers with Facebook Flex, hides the purple Free mode bar. That bar is also
 Only from a reel's More menu	Nur über das Menü eines Reels
 # context: summary of that switch; Picture-in-picture is the name of the row in the reel's menu, translated as the row is; the three dots are the reel's own menu button
 Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu (the three dots) when you want one. That row is there whenever Picture-in-picture is on.	Wenn du Facebook verlässt, öffnet sich kein Fenster. Tippe im Menü eines Reels (die drei Punkte) auf Bild im Bild, wenn du eins möchtest. Diese Zeile ist da, solange Bild im Bild an ist.
+# context: switch title under Picture-in-picture on the Playback page; the button floats over a reel or video and opens the small window when tapped
+Picture-in-picture button	Schaltfläche für Bild im Bild
+# context: summary of that switch; "the window" is the small picture-in-picture window
+Shows a small button at the left edge of a reel or video that has the window ready. Tap it to open the window right away. Works with Picture-in-picture on.	Zeigt am linken Rand eines Reels oder Videos, für das das Fenster bereit ist, eine kleine Schaltfläche. Tippe darauf, um das Fenster sofort zu öffnen. Funktioniert mit eingeschaltetem Bild im Bild.
 # context: switch title under Stories; it makes videos you post to your own Story ask for high quality when they upload
 Upload Stories in HD	Storys in HD hochladen
 # context: summary of that switch; standard is the normal upload quality, high the better one
@@ -1577,4 +1589,119 @@ Takes the row of profile pictures off the share sheet, the people Facebook sugge
 Hide who is typing in comments	Wer gerade kommentiert, ausblenden
 Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.	Entfernt die Zeile, die anzeigt, dass jemand gerade einen Kommentar schreibt. Dein eigenes Tippen hat einen eigenen Schalter unter Datenschutz.
 Hide the search pill on reels	Suchvorschlag bei Reels ausblenden
-Hides the search suggestion under a reel's caption, the magnifier with a question to look up. Off by default, since it hasn't been tried on a real account yet.	Blendet den Suchvorschlag unter der Beschreibung eines Reels aus, die Lupe mit einer Frage zum Nachschlagen. Standardmäßig aus, da es noch nicht mit einem echten Konto getestet wurde.
+Hides the search suggestion under a reel's caption, the magnifier with a question to look up.	Blendet den Suchvorschlag unter der Beschreibung eines Reels aus, die Lupe mit einer Frage zum Nachschlagen.
+# context: switch title under Appearance; the button is Facebook's Messenger icon in the top bar of Home
+Hide the Messenger button	Messenger-Button ausblenden
+# context: summary of that switch; the other top bar buttons move over to fill the space; Hushfacebook is the app's name
+Takes the Messenger button out of the top bar, and the buttons beside it close up the gap. Restart Facebook to see the change.	Nimmt den Messenger-Button aus der oberen Leiste, und die Buttons daneben rücken zusammen. Starte Facebook neu, um die Änderung zu sehen.
+# context: switch title under Appearance; the count is the unread number badge on the Messenger icon
+Hide the Messenger count	Messenger-Zähler ausblenden
+# context: summary of that switch; the Messenger icon stays in the top bar
+Keeps the Messenger button but drops the unread count on it.	Behält den Messenger-Button, blendet aber die Zahl der ungelesenen Nachrichten darauf aus.
+# context: switch title under Appearance; the logo is the Facebook wordmark or icon at the left of the top bar
+Hide the Facebook logo	Facebook-Logo ausblenden
+# context: summary of that switch; Hushfacebook is the app's name and stays as it is; press and hold is a long press
+Hides the Facebook logo in the top bar. The empty spot is the same size and still opens Hushfacebook settings when you press and hold it. Restart Facebook to see the change.	Blendet das Facebook-Logo in der oberen Leiste aus. Die leere Stelle ist genauso groß und öffnet bei langem Drücken weiterhin die Hushfacebook-Einstellungen. Starte Facebook neu, um die Änderung zu sehen.
+# context: switch title under News feed; the counts are the numbers on the Like, Comment and Share buttons under a post
+Hide counts on posts	Zahlen bei Beiträgen ausblenden
+# context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
+Takes the numbers off the Like, Comment and Share buttons under posts, so each shows just its word. The buttons stay where they are. A change shows on the posts drawn after it.	Entfernt die Zahlen von den Schaltflächen „Gefällt mir“, „Kommentieren“ und „Teilen“ unter Beiträgen, sodass jede nur ihr Wort zeigt. Die Schaltflächen bleiben, wo sie sind. Eine Änderung gilt für Beiträge, die danach geladen werden.
+# context: switch title under Reels and Watch; the counts are the numbers under the Like, Comment and Share icons down a reel's right side
+Hide counts on reels	Zahlen bei Reels ausblenden
+# context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
+Takes the numbers away from under a reel's Like, Comment and Share icons. The icons stay where they are. A change shows from the next reel.	Entfernt die Zahlen unter den Symbolen „Gefällt mir“, „Kommentieren“ und „Teilen“ eines Reels. Die Symbole bleiben, wo sie sind. Eine Änderung gilt ab dem nächsten Reel.
+# context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
+Hide the reaction preview on posts	Reaktionsvorschau bei Beiträgen ausblenden
+# context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
+Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions.	Blendet die gestapelten Reaktionssymbole und die Anzahl der Reaktionen unter Beiträgen aus. Der Platz bleibt, daher öffnet ein Tippen dorthin weiterhin die Liste der Reaktionen.
+# context: switch title under Comments; the reaction preview is the stack of reaction icons in the corner of a comment
+Hide the reaction preview on comments	Reaktionsvorschau bei Kommentaren ausblenden
+# context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
+Hides the stacked reaction icons in the corner of a comment. The space stays, so a tap where they were still opens the list of reactions.	Blendet die gestapelten Reaktionssymbole in der Ecke eines Kommentars aus. Der Platz bleibt, daher öffnet ein Tippen dorthin weiterhin die Liste der Reaktionen.
+# context: switch title under Downloads; "Download" is the post menu row "Download to phone" and "post menus" are the three-dot menus under posts
+Download first in post menus	Download zuerst in Beitragsmenüs
+# context: summary of that switch; "Download to phone" and "Save photo" are the menu rows, translate them as elsewhere; "More options" is the title of Facebook's own page, use Facebook's wording
+Moves Download to phone and Save photo from the end of a post's three-dot menu to the start of its options list. Facebook's own top rows stay above them (on photo posts the list is the More options page). A post with nothing to save gets neither.	Verschiebt Aufs Handy herunterladen und Foto speichern vom Ende des Drei-Punkte-Menüs eines Beitrags an den Anfang seiner Optionsliste. Facebooks eigene oberste Zeilen bleiben darüber (bei Fotobeiträgen ist die Liste die Seite Weitere Optionen). Ein Beitrag ohne speicherbare Inhalte bekommt keines von beiden.
+# context: row title under Menu; opens a list of the Menu's tiles to hide, such as Marketplace and Gaming
+Menu tiles to hide	Menükacheln zum Ausblenden
+# context: title of the list of Menu tiles to hide
+Hide from the Menu	Im Menü ausblenden
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's short videos
+Reels	Reels
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the games section
+Gaming	Gaming
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the look-back posts from past years
+Memories	Erinnerungen
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the friends' birthdays page
+Birthdays	Geburtstage
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the charity fundraisers page
+Fundraisers	Spendenaktionen
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; job listings
+Jobs	Jobs
+# context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's dating feature
+Dating	Dating
+# context: import preview and toast, no Menu tile will be in that list after the import
+Your list of Menu tiles to hide will be empty.	Deine Liste der auszublendenden Menükacheln wird leer sein.
+# context: import preview and toast, one Menu tile will be in that list after the import
+Your list of Menu tiles to hide will hold %1$d tile.	Deine Liste der auszublendenden Menükacheln enthält %1$d Kachel.
+# context: import preview and toast, several Menu tiles will be in that list after the import
+Your list of Menu tiles to hide will hold %1$d tiles.	Deine Liste der auszublendenden Menükacheln enthält %1$d Kacheln.
+# context: switch title under Reels and Watch; on, a double tap on a reel opens its comments
+Double tap opens comments	Doppeltippen öffnet Kommentare
+# context: switch title under Reels and Watch; on, holding a reel opens its comments
+Long press opens comments	Gedrückthalten öffnet Kommentare
+# context: summary of the double tap switch
+A double tap on a reel opens its comments instead of liking it. Turn off double tap to like still wins when it's on. Off by default, since it hasn't been tried on a real account yet.	Doppeltippen auf ein Reel öffnet dessen Kommentare, statt es zu liken. „Doppeltippen zum Liken ausschalten“ hat Vorrang, wenn es an ist. Standardmäßig aus, weil es noch nicht mit einem echten Konto getestet wurde.
+# context: summary of the long press switch
+Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Off by default, since it hasn't been tried on a real account yet.	Ein Reel gedrückt zu halten öffnet dessen Kommentare, statt Facebooks Long-Press-Menü oder das 2x-Halten. Der Mehr-Button des Reels öffnet das Menü weiterhin. Standardmäßig aus, weil es noch nicht mit einem echten Konto getestet wurde.
+# context: switch title under Downloads; the switch adds the post menu row "Open in another app" to feed and Watch videos
+Open videos in another app	Videos in einer anderen App öffnen
+# context: summary of that switch; "Open in another app" is the menu row; VLC and Web Video Caster are app names, keep them
+Adds Open in another app to feed and Watch video menus. It hands the video to a player or casting app, such as VLC or Web Video Caster. A video with no single file to hand over says so.	Fügt den Menüs von Feed- und Watch-Videos „In anderer App öffnen“ hinzu. Das Video geht an eine Player- oder Cast-App wie VLC oder Web Video Caster. Hat ein Video keine einzelne Datei zum Weitergeben, wird das gesagt.
+# context: post menu row that hands the video to a player or casting app, next to the row "Download to phone"
+Open in another app	In anderer App öffnen
+# context: title of Android's app chooser, shown over the apps that can play a video
+Open the video with	Video öffnen mit
+# context: toast when the video has no single file to hand to another app
+Couldn't find a file for this video. Play it for a moment, then try again.	Für dieses Video wurde keine Datei gefunden. Spiel es kurz ab und versuch es dann noch einmal.
+# context: toast when Android has no app that plays a video file
+No app on this phone can open this video	Keine App auf diesem Handy kann dieses Video öffnen
+New	Neu
+# context: label of the switch that keeps a list of the reels, videos and stories you watched
+Remember what you watch	Merken, was du ansiehst
+# context: summary of the Remember what you watch switch
+Keeps a list on this phone of the reels, videos and stories you watch, so you can find one again after the feed refreshes. Nothing leaves your phone.	Führt auf diesem Telefon eine Liste der Reels, Videos und Stories, die du ansiehst, damit du einen Eintrag wiederfindest, nachdem der Feed neu geladen wurde. Nichts verlässt dein Telefon.
+# context: title of the row and the list of the reels, videos and stories you watched, newest first; not Facebook's own Watch history
+Recently watched	Zuletzt angesehen
+# context: summary of the Recently watched row
+Reels, videos and stories you watched, newest first. Tap one to open it again.	Reels, Videos und Stories, die du angesehen hast, die neuesten zuerst. Tippe auf einen Eintrag, um ihn wieder zu öffnen.
+# context: chip in the Recently watched list that shows only videos
+Videos	Videos
+# context: kind of one entry in the Recently watched list: a reel
+Reel	Reel
+# context: kind of one entry in the Recently watched list: a story
+Story	Story
+# context: button that empties the Recently watched list at once
+Clear	Leeren
+Just now	Gerade eben
+# context: toast after Clear empties the Recently watched list
+List cleared	Liste geleert
+# context: shown in the Recently watched list while it's empty; names the Remember what you watch switch
+Nothing here yet. With Remember what you watch on, the reels, videos and stories you watch show up here.	Hier ist noch nichts. Wenn Merken, was du ansiehst aktiv ist, erscheinen hier die Reels, Videos und Stories, die du ansiehst.
+# context: shown in the Recently watched list when the picked chip has no entries
+Nothing of this kind yet.	Davon gibt es noch nichts.
+# context: switch title under Comments; on, the comment sheet opens at the full height of the screen
+Open comments at full height	Kommentare in voller Höhe öffnen
+# context: summary of that switch; Comment is the button under a reel or video, the split view shows the video above the comments
+Comments open on a sheet that fills the screen instead of stopping part way up. On reels and videos, Comment opens that sheet in place of the split view with the video on top.	Kommentare öffnen sich auf einem Blatt, das den ganzen Bildschirm füllt, statt auf halber Höhe stehen zu bleiben. Bei Reels und Videos öffnet „Kommentieren“ dieses Blatt statt der geteilten Ansicht mit dem Video oben.
+# context: switch title under Appearance; on, Android's status bar (clock, battery) is hidden on Facebook's main screen
+Hide the status bar	Statusleiste ausblenden
+# context: summary of that switch; a swipe down from the top edge shows the bar briefly
+Takes the phone's status bar, with the time and battery, off Facebook's main screen, so the app gets the whole screen. Swipe down from the top edge to see it for a moment.	Blendet die Statusleiste des Handys mit Uhrzeit und Akku auf dem Hauptbildschirm von Facebook aus, sodass die App den ganzen Bildschirm nutzt. Wische vom oberen Rand nach unten, um sie kurz zu sehen.
+# context: switch title under Reels and Watch; on, a video tapped in the news feed opens alone in the full-screen player instead of leading into endless reels
+Open feed videos on their own	Feed-Videos einzeln öffnen
+# context: summary of that switch; the Reels tab itself still scrolls normally
+A video you tap in the feed opens full screen by itself, with no reels to swipe to after it. The Reels tab keeps scrolling. Off by default, since it hasn't been tried on a real account yet.	Ein Video, das du im Feed antippst, öffnet sich allein im Vollbild, ohne Reels, zu denen du danach wischen kannst. Der Reels-Tab scrollt weiter wie gewohnt. Standardmäßig aus, da es noch nicht mit einem echten Konto getestet wurde.
+Hide the new comments pop-up	Pop-up für neue Kommentare ausblenden
+# context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
+The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	Die Blase „neue Kommentare“ erscheint nicht mehr, während du Kommentare liest. Neue Kommentare stehen weiter in der Liste.

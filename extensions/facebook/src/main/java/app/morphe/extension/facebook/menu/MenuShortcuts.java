@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import app.morphe.extension.facebook.download.PostDetails;
 import app.morphe.extension.facebook.settings.FamilyNames;
@@ -17,8 +18,9 @@ import app.morphe.extension.shared.diagnostics.FeedFilterCounters;
 import app.morphe.extension.shared.diagnostics.HookStatus;
 
 /**
- * Takes the Meta AI shortcut out of Facebook's Menu, where it sits with Feeds, Marketplace, Reels
- * and Groups above See more.
+ * Takes the Meta AI shortcut, and any tile picked in Menu tiles to hide (#153), out of Facebook's Menu,
+ * where they sit with Feeds, Marketplace, Reels and Groups above See more. A tile is matched by the
+ * deep link it opens ({@link MenuTiles#keyOf}), never by its label.
  *
  * <p>Those rows are a bookmarks folder section's list of bookmarks, the same list See more opens
  * in full. The patch hands that list to {@link #kept} the moment the section reads it, before it
@@ -45,6 +47,9 @@ public final class MenuShortcuts {
     /** What a hidden Meta AI shortcut is counted under. */
     static final String HIDDEN = "Meta AI shortcut";
 
+    /** What a tile taken out by its deep link is counted under. */
+    static final String TILE_HIDDEN = "Menu tile";
+
     private MenuShortcuts() {
     }
 
@@ -60,25 +65,40 @@ public final class MenuShortcuts {
             HookStatus.invoked(FamilyNames.MENU_PROMOTIONS);
             if (bookmarks == null || bookmarks.isEmpty()) return bookmarks;
             // Ready first: Settings loads every switch, and it can't before the context is set.
-            if (!Utils.settingsReady() || !Settings.HIDE_MENU_META_AI.get()) return bookmarks;
+            if (!Utils.settingsReady()) return bookmarks;
+            boolean metaAi = Settings.HIDE_MENU_META_AI.get();
+            Set<String> tiles = MenuTiles.hiddenNow();
+            if (!metaAi && tiles.isEmpty()) return bookmarks;
             HookStatus.bound(FamilyNames.MENU_PROMOTIONS, HOOK);
             FeedFilterCounters.sawList(ROUTE, bookmarks.size());
             List<Object> kept = null;
+            int metaAiGone = 0;
             for (int index = 0; index < bookmarks.size(); index++) {
                 Object bookmark = bookmarks.get(index);
-                if (isMetaAi(bookmark)) {
+                boolean isMetaAi = metaAi && isMetaAi(bookmark);
+                if (isMetaAi || (!tiles.isEmpty() && isHiddenTile(bookmark, tiles))) {
+                    if (isMetaAi) metaAiGone++;
                     if (kept == null) kept = new ArrayList<>(bookmarks.subList(0, index));
                 } else if (kept != null) {
                     kept.add(bookmark);
                 }
             }
             if (kept == null) return bookmarks;
-            FeedFilterCounters.removed(ROUTE, bookmarks.size() - kept.size(), HIDDEN);
+            int gone = bookmarks.size() - kept.size();
+            if (metaAiGone > 0) FeedFilterCounters.removed(ROUTE, metaAiGone, HIDDEN);
+            if (gone > metaAiGone) FeedFilterCounters.removed(ROUTE, gone - metaAiGone, TILE_HIDDEN);
             return kept;
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.MENU_PROMOTIONS, HOOK, failure);
             return bookmarks;
         }
+    }
+
+    /** Whether [bookmark] is a live bookmark model whose deep link keys to one of [tiles]. */
+    private static boolean isHiddenTile(@Nullable Object bookmark, Set<String> tiles) {
+        if (!PostDetails.isLiveTree(bookmark)) return false;
+        String key = MenuTiles.keyOf(PostDetails.string(bookmark, MenuTiles.URL));
+        return key != null && tiles.contains(key);
     }
 
     /** Whether [bookmark] is a live bookmark model named Meta AI. A released one is never read. */

@@ -43,6 +43,9 @@ public class PostPromptsTest {
         PauseForTests.resume();
         Settings.HIDE_POST_PROMPTS.resetToDefault();
         Settings.HIDE_POST_FOLLOW_LINK.resetToDefault();
+        Settings.HIDE_POST_COUNTS.resetToDefault();
+        Settings.HIDE_POST_REACTIONS.resetToDefault();
+        Settings.HIDE_COMMENT_REACTIONS.resetToDefault();
         HookStatus.clear();
     }
 
@@ -125,6 +128,132 @@ public class PostPromptsTest {
         Settings.HIDE_POST_FOLLOW_LINK.save(false);
         assertTrue(PostPrompts.showFollowLink(1));
         assertFalse(PostPrompts.showFollowLink(0));
+    }
+
+    /**
+     * The counts (#180): the switch starts off, so the count builder writes Facebook's number. On,
+     * the builder is told to give its zero answer, the empty text that leaves the word on the
+     * button, and the status line counts it. Off again, the number is back.
+     */
+    @Test
+    public void theCountsStayUntilTheirSwitchIsOn() {
+        assertFalse("the switch doesn't start on", Settings.HIDE_POST_COUNTS.get());
+        assertFalse("a count went with the switch off", PostPrompts.hidePostCounts());
+
+        Settings.HIDE_POST_COUNTS.save(true);
+        assertTrue("a count stayed with the switch on", PostPrompts.hidePostCounts());
+        assertTrue("the status line doesn't count the hidden count",
+                statusLine().contains(PostPrompts.COUNTS_HIDDEN + " 1"));
+
+        Settings.HIDE_POST_COUNTS.save(false);
+        assertFalse("turning the switch off didn't bring the count back", PostPrompts.hidePostCounts());
+    }
+
+    @Test
+    public void pausedTheCountsStay() {
+        Settings.HIDE_POST_COUNTS.save(true);
+        for (HushfacebookPause.Reason reason : new HushfacebookPause.Reason[] {
+                HushfacebookPause.Reason.SWITCH, HushfacebookPause.Reason.CRASH_LOOP}) {
+            PauseForTests.pause(reason);
+            assertFalse("a Hushfacebook paused by " + reason + " hid a count", PostPrompts.hidePostCounts());
+            PauseForTests.resume();
+        }
+        assertTrue("resumed, the count didn't go again", PostPrompts.hidePostCounts());
+    }
+
+    /** The counts switch answers for nothing else, and the other two don't answer for it. */
+    @Test
+    public void theCountsSwitchSharesNoAnswer() {
+        Settings.HIDE_POST_COUNTS.save(true);
+        Settings.HIDE_POST_PROMPTS.save(false);
+        assertTrue("the counts switch hid a bumper", PostPrompts.keep(true));
+        assertTrue("the counts switch hid a Follow link", PostPrompts.showFollowLink(true));
+        Settings.HIDE_POST_COUNTS.save(false);
+        Settings.HIDE_POST_PROMPTS.save(true);
+        Settings.HIDE_POST_FOLLOW_LINK.save(true);
+        assertFalse("the other switches hid a count", PostPrompts.hidePostCounts());
+    }
+
+    /** The reaction preview (#158): off draws it, on leaves it undrawn, off again brings it back. */
+    @Test
+    public void theReactionPreviewIsDrawnUntilItsSwitchIsOn() {
+        assertFalse("the switch doesn't start on", Settings.HIDE_POST_REACTIONS.get());
+        assertFalse("a preview went with the switch off", PostPrompts.hideReactionPreview());
+
+        Settings.HIDE_POST_REACTIONS.save(true);
+        assertTrue("a preview stayed with the switch on", PostPrompts.hideReactionPreview());
+        assertTrue("the status line doesn't count the hidden preview",
+                statusLine().contains(PostPrompts.REACTIONS_HIDDEN + " 1"));
+
+        Settings.HIDE_POST_REACTIONS.save(false);
+        assertFalse("turning the switch off didn't bring the preview back", PostPrompts.hideReactionPreview());
+    }
+
+    @Test
+    public void pausedTheReactionPreviewIsDrawn() {
+        Settings.HIDE_POST_REACTIONS.save(true);
+        for (HushfacebookPause.Reason reason : new HushfacebookPause.Reason[] {
+                HushfacebookPause.Reason.SWITCH, HushfacebookPause.Reason.CRASH_LOOP}) {
+            PauseForTests.pause(reason);
+            assertFalse("a Hushfacebook paused by " + reason + " hid the preview", PostPrompts.hideReactionPreview());
+            PauseForTests.resume();
+        }
+        assertTrue("resumed, the preview didn't go again", PostPrompts.hideReactionPreview());
+    }
+
+    /** A comment's reaction faces answer to their own switch (#158): off draws them, on leaves them undrawn. */
+    @Test
+    public void aCommentsReactionPreviewIsDrawnUntilItsSwitchIsOn() {
+        assertFalse("the switch doesn't start on", Settings.HIDE_COMMENT_REACTIONS.get());
+        assertFalse("a comment preview went with the switch off", PostPrompts.hideReactionPreview(true));
+
+        Settings.HIDE_COMMENT_REACTIONS.save(true);
+        assertTrue("a comment preview stayed with the switch on", PostPrompts.hideReactionPreview(true));
+        assertTrue("the status line doesn't count the hidden comment preview",
+                statusLine().contains(PostPrompts.COMMENT_REACTIONS_HIDDEN + " 1"));
+
+        Settings.HIDE_COMMENT_REACTIONS.save(false);
+        assertFalse("turning the switch off didn't bring the preview back", PostPrompts.hideReactionPreview(true));
+    }
+
+    @Test
+    public void pausedACommentsReactionPreviewIsDrawn() {
+        Settings.HIDE_COMMENT_REACTIONS.save(true);
+        for (HushfacebookPause.Reason reason : new HushfacebookPause.Reason[] {
+                HushfacebookPause.Reason.SWITCH, HushfacebookPause.Reason.CRASH_LOOP}) {
+            PauseForTests.pause(reason);
+            assertFalse("a Hushfacebook paused by " + reason + " hid the comment preview",
+                    PostPrompts.hideReactionPreview(true));
+            PauseForTests.resume();
+        }
+        assertTrue("resumed, the comment preview didn't go again", PostPrompts.hideReactionPreview(true));
+    }
+
+    /** The post switch and the comment switch each answer for their own surface only. */
+    @Test
+    public void thePostAndCommentSwitchesDontShareAnAnswer() {
+        Settings.HIDE_POST_REACTIONS.save(true);
+        assertTrue("the post switch didn't hide a post's faces", PostPrompts.hideReactionPreview(false));
+        assertTrue("the no-argument entry (the bling bar) ignored the post switch", PostPrompts.hideReactionPreview());
+        assertFalse("the post switch hid a comment's faces", PostPrompts.hideReactionPreview(true));
+        Settings.HIDE_POST_REACTIONS.save(false);
+        Settings.HIDE_COMMENT_REACTIONS.save(true);
+        assertFalse("the comment switch hid a post's faces", PostPrompts.hideReactionPreview(false));
+        assertFalse("the comment switch hid the bling bar", PostPrompts.hideReactionPreview());
+        assertTrue("the comment switch didn't hide a comment's faces", PostPrompts.hideReactionPreview(true));
+    }
+
+    /** The reactions switch answers for nothing else, and the counts switch doesn't answer for it. */
+    @Test
+    public void theReactionSwitchSharesNoAnswer() {
+        Settings.HIDE_POST_REACTIONS.save(true);
+        Settings.HIDE_POST_PROMPTS.save(false);
+        assertTrue("the reactions switch hid a bumper", PostPrompts.keep(true));
+        assertTrue("the reactions switch hid a Follow link", PostPrompts.showFollowLink(true));
+        assertFalse("the reactions switch hid a count", PostPrompts.hidePostCounts());
+        Settings.HIDE_POST_REACTIONS.save(false);
+        Settings.HIDE_POST_COUNTS.save(true);
+        assertFalse("the counts switch hid the preview", PostPrompts.hideReactionPreview());
     }
 
     /** The patch hands Facebook's answer over as an int, since a boolean method may return one. */

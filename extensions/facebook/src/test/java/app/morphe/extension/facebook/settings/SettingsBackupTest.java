@@ -204,6 +204,7 @@ public class SettingsBackupTest {
         Settings.KEPT_WORDS.resetToDefault();
         Settings.HIDDEN_SOURCES.resetToDefault();
         Settings.HIDDEN_SHARE_ITEMS.resetToDefault();
+        Settings.HIDDEN_MENU_TILES.resetToDefault();
         Settings.SEEN_SHARE_ITEMS.resetToDefault();
         BaseSettings.PAUSED.resetToDefault();
         BaseSettings.DEBUG.resetToDefault();
@@ -247,7 +248,7 @@ public class SettingsBackupTest {
         for (Setting<?> setting : SettingsBackup.VALUES) {
             assertFalse(setting.key + " is carried and kept out at once", VALUES_STAY_OUT.containsKey(setting.key));
         }
-        assertEquals(Arrays.<Setting<?>>asList(Settings.HIDDEN_WORDS, Settings.KEPT_WORDS, Settings.HIDDEN_SOURCES, Settings.HIDE_POSTS_OVER_REACTIONS, Settings.HIDDEN_SHARE_ITEMS, Settings.HOME_FEED, Settings.SEEN_POSTS_KEEP, Settings.SAVE_TO,
+        assertEquals(Arrays.<Setting<?>>asList(Settings.HIDDEN_WORDS, Settings.KEPT_WORDS, Settings.HIDDEN_SOURCES, Settings.HIDE_POSTS_OVER_REACTIONS, Settings.HIDDEN_SHARE_ITEMS, Settings.HIDDEN_MENU_TILES, Settings.HOME_FEED, Settings.SEEN_POSTS_KEEP, Settings.SAVE_TO,
                 Settings.SAVE_FOLDER, Settings.VIDEO_SUBFOLDER, Settings.PHOTO_SUBFOLDER, Settings.DOWNLOAD_QUALITY,
                 Settings.FILENAME_TEMPLATE, Settings.PHOTO_FILENAME_TEMPLATE, Settings.DOWNLOAD_ACTION, Settings.SEND_TO_APP,
                 Settings.START_TAB, Settings.FEEDS_SUBTAB, Settings.COMMENT_ORDER, Settings.PLAYBACK_QUALITY,
@@ -258,6 +259,7 @@ public class SettingsBackupTest {
         assertEquals(Settings.KEPT_WORDS, SettingsBackup.KEPT);
         assertEquals(Settings.HIDDEN_SOURCES, SettingsBackup.SOURCES);
         assertEquals(Settings.HIDDEN_SHARE_ITEMS, SettingsBackup.SHARE_ITEMS);
+        assertEquals(Settings.HIDDEN_MENU_TILES, SettingsBackup.MENU_TILES);
         assertEquals(Settings.SAVE_FOLDER, SettingsBackup.FOLDER);
         assertEquals(Settings.DOWNLOAD_QUALITY, SettingsBackup.QUALITY);
         assertEquals(Settings.FILENAME_TEMPLATE, SettingsBackup.FILE_NAME);
@@ -900,6 +902,61 @@ public class SettingsBackupTest {
         assertEquals("example.com\nDaily Bugle", SettingsBackup.Snapshot.fromBundle(state).sources);
         state.putString("hidden_sources", "example.com\nEXAMPLE.com");
         assertNull(SettingsBackup.Snapshot.fromBundle(state).sources);
+    }
+
+    /**
+     * The Menu tiles to hide go out and come back as their row stores them, a key this build
+     * doesn't list included. A file can clear the list, an older file leaves it alone, and a list
+     * the row would store differently refuses the whole file.
+     */
+    @Test
+    public void menuTilePicksRoundTripWithKeysThisBuildDoesntList() throws Exception {
+        String picks = "marketplace,gaming,hologram";
+        Settings.HIDDEN_MENU_TILES.save(picks);
+        String file = SettingsBackup.create();
+        assertEquals(picks, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.MENU_TILES.key));
+        Settings.HIDDEN_MENU_TILES.resetToDefault();
+
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+        assertEquals(picks, snapshot.menuTilesChange());
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertEquals(picks, Settings.HIDDEN_MENU_TILES.savedValue());
+        assertEquals("a file read back is the file", file, SettingsBackup.create());
+        assertEquals(0, SettingsBackup.parse(file).changes().size());
+        assertEquals("Your list of Menu tiles to hide will hold 3 tiles.",
+                SettingsBackupPreference.menuTilesSentence(snapshot.menuTiles));
+        assertEquals("Your list of Menu tiles to hide will hold 1 tile.", SettingsBackupPreference.menuTilesSentence("gaming"));
+        assertEquals("Your list of Menu tiles to hide will be empty.", SettingsBackupPreference.menuTilesSentence(""));
+
+        Map<String, ?> before = store();
+        for (Object refused : new Object[]{" gaming", "gaming,", "gaming,gaming", "Gaming", "gaming-tab", "1gaming", 5, true,
+                JSONObject.NULL}) {
+            JSONObject hostile = new JSONObject(file);
+            hostile.getJSONObject("settings").put(SettingsBackup.MENU_TILES.key, refused);
+            try {
+                SettingsBackup.parse(hostile.toString());
+                fail("a file with the list " + printable(String.valueOf(refused)) + " was read");
+            } catch (SettingsBackup.Rejected rejected) {
+                assertEquals(printable(String.valueOf(refused)), SettingsBackup.Reason.VALUE, rejected.reason);
+            }
+        }
+        assertEquals("a refused file wrote something", before, store());
+
+        JSONObject emptied = new JSONObject(file);
+        emptied.getJSONObject("settings").put(SettingsBackup.MENU_TILES.key, "");
+        assertEquals(1, SettingsBackup.apply(SettingsBackup.parse(emptied.toString())));
+        assertEquals("", Settings.HIDDEN_MENU_TILES.savedValue());
+
+        Settings.HIDDEN_MENU_TILES.save("gaming");
+        JSONObject older = new JSONObject(file);
+        older.getJSONObject("settings").remove(SettingsBackup.MENU_TILES.key);
+        SettingsBackup.apply(SettingsBackup.parse(older.toString()));
+        assertEquals("gaming", Settings.HIDDEN_MENU_TILES.savedValue());
+
+        Bundle state = snapshot.toBundle();
+        assertEquals(picks, SettingsBackup.Snapshot.fromBundle(state).menuTiles);
+        state.putString("hidden_menu_tiles", "gaming,gaming");
+        assertNull(SettingsBackup.Snapshot.fromBundle(state).menuTiles);
     }
 
     /**

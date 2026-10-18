@@ -102,6 +102,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean reelGestures() {
+        return false;
+    }
+
     public static boolean keepReelSpeed() {
         return false;
     }
@@ -119,6 +123,10 @@ public final class SettingsStatus {
     }
 
     public static boolean commentSheetOptions() {
+        return false;
+    }
+
+    public static boolean fullHeightComments() {
         return false;
     }
 

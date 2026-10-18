@@ -38,6 +38,9 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_FEED_REELS) return L10n.t("Hide Reels in the feed");
         if (setting == Settings.HIDE_POST_PROMPTS) return L10n.t("Hide post prompts");
         if (setting == Settings.HIDE_POST_FOLLOW_LINK) return L10n.t("Hide the Follow link on posts");
+        if (setting == Settings.HIDE_POST_COUNTS) return L10n.t("Hide counts on posts");
+        if (setting == Settings.HIDE_POST_REACTIONS) return L10n.t("Hide the reaction preview on posts");
+        if (setting == Settings.HIDE_COMMENT_REACTIONS) return L10n.t("Hide the reaction preview on comments");
         if (setting == Settings.HIDE_SEEN_POSTS) return L10n.t("Hide posts you've already seen");
         if (setting == Settings.HIDE_META_AI_QUESTIONS) return L10n.t("Hide Meta AI questions under posts");
         if (setting == Settings.KEEP_POST_DATES) return L10n.t("Keep post dates");
@@ -78,6 +81,8 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_SHOP_LINK_COMMENTS) return L10n.t("Hide comments with shop links");
         if (setting == Settings.HIDE_COMMENTS_WITH_WORDS) return L10n.t("Hide comments with your words");
         if (setting == Settings.HIDE_INCOMING_COMMENT_TYPING) return L10n.t("Hide who is typing in comments");
+        if (setting == Settings.HIDE_NEW_COMMENTS_PILL) return L10n.t("Hide the new comments pop-up");
+        if (setting == Settings.OPEN_COMMENTS_FULL_HEIGHT) return L10n.t("Open comments at full height");
         if (setting == Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT) return L10n.t("Tag suggestions only after @");
         if (setting == Settings.HIDE_REELS_TAB) return L10n.t("Hide the Reels tab");
         if (setting == Settings.HIDE_REELS_TAB_DOT) return L10n.t("Hide the Reels tab dot");
@@ -113,6 +118,8 @@ final class SwitchLabels {
         if (setting == Settings.PLAY_REELS_ONCE) return L10n.t("Play reels once");
         if (setting == Settings.ORIGINAL_AUDIO) return L10n.t("Keep the original audio");
         if (setting == Settings.HIDE_REEL_SEARCH_PILL) return L10n.t("Hide the search pill on reels");
+        if (setting == Settings.HIDE_REEL_COUNTS) return L10n.t("Hide counts on reels");
+        if (setting == Settings.FEED_VIDEOS_ALONE) return L10n.t("Open feed videos on their own");
         if (setting == Settings.DONT_SEND_REEL_WATCH_HISTORY) return L10n.t("Don't send reel watch history");
         if (setting == Settings.HOLD_ANALYTICS_UPLOADS) return L10n.t("Hold back analytics uploads");
         if (setting == Settings.HOLD_CAMERA_ROLL_PROCESSING) return L10n.t("Hold back camera roll processing");
@@ -129,6 +136,8 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_READ_RECEIPTS) return L10n.t("Hide read receipts");
         if (setting == Settings.ORIGINAL_CHAT_MEDIA) return L10n.t("Send photos and videos at original quality");
         if (setting == Settings.TURN_OFF_DOUBLE_TAP_LIKE) return L10n.t("Turn off double tap to like");
+        if (setting == Settings.DOUBLE_TAP_OPENS_COMMENTS) return L10n.t("Double tap opens comments");
+        if (setting == Settings.LONG_PRESS_OPENS_COMMENTS) return L10n.t("Long press opens comments");
         if (setting == Settings.KEEP_REEL_SPEED) return L10n.t("Keep the reel speed");
         if (setting == Settings.KEEP_VIDEO_SPEED) return L10n.t("Keep the video speed");
         if (setting == Settings.SLOWER_REEL_SPEEDS) return L10n.t("Slower speeds");
@@ -138,10 +147,12 @@ final class SwitchLabels {
         if (setting == Settings.TAP_TO_PLAY) return L10n.t("Tap to play");
         if (setting == Settings.TAP_TO_PLAY_REELS_AFTER_FIRST) return L10n.t("Only the first reel waits");
         if (setting == Settings.RESUME_LONG_VIDEOS) return L10n.t("Resume long videos");
+        if (setting == Settings.RECENTLY_WATCHED) return L10n.t("Remember what you watch");
         if (setting == Settings.FRAME_STEP) return L10n.t("Frame step");
         if (setting == Settings.DEFAULT_PLAYBACK_QUALITY) return L10n.t("Default playback quality");
         if (setting == Settings.PICTURE_IN_PICTURE) return L10n.t("Picture-in-picture");
         if (setting == Settings.PICTURE_IN_PICTURE_FROM_MENU) return L10n.t("Only from a reel's More menu");
+        if (setting == Settings.PICTURE_IN_PICTURE_BUTTON) return L10n.t("Picture-in-picture button");
         if (setting == Settings.TURN_OFF_HDR_BRIGHTNESS) return L10n.t("Turn off HDR brightness");
         if (setting == Settings.PREFER_SDR_RENDITIONS) return L10n.t("Play SDR versions of HDR videos");
         if (setting == Settings.SKIP_SILENT_PARTS) return L10n.t("Skip silent parts");
@@ -152,6 +163,8 @@ final class SwitchLabels {
         if (setting == Settings.CLIPBOARD_DOWNLOAD) return L10n.t("Offer to download copied links");
         if (setting == Settings.DOWNLOAD_PHOTOS) return L10n.t("Save any photo");
         if (setting == Settings.POST_MENU_PHOTO_SAVE) return L10n.t("Save photo in post menus");
+        if (setting == Settings.OPEN_IN_ANOTHER_APP) return L10n.t("Open videos in another app");
+        if (setting == Settings.POST_MENU_DOWNLOAD_FIRST) return L10n.t("Download first in post menus");
         if (setting == Settings.DOWNLOAD_COMPATIBLE) return L10n.t("Save videos other apps can open");
         if (setting == Settings.DOWNLOAD_QUIET) return L10n.t("Quiet saves");
         if (setting == Settings.HIDE_GET_MESSENGER_CARD) return L10n.t("Hide the Get Messenger card");
@@ -163,6 +176,8 @@ final class SwitchLabels {
         if (setting == Settings.SAVED_SHORTCUT) return L10n.t("Saved shortcut");
         if (setting == Settings.WATCH_HISTORY_SHORTCUT) return L10n.t("Watch history shortcut");
         if (setting == Settings.SETTINGS_SHORTCUT) return L10n.t("Settings shortcut on the app icon");
+        if (setting == Settings.SETTINGS_LOGO_PRESS) return L10n.t("Open settings from the logo");
+        if (setting == Settings.SETTINGS_MENU_ROW) return L10n.t("Settings row in Menu");
         if (setting == Settings.APP_LOCK) return L10n.t("Lock Facebook");
         if (setting == Settings.SAVE_CRASH_FILE) return L10n.t("Save crashes to Downloads");
         if (setting == Settings.HIDE_MENU_UPGRADES) return L10n.t("Hide Upgrades");
@@ -212,6 +227,10 @@ final class SwitchLabels {
         if (setting == Settings.KEEP_TOP_BAR) return L10n.t("Keep the top bar on screen");
         if (setting == Settings.PHONE_LAYOUT_ON_BIG_SCREENS) return L10n.t("Phone layout on big screens");
         if (setting == Settings.TRANSLUCENT_BARS) return L10n.t("See-through bars");
+        if (setting == Settings.HIDE_STATUS_BAR) return L10n.t("Hide the status bar");
+        if (setting == Settings.HIDE_MESSENGER_BUTTON) return L10n.t("Hide the Messenger button");
+        if (setting == Settings.HIDE_MESSENGER_COUNT) return L10n.t("Hide the Messenger count");
+        if (setting == Settings.HIDE_FACEBOOK_LOGO) return L10n.t("Hide the Facebook logo");
         if (setting == Settings.FORCE_DARK_MODE) return L10n.t("Force dark mode");
         throw new IllegalArgumentException("No individual switch label: " + setting.key);
     }

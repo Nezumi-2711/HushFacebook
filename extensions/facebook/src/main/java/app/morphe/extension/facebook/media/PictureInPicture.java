@@ -114,6 +114,9 @@ public final class PictureInPicture {
     /** Counted each time a player whose video is off screen plays and the window stays with the reel on screen. */
     static final String OFF_SCREEN = "off-screen player left out of the window";
 
+    /** Counted each time a player on another screen plays and the window stays with the armed screen's reel. */
+    static final String OTHER_SCREEN = "player on another screen left out of the window";
+
     /** Counted each time the window is armed again because Facebook didn't after it was opened full screen. */
     static final String REARMED_AFTER_WINDOW = "armed again after the window closed";
 
@@ -150,6 +153,9 @@ public final class PictureInPicture {
 
     /** Counted each time the More sheet's Picture-in-picture row opened the window. */
     static final String FROM_MENU = "opened from the More menu";
+
+    /** Counted each time the floating button opened the window. */
+    static final String FROM_BUTTON = "opened from the button";
 
     /** Counted each time a view back from the window shows as it did before, not as Facebook asked. */
     static final String AS_BEFORE = "view kept as before the window";
@@ -239,6 +245,24 @@ public final class PictureInPicture {
     }
 
     /**
+     * Whether [player]'s video is attached to a view of a screen other than the armed one. Once the
+     * reel viewer floats, Facebook opened from the launcher shows Home full screen beside it, and
+     * Home's inline videos then armed the floating window for themselves. A player with no view
+     * known, or a view whose screen can't be read, counts as the armed screen's, as before.
+     */
+    static boolean onAnotherScreen(Object player) {
+        try {
+            View view = views.of(player);
+            if (view == null) return false;
+            Activity screen = activityOf(view.getContext());
+            Activity armed = armedScreen();
+            return screen != null && armed != null && screen != armed;
+        } catch (Throwable failure) {
+            return false;
+        }
+    }
+
+    /**
      * The hook, first thing in ReelsPipUtil's check of whether [activity] may use
      * picture-in-picture. True answers yes; false leaves the answer to Facebook's own check.
      */
@@ -285,6 +309,7 @@ public final class PictureInPicture {
             if (activity != null) watch(activity.getApplication());
             // Facebook turns auto-enter on right after this hook, so it goes off again once the arming is done.
             if (activity != null && menuOnly()) Utils.runOnMainThread(() -> keepForMenu(activity));
+            PictureInPictureButton.sync();
             Logger.printDebug(() -> "Picture-in-picture: armed for player " + System.identityHashCode(player));
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "arming", failure);
@@ -327,6 +352,25 @@ public final class PictureInPicture {
         return screen;
     }
 
+    /**
+     * The screen the floating button belongs on: the armed screen, under the same conditions as the
+     * More sheet's row, with the button's own switch on. Null otherwise.
+     */
+    @Nullable
+    static Activity buttonScreen() {
+        try {
+            Activity armed;
+            synchronized (PictureInPicture.class) {
+                armed = armedScreen.get();
+            }
+            Activity screen = armed == null ? null : menuScreen(armed);
+            return screen != null && Settings.PICTURE_IN_PICTURE_BUTTON.get() ? screen : null;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "button", failure);
+            return null;
+        }
+    }
+
     /** The activity [context] is, or wraps, or null. */
     @Nullable
     static Activity activityOf(@Nullable Context context) {
@@ -357,6 +401,24 @@ public final class PictureInPicture {
     }
 
     /**
+     * The floating button's tap: opens the window on [screen] now, with the same plain params as the
+     * More sheet's row, if the button still belongs there. True when it opened.
+     */
+    static boolean enterFromButton(@Nullable Activity screen) {
+        try {
+            if (screen == null || buttonScreen() != screen) return false;
+            boolean entered = screen.enterPictureInPictureMode(new PictureInPictureParams.Builder().build());
+            HookStatus.bound(FAMILY, "button");
+            if (entered) HookStatus.counted(FAMILY, FROM_BUTTON);
+            Logger.printDebug(() -> "Picture-in-picture: the button " + (entered ? "opened" : "didn't open") + " the window");
+            return entered;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "button", failure);
+            return false;
+        }
+    }
+
+    /**
      * Puts the page watch on [application] once. The first arming comes long after Facebook's
      * application set itself up, which its override of the registration needs.
      */
@@ -380,6 +442,7 @@ public final class PictureInPicture {
         @Override
         public void onActivityResumed(Activity activity) {
             cameBack(activity);
+            PictureInPictureButton.sync();
         }
 
         @Override
@@ -514,6 +577,7 @@ public final class PictureInPicture {
     public static void disarmed() {
         try {
             arm(null, null, null);
+            PictureInPictureButton.sync();
             Logger.printDebug(() -> "Picture-in-picture: disarmed");
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "disarm", failure);
@@ -584,11 +648,17 @@ public final class PictureInPicture {
      * the reel on screen from now on: a held auto-enter goes back on, switch or no switch, since it
      * was the extension that turned it off, and a reel other than the armed one gets the window
      * armed again for it. Unless that other player's video is off screen: Facebook getting the next
-     * reel ready plays it for a moment, and the window then opened on that reel (#126).
+     * reel ready plays it for a moment, and the window then opened on that reel (#126). Or unless it
+     * plays on another screen, such as Home beside a floating viewer ({@link #onAnotherScreen}).
      */
     public static void playerPlaying(Object player) {
         try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || player == null) return;
+            if (anotherReel(player) && onAnotherScreen(player)) {
+                HookStatus.counted(FAMILY, OTHER_SCREEN);
+                Logger.printDebug(() -> "Picture-in-picture: player " + System.identityHashCode(player) + " plays on another screen, left out");
+                return;
+            }
             if (anotherReel(player) && offScreen(player)) {
                 HookStatus.counted(FAMILY, OFF_SCREEN);
                 Logger.printDebug(() -> "Picture-in-picture: player " + System.identityHashCode(player) + " plays off screen, left out");
@@ -694,6 +764,7 @@ public final class PictureInPicture {
             unfit = true;
             held = false;
         }
+        PictureInPictureButton.sync();
         if (screen.isInPictureInPictureMode()) return;
         autoEnter(screen, false);
         HookStatus.bound(FAMILY, "arming again");

@@ -86,6 +86,17 @@ public class MenuSectionsTest {
         assertSame(Settings.HIDE_MENU_ALSO_FROM_META, MenuSections.switchFor("PRODUCTS_FROM_FACEBOOK"));
     }
 
+    /**
+     * A Menu built before a switch changed keeps its groups on screen even though both sections
+     * ask again, so each switch brings up the restart row (#184).
+     */
+    @Test
+    public void bothSwitchesWaitForARestart() {
+        assertTrue("an open Menu keeps Upgrades until Facebook restarts", Settings.HIDE_MENU_UPGRADES.rebootApp);
+        assertTrue("an open Menu keeps Also from Meta until Facebook restarts",
+                Settings.HIDE_MENU_ALSO_FROM_META.rebootApp);
+    }
+
     /** Each switch reaches its own group and leaves the other one hidden. */
     @Test
     public void eachGroupGoesByItsOwnSwitch() {

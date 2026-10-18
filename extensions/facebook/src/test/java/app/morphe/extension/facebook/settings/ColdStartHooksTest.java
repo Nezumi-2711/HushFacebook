@@ -62,6 +62,7 @@ import app.morphe.extension.facebook.feed.TypedFeedUnit;
 import app.morphe.extension.facebook.font.OwnFont;
 import app.morphe.extension.facebook.comments.DefaultCommentOrderForTests;
 import app.morphe.extension.facebook.comments.CommentSheetOptions;
+import app.morphe.extension.facebook.comments.FullHeightComments;
 import app.morphe.extension.facebook.comments.MetaAiSummaries;
 import app.morphe.extension.facebook.media.HdrBrightnessForTests;
 import app.morphe.extension.facebook.media.PictureInPictureForTests;
@@ -330,6 +331,20 @@ public class ColdStartHooksTest {
                 CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS));
         assertFalse("a comment with a shop link drawn before the context was left out",
                 CommentSheetOptions.hidesComment(new GraphQLComment("https://s.shopee.vn/9zKs")));
+        assertFalse("a comment sheet built before the context opened at full height",
+                FullHeightComments.sheetHeight(0.66f) == 1f);
+        assertFalse("a split-screen launcher asked before the context was passed over",
+                FullHeightComments.skipSplitScreen());
+        assertFalse("a comment sheet sized before the context was made full screen",
+                FullHeightComments.fillsScreen(1f));
+        android.widget.FrameLayout earlyHeader = new android.widget.FrameLayout(RuntimeEnvironment.getApplication());
+        earlyHeader.setId(0x7f0a0612);
+        earlyHeader.addView(new android.view.TextureView(RuntimeEnvironment.getApplication()));
+        android.widget.FrameLayout earlySheet = new android.widget.FrameLayout(RuntimeEnvironment.getApplication());
+        earlySheet.addView(earlyHeader);
+        FullHeightComments.watchHeader(earlySheet, 0x7f0a0612, true);
+        assertFalse("a comment sheet set up before the context lost the video above its comments",
+                earlyHeader.getVisibility() == android.view.View.GONE);
         assertFalse("a word typed before the context lost its tag suggestions", TagSuggestionsForTests.skipsAPlainWord());
         assertFalse("a list of people open before the context was closed", TagSuggestionsForTests.closesAListLeftOpen());
         assertFalse("a Chats list built before the context lost the Get Messenger card",

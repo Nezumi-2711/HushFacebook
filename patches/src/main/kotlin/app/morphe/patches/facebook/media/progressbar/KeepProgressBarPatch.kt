@@ -269,7 +269,9 @@ internal const val INVALIDATE = "Landroid/view/View;->invalidate()V"
  * doesn't seek, as Facebook passes it on to the video. A drag that starts on the thumb seeks either
  * way. So the extension sees each touch first, holds a press that misses the thumb, and plays it
  * back to the handler as a drag from the thumb to where it lifted. On the emulator (2026-10-12)
- * the account ran drag-anywhere, where a hook at the thumb check never ran.
+ * the account ran drag-anywhere, where a hook at the thumb check never ran. On 583 (bar
+ * `LX/9GA;`) the scrubber's listener can post its start of a scrub as a drag starts, so the
+ * played drag lifts a moment later, after that start ran (#120).
  *
  * In the default selection with its switch off: it only acts once the switch is turned on.
  */
