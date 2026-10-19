@@ -71,6 +71,7 @@ public class MenuShortcutsTest {
     public void startClean() {
         FeedFilterCounters.clear();
         HookStatus.clear();
+        MenuTiles.forgetForTests();
         Settings.HIDE_MENU_META_AI.save(true);
     }
 
@@ -79,12 +80,55 @@ public class MenuShortcutsTest {
         PauseForTests.resume();
         Settings.HIDE_MENU_META_AI.resetToDefault();
         Settings.HIDDEN_MENU_TILES.resetToDefault();
+        Settings.SEEN_MENU_TILES.resetToDefault();
+        MenuTiles.forgetForTests();
         FeedFilterCounters.clear();
         HookStatus.clear();
     }
 
     private static TreeJNI tile(String name, String link) {
         return new TreeJNI().with("name", name).with("url", link);
+    }
+
+    /** The first eight of 583's Menu and three that share a route, as the hook read them on 2026-10-19. */
+    private static List<Object> menu583() {
+        return new ArrayList<>(Arrays.asList(tile("Feeds", MenuTilesTest.FEEDS),
+                tile("Marketplace", "fb://marketplace/?referralSurface=bookmark"), tile("Reels", MenuTilesTest.REELS),
+                tile("Groups", "fb://groups/tab?source=bookmark"),
+                tile("Meta AI", "fb://gen_ai_chat/?as_bottom_sheet=0&entry_point=fb_feed%3Ameta_ai_bookmark"),
+                tile("Birthdays", MenuTilesTest.BIRTHDAYS), tile("Saved", "fb://saved/?section_name=ALL&referer=29"),
+                tile("Memories", "fb://memories_home/?source=bookmark"), tile("Crisis response", MenuTilesTest.CRISIS_RESPONSE),
+                tile("Pages", MenuTilesTest.PAGES), tile("Community Notes", MenuTilesTest.COMMUNITY_NOTES)));
+    }
+
+    /**
+     * #153: Feeds, Reels, Birthdays and Pages ticked in 0.15.0's list leave 583's Menu, and the
+     * tiles that share Birthdays' and Pages' routes stay.
+     */
+    @Test
+    public void the583MenuLosesTheTickedTilesAndOnlyThose() {
+        Settings.HIDE_MENU_META_AI.save(false);
+        Settings.HIDDEN_MENU_TILES.save("feeds,reels,birthdays,pages");
+        assertEquals(Arrays.asList("Marketplace", "Groups", "Meta AI", "Saved", "Memories", "Crisis response",
+                "Community Notes"), names(MenuShortcuts.kept(menu583())));
+        MenuTiles.hide(Arrays.asList("memories_home", "crisis_response"));
+        assertEquals(Arrays.asList("Feeds", "Marketplace", "Reels", "Groups", "Meta AI", "Birthdays", "Saved", "Pages",
+                "Community Notes"), names(MenuShortcuts.kept(menu583())));
+    }
+
+    /** Reading the Menu writes its tiles down for the list, in order and by name, without Meta AI. */
+    @Test
+    public void readingTheMenuWritesDownItsTilesWithoutMetaAi() {
+        Settings.HIDE_MENU_META_AI.save(false);
+        List<Object> bookmarks = menu583();
+        assertSame("nothing ticked, the list isn't Facebook's", bookmarks, MenuShortcuts.kept(bookmarks));
+        assertEquals("recent_feed=Feeds\nmarketplace=Marketplace\nwatch=Reels\ngroups=Groups\n"
+                        + "meta_birthday_center=Birthdays\nsaved=Saved\nmemories_home=Memories\n"
+                        + "crisis_response=Crisis response\npages=Pages\ncommunity_notes_rating=Community Notes",
+                Settings.SEEN_MENU_TILES.savedValue());
+        assertEquals("recent_feed", MenuTiles.choices().get(0));
+        assertFalse(MenuTiles.choices().contains("gen_ai_chat"));
+        assertEquals("Community Notes", MenuTiles.label("community_notes_rating"));
     }
 
     /** The rows as a phone showed them, each with the deep link it opens. */

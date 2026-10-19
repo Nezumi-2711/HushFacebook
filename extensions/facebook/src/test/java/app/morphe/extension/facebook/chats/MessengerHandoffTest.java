@@ -187,14 +187,32 @@ public class MessengerHandoffTest {
     }
 
     /**
-     * Only Meta's Messenger counts. A copy under another package name, HushMessenger beside Meta's
-     * apps say, may not get Meta's pushes at all, so Facebook keeps ringing beside it.
+     * A Messenger under another package name, HushMessenger installed beside Meta's apps, counts
+     * like Meta's own: it gets the same pushes, so Facebook leaves calls and chats to it too (#193,
+     * where Facebook and such a copy each notified for one message).
      */
     @Test
-    public void aMessengerUnderAnotherPackageNameDoesntCount() {
+    public void aMessengerUnderAnotherPackageNameCountsToo() {
         Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER.save(true);
         MessengerIconForTests.installLauncher(MessengerIconForTests.CLONE_HOME);
-        assertNoneDropped("only a copy of Messenger", callAndMessage());
+        assertAllDropped("only a copy of Messenger", callAndMessage());
+        assertEquals("Facebook kept registering for calls beside a copy of Messenger", 0x215L,
+                MessengerHandoff.clientCapabilities(0x217L));
+        assertEquals(PREFIX + "invoked 4, 0 found, 0 missing. Counted: "
+                + MessengerHandoff.CALL_PUSH_DROPPED + " 1, "
+                + MessengerHandoff.RING_DROPPED + " 1, "
+                + MessengerHandoff.CHAT_DROPPED + " 1, "
+                + MessengerHandoff.CALL_REGISTRATION_LEFT + " 1", statusLine());
+    }
+
+    /** Another app's launcher entry, one with no Messenger class, is no Messenger. */
+    @Test
+    public void anotherAppsLauncherEntryIsntMessenger() {
+        Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER.save(true);
+        MessengerIconForTests.installLauncher(MessengerIconForTests.OTHER_HOME);
+        assertNoneDropped("another app", callAndMessage());
+        assertEquals(PREFIX + "invoked 3, 0 found, 0 missing. Counted: "
+                + MessengerHandoff.NO_MESSENGER + " 3", statusLine());
     }
 
     /**

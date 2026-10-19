@@ -46,7 +46,8 @@ public enum PatchFamily {
     SUGGESTED_POSTS(FamilyNames.SUGGESTED_POSTS, "suggestedPosts", null,
             Settings.HIDE_SUGGESTED_POSTS, Settings.HIDE_SUGGESTED_FOR_YOU, Settings.HIDE_PEOPLE_YOU_MAY_KNOW,
             Settings.HIDE_SUGGESTED_GROUPS, Settings.HIDE_STORIES_YOU_MIGHT_LIKE, Settings.HIDE_FEED_MEMORIES,
-            Settings.HIDE_FEED_FRIEND_REQUESTS, Settings.HIDE_FRIENDS_LOCATIONS, Settings.HIDE_NOTIFICATION_POST_FOOTER),
+            Settings.HIDE_FEED_FRIEND_REQUESTS, Settings.HIDE_FRIENDS_LOCATIONS, Settings.HIDE_NOTIFICATION_POST_FOOTER,
+            Settings.HIDE_FIND_FRIENDS_CARD),
     STORIES_TRAY(FamilyNames.STORIES_TRAY, "storiesTray", null,
             Settings.HIDE_TOP_STORIES_TRAY, Settings.HIDE_STORIES_BETWEEN_POSTS, Settings.HIDE_HOME_COMPOSER),
     FEED_REELS(FamilyNames.FEED_REELS, "feedReels", null,
@@ -99,7 +100,7 @@ public enum PatchFamily {
             Settings.HIDE_REEL_CHIPS, Settings.HIDE_REEL_FOLLOW_BUTTON, Settings.HIDE_REEL_SOCIAL_FOOTER,
             Settings.HIDE_REEL_THREADS_CARDS, Settings.REEL_CLEAN_MODE, Settings.PLAY_REELS_ONCE,
             Settings.ORIGINAL_AUDIO, Settings.HIDE_REEL_SEARCH_PILL, Settings.HIDE_REEL_COUNTS,
-            Settings.FEED_VIDEOS_ALONE),
+            Settings.HIDE_REEL_SAVE_BUTTON, Settings.HIDE_REEL_SOUND_BUTTON, Settings.FEED_VIDEOS_ALONE),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
@@ -298,12 +299,13 @@ public enum PatchFamily {
     /**
      * The switches the download patches share and none of them owns: each shapes what every
      * save picks, a story's, a reel's or a feed video's, so it's on the screen under Downloads
-     * whenever one of them is in the build. Today that's saves other apps can open and quiet saves.
+     * whenever one of them is in the build. Today that's saves other apps can open, converting to
+     * keep the full size, and quiet saves.
      * Pause turns them off like a family's switches, and a paused Facebook makes no Hushfacebook
      * saves anyway.
      */
     static final List<BooleanSetting> DOWNLOAD_SWITCHES = Collections.unmodifiableList(
-            java.util.Arrays.asList(Settings.DOWNLOAD_COMPATIBLE, Settings.DOWNLOAD_QUIET));
+            java.util.Arrays.asList(Settings.DOWNLOAD_COMPATIBLE, Settings.DOWNLOAD_CONVERT, Settings.DOWNLOAD_QUIET));
 
     /** The families whose saves read {@link #DOWNLOAD_SWITCHES}. */
     static final Set<PatchFamily> DOWNLOADS = Collections.unmodifiableSet(

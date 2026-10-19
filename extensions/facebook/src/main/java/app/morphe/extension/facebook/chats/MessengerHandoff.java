@@ -5,6 +5,7 @@
 package app.morphe.extension.facebook.chats;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 
 import androidx.annotation.Nullable;
 
@@ -40,10 +41,12 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  *
  * <p>Messenger is looked up afresh on every question, never kept. A missed call costs far more than
  * a package lookup, and a Messenger uninstalled or disabled a minute ago has to stop the local drop
- * hooks straight away. Restarting Facebook then restores its server registration. Only Meta's own
- * package counts: a copy under another package name, as HushMessenger's install beside Meta's apps
- * makes, may not get Meta's pushes at all, so Facebook keeps ringing beside it. Whether Messenger
- * is signed in can't be seen from here, which the switch's summary says.
+ * hooks straight away. Restarting Facebook then restores its server registration. A copy under
+ * another package name, as HushMessenger's install beside Meta's apps makes, counts like Meta's
+ * own: it's the one the top bar's icon opens and the Get Messenger card counts, and it gets Meta's
+ * pushes too (#193 showed a copy and Facebook each notifying for the same message, while this
+ * counted no Messenger). Whether Messenger is signed in can't be seen from here, which the switch's
+ * summary says.
  *
  * <p>It fails open: with the switch off, a pause, settings that aren't ready, no context yet, no
  * Messenger, a disabled one, or any failure in here, Facebook rings and notifies as it always did.
@@ -159,11 +162,21 @@ public final class MessengerHandoff {
     private static boolean handOff(String what) {
         if (!Utils.settingsReady() || !Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER.get()) return false;
         Context context = Utils.getContext();
-        if (context == null || !MessengerCard.lookUp(context.getPackageManager())) {
+        if (context == null || !messengerInstalled(context)) {
             HookStatus.counted(FamilyNames.MESSENGER_ICON, NO_MESSENGER);
             return false;
         }
         HookStatus.counted(FamilyNames.MESSENGER_ICON, what);
         return true;
+    }
+
+    /**
+     * Whether Meta's Messenger, or a copy of it under another package name, is installed and
+     * enabled right now. A disabled copy has no launcher entry to find, so it counts as none, like
+     * a disabled Meta Messenger.
+     */
+    static boolean messengerInstalled(Context context) {
+        PackageManager packages = context.getPackageManager();
+        return MessengerCard.lookUp(packages) || MessengerIcon.copyLaunch(packages, context.getPackageName()) != null;
     }
 }

@@ -161,6 +161,26 @@ public final class CommentSheetOptions {
     }
 
     /**
+     * The hook on the newer pill (#185), right before its builder returns the pill's data. That
+     * comment list draws its pill from the data and draws none for a null, which is what the
+     * builder's caller already answers when no comment came in. With the switch on it answers
+     * null; otherwise, for a null, and for a throw, it hands back what Facebook built.
+     */
+    @Nullable
+    public static Object newCommentsPillData(@Nullable Object data) {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, PILL);
+            if (data == null || !Utils.settingsReady() || !Settings.HIDE_NEW_COMMENTS_PILL.get()) return data;
+            HookStatus.counted(FAMILY, PILL_HIDDEN);
+            return null;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "new comments pill", failure);
+            return data;
+        }
+    }
+
+    /**
      * The hook, first thing in the comment box's check of whether a button shows, handed the
      * button's name. True answers no for the GIF and sticker buttons while the switch is on; false
      * leaves the check to Facebook, for every other button and otherwise.

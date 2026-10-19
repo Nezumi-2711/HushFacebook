@@ -83,11 +83,14 @@ public final class StorySeen {
      * after the last mark still reads unwatched and needs its own: a cold start builds the tray four
      * times in under a second, the last from the network after the mark, and one mark for all of
      * them left the ring blue (#61, #165, S22 2026-10-18). A copy that already reads watched isn't
-     * published, and no bucket is published more than {@link #MARKS_PER_WINDOW} times in this long,
-     * in case a publish ever makes Facebook build an unwatched copy again.
+     * published. The only ceiling is a guard in case a publish ever makes Facebook build an
+     * unwatched copy again: no bucket is published more than {@link #MARKS_PER_WINDOW} times in this
+     * long. It has to sit far above what a Menu or feed visit builds, because the tray loader makes
+     * a dozen copies of every bucket in its first second and more with each refresh, and a ceiling
+     * of eight a minute left every copy after the eighth blue again (#165, 0.15.0, 2026-10-19).
      */
     static final long REMARK_MS = 60_000;
-    static final int MARKS_PER_WINDOW = 8;
+    static final int MARKS_PER_WINDOW = 240;
 
     /** What a stub answers until the patch fills it, so a missing one reads as missing. */
     private static final Object UNPATCHED = new Object();

@@ -36,7 +36,8 @@ import org.junit.Test
  * those classes. The tile state: one class whose constructor checks `activeNowTiles` and stores an
  * ImmutableList, found in 577 (`E4x`), 580 (`EBq`) and 581 (`E7k`); the hook goes in front of the
  * store as range calls, because the list's register can sit past v15 elsewhere, and the test reads
- * the instructions back. The promotions: one plugin per tag, each with one show question and a
+ * the instructions back. The section drawing that row: one render naming `ActiveNowSection` with an
+ * empty way out Facebook already jumps to; the hook goes first and jumps there too. The promotions: one plugin per tag, each with one show question and a
  * local to borrow; the hook goes first in the question. The Meta AI button: one search row builds
  * it with a tap action that opens Meta AI from the inbox, and the hook takes the built button
  * before the row's own null check. The search screen's Meta AI button: its tap names the row's
@@ -108,6 +109,20 @@ class CleanUpChatListFixtureTest {
                             it.parameterTypes.map(CharSequence::toString) == listOf("Ljava/util/Collection;")
                     })
 
+                // The section drawing the row: one render loads its name and tile key and has an empty way
+                // out that a jump of Facebook's own already lands on.
+                val sectionOwners = FixtureDex.classesHolding(bundle, NOTES_SECTION)
+                val sections = sectionOwners.flatMap { owner -> owner.methods.mapNotNull(::notesRowExit) }
+                assertEquals("$name: renders of the notes row with an empty way out", 1, sections.size)
+                val section = sections.single()
+                assertTrue("$name: the render has a local for the answer", locals(section.method) >= 1)
+                val sectionStock = section.method.body()
+                assertEquals("$name: the way out is the render's first new object", section.exit,
+                    sectionStock.indexOfFirst { it.opcode == Opcode.NEW_INSTANCE })
+                assertTrue("$name: Facebook's own branch already lands on the way out",
+                    branches(sectionStock).any { it.second == section.exit })
+                assertTrue("$name: no try block in the render", section.method.implementation!!.tryBlocks.isEmpty())
+
                 // The promotions: one plugin per tag, distinct, each with one show question.
                 val plugins = mutableListOf<ClassDef>()
                 val questions = PROMOTION_TAGS.map { tag ->
@@ -170,7 +185,7 @@ class CleanUpChatListFixtureTest {
 
                 // The patch on those classes.
                 val context = PatchContexts.of(
-                    (listOf(state) + plugins + openers + rows + pickerOpeners + pickerRow).distinctBy { it.type } +
+                    (listOf(state) + sectionOwners + plugins + openers + rows + pickerOpeners + pickerRow).distinctBy { it.type } +
                         ExtensionDex.classDef(SETTINGS_STATUS),
                 )
                 val before = store.method.body()
@@ -198,6 +213,30 @@ class CleanUpChatListFixtureTest {
                 assertEquals("$where: the store follows", Opcode.IPUT_OBJECT, after[at + 4].opcode)
                 assertEquals("$where: stores the same register", store.list, (after[at + 4] as OneRegisterInstruction).registerA)
                 assertEquals("$where: stock code after the hook", before.drop(at).map { it.target() }, after.drop(at + 4).map { it.target() })
+
+                val renderStock = section.method.body()
+                val renderHooked = patched(context, section.method).body()
+                val drawn = "$name ${section.method.definingClass}->${section.method.name}"
+                val shape = { code: List<Instruction> -> code.map { it.opcode to it.target() } }
+                assertEquals("$drawn: three instructions in", renderStock.size + 3, renderHooked.size)
+                assertEquals("$drawn: the hook call", Opcode.INVOKE_STATIC, renderHooked[0].opcode)
+                assertEquals("$drawn: the hook", HIDES_NOTES_ROW, renderHooked[0].target())
+                assertEquals("$drawn: no arguments", 0, (renderHooked[0] as FiveRegisterInstruction).registerCount)
+                assertEquals("$drawn: the answer", Opcode.MOVE_RESULT, renderHooked[1].opcode)
+                assertEquals("$drawn: lands in v0", 0, (renderHooked[1] as OneRegisterInstruction).registerA)
+                assertEquals("$drawn: a yes jumps", Opcode.IF_NEZ, renderHooked[2].opcode)
+                assertEquals("$drawn: tests v0", 0, (renderHooked[2] as OneRegisterInstruction).registerA)
+                assertEquals("$drawn: to the render's own empty way out", section.exit + 3,
+                    (renderHooked[2] as BuilderOffsetInstruction).target.location.index)
+                assertEquals("$drawn: which builds an object, reads its result and returns it",
+                    listOf(Opcode.NEW_INSTANCE, Opcode.INVOKE_DIRECT, Opcode.IGET_OBJECT, Opcode.RETURN_OBJECT),
+                    renderHooked.subList(section.exit + 3, section.exit + 7).map { it.opcode })
+                assertEquals("$drawn: a no runs the stock render from its first instruction", shape(renderStock), shape(renderHooked.drop(3)))
+                assertEquals(
+                    "$drawn: Facebook's branches land where they did",
+                    branches(renderStock).map { (from, to) -> from + 3 to to + 3 },
+                    branches(renderHooked).drop(1),
+                )
 
                 for (question in questions) {
                     val stock = question.body()

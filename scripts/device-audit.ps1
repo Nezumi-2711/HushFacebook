@@ -12,11 +12,13 @@
        ones that stop a walk (AuditMode.ALL_ON_EXCLUDED), plus -On and less -Off. Facebook applies
        it at its next start and keeps the switches it had in before.json.
     3. Restarts Facebook twice, so every hook starts with the profile's values.
-    4. Walks the screens in -Visit with -Swipes swipes each. It only opens links and swipes, so
-       nothing is liked, followed or sent.
+    4. Walks the screens in -Visit with -Swipes swipes each. It opens links, swipes, taps a few
+       navigation rows and searches for one fixed word, so nothing is liked, followed or sent.
     5. Asks for the full diagnostic report over an intent and pulls it, then reads [HOOK STATUS]
        with phone-smoke's Read-SmokeReport and compares it to -Expectations: a family that ran in
        the baseline and didn't run now fails, as does anything missing, ambiguous or a crash.
+       A -MayIdle family (or one the baseline lists under mayIdle) waits on what Facebook serves,
+       so it gets a note either way and is never written into the baseline's ranOnWalk.
     6. Opens every settings page named in SettingsNavigation.java, scrolls it to the end and
        screenshots each screenful, in dark and light, plus one dark pass per -Locales entry.
        The text of each page goes next to its screenshots, and index.html shows them all.
@@ -45,10 +47,11 @@ param(
     # node whose text or description is exactly <label>, from a fresh dump, scrolling back up to
     # find it, and only labels that open or expand something belong here: never Like, Follow,
     # Add friend, Send or a person. "longpress" holds the middle of the screen, "back" goes back.
+    # "query" types $AuditQuery into the search field fb://search just opened and submits it.
     # No fb://groups or fb://friends: all-on hides those tabs, and their links then land nowhere
     # or on Android's app chooser.
     [string[]]$Visit = @('fb://feed', 'tap:Comment', 'back', 'fb://watch', 'fb://fb_shorts/viewer', 'longpress',
-        'fb://notifications', 'fb://marketplace', 'fb://profile', 'fb://search',
+        'fb://notifications', 'fb://marketplace', 'fb://profile', 'fb://search', 'query',
         'fb://bookmarks', 'tap:Settings and privacy', 'fb://bookmarks', 'tap:Feeds', 'fb://feed'),
     # Only these explicitly optional steps may be absent without failing the requested scope.
     [string[]]$OptionalVisit = @('tap:Comment', 'tap:Feeds'),
@@ -58,6 +61,9 @@ param(
     [string[]]$On = @(),
     [string[]]$Off = @(),
     [string]$Expectations = (Join-Path $PSScriptRoot 'device-audit-expectations.json'),
+    # Families that run only when Facebook serves something the walk can't make appear: a
+    # sponsored post on the profile, a new-reels badge on the Reels tab.
+    [string[]]$MayIdle = @('Hide sponsored profile posts', 'Hide the Reels tab dot'),
     [switch]$WriteBaseline,
     [switch]$SkipWalk,
     [switch]$SkipPages,
@@ -83,6 +89,13 @@ $LauncherClass = 'com.facebook.katana.LoginActivity'
 $Entry = $null
 $Extra = 'app.morphe.extension.facebook'
 $AuditDir = "/sdcard/Android/data/$Package/files/hushfacebook-audit"
+# These links open a playing reel, and uiautomator can't read a screen while a video plays
+# ("could not get idle state", about 11 seconds a try). Their destination and their input are
+# proved from the fragment tree instead (Get-AuditReelProof), and a reel never gets a tap.
+$ReelRoutes = @('fb://watch', 'fb://fb_shorts/viewer')
+# The only text the walk types. The search hooks run on a typeahead and a results page, which an
+# empty search field never shows, and a common word brings both.
+$AuditQuery = 'news'
 $translationTables = Join-Path $PSScriptRoot '..\extensions\shared\library\src\main\l10n'
 
 if (-not $Serial) { throw 'Pass -Serial or set HUSHFACEBOOK_DEVICE_SERIAL.' }
@@ -150,7 +163,7 @@ function Assert-AuditLease {
 function Assert-AuditSteps {
     $allowed = @('fb://feed', 'fb://watch', 'fb://fb_shorts/viewer', 'fb://notifications',
         'fb://marketplace', 'fb://profile', 'fb://search', 'fb://bookmarks',
-        'tap:Comment', 'tap:Settings and privacy', 'tap:Feeds', 'back', 'longpress')
+        'tap:Comment', 'tap:Settings and privacy', 'tap:Feeds', 'back', 'longpress', 'query')
     foreach ($step in $Visit) {
         if ($allowed -cnotcontains $step) { throw "Not a permitted audit navigation step: $step" }
     }
@@ -183,9 +196,25 @@ function Invoke-Adb {
     if ($arguments.Count -gt 2 -and $arguments[0] -eq 'shell' -and $arguments[1] -eq 'input') {
         if (-not $identityVerified) { throw 'Device identity has not been verified. No input was sent.' }
         if (-not ($arguments.Count -eq 4 -and $arguments[2] -eq 'keyevent' -and $arguments[3] -eq 'KEYCODE_WAKEUP')) {
+            if ($arguments[2] -cnotin @('tap', 'swipe', 'keyevent', 'text') -or
+                    ($arguments[2] -eq 'keyevent' -and ($arguments.Count -ne 4 -or $arguments[3] -cnotin @('KEYCODE_BACK', 'KEYCODE_ENTER')))) {
+                throw 'Not a permitted input. No input was sent.'
+            }
+            $typing = $arguments[2] -eq 'text' -or $arguments[3] -ceq 'KEYCODE_ENTER'
+            if ($typing -and (-not $inputQuery -or
+                    ($arguments[2] -eq 'text' -and ($arguments.Count -ne 4 -or $arguments[3] -cne $AuditQuery)))) {
+                throw 'Only the audit query is typed, and only at the query step. Nothing was typed.'
+            }
             Assert-AuditForeground
-            $fresh = @(Get-UiNodes)
-            if ($fresh.Count -eq 0) { throw 'No fresh Facebook UI nodes. No input was sent.' }
+            if ($inputReel) {
+                # A playing reel can't be dumped, so its fragments prove the screen. A tap soon after
+                # another one likes a reel, so it never gets one.
+                if ($arguments[2] -eq 'tap') { throw 'A reel never gets a tap. No tap was sent.' }
+                if (-not (Get-AuditReelProof)) { throw 'The reel viewer is not on screen. No input was sent.' }
+            } else {
+                $fresh = @(Get-UiNodes)
+                if ($fresh.Count -eq 0) { throw 'No fresh Facebook UI nodes. No input was sent.' }
+            }
             $nodeWindow = $script:auditWindowIdentity
             if ($arguments[2] -eq 'tap') {
                 if ($inputNodeLabel -cnotin @('Comment', 'Settings and privacy', 'Feeds')) {
@@ -199,6 +228,11 @@ function Invoke-Adb {
                     throw 'The navigation node moved or became ambiguous. No tap was sent.'
                 }
             }
+            # A swipe or tap across an open keyboard types into the focused field (stray characters
+            # in Facebook search on the S22, 2026-10-18), and the query needs the field focused.
+            $keyboard = $arguments[2] -ne 'keyevent' -and (Test-AuditKeyboard)
+            if ($typing -and $arguments[2] -eq 'text' -and -not $keyboard) { throw 'No keyboard is open for the query. Nothing was typed.' }
+            if (-not $typing -and $keyboard) { throw 'The keyboard is open. No swipe or tap was sent.' }
             # A dump can take seconds. An overlay may have taken input while it was running.
             Assert-AuditForeground
             if ($nodeWindow -cne $script:auditWindowIdentity) {
@@ -225,6 +259,14 @@ function Write-Step([string]$Text) { Write-Host "[audit] $Text" }
 
 # One argument for the phone's shell, quoted so spaces and apostrophes survive it.
 function Format-Shell([string]$Text) { "'" + $Text.Replace("'", "'\''") + "'" }
+
+# Whether the keyboard is on screen. A dump that doesn't say is no answer either way.
+function Test-AuditKeyboard {
+    $state = (Invoke-Adb shell dumpsys input_method) -join "`n"
+    $shown = @([regex]::Matches($state, '\bmInputShown=(true|false)\b') | ForEach-Object { $_.Groups[1].Value })
+    if ($shown.Count -eq 0) { throw 'The input method dump does not say whether the keyboard is open. No input was sent.' }
+    return $shown -ccontains 'true'
+}
 
 function Get-UiNodes {
     Assert-AuditForeground
@@ -262,8 +304,6 @@ function Test-AuditDestination([string]$Route, [object[]]$Nodes) {
             return ($labels -ccontains "What's on your mind?" -and $labels -ccontains 'Go to profile') -or
                 @($own | Where-Object { $_.'content-desc' -ceq 'Facebook logo' }).Count -gt 0
         }
-        'fb://watch' { return $labels -ccontains 'Reels tab details' -or $labels -ccontains 'Reel details' }
-        'fb://fb_shorts/viewer' { return $labels -ccontains 'Reel details' }
         'fb://notifications' {
             # The link opens a page whose title isn't a node and which a warm app restores scrolled
             # down, so a row's own settings button counts too.
@@ -286,6 +326,62 @@ function Test-AuditDestination([string]$Route, [object[]]$Nodes) {
         }
     }
     return $false
+}
+
+# Whether $Activity's section of "dumpsys activity top" is resumed and shows a reel viewer: a
+# WatchFeedOrWarionFragment that's shown and visible to the user, inside fragments that are too.
+# A fragment's fields are the lines indented under its header, up to its child fragments. Lines
+# naming a fragment after "#n:" or "mParent=" only list it. Anything ambiguous is no proof.
+function Test-AuditReelViewer([string[]]$Top, [string]$Activity) {
+    $lines = @(($Top -join "`n") -split "\r?\n")
+    $heads = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^(?:TASK |\s*ACTIVITY )') { $i } })
+    $mine = @($heads | Where-Object { $lines[$_] -match '^\s*ACTIVITY (\S+)\s' -and $Matches[1] -ceq $Activity })
+    if ($mine.Count -ne 1) { return $false }
+    $next = @(@($heads | Where-Object { $_ -gt $mine[0] }) + $lines.Count)[0]
+    if ($next -le $mine[0] + 1) { return $false }
+    $section = $lines[($mine[0] + 1)..($next - 1)]
+    if (-not @($section | Where-Object { $_ -cmatch '\bmResumed=true\b' }).Count) { return $false }
+    $fields = @{}
+    $name = $null
+    $indent = 0
+    foreach ($line in $section) {
+        $depth = $line.Length - $line.TrimStart().Length
+        if ($line -match '^\s+([\w$.]+\{[0-9a-f]+\}) \(') {
+            if ($fields.ContainsKey($Matches[1])) { return $false }
+            $name = $Matches[1]
+            $indent = $depth
+            $fields[$name] = [Collections.Generic.List[string]]::new()
+        } elseif ($null -ne $name -and ($depth -le $indent -or $line -match '^\s+Child FragmentManager')) {
+            $name = $null
+        } elseif ($null -ne $name) {
+            $fields[$name].Add($line)
+        }
+    }
+    foreach ($reel in @($fields.Keys | Where-Object { $_.StartsWith('WatchFeedOrWarionFragment{', [StringComparison]::Ordinal) })) {
+        $at = $reel
+        for ($level = 0; $null -ne $at -and $level -lt 12; $level++) {
+            if (-not $fields.ContainsKey($at)) { break }
+            $text = $fields[$at] -join "`n"
+            if ($text -cnotmatch '\bmHidden=false\b' -or $text -cnotmatch '\bmDetached=false\b' -or
+                    $text -cnotmatch '\bmMenuVisible=true\b' -or $text -cnotmatch '\bmUserVisibleHint=true\b') { break }
+            $parents = @([regex]::Matches($text, '(?m)^\s*mParentFragment=([\w$.]+\{[0-9a-f]+\})') | ForEach-Object { $_.Groups[1].Value })
+            if ($parents.Count -gt 1) { break }
+            $at = if ($parents.Count) { $parents[0] } else { $null }
+        }
+        if ($null -eq $at) { return $true }
+    }
+    return $false
+}
+
+# Proves the reel viewer is in front from the resumed Facebook screen's fragments, which can be
+# read while a video plays.
+function Get-AuditReelProof {
+    Assert-AuditForeground
+    $windowBefore = $script:auditWindowIdentity
+    $top = @(Invoke-Adb shell dumpsys activity top)
+    Assert-AuditForeground
+    if ($script:auditWindowIdentity -cne $windowBefore) { return $false }
+    return Test-AuditReelViewer $top $windowBefore.Substring(0, $windowBefore.IndexOf('|'))
 }
 
 # The one node a "tap:<label>" step may tap, or $null. A row can repeat its label on a child that
@@ -360,8 +456,23 @@ function New-AuditBaseline([string]$Report, [string[]]$Ran, [string[]]$Idle) {
         profile = [ordered]@{ name = 'all-on'; on = @($On | Sort-Object -Unique); off = @($Off | Sort-Object -Unique)
             visit = @($Visit); optionalVisit = @($OptionalVisit | Sort-Object -Unique); swipes = $Swipes
             locales = @($Locales); maxScrolls = $MaxScrolls }
-        visit = @($Visit); ranOnWalk = @($Ran | Sort-Object); notOnWalk = @($Idle | Sort-Object)
+        visit = @($Visit); ranOnWalk = @($Ran | Where-Object { @($MayIdle) -notcontains $_ } | Sort-Object)
+        notOnWalk = @($Idle | Sort-Object); mayIdle = @($MayIdle | Where-Object { $_ } | Sort-Object -Unique)
     }
+}
+
+function Compare-AuditWalk($Expected, [string[]]$Ran) {
+    $waits = @(@($MayIdle) + @($Expected.mayIdle) | Where-Object { $_ } | Sort-Object -Unique)
+    $failures = @(@($Expected.ranOnWalk) | Where-Object { $Ran -notcontains $_ -and $waits -notcontains $_ } |
+        ForEach-Object { "$_ ran on the baseline's walk ($($Expected.facebook)) and didn't now." })
+    $notes = [Collections.Generic.List[string]]::new()
+    $new = @($Ran | Where-Object { @($Expected.ranOnWalk) -notcontains $_ -and $waits -notcontains $_ })
+    if ($new) { $notes.Add("Ran now and not in the baseline: $($new -join ', ')") }
+    if ($waits) {
+        $notes.Add('Wait on what Facebook serves: ' + (@($waits | ForEach-Object {
+            if ($Ran -contains $_) { "$_ ran" } else { "$_ didn't run" } }) -join ', '))
+    }
+    return [pscustomobject]@{ Failures = $failures; Notes = @($notes) }
 }
 
 function Test-AuditBaseline($Expected, $Actual) {
@@ -373,6 +484,8 @@ function Test-AuditBaseline($Expected, $Actual) {
     if (($Expected.profile -isnot [Collections.IDictionary] -and $Expected.profile -isnot [pscustomobject]) -or
             $Expected.ranOnWalk -isnot [Array] -or $Expected.ranOnWalk.Count -eq 0 -or
             @($Expected.ranOnWalk | Where-Object { $_ -isnot [string] -or [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) { return $false }
+    if ($null -ne $Expected.mayIdle -and ($Expected.mayIdle -isnot [Array] -or @($Expected.mayIdle | Where-Object {
+            $_ -isnot [string] -or [string]::IsNullOrWhiteSpace($_) -or @($Expected.ranOnWalk) -contains $_ }).Count -gt 0)) { return $false }
     return (ConvertTo-Json -InputObject $Expected.profile -Depth 5 -Compress) -ceq
         (ConvertTo-Json -InputObject $Actual.profile -Depth 5 -Compress)
 }
@@ -675,6 +788,8 @@ try {
     if (-not $SkipWalk) {
         $stepNumber = 0
         $routeVerified = $false
+        $routeReel = $false
+        $routeStep = $null
         $skipBack = $false
         foreach ($step in $Visit) {
             $stepNumber++
@@ -685,6 +800,12 @@ try {
                 continue
             }
             if ($step -like 'tap:*') {
+                if ($routeReel) {
+                    $skipBack = $true
+                    $summary.Add("Walk: step $stepNumber ($step) would tap a reel. No tap sent.")
+                    if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required step $stepNumber would tap a reel: $step") }
+                    continue
+                }
                 $skipBack = $false
                 $label = $step.Substring(4)
                 $node = $null
@@ -705,6 +826,7 @@ try {
                     try {
                         Invoke-Adb shell input tap ([int](([int]$Matches[1] + [int]$Matches[3]) / 2)) ([int](([int]$Matches[2] + [int]$Matches[4]) / 2)) | Out-Null
                     } finally { $inputNodeLabel = $null }
+                    $routeStep = $null
                     Start-Sleep -Seconds $SettleSeconds
                 } else {
                     $skipBack = $true
@@ -712,29 +834,63 @@ try {
                     if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required step $stepNumber was not reached: $step") }
                 }
             } elseif ($step -eq 'longpress') {
-                Invoke-Adb shell input swipe $swipeX ([int]($height / 2)) $swipeX ([int]($height / 2)) 2500 | Out-Null
+                $inputReel = $routeReel
+                $inputWindow = if ($routeReel) { $routeWindow }
+                try { Invoke-Adb shell input swipe $swipeX ([int]($height / 2)) $swipeX ([int]($height / 2)) 2500 | Out-Null }
+                finally { $inputReel = $false; $inputWindow = $null }
                 Start-Sleep -Seconds 1
             } elseif ($step -eq 'back') {
                 if ($skipBack) { $skipBack = $false; continue }
-                Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
+                $inputReel = $routeReel
+                try { Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null }
+                finally { $inputReel = $false }
+                $routeReel = $false
+                $routeStep = $null
                 Start-Sleep -Seconds 1
+            } elseif ($step -eq 'query') {
+                if ($routeStep -cne 'fb://search' -or -not (Test-AuditKeyboard)) {
+                    $summary.Add("Walk: no open search field to type in at step $stepNumber. Nothing typed.")
+                    if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required step $stepNumber had no open search field: $step") }
+                    continue
+                }
+                $inputWindow = $routeWindow
+                $inputQuery = $true
+                try {
+                    Invoke-Adb shell input text $AuditQuery | Out-Null
+                    Start-Sleep -Seconds 2
+                    Invoke-Adb shell input keyevent KEYCODE_ENTER | Out-Null
+                } finally { $inputWindow = $null; $inputQuery = $false }
+                $routeStep = $null
+                Start-Sleep -Seconds $SettleSeconds
             } else {
                 $routeVerified = $false
+                $routeReel = $false
+                $routeStep = $null
+                $reel = $ReelRoutes -ccontains $step
                 $launch = (Invoke-Adb shell am start -W -a android.intent.action.VIEW -d $step -p $Package) -join "`n"
                 Start-Sleep -Seconds $SettleSeconds
-                $routeVerified = $launch -cmatch '(?m)^Status: ok\r?$' -and (Test-AuditDestination $step @(Get-UiNodes))
+                $routeVerified = $launch -cmatch '(?m)^Status: ok\r?$' -and
+                    $(if ($reel) { Get-AuditReelProof } else { Test-AuditDestination $step @(Get-UiNodes) })
                 if (-not $routeVerified) {
                     $summary.Add("Walk: destination not proved at step $stepNumber ($step). No input sent.")
                     if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required destination not reached at step ${stepNumber}: $step") }
                     continue
                 }
                 $routeWindow = $script:auditWindowIdentity
+                $routeReel = $reel
+                $routeStep = $step
                 # Before the swipes too, while a tab bar that slides away is still on screen.
                 Save-Screenshot (Join-Path $OutDir ('walk-{0:00}-{1}-top.png' -f $stepNumber, ($step -replace '[^A-Za-z0-9]+', '-').Trim('-')))
                 for ($i = 0; $i -lt $Swipes; $i++) {
+                    # Search opens with its field focused and the keyboard up.
+                    if (Test-AuditKeyboard) {
+                        $summary.Add("Walk: the keyboard is open at step $stepNumber ($step). No swipe sent.")
+                        break
+                    }
                     $inputWindow = $routeWindow
+                    $inputReel = $routeReel
                     try { Invoke-Adb shell input swipe $swipeX $swipeFrom $swipeX $swipeTo 300 | Out-Null }
-                    finally { $inputWindow = $null }
+                    finally { $inputWindow = $null; $inputReel = $false }
                     Start-Sleep -Milliseconds 1500
                 }
             }
@@ -763,11 +919,9 @@ try {
             if (-not $WriteBaseline -and -not (Test-AuditBaseline $expected $baseline)) {
                 $problems.Add('The baseline identifies a different build, device or audit profile. A reviewed full baseline run is required.')
             }
-            foreach ($name in @($expected.ranOnWalk)) {
-                if ($ran -notcontains $name) { $problems.Add("$name ran on the baseline's walk ($($expected.facebook)) and didn't now.") }
-            }
-            $new = @($ran | Where-Object { @($expected.ranOnWalk) -notcontains $_ })
-            if ($new) { $summary.Add("Ran now and not in the baseline: $($new -join ', ')") }
+            $walk = Compare-AuditWalk $expected $ran
+            foreach ($failure in $walk.Failures) { $problems.Add($failure) }
+            foreach ($note in $walk.Notes) { $summary.Add($note) }
         } elseif (-not $WriteBaseline) {
             $problems.Add("No baseline at $Expectations. Run once with -WriteBaseline on a build you trust.")
         }

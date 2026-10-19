@@ -174,8 +174,9 @@ final class DashSave {
                 if (progress.cancelled()) return Downloader.Result.fail(Downloader.Status.CANCELLED, "cancelled before the conversion");
                 progress.joining();
                 picture = workFile("picture", ".mp4", folder);
-                // H.264 at the bitrate VideoTranscode picks runs several times the VP9 or AV1 it came from.
-                long room = Math.min(maxBytes, Math.max(videoFile.length() * 6, 32L << 20));
+                // H.264 at the bitrate VideoTranscode picks runs several times the VP9 or AV1 it came
+                // from, so the room goes by how long the picture runs, as the sound's does.
+                long room = Math.min(maxBytes, VideoTranscode.room(videoFile, video.bandwidth));
                 if (reserve(picture, room) < room) {
                     return Downloader.Result.fail(Downloader.Status.WRITE_ERROR, Downloader.Cause.NO_SPACE,
                         "not enough free space to convert the picture");
@@ -187,7 +188,7 @@ final class DashSave {
                     }
                 } catch (OutputAllowance.Exceeded over) {
                     return Downloader.Result.fail(Downloader.Status.WRITE_ERROR, Downloader.Cause.CONVERSION,
-                        "the converted picture outgrew the " + room + " bytes kept for it");
+                        "the converted picture outgrew the " + room + " bytes kept for it (" + over.getMessage() + ")");
                 }
                 long took = SystemClock.uptimeMillis() - started;
                 File made = picture;

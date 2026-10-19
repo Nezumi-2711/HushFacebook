@@ -131,6 +131,12 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.HIDE_REEL_COUNTS,
                     L10n.t("Takes the numbers away from under a reel's Like, Comment and Share icons. "
                             + "The icons stay where they are. A change shows from the next reel.")));
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_SAVE_BUTTON,
+                    L10n.t("Takes the Save button off the side of reels. The buttons above it move down. "
+                            + "A change shows from the next reel.")));
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_SOUND_BUTTON,
+                    L10n.t("Takes the speaker button off the bottom of the side of reels. "
+                            + "A change shows from the next reel.")));
             // Asked as a feed video's player asks for more, so a change shows from the next feed video.
             reels.addPreference(toggle(context, Settings.FEED_VIDEOS_ALONE,
                     L10n.t("A video you tap in the feed opens full screen by itself, with no reels to swipe to after it. "
@@ -295,13 +301,17 @@ final class VideoPages {
                 downloads.addPreference(toggle(context, Settings.POST_MENU_PHOTO_SAVE,
                         L10n.t("With Save any photo on, a post with photos gets Save photo in its three-dot menu too. A post with several saves each one, one after another.")));
             }
-            // Every save reads these two, a story's and a reel's as much as a feed video's, so they're
-            // here whichever download patch is in, the compatible one above the quality it keeps within.
+            // Every save reads these, a story's and a reel's as much as a feed video's, so they're here
+            // whichever download patch is in, the compatible ones above the quality they keep within.
             downloads.addPreference(toggle(context, Settings.DOWNLOAD_QUIET,
                     L10n.t("No toast when a save starts, finishes or is canceled. A save that fails still says why.")));
             downloads.addPreference(toggle(context, Settings.DOWNLOAD_COMPATIBLE,
                     L10n.t("Fixes saved videos that play without sound in WhatsApp, video editors such as CapCut and InShot, or "
                             + "some galleries and players. May lower quality.")));
+            downloads.addPreference(toggle(context, Settings.DOWNLOAD_CONVERT,
+                    L10n.t("With Save videos other apps can open on, a full size video Facebook only has as VP9 or AV1 is "
+                            + "converted to H.264 on your phone instead of saved smaller. Slower, and videos over 10 minutes "
+                            + "stay smaller.")));
             downloads.addPreference(qualityRow(context));
             downloads.addPreference(saveToRow(context));
             downloads.addPreference(folderRow(context));

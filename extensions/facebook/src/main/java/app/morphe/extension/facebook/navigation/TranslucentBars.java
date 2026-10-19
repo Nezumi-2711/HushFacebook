@@ -71,9 +71,10 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * blurs a view's own content, which is why the copy is needed. It costs one recording and one blur
  * of a bar sized area per bar per frame, and only while a frame draws anyway. The frost fades and
  * moves with the bar, so a bar sliding away takes its frost along. It stays inside the bar's rows,
- * so a holder taller than its tabs can't blur a band of the feed above them, and a page holding a
+ * so a holder taller than its tabs can't blur a band of the feed above them, and a page showing a
  * SurfaceView gets none: drawing one a second time moves or drops its video surface, and the reel
- * went black (#171).
+ * went black (#171). Only one on screen counts. Reels' page waiting beside Home with its video
+ * kept every tab plain once Reels had been opened, which read as the frost coming and going (#188).
  *
  * <p>Any failure gives every fill back and stops the bars of that screen, which then look stock.
  */
@@ -177,13 +178,31 @@ public final class TranslucentBars {
         }
     }
 
-    /** Whether [view] is a SurfaceView or holds one anywhere in it. */
-    static boolean holdsSurface(View view) {
-        if (view instanceof SurfaceView) return true;
+    /**
+     * Whether [host] is a SurfaceView or shows one: a visible one somewhere inside its box. One that's
+     * hidden, or laid out or scrolled outside the box, isn't on screen to be moved, the way Facebook
+     * 583 keeps each opened tab's page beside the one shown in a pager (#188). [box] is scratch space.
+     */
+    static boolean holdsSurface(View host, Rect box) {
+        if (host instanceof SurfaceView) return true;
+        box.set(0, 0, host.getWidth(), host.getHeight());
+        return surfaceInside(host, box);
+    }
+
+    /** Whether a visible child of [view] is or holds a SurfaceView inside [box], in [view]'s coordinates. */
+    private static boolean surfaceInside(View view, Rect box) {
         if (!(view instanceof ViewGroup)) return false;
         ViewGroup group = (ViewGroup) view;
         for (int i = 0; i < group.getChildCount(); i++) {
-            if (holdsSurface(group.getChildAt(i))) return true;
+            View child = group.getChildAt(i);
+            if (child.getVisibility() != View.VISIBLE) continue;
+            int dx = child.getLeft() + Math.round(child.getTranslationX()) - group.getScrollX();
+            int dy = child.getTop() + Math.round(child.getTranslationY()) - group.getScrollY();
+            box.offset(-dx, -dy);
+            boolean shows = box.intersects(0, 0, child.getWidth(), child.getHeight())
+                    && (child instanceof SurfaceView || surfaceInside(child, box));
+            box.offset(dx, dy);
+            if (shows) return true;
         }
         return false;
     }
@@ -289,7 +308,7 @@ public final class TranslucentBars {
         private final Map<View, Object> frosts = new IdentityHashMap<>();
         /**
          * The part of one bar's fills on screen this frame, in the window, one fill's or anchor's
-         * part, and the bar's rows.
+         * part (also the surface check's scratch box), and the bar's rows.
          */
         private final Rect seen = new Rect();
         private final Rect visible = new Rect();
@@ -353,7 +372,7 @@ public final class TranslucentBars {
                     if (other.getGlobalVisibleRect(visible)) rows.union(visible);
                 }
                 View under = blurs ? under(bar) : null;
-                if (under != null && holdsSurface(under)) under = null;
+                if (under != null && holdsSurface(under, visible)) under = null;
                 seen.setEmpty();
                 float shown = keep(bar, bar, row, under != null, 1f, 0);
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

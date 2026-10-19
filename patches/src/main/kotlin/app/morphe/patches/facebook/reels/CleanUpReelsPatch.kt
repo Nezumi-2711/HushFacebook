@@ -52,8 +52,10 @@ private const val PATCH = "Clean up Reels"
  * were made with instead of a Meta AI dub (see OriginalAudio.kt). An eighth, also off, takes the
  * search pill out from under a reel's caption (see SearchPill.kt). A ninth, also off, takes the
  * numbers away from under the sidebar's Like, Comment and Share icons (see ReelCounts.kt). A
- * tenth, also off, opens a video tapped in the feed on its own, with no reels after it (see
- * FeedVideoAlone.kt).
+ * tenth, also off, leaves the Save button out of that sidebar (see ReelSaveButton.kt). An
+ * eleventh, also off, opens a video tapped in the feed on its own, with no reels after it (see
+ * FeedVideoAlone.kt). A twelfth, also off, leaves the speaker button out of the bottom of the
+ * sidebar (see ReelSoundButton.kt).
  *
  * Every anchor is a kept name or literal (see ReelAnchors.kt), and every one of them is required: a
  * build where one can't be found stops the patch with what's missing, rather than shipping a switch
@@ -68,7 +70,7 @@ val cleanUpReelsPatch = bytecodePatch(
     name = "Clean up Reels",
     description = "Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template " +
         "buttons and Threads cards between reels, so more of the video shows, and can play each reel once " +
-        "instead of over and over, keep its original audio instead of a Meta AI dub, drop the search pill under the caption or hide the like, comment and share counts. It can also open a video you tap in the feed on its own, with no reels after it. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
+        "instead of over and over, keep its original audio instead of a Meta AI dub, drop the search pill under the caption, or hide the like, comment and share counts, the Save button or the speaker button. It can also open a video you tap in the feed on its own, with no reels after it. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
 ) {
     category("Reels")
     dependsOn(settingsPatch)
@@ -87,6 +89,12 @@ val cleanUpReelsPatch = bytecodePatch(
         hideSearchPill()
         // #180: the numbers under the sidebar's Like, Comment and Share icons.
         hideReelCounts()
+        // #190: the sidebar's Save button, skipped as its icon type comes up.
+        hideReelSaveButton()
+        // #190: the speaker button under the sidebar, from whichever place a server flag picks:
+        // the video controls, through Facebook's own check for it, or the footer, through its null check.
+        hideReelSoundButton()
+        hideReelFooterSoundButton()
         // #161: a feed video's player asks for no more reels after it.
         keepFeedVideosAlone()
         enableStatus("reelDeclutter")

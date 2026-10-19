@@ -6,7 +6,8 @@ $auditAst = [System.Management.Automation.Language.Parser]::ParseFile($auditPath
 if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
-    'New-AuditBaseline', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report')
+    'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
+    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -42,6 +43,8 @@ $script:adbCalls = [Collections.Generic.List[string]]::new()
 $script:foreground = "topResumedActivity=ActivityRecord{1 u0 $Package/.Main t1}"
 $script:focusedWindow = "mCurrentFocus=Window{1 u0 $Package/$Package.Main}"
 $script:uiDump = "<?xml version=`"1.0`"?><hierarchy><node package=`"$Package`" text=`"Comment`" content-desc=`"Comment`" bounds=`"[0,0][20,20]`" /></hierarchy>"
+$script:imeState = '  mInputShown=false'
+$AuditQuery = 'news'
 $inputNodeLabel = 'Comment'
 function Invoke-FakeAdb {
     $command = $args -join ' '
@@ -54,6 +57,8 @@ function Invoke-FakeAdb {
     if ($command -like '*cat */page.json*') { return $script:pageAck }
     if ($command -like '*cat */import.txt*') { return 'applied 4' }
     if ($command -like '*dumpsys activity activities') { return $script:foreground }
+    if ($command -like '*dumpsys activity top') { return $script:topDump }
+    if ($command -like '*dumpsys input_method') { return $script:imeState }
     if ($command -like '*dumpsys window') {
         if ($script:changeOwnWindowAfterDump -and $null -ne $script:postDumpFocusReads) {
             $script:postDumpFocusReads++
@@ -117,8 +122,10 @@ try {
         $Visit = @($unsafe)
         Assert-Throws { Assert-AuditSteps } "Unsafe step accepted: $unsafe"
     }
-    $Visit = @('fb://feed', 'tap:Comment', 'back', 'tap:Feeds', 'tap:Settings and privacy', 'longpress')
+    $Visit = @('fb://feed', 'tap:Comment', 'back', 'tap:Feeds', 'tap:Settings and privacy', 'longpress', 'fb://search', 'query')
     Assert-AuditSteps
+    $Visit = @('fb://search', 'query:hello')
+    Assert-Throws { Assert-AuditSteps } 'A query step with its own text was accepted.'
 
     $identityVerified = $false
     Assert-Throws { Invoke-Adb shell input keyevent KEYCODE_WAKEUP } 'Unverified identity permitted input.'
@@ -176,20 +183,88 @@ try {
     $script:changeOwnWindowAfterDump = $false
     $script:postDumpFocusReads = $null
     $script:focusedWindow = "mCurrentFocus=Window{1 u0 $Package/$Package.Main}"
+    # A playing reel can't be dumped, so its fragment tree proves it (the S22's layout, 2026-10-18).
+    function New-TopDump([string]$Resumed = 'true', [string]$Reel = 'true', [string]$Parent = 'true',
+            [string]$ParentName = 'VideoHomeRootFragment{5a5ee79}', [string]$ReelHeader = 'WatchFeedOrWarionFragment{90bc1ee} (cc7d9f26 id=0x7f0a06ff)') {
+        return @('TASK 10433:com.facebook.katana id=7721 userId=0',
+            "  ACTIVITY $Package/.Main ebc6768 pid=18012 userId=0",
+            '    Local Activity a1 State:',
+            "      mResumed=$Resumed mStopped=false mFinished=false",
+            "      mCreated=true mResumed=$Resumed mStopped=false    Active Fragments:",
+            '    VideoHomeRootFragment{5a5ee79} (15d18ac3 id=0x7f0a0ccd)',
+            "        mHidden=false mDetached=false mMenuVisible=$Parent mHasMenu=false",
+            "        mRetainInstance=false mUserVisibleHint=$Parent",
+            '        Child FragmentManager{1 in VideoHomeRootFragment{5a5ee79}}:',
+            '          Active Fragments:',
+            "          $ReelHeader",
+            "              mHidden=false mDetached=false mMenuVisible=$Reel mHasMenu=false",
+            "              mRetainInstance=false mUserVisibleHint=$Reel",
+            "              mParentFragment=$ParentName (15d18ac3 id=0x7f0a0ccd)",
+            '              Child FragmentManager{2 in WatchFeedOrWarionFragment{90bc1ee}}:',
+            '                mParent=WatchFeedOrWarionFragment{90bc1ee} (cc7d9f26 id=0x7f0a06ff)',
+            '            #0: WatchFeedOrWarionFragment{90bc1ee} (cc7d9f26 id=0x7f0a06ff)',
+            'TASK 10468:com.other.app id=7401 userId=0',
+            '  ACTIVITY com.other.app/.Main 30d65d pid=2364 userId=0',
+            '      mResumed=false mStopped=true mFinished=false')
+    }
+    Assert-That (Test-AuditReelViewer (New-TopDump) "$Package/.Main") 'A visible reel viewer was not proved.'
+    Assert-That (-not (Test-AuditReelViewer (New-TopDump) "$Package/.Other")) "Another screen's reel viewer passed."
+    Assert-That (-not (Test-AuditReelViewer (New-TopDump -Resumed 'false') "$Package/.Main")) 'A paused screen passed.'
+    Assert-That (-not (Test-AuditReelViewer (New-TopDump -Reel 'false') "$Package/.Main")) 'A reel viewer in a hidden tab passed.'
+    Assert-That (-not (Test-AuditReelViewer (New-TopDump -Parent 'false') "$Package/.Main")) 'A reel viewer under a hidden fragment passed.'
+    Assert-That (-not (Test-AuditReelViewer (New-TopDump -ParentName 'GoneFragment{123abc}') "$Package/.Main")) 'A reel viewer with no parent header passed.'
+    Assert-That (-not (Test-AuditReelViewer (New-TopDump -ReelHeader 'OtherFragment{77} (aa id=0x1)') "$Package/.Main")) 'A reel viewer only listed passed.'
+    Assert-That (-not (Test-AuditReelViewer @((New-TopDump) + (New-TopDump)) "$Package/.Main")) 'A screen listed twice passed.'
+    $script:topDump = (New-TopDump) -join "`n"
+    $inputReel = $true
+    $script:adbCalls.Clear()
+    Invoke-Adb shell input swipe 10 20 10 5 | Out-Null
+    Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
+    Assert-That (@($script:adbCalls | Where-Object { $_ -like '* input *' }).Count -eq 2) 'A proved reel refused a swipe or Back.'
+    Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '*uiautomator*' }).Count) 'A reel was dumped while it played.'
+    $script:adbCalls.Clear()
+    Assert-Throws { Invoke-Adb shell input tap 10 10 } 'A reel got a tap.'
+    $script:topDump = (New-TopDump -Reel 'false') -join "`n"
+    Assert-Throws { Invoke-Adb shell input swipe 10 20 10 5 } 'A swipe went to a reel viewer that is not on screen.'
+    Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '* input *' }).Count) 'Input escaped the reel guard.'
+    $inputReel = $false
+    # A swipe across an open keyboard types into the focused field, and only the query is typed.
+    $script:imeState = "  mShowRequested=true`n  mInputShown=true"
+    $script:adbCalls.Clear()
+    Assert-Throws { Invoke-Adb shell input swipe 10 20 10 5 } 'A swipe went across an open keyboard.'
+    Assert-Throws { Invoke-Adb shell input tap 10 10 } 'A tap went across an open keyboard.'
+    Assert-Throws { Invoke-Adb shell input text news } 'Text was typed outside the query step.'
+    $inputQuery = $true
+    Assert-Throws { Invoke-Adb shell input text hello } 'A word other than the audit query was typed.'
+    Assert-Throws { Invoke-Adb shell input text news hello } 'Extra words went in with the audit query.'
+    Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '* input *' }).Count) 'Input escaped the keyboard guard.'
+    Invoke-Adb shell input text news | Out-Null
+    Invoke-Adb shell input keyevent KEYCODE_ENTER | Out-Null
+    Assert-That (@($script:adbCalls | Where-Object { $_ -like '* input *' }).Count -eq 2) 'The query was not typed and submitted.'
+    $script:imeState = '  mInputShown=false'
+    $script:adbCalls.Clear()
+    Assert-Throws { Invoke-Adb shell input text news } 'The query was typed with no keyboard open.'
+    $inputQuery = $false
+    Assert-Throws { Invoke-Adb shell input keyevent KEYCODE_ENTER } 'Enter was sent outside the query step.'
+    Assert-Throws { Invoke-Adb shell input keyevent KEYCODE_MENU } 'An unlisted key was sent.'
+    Assert-Throws { Invoke-Adb shell input draganddrop 10 20 10 5 } 'An unlisted input command was sent.'
+    $script:imeState = 'mServedView=null'
+    Assert-Throws { Invoke-Adb shell input swipe 10 20 10 5 } 'A dump that does not say whether the keyboard is open permitted a swipe.'
+    Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '* input *' }).Count) 'Input escaped the keyboard guard with no keyboard state.'
+    $script:imeState = '  mInputShown=false'
+    Invoke-Adb shell input swipe 10 20 10 5 | Out-Null
+    Assert-That (@($script:adbCalls | Where-Object { $_ -like '* input swipe *' }).Count -eq 1) 'A swipe with the keyboard closed was refused.'
     function New-TestNode([string]$Label, [string]$Class = 'android.view.View', [string]$Owner = $Package) {
         return [pscustomobject]@{ text = $Label; 'content-desc' = $Label; package = $Owner; class = $Class }
     }
     $feedNodes = @((New-TestNode "What's on your mind?"), (New-TestNode 'Go to profile'))
     Assert-That (Test-AuditDestination 'fb://feed' $feedNodes) 'A proved feed was rejected.'
     Assert-That (Test-AuditDestination 'fb://feed' @((New-TestNode 'Facebook logo'))) 'Home with its composer hidden was rejected.'
-    Assert-That (Test-AuditDestination 'fb://watch' @((New-TestNode 'Reel details'))) 'The immersive Reels destination was rejected.'
     foreach ($route in @('fb://watch', 'fb://fb_shorts/viewer', 'fb://notifications', 'fb://marketplace', 'fb://profile', 'fb://search', 'fb://bookmarks')) {
         Assert-That (-not (Test-AuditDestination $route $feedNodes)) "Home fallback passed as $route."
         Assert-That (-not (Test-AuditDestination $route @())) "Empty UI passed as $route."
     }
     $destinations = @{
-        'fb://watch' = @((New-TestNode 'Reels tab details'))
-        'fb://fb_shorts/viewer' = @((New-TestNode 'Reel details'))
         'fb://notifications' = @((New-TestNode 'Notifications'))
         'fb://marketplace' = @((New-TestNode 'Marketplace'), (New-TestNode 'Search Marketplace'))
         'fb://profile' = @((New-TestNode 'Edit profile'), (New-TestNode 'Edit profile picture'))
@@ -356,6 +431,34 @@ try {
         Assert-That (-not (Test-AuditBaseline $different $candidate)) 'An absent or malformed baseline family list passed.'
     }
     Assert-Throws { New-AuditBaseline ($report -replace 'sha256=', 'unknown=') @() @() } 'Unknown patch build was accepted.'
+
+    $MayIdle = @('waits', 'waits')
+    $served = New-AuditBaseline $report @('family', 'waits') @('other')
+    Assert-That (@($served.ranOnWalk) -join ',' -ceq 'family') 'A family that waits on served content went into ranOnWalk.'
+    Assert-That (@($served.mayIdle) -join ',' -ceq 'waits') 'The baseline did not record its mayIdle families once each.'
+    $expected = $served | ConvertTo-Json -Depth 6 | ConvertFrom-Json
+    Assert-That (Test-AuditBaseline $expected $served) 'A baseline with mayIdle families was rejected.'
+    foreach ($badIdle in @('waits', @(1), @(''), @('family'))) {
+        $different = $served | ConvertTo-Json -Depth 6 | ConvertFrom-Json
+        $different.mayIdle = $badIdle
+        Assert-That (-not (Test-AuditBaseline $different $served)) 'A malformed mayIdle list, or one naming a ranOnWalk family, passed.'
+    }
+    $different = $served | ConvertTo-Json -Depth 6 | ConvertFrom-Json
+    $different.PSObject.Properties.Remove('mayIdle')
+    Assert-That (Test-AuditBaseline $different $served) 'A baseline from before mayIdle was rejected.'
+    $walk = Compare-AuditWalk $expected @()
+    Assert-That (@($walk.Failures).Count -eq 1 -and $walk.Failures[0] -like 'family ran on*') 'An idle family outside mayIdle did not fail, or a mayIdle one did.'
+    Assert-That (@($walk.Notes) -contains "Wait on what Facebook serves: waits didn't run") 'An idle mayIdle family got no note.'
+    $walk = Compare-AuditWalk $expected @('family', 'waits', 'fresh')
+    Assert-That (@($walk.Failures).Count -eq 0) 'A walk that ran every baseline family failed.'
+    Assert-That (@($walk.Notes) -contains 'Wait on what Facebook serves: waits ran') 'A mayIdle family that ran got no note.'
+    Assert-That (@($walk.Notes) -contains 'Ran now and not in the baseline: fresh') 'A new family was not reported, or a mayIdle one was reported as new.'
+    $older = $candidate | ConvertTo-Json -Depth 6 | ConvertFrom-Json
+    $older.ranOnWalk = @('family', 'waits')
+    Assert-That (@((Compare-AuditWalk $older @('family')).Failures).Count -eq 0) 'A baseline from before -MayIdle failed a family that waits on served content.'
+    $MayIdle = @()
+    Assert-That (@((Compare-AuditWalk $expected @('family')).Failures).Count -eq 0) "The baseline's own mayIdle list was ignored."
+    Assert-That (@((Compare-AuditWalk $older @('family')).Failures).Count -eq 1) 'A ranOnWalk family idled without failing while nothing marks it as waiting.'
 
     $Expectations = Join-Path $testRoot 'baseline.json'
     $original = '{"original":true}'

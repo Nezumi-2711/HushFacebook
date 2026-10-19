@@ -32,6 +32,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_FEED_FRIEND_REQUESTS) return L10n.t("Hide friend requests in the feed");
         if (setting == Settings.HIDE_FRIENDS_LOCATIONS) return L10n.t("Hide friends' locations");
         if (setting == Settings.HIDE_NOTIFICATION_POST_FOOTER) return L10n.t("Hide more posts under notification posts");
+        if (setting == Settings.HIDE_FIND_FRIENDS_CARD) return L10n.t("Hide the Find friends card");
         if (setting == Settings.HIDE_TOP_STORIES_TRAY) return L10n.t("Hide the Stories tray");
         if (setting == Settings.HIDE_STORIES_BETWEEN_POSTS) return L10n.t("Hide Stories between posts");
         if (setting == Settings.HIDE_HOME_COMPOSER) return L10n.t("Hide the composer row");
@@ -119,6 +120,8 @@ final class SwitchLabels {
         if (setting == Settings.ORIGINAL_AUDIO) return L10n.t("Keep the original audio");
         if (setting == Settings.HIDE_REEL_SEARCH_PILL) return L10n.t("Hide the search pill on reels");
         if (setting == Settings.HIDE_REEL_COUNTS) return L10n.t("Hide counts on reels");
+        if (setting == Settings.HIDE_REEL_SAVE_BUTTON) return L10n.t("Hide Save on reels");
+        if (setting == Settings.HIDE_REEL_SOUND_BUTTON) return L10n.t("Hide the speaker button on reels");
         if (setting == Settings.FEED_VIDEOS_ALONE) return L10n.t("Open feed videos on their own");
         if (setting == Settings.DONT_SEND_REEL_WATCH_HISTORY) return L10n.t("Don't send reel watch history");
         if (setting == Settings.HOLD_ANALYTICS_UPLOADS) return L10n.t("Hold back analytics uploads");
@@ -166,6 +169,7 @@ final class SwitchLabels {
         if (setting == Settings.OPEN_IN_ANOTHER_APP) return L10n.t("Open videos in another app");
         if (setting == Settings.POST_MENU_DOWNLOAD_FIRST) return L10n.t("Download first in post menus");
         if (setting == Settings.DOWNLOAD_COMPATIBLE) return L10n.t("Save videos other apps can open");
+        if (setting == Settings.DOWNLOAD_CONVERT) return L10n.t("Convert to keep the full size");
         if (setting == Settings.DOWNLOAD_QUIET) return L10n.t("Quiet saves");
         if (setting == Settings.HIDE_GET_MESSENGER_CARD) return L10n.t("Hide the Get Messenger card");
         if (setting == Settings.HIDE_CHAT_NOTES_TRAY) return L10n.t("Hide the notes and active now row");

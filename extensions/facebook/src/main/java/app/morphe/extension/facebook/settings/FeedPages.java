@@ -163,6 +163,10 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.HIDE_NOTIFICATION_POST_FOOTER,
                         L10n.t("A post you open from a notification ends without the \"More from your friends\" list "
                                 + "Facebook adds under it, which can carry ads.")));
+                // The end of the feed is built as the feed runs out, so a change shows the next time it does.
+                feed.addPreference(toggle(context, Settings.HIDE_FIND_FRIENDS_CARD,
+                        L10n.t("Hides the \"Want to see more posts from friends?\" card with its Find friends button where "
+                                + "your friends' posts run out.")));
             }
             if (build.contains(PatchFamily.STORIES_TRAY)) {
                 // Facebook builds the feed's adapters once, when the feed is set up, and the tray is

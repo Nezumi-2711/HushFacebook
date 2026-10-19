@@ -116,6 +116,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_notification_post_footer", FALSE);
 
     /**
+     * The "Want to see more posts from friends? Find friends" card where the feed runs out of friends'
+     * posts (#187). It's a part of the end of feed section, never a feed unit, so the section is told
+     * it has no card ({@link app.morphe.extension.facebook.feed.FindFriendsCard}).
+     */
+    public static final BooleanSetting HIDE_FIND_FRIENDS_CARD =
+            new BooleanSetting("hushfacebook_hide_find_friends_card", FALSE);
+
+    /**
      * The row of stories at the top of the feed. The feed's adapter list builds it as an adapter of
      * its own, and the patch has both tray adapters count no rows while this is on.
      */
@@ -457,6 +465,22 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_REEL_COUNTS =
             new BooleanSetting("hushfacebook_hide_reel_counts", FALSE);
+
+    /**
+     * The Save button down a reel's right side isn't built, and the buttons above it move down
+     * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#hideSidebarButton}, #190). Off by
+     * default. A change shows from the next reel.
+     */
+    public static final BooleanSetting HIDE_REEL_SAVE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_reel_save_button", FALSE);
+
+    /**
+     * The speaker button at the bottom of a reel's right side isn't built
+     * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#showsSoundButton}, #190). Off by
+     * default. A change shows from the next reel.
+     */
+    public static final BooleanSetting HIDE_REEL_SOUND_BUTTON =
+            new BooleanSetting("hushfacebook_hide_reel_sound_button", FALSE);
 
     /**
      * A video tapped in the feed opens in the full-screen player on its own, with no reels to swipe
@@ -1061,6 +1085,14 @@ public class Settings extends BaseSettings {
      */
     public static final StringSetting HIDDEN_MENU_TILES =
             new StringSetting("hushfacebook_hidden_menu_tiles", "");
+
+    /**
+     * The Menu tiles Facebook has shown on this install, a {@code key=name} line each in the Menu's
+     * order, so the list of tiles to hide shows this Menu's own in its words. Written by the hook,
+     * never by a person.
+     */
+    public static final StringSetting SEEN_MENU_TILES =
+            new StringSetting("hushfacebook_seen_menu_tiles", "");
 
     /**
      * The share sheet's Send to group button, which makes a new group chat of the people picked,
@@ -1703,6 +1735,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting DOWNLOAD_COMPATIBLE =
             new BooleanSetting("hushfacebook_download_compatible", FALSE);
+
+    /**
+     * With {@link #DOWNLOAD_COMPATIBLE} on, a VP9, AV1 or H.265 picture larger than the best H.264
+     * one is converted to H.264 on the phone instead of the save keeping the smaller H.264 (#189).
+     * Facebook often lists a reel's full size only as VP9 or AV1. Converting takes a while, so it's
+     * off by default. Every download patch reads it ({@link PatchFamily#DOWNLOAD_SWITCHES}).
+     */
+    public static final BooleanSetting DOWNLOAD_CONVERT =
+            new BooleanSetting("hushfacebook_download_convert", FALSE);
 
     /**
      * Saves go without the toasts that only say how a save went: Saving as it starts, Saved to as

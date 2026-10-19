@@ -171,11 +171,25 @@ public class StorySeenMarkingTest {
     }
 
     @Test
-    public void aBucketBuiltUnwatchedOverAndOverIsMarkedAFewTimesAWindow() {
+    public void everyCopyOfATrayBuiltADozenTimesASecondIsMarked() {
+        // 583's tray loader builds every bucket about a dozen times in its first second and again
+        // with each refresh: 40 copies in a session's first minutes on a reporter's phone. The old
+        // ceiling of eight a minute left the ninth copy on blue (#165, 0.15.0).
         Bucket friend = new Bucket("b1", "s1");
         StorySeen.viewed(friend, "s1", helper, false);
         heldBack();
         idle();
+        for (int i = 0; i < 40; i++) built(new Bucket("b1", "s1"));
+        assertEquals(41, published.size());
+    }
+
+    @Test
+    public void aBucketBuiltUnwatchedWithoutEndIsCutOffFarAboveWhatATrayBuilds() {
+        Bucket friend = new Bucket("b1", "s1");
+        StorySeen.viewed(friend, "s1", helper, false);
+        heldBack();
+        idle();
+        assertTrue(StorySeen.MARKS_PER_WINDOW >= 200);
         for (int i = 0; i < StorySeen.MARKS_PER_WINDOW * 3; i++) built(new Bucket("b1", "s1"));
         assertEquals(StorySeen.MARKS_PER_WINDOW, published.size());
 

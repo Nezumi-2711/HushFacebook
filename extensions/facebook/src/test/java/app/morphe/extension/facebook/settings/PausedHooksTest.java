@@ -73,6 +73,7 @@ import app.morphe.extension.facebook.download.VideoMenuItemForTests;
 import app.morphe.extension.facebook.emoji.SystemEmoji;
 import app.morphe.extension.facebook.feed.AutoTranslationForTests;
 import app.morphe.extension.facebook.feed.FeedFilter;
+import app.morphe.extension.facebook.feed.FindFriendsCard;
 import app.morphe.extension.facebook.feed.SeenPostsForTests;
 import app.morphe.extension.facebook.feed.FeedsHeader;
 import app.morphe.extension.facebook.feed.FollowingHome;
@@ -134,6 +135,7 @@ import app.morphe.extension.facebook.reels.ReelGesturesForTests;
 import app.morphe.extension.facebook.reels.ReelHold;
 import app.morphe.extension.facebook.reels.ReelHoldForTests;
 import app.morphe.extension.facebook.reels.FeedVideoAlone;
+import app.morphe.extension.facebook.reels.FeedVideoAloneForTests;
 import app.morphe.extension.facebook.reels.ReelCleanMode;
 import app.morphe.extension.facebook.reels.ReelDeclutter;
 import app.morphe.extension.facebook.reels.ReelLoopForTests;
@@ -242,6 +244,9 @@ public class PausedHooksTest {
     /** Stands in for Facebook's enum of share sheet items, named the same way. */
     private enum ShareItem { SHARE_NOW, SHARE_TO_HATCH, SHARE_TO_THREADS }
 
+    /** Stands in for Facebook's icon enum, whose constants the reel sidebar walks one button each. */
+    private enum SidebarIcon { LIKE, BOOKMARK }
+
     @After
     public void restore() {
         PauseForTests.resume();
@@ -285,6 +290,8 @@ public class PausedHooksTest {
         Map<BooleanSetting, Probe> probes = new LinkedHashMap<>();
         // A save takes the H.264 picture over the sharper AV1 one.
         probes.put(Settings.DOWNLOAD_COMPATIBLE, SaveRulesForTests::picksAFileOtherAppsOpen);
+        // With it, the sharper AV1 picture is converted rather than the H.264 one kept.
+        probes.put(Settings.DOWNLOAD_CONVERT, SaveRulesForTests::convertsTheFullSize);
         // A finished save goes without its Saved to toast.
         probes.put(Settings.DOWNLOAD_QUIET, SaveRulesForTests::finishesQuietly);
         return probes;
@@ -343,7 +350,9 @@ public class PausedHooksTest {
                 // Your own profile's People you may know carousel builds nothing.
                 ProfileSuggestionsForTests::hidesTheCarousel,
                 // A post opened from a notification is asked for without its list of more posts.
-                () -> !NotificationFooter.show(true)));
+                () -> !NotificationFooter.show(true),
+                // The end of the feed is built without its Find friends card.
+                () -> FindFriendsCard.unit("card") == null));
         // Each of the feed's two Stories tray adapters, and the composer row's, new to the hook,
         // counts no rows.
         probes.put(PatchFamily.STORIES_TRAY, Arrays.asList(
@@ -510,6 +519,12 @@ public class PausedHooksTest {
                 ReelDeclutter::hideSearchPill,
                 // A sidebar button's count loses its number only while the patch runs.
                 () -> !"12".equals(ReelDeclutter.countText("12")),
+                // The sidebar's Save button is skipped only while the patch runs.
+                () -> ReelDeclutter.hideSidebarButton(SidebarIcon.BOOKMARK),
+                // So is the speaker button under it.
+                () -> !ReelDeclutter.showsSoundButton(true),
+                // And the footer's speaker, when the footer builds it.
+                () -> ReelDeclutter.soundButton(new Object()) == null,
                 // A feed video's player asking for more right after the tap gets none.
                 () -> {
                     FeedVideoAlone.feedVideoTapped();
@@ -519,7 +534,9 @@ public class PausedHooksTest {
                 () -> {
                     FeedVideoAlone.reelsViewerOpening("newsfeed::feed_story");
                     return FeedVideoAlone.seedOnly(new Object());
-                }));
+                },
+                // And that viewer's list shows no loading page after the video.
+                FeedVideoAloneForTests::dropsTheLoadingPage));
         // A reel that would get the interest prompt is answered as one that doesn't.
         probes.put(PatchFamily.REEL_PROMPTS, Collections.singletonList(() -> !ReelPrompts.keep(true)));
         // The Reels batcher's send of the reels you watched never reaches its executor.

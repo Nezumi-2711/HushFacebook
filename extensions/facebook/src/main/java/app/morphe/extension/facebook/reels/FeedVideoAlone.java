@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.LongSupplier;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
@@ -38,13 +39,17 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * shows its seed video alone.
  *
  * <p>With the switch on, a reels feed or data source that never asked before is taken to be a tapped
- * video's player when it first asks while a Warion viewer is open, while the full-screen player is the
- * screen in front, or within {@link #WINDOW_MS} of a Warion step or of the reels viewer opening from a
- * feed. It gets no more reels (its seed video
- * alone, in the data source's case) then and on every later ask. One held for a Warion viewer is
- * decided again on its first ask after that viewer closes. One that first asked from the main screen
- * with no viewer open, the Reels and Video tabs' among them, keeps Facebook's answer. Off, paused, before the settings are ready, or when anything
- * here fails, everything gets Facebook's own answer.
+ * video's player when it first asks within {@link #WINDOW_MS} of a Warion step or of the reels viewer
+ * opening from a feed, while a Warion viewer that opened within that time of one is open, or while a
+ * full-screen player screen created within that time of one is in front. It gets no more reels (its
+ * seed video alone, in the data source's case) then and on every later ask. One held for a Warion
+ * viewer is decided again on its first ask after that viewer closes. One that first asked from the
+ * main screen with no viewer open, the Reels and Video tabs' among them, keeps Facebook's answer, and
+ * so does one asking in a viewer or player screen no feed video opened: the Watch page on a screen of
+ * its own, or the reels viewer opened from a link or from anywhere but a feed (S22 audit 2026-10-18,
+ * where both spun for good). A reels viewer whose params say it opened from a feed also shows no
+ * loading page after its video. Off, paused, before the settings are ready, or when anything here
+ * fails, everything gets Facebook's own answer.
  */
 public final class FeedVideoAlone {
     /** Counted once for each player a feed video opened that this kept to that video. */
@@ -52,6 +57,9 @@ public final class FeedVideoAlone {
 
     /** Counted each time that player asked for more reels and got none. */
     static final String HELD_BACK = "More reels held back";
+
+    /** Counted once for each reels viewer from a feed whose list was told no more reels are coming. */
+    static final String NO_LOADING_PAGE = "Reels loading page left out";
 
     /** How long after a feed video tap its player's first ask for more is still taken as that player's. */
     static final long WINDOW_MS = 5000;
@@ -72,6 +80,9 @@ public final class FeedVideoAlone {
     /** The screen created or resumed last, or an empty reference. */
     private static volatile WeakReference<Activity> front = new WeakReference<>(null);
 
+    /** The last full-screen player screen a feed video opened, or an empty reference. */
+    private static volatile WeakReference<Activity> feedPlayer = new WeakReference<>(null);
+
     private static boolean watching;
 
     private static final long NONE = Long.MIN_VALUE;
@@ -90,6 +101,12 @@ public final class FeedVideoAlone {
     /** When the last feed video tap that no player has used yet came, or NONE. */
     private static final AtomicLong TAPPED_AT = new AtomicLong(NONE);
 
+    /**
+     * When a feed video last opened, or NONE once something else opened since. Unlike TAPPED_AT no
+     * asker uses it up: it tells whether a Warion viewer or player screen opening now is that video's.
+     */
+    private static final AtomicLong FEED_OPENED_AT = new AtomicLong(NONE);
+
     private static final class Feed {
         final WeakReference<Object> feed;
         final boolean player;
@@ -106,11 +123,14 @@ public final class FeedVideoAlone {
     /** A Warion viewer, Facebook's fragment showing a feed reel and what comes after it. */
     private static final class Viewer {
         final WeakReference<Object> fragment;
+        /** Whether a feed video opened it, rather than a link or another surface. */
+        final boolean fromFeed;
         volatile boolean closed;
         boolean counted;
 
-        Viewer(Object fragment) {
+        Viewer(Object fragment, boolean fromFeed) {
             this.fragment = new WeakReference<>(fragment);
+            this.fromFeed = fromFeed;
         }
     }
 
@@ -146,17 +166,30 @@ public final class FeedVideoAlone {
         front = new WeakReference<>(screen);
     }
 
-    /** Whether the screen in front is the full-screen player. */
-    static boolean playerInFront() {
+    /** Whether the screen in front is a full-screen player a feed video opened. */
+    static boolean feedPlayerInFront() {
         Activity screen = front.get();
-        return screen != null && !screen.isFinishing() && PLAYER_SCREENS.contains(screen.getClass().getName());
+        return screen != null && !screen.isFinishing() && screen == feedPlayer.get();
     }
 
-    /** Keeps the screen in front up to date. */
+    /** Whether a feed video opened within WINDOW_MS, with nothing else opening since. */
+    private static boolean feedOpenedLately() {
+        long opened = FEED_OPENED_AT.get();
+        return opened != NONE && now() - opened <= WINDOW_MS;
+    }
+
+    /**
+     * Keeps the screen in front up to date, and marks a full-screen player created soon after a feed
+     * video opened as that video's. One created with no feed video opening, the Watch page on its own
+     * screen among them, isn't.
+     */
     static final class Screens implements Application.ActivityLifecycleCallbacks {
         @Override
         public void onActivityCreated(Activity activity, @Nullable Bundle state) {
             inFront(activity);
+            if (PLAYER_SCREENS.contains(activity.getClass().getName()) && feedOpenedLately()) {
+                feedPlayer = new WeakReference<>(activity);
+            }
         }
 
         @Override
@@ -190,11 +223,11 @@ public final class FeedVideoAlone {
         try {
             HookStatus.invoked(FAMILY);
             if (!on()) {
-                TAPPED_AT.set(NONE);
+                feedOpened(false);
                 return;
             }
             HookStatus.bound(FAMILY, "feed video tap");
-            TAPPED_AT.set(now());
+            feedOpened(true);
             Logger.printDebug(() -> "Feed videos on their own: a feed video is opening its player");
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "feed video tap", failure);
@@ -205,7 +238,8 @@ public final class FeedVideoAlone {
      * Injection point, in Facebook's reels viewer entry as it reads where the video opens from, before
      * the viewer's data source first asks. A feed reel goes this way on some accounts with no Warion
      * step (S25 2026-10-18), so a video opening from a feed surface counts as a feed video tap. One
-     * opening from anywhere else is left to Facebook. Never throws.
+     * opening from anywhere else, a link among them, is left to Facebook along with the viewer and
+     * player screen it opens. Never throws.
      *
      * @param origin Facebook's player origin, "surface::subsurface" as text.
      */
@@ -213,21 +247,27 @@ public final class FeedVideoAlone {
         try {
             HookStatus.invoked(FAMILY);
             if (!on()) {
-                TAPPED_AT.set(NONE);
+                feedOpened(false);
                 return;
             }
             if (origin == null) return;
             HookStatus.bound(FAMILY, "reels viewer entry");
             String where = origin.toString();
-            if (fromFeed(where)) {
-                TAPPED_AT.set(now());
-                Logger.printDebug(() -> "Feed videos on their own: a feed video is opening the reels viewer from " + where);
-            } else {
-                Logger.printDebug(() -> "Feed videos on their own: the reels viewer is opening from " + where + ", not a feed");
-            }
+            boolean feed = fromFeed(where);
+            feedOpened(feed);
+            Logger.printDebug(() -> feed
+                    ? "Feed videos on their own: a feed video is opening the reels viewer from " + where
+                    : "Feed videos on their own: the reels viewer is opening from " + where + ", not a feed");
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reels viewer entry", failure);
         }
+    }
+
+    /** Records a feed video opening now, or, for false, that what opened last wasn't one. */
+    private static void feedOpened(boolean feed) {
+        long at = feed ? now() : NONE;
+        TAPPED_AT.set(at);
+        FEED_OPENED_AT.set(at);
     }
 
     /** Whether [origin], a player origin as text, names a feed's surface. */
@@ -248,10 +288,13 @@ public final class FeedVideoAlone {
             HookStatus.invoked(FAMILY);
             if (!inWarion || fragment == null || !on()) return;
             HookStatus.bound(FAMILY, "warion viewer");
+            boolean fromFeed = feedOpenedLately();
             synchronized (FEEDS) {
-                VIEWERS.add(new Viewer(fragment));
+                VIEWERS.add(new Viewer(fragment, fromFeed));
             }
-            Logger.printDebug(() -> "Feed videos on their own: a Warion viewer opened");
+            Logger.printDebug(() -> fromFeed
+                    ? "Feed videos on their own: a Warion viewer opened for a feed video"
+                    : "Feed videos on their own: a Warion viewer opened, not for a feed video");
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "warion viewer", failure);
         }
@@ -297,6 +340,54 @@ public final class FeedVideoAlone {
         return alone(source, "seed video only", "reels data source");
     }
 
+    /**
+     * Injection point, in the reels viewer's list as it reads whether more reels are coming, and
+     * again as it reads whether to add its pagination page. Either puts a loading page after the last
+     * reel. A viewer opened from a feed gets no more reels with the switch on, so that page would spin
+     * for good after its video (S25 2026-10-18): the list is told no. Every other viewer, the Reels
+     * tab's among them, keeps Facebook's answer. Never throws.
+     *
+     * @param more   Facebook's answer.
+     * @param params the viewer's params, or null.
+     */
+    public static boolean moreReelsComing(boolean more, @Nullable Object params) {
+        try {
+            HookStatus.invoked(FAMILY);
+            if (!more || params == null || !on()) return more;
+            Function<Object, Object> forced = originForTests;
+            Object origin = forced != null ? forced.apply(params) : viewerOrigin(params);
+            if (origin == null) return more;
+            HookStatus.bound(FAMILY, "reels loading page");
+            String where = origin.toString();
+            if (!fromFeed(where)) return more;
+            if (loadingPageLogged.get() != params) {
+                loadingPageLogged = new WeakReference<>(params);
+                HookStatus.counted(FAMILY, NO_LOADING_PAGE);
+                Logger.printDebug(() -> "Feed videos on their own: the reels viewer from " + where + " shows no loading page after its video");
+            }
+            return false;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "reels loading page", failure);
+            return more;
+        }
+    }
+
+    /** The viewer whose loading page was last logged as left out, so a list drawn again isn't logged again. */
+    private static volatile WeakReference<Object> loadingPageLogged = new WeakReference<>(null);
+
+    /**
+     * Filled in by the patch: the viewer params' PlayerOrigin, the field the reels viewer's entry reads.
+     * Only the viewer's params may be passed. Unpatched there's none.
+     */
+    @Nullable
+    public static Object viewerOrigin(Object params) {
+        return null;
+    }
+
+    /** Stands in for {@link #viewerOrigin} when a test sets it. */
+    @Nullable
+    static volatile Function<Object, Object> originForTests;
+
     /** Whether [asker] is a tapped feed video's player, deciding on its first ask. */
     private static boolean alone(@Nullable Object asker, String road, String what) {
         try {
@@ -306,6 +397,7 @@ public final class FeedVideoAlone {
             boolean alone;
             boolean first;
             boolean opened = false;
+            Viewer open = null;
             Viewer bound = null;
             synchronized (FEEDS) {
                 Feed known = null;
@@ -325,8 +417,10 @@ public final class FeedVideoAlone {
                     // The tap goes to one player only, even with a tap landing while this reads it.
                     long tapped = TAPPED_AT.get();
                     boolean fromTap = tapped != NONE && now() - tapped <= WINDOW_MS && TAPPED_AT.compareAndSet(tapped, NONE);
-                    bound = openViewer();
-                    alone = fromTap || playerInFront() || bound != null;
+                    open = openViewer();
+                    // A viewer no feed video opened, a link's or the Reels tab's, is left to Facebook.
+                    bound = open != null && open.fromFeed ? open : null;
+                    alone = fromTap || feedPlayerInFront() || bound != null;
                     FEEDS.add(new Feed(asker, alone, alone ? bound : null));
                     if (bound != null && !bound.counted) {
                         // A viewer's feed and data source both ask; it's one video opened.
@@ -343,7 +437,8 @@ public final class FeedVideoAlone {
                 if (opened) HookStatus.counted(FAMILY, OPENED);
                 String id = asker.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(asker));
                 Activity screen = front.get();
-                String where = (screen == null ? "no screen" : screen.getClass().getName()) + (bound != null ? ", Warion viewer open" : "");
+                String where = (screen == null ? "no screen" : screen.getClass().getName())
+                        + (bound != null ? ", Warion viewer open" : open != null ? ", a Warion viewer not from a feed open" : "");
                 boolean player = alone;
                 Logger.printDebug(() -> player
                         ? "Feed videos on their own: " + what + " " + id + " is a tapped feed video's player (" + where + "), nothing comes after the video"
@@ -372,14 +467,18 @@ public final class FeedVideoAlone {
         return clock != null ? clock.getAsLong() : SystemClock.uptimeMillis();
     }
 
-    /** Forgets every feed, viewer, any pending tap and the stand-in clock. Tests only. */
+    /** Forgets every feed, viewer, player screen, any pending tap and the stand-in clock. Tests only. */
     static void forgetForTests() {
         synchronized (FEEDS) {
             FEEDS.clear();
             VIEWERS.clear();
         }
         TAPPED_AT.set(NONE);
+        FEED_OPENED_AT.set(NONE);
+        feedPlayer = new WeakReference<>(null);
         clockForTests = null;
+        loadingPageLogged = new WeakReference<>(null);
+        originForTests = null;
         inFront(null);
     }
 }

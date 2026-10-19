@@ -992,11 +992,17 @@ public class HushfacebookPreferenceFragmentTest {
                 Preference row = rows.get(compatible);
                 assertTrue(row instanceof SwitchPreference);
                 assertFalse(((SwitchPreference) row).isChecked());
-                assertEquals(indexOfKey(rows, Settings.DOWNLOAD_QUALITY.key) - 1, compatible);
+                assertEquals(indexOfKey(rows, Settings.DOWNLOAD_QUALITY.key) - 2, compatible);
                 assertEquals("Save videos other apps can open", String.valueOf(row.getTitle()));
                 assertEquals("Fixes saved videos that play without sound in WhatsApp, video editors such as CapCut and InShot, or "
                         + "some galleries and players. May lower quality.",
                         String.valueOf(row.getSummary()));
+                // Convert to keep the full size (issue #189) works with it, so it's right below.
+                Preference convert = rows.get(compatible + 1);
+                assertEquals(download + ": convert to keep the full size isn't below saves other apps can open",
+                        Settings.DOWNLOAD_CONVERT.key, convert.getKey());
+                assertFalse(((SwitchPreference) convert).isChecked());
+                assertEquals("Convert to keep the full size", String.valueOf(convert.getTitle()));
                 // Quiet saves (issue #142) is every save's too, right above it.
                 Preference quiet = rows.get(compatible - 1);
                 assertEquals(download + ": quiet saves isn't above saves other apps can open",
@@ -1014,6 +1020,7 @@ public class HushfacebookPreferenceFragmentTest {
             assertEquals("a compatible-saves row with no download in the build",
                     -1, indexOfKey(rows, Settings.DOWNLOAD_COMPATIBLE.key));
             assertEquals("a quiet-saves row with no download in the build", -1, indexOfKey(rows, Settings.DOWNLOAD_QUIET.key));
+            assertEquals("a convert row with no download in the build", -1, indexOfKey(rows, Settings.DOWNLOAD_CONVERT.key));
         }
     }
 

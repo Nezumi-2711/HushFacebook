@@ -7,7 +7,9 @@ package app.morphe.extension.facebook.menu;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import app.morphe.extension.facebook.download.PostDetails;
@@ -27,6 +29,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * splits off the rows shown above See more, so a bookmark taken out here leaves no gap: the next
  * one moves up. Each bookmark is a GraphQL model, its name read through the tree's kept
  * {@code getString} by the hash of {@code name}, as {@link MuseCard} reads the Muse card's.
+ *
+ * <p>Each list read also writes down its tiles' keys and names ({@link MenuTiles#remember}), so
+ * Menu tiles to hide offers the tiles this Menu has, in its own words.
  *
  * <p>Every other bookmark stays, in Facebook's order. Off, paused, before the settings are ready,
  * for a list with nothing to take out, or when anything here fails, the list is Facebook's own.
@@ -66,6 +71,7 @@ public final class MenuShortcuts {
             if (bookmarks == null || bookmarks.isEmpty()) return bookmarks;
             // Ready first: Settings loads every switch, and it can't before the context is set.
             if (!Utils.settingsReady()) return bookmarks;
+            MenuTiles.remember(tiles(bookmarks));
             boolean metaAi = Settings.HIDE_MENU_META_AI.get();
             Set<String> tiles = MenuTiles.hiddenNow();
             if (!metaAi && tiles.isEmpty()) return bookmarks;
@@ -92,6 +98,21 @@ public final class MenuShortcuts {
             HookStatus.threw(FamilyNames.MENU_PROMOTIONS, HOOK, failure);
             return bookmarks;
         }
+    }
+
+    /**
+     * The tiles in [bookmarks], each live model's key with its name, in order, for Menu tiles to
+     * hide's list. Meta AI has a switch of its own and isn't one of them.
+     */
+    private static Map<String, String> tiles(List<?> bookmarks) {
+        Map<String, String> tiles = new LinkedHashMap<>();
+        for (Object bookmark : bookmarks) {
+            if (!PostDetails.isLiveTree(bookmark)) continue;
+            String name = PostDetails.string(bookmark, NAME);
+            String key = MenuTiles.keyOf(PostDetails.string(bookmark, MenuTiles.URL));
+            if (key != null && name != null && !isMetaAiName(name) && !tiles.containsKey(key)) tiles.put(key, name);
+        }
+        return tiles;
     }
 
     /** Whether [bookmark] is a live bookmark model whose deep link keys to one of [tiles]. */

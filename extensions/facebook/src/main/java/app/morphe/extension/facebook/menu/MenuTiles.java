@@ -6,13 +6,17 @@ package app.morphe.extension.facebook.menu;
 
 import androidx.annotation.Nullable;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -26,8 +30,13 @@ import app.morphe.extension.shared.L10n;
  *
  * <p>A tile is named by where it goes, never by the label it wears, so a translated Menu still
  * matches: its key is the first word of the bookmark's deep link, {@code marketplace} for
- * {@code fb://marketplace_tab} and for {@code https://www.facebook.com/marketplace/}. A key the
- * list doesn't know is carried like any other, so a newer Facebook's tile survives a settings file.
+ * {@code fb://marketplace_tab} and for {@code https://www.facebook.com/marketplace/}. A link to a
+ * route that opens many screens keys by the screen it names instead. A key the list doesn't know
+ * is carried like any other, so a newer Facebook's tile survives a settings file.
+ *
+ * <p>The hook writes down each tile the Menu shows, by key and by the name Facebook gives it, so
+ * the list offers this person's own tiles in Facebook's words. Before the Menu has been opened
+ * the list offers the catalog.
  */
 public final class MenuTiles {
     private MenuTiles() {
@@ -42,32 +51,54 @@ public final class MenuTiles {
      */
     public static final int MAX_HIDDEN_CHARS = 512;
 
+    /** At most this many tiles are written down, about a full Menu twice over. */
+    static final int SEEN_LIMIT = 48;
+
+    /** A written-down name is cut to this many chars. */
+    static final int NAME_CHARS = 48;
+
     /** A key: lowercase words, digits and underscores, as a deep link's first word is. */
     private static final Pattern KEY = Pattern.compile("[a-z][a-z0-9_]{0,63}");
 
-    /** The tiles the list offers, by key, in the order the Menu usually shows them. */
-    static final List<String> CATALOG = Collections.unmodifiableList(Arrays.asList(
-            "feeds", "marketplace", "reels", "groups", "gaming", "watch", "events", "pages", "friends", "saved",
-            "memories", "birthdays", "fundraisers", "jobs", "dating"));
+    /** One part of a screen id that can go in a key. A class name, with capitals, can't. */
+    private static final Pattern SCREEN_PART = Pattern.compile("[a-z0-9_]+");
 
-    /** What the list calls [key]: the tile's usual name, or the key read out in words. */
+    /**
+     * The tiles the list offers before the Menu has been opened, by key, in the order 583's Menu
+     * shows them. Feeds opens {@code fb://recent_feed}, Reels {@code fb://watch}, Dating
+     * {@code fbinternal://gemstone} and Birthdays the Bloks screen
+     * {@code com.bloks.www.meta.birthday_center}.
+     */
+    static final List<String> CATALOG = Collections.unmodifiableList(Arrays.asList(
+            "recent_feed", "marketplace", "watch", "groups", "meta_birthday_center", "saved", "memories_home",
+            "gemstone", "gaming", "events", "friends", "pages", "fundraisers", "jobs"));
+
+    /** The tiles written down so far, read once, so a Menu that shows nothing new writes nothing. */
+    @Nullable
+    private static volatile Map<String, String> seen;
+
+    /**
+     * What the list calls [key]: the name Facebook gave the tile on this phone, else the tile's
+     * usual name, or the key read out in words.
+     */
     public static String label(String key) {
+        String name = seen().get(key);
+        if (name != null) return name;
         switch (key) {
-            case "feeds": return L10n.t("Feeds");
+            case "recent_feed": return L10n.t("Feeds");
             case "marketplace": return L10n.t("Marketplace");
-            case "reels": return L10n.t("Reels");
+            case "watch": return L10n.t("Reels");
             case "groups": return L10n.t("Groups");
-            case "gaming": return L10n.t("Gaming");
-            case "watch": return L10n.t("Video");
-            case "events": return L10n.t("Events");
-            case "pages": return L10n.t("Pages");
-            case "friends": return L10n.t("Friends");
+            case "meta_birthday_center": return L10n.t("Birthdays");
             case "saved": return L10n.t("Saved");
-            case "memories": return L10n.t("Memories");
-            case "birthdays": return L10n.t("Birthdays");
+            case "memories_home": return L10n.t("Memories");
+            case "gemstone": return L10n.t("Dating");
+            case "gaming": return L10n.t("Gaming");
+            case "events": return L10n.t("Events");
+            case "friends": return L10n.t("Friends");
+            case "pages": return L10n.t("Pages");
             case "fundraisers": return L10n.t("Fundraisers");
             case "jobs": return L10n.t("Jobs");
-            case "dating": return L10n.t("Dating");
             default:
                 String words = key.replace('_', ' ');
                 return Character.toUpperCase(words.charAt(0)) + words.substring(1);
@@ -77,23 +108,35 @@ public final class MenuTiles {
     /**
      * The key of the tile whose deep link is [link], or null for no link or one with no word to
      * key on. The scheme, a Facebook host and a leading slash are dropped, then the first word up
-     * to a slash, question mark, hash or ampersand, and a trailing {@code _tab}.
+     * to a slash, question mark, hash or ampersand, and a trailing {@code _tab}. A route that opens
+     * many screens keys by the screen its link names ({@link #screenKey}).
      */
     @Nullable
     public static String keyOf(@Nullable String link) {
         if (link == null) return null;
-        String rest = link.trim().toLowerCase(Locale.ROOT);
+        String rest = link.trim();
         int scheme = rest.indexOf("://");
         if (scheme < 0) return null;
-        boolean web = rest.startsWith("http");
+        boolean web = rest.regionMatches(true, 0, "http", 0, 4);
         rest = rest.substring(scheme + 3);
         if (web) {
             int slash = rest.indexOf('/');
             if (slash < 0) return null;
-            String host = rest.substring(0, slash);
+            String host = rest.substring(0, slash).toLowerCase(Locale.ROOT);
             if (!host.equals("facebook.com") && !host.endsWith(".facebook.com")) return null;
             rest = rest.substring(slash + 1);
         }
+        String route = firstWord(rest);
+        String param = route == null ? null : screenParam(route);
+        if (param == null) return route;
+        String screen = queryValue(rest, param);
+        return screen == null ? null : screenKey(screen);
+    }
+
+    /** [path]'s first word, lowercase, without a trailing {@code _tab}, or null when it isn't a key. */
+    @Nullable
+    private static String firstWord(String path) {
+        String rest = path.toLowerCase(Locale.ROOT);
         while (rest.startsWith("/")) rest = rest.substring(1);
         int end = rest.length();
         for (char stop : new char[] {'/', '?', '#', '&'}) {
@@ -105,21 +148,169 @@ public final class MenuTiles {
         return KEY.matcher(key).matches() ? key : null;
     }
 
+    /**
+     * The query value that names the screen behind [route], for a route that opens many screens,
+     * or null for any other. 583's Birthdays is {@code fb://bloks_screen/?bloks_screen_id=...},
+     * Crisis response and Community Notes {@code fb://bloks_screen_query/?app_id=...}, and Pages
+     * {@code fb://nt_screen/FB-SCREEN-FB?p=/pages/...}: keyed by the route, each would hide the rest.
+     */
+    @Nullable
+    private static String screenParam(String route) {
+        switch (route) {
+            case "bloks_screen": return "bloks_screen_id";
+            case "bloks_screen_query": return "app_id";
+            case "nt_screen": return "p";
+            default: return null;
+        }
+    }
+
+    /** The decoded value of [name] in the query of [rest], or null when it has none. */
+    @Nullable
+    private static String queryValue(String rest, String name) {
+        int query = rest.indexOf('?');
+        if (query < 0) return null;
+        int hash = rest.indexOf('#', query);
+        String pairs = rest.substring(query + 1, hash < 0 ? rest.length() : hash);
+        for (String pair : pairs.split("&")) {
+            int equals = pair.indexOf('=');
+            if (equals <= 0 || !pair.substring(0, equals).equals(name)) continue;
+            try {
+                return URLDecoder.decode(pair.substring(equals + 1), "UTF-8");
+            } catch (UnsupportedEncodingException | IllegalArgumentException badValue) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The key of a screen: a path's first word, {@code pages} for {@code /pages/nt_launchpoint/},
+     * or a Bloks id's lowercase parts after {@code com.bloks.www}, {@code meta_birthday_center}
+     * for {@code com.bloks.www.meta.birthday_center}. A class name in the id is left out.
+     */
+    @Nullable
+    private static String screenKey(String screen) {
+        if (screen.startsWith("/")) return firstWord(screen);
+        StringBuilder key = new StringBuilder();
+        for (String part : screen.split("\\.")) {
+            if (part.equals("com") || part.equals("bloks") || part.equals("www")) continue;
+            if (!SCREEN_PART.matcher(part).matches()) continue;
+            if (key.length() > 0) key.append('_');
+            key.append(part);
+        }
+        return KEY.matcher(key).matches() ? key.toString() : null;
+    }
+
+    /**
+     * The key 0.15.0's list stored for a tile that its Menu link never had, as the tile's key:
+     * Feeds, Reels, Memories, Birthdays and Dating were guessed (#153). A list saved then hides
+     * what was ticked.
+     */
+    static String current(String key) {
+        switch (key) {
+            case "feeds": return "recent_feed";
+            case "reels": return "watch";
+            case "memories": return "memories_home";
+            case "birthdays": return "meta_birthday_center";
+            case "dating": return "gemstone";
+            default: return key;
+        }
+    }
+
+    private static Set<String> current(Set<String> keys) {
+        Set<String> tiles = new LinkedHashSet<>();
+        for (String key : keys) tiles.add(current(key));
+        return tiles;
+    }
+
     /** The keys picked to keep out, as saved. */
     public static Set<String> hidden() {
-        return parse(Settings.HIDDEN_MENU_TILES.savedValue());
+        return current(parse(Settings.HIDDEN_MENU_TILES.savedValue()));
     }
 
     /** The keys the live setting holds, which the hook reads. */
     static Set<String> hiddenNow() {
-        return parse(Settings.HIDDEN_MENU_TILES.get());
+        return current(parse(Settings.HIDDEN_MENU_TILES.get()));
     }
 
-    /** The tiles the list offers: the catalog, then any picked earlier that it doesn't name. */
+    /**
+     * The tiles the list offers: the ones the Menu has shown, or the catalog before it has, then
+     * any picked earlier that those don't name.
+     */
     public static List<String> choices() {
-        Set<String> all = new LinkedHashSet<>(CATALOG);
+        Set<String> all = new LinkedHashSet<>(seen().keySet());
+        if (all.isEmpty()) all.addAll(CATALOG);
         all.addAll(hidden());
         return new ArrayList<>(all);
+    }
+
+    /**
+     * Writes down [shown], each tile's key with the name the Menu gave it, in the Menu's order:
+     * tiles it hadn't yet, up to {@link #SEEN_LIMIT}, and a new name for one it had.
+     */
+    static void remember(Map<String, String> shown) {
+        Map<String, String> known = seen();
+        Map<String, String> grown = null;
+        for (Map.Entry<String, String> tile : shown.entrySet()) {
+            String key = tile.getKey();
+            String name = cleanName(tile.getValue());
+            Map<String, String> current = grown != null ? grown : known;
+            if (name == null || name.equals(current.get(key))) continue;
+            if (!current.containsKey(key) && current.size() >= SEEN_LIMIT) continue;
+            if (grown == null) grown = new LinkedHashMap<>(known);
+            grown.put(key, name);
+        }
+        if (grown == null) return;
+        seen = Collections.unmodifiableMap(grown);
+        Settings.SEEN_MENU_TILES.save(joinSeen(grown));
+    }
+
+    /** The tiles written down, by key, in the order the Menu showed them. */
+    static Map<String, String> seen() {
+        Map<String, String> known = seen;
+        if (known == null) {
+            known = Collections.unmodifiableMap(parseSeen(Settings.SEEN_MENU_TILES.savedValue()));
+            seen = known;
+        }
+        return known;
+    }
+
+    /** Forgets the cached written-down tiles, so the next read takes the setting again. Tests only. */
+    static void forgetForTests() {
+        seen = null;
+    }
+
+    /** [name] on one line, trimmed and cut to {@link #NAME_CHARS}, or null when nothing's left. */
+    @Nullable
+    static String cleanName(@Nullable String name) {
+        if (name == null) return null;
+        String line = name.replace('\n', ' ').replace('\r', ' ').trim();
+        if (line.length() > NAME_CHARS) line = line.substring(0, NAME_CHARS).trim();
+        return line.isEmpty() ? null : line;
+    }
+
+    /** The written-down tiles as the setting holds them, a {@code key=name} line each. */
+    static String joinSeen(Map<String, String> tiles) {
+        StringBuilder lines = new StringBuilder();
+        for (Map.Entry<String, String> tile : tiles.entrySet()) {
+            if (lines.length() > 0) lines.append('\n');
+            lines.append(tile.getKey()).append('=').append(tile.getValue());
+        }
+        return lines.toString();
+    }
+
+    /** The tiles in a written-down list, in order. A line without a key and a name is dropped. */
+    static Map<String, String> parseSeen(@Nullable String saved) {
+        Map<String, String> tiles = new LinkedHashMap<>();
+        if (saved == null) return tiles;
+        for (String line : saved.split("\n")) {
+            int equals = line.indexOf('=');
+            if (equals <= 0 || tiles.size() >= SEEN_LIMIT) continue;
+            String key = line.substring(0, equals).trim();
+            String name = cleanName(line.substring(equals + 1));
+            if (KEY.matcher(key).matches() && name != null) tiles.put(key, name);
+        }
+        return tiles;
     }
 
     /** What {@link #hide} did with a pick. */

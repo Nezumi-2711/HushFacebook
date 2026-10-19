@@ -27,6 +27,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val CHAT_LIST = "$EXTENSION_PACKAGE/chats/ChatList;"
 internal const val NOTES_TILES_HOOK = "$CHAT_LIST->notesTiles(Ljava/util/List;)Ljava/util/List;"
+internal const val HIDES_NOTES_ROW = "$CHAT_LIST->hidesNotesRow()Z"
 internal const val HIDES_PROMOTION = "$CHAT_LIST->hidesPromotion()Z"
 internal const val META_AI_BUTTON_HOOK = "$CHAT_LIST->metaAiButton(Ljava/lang/Object;)Ljava/lang/Object;"
 internal const val PICKER_META_AI_HOOK = "$CHAT_LIST->showsSearchMetaAiButton(Z)Z"
@@ -34,7 +35,7 @@ internal const val IMMUTABLE_COPY_OF = "$IMMUTABLE_LIST_TYPE->copyOf(Ljava/util/
 
 /**
  * Three switches for the list inside Facebook's own Chats: the row of notes and active friends
- * above the chats, the promotion banners at the top, and the Meta AI button in the search row and
+ * above the chats (its tiles and the section drawing it), the promotion banners at the top, and the Meta AI button in the search row and
  * on the search screen. See
  * ChatListAnchors.kt for what each hook sits on and why only these pieces are here.
  *
@@ -61,6 +62,12 @@ val cleanUpChatListPatch = bytecodePatch(
                 "$CHAT_LIST_PATCH: expected one tile state whose constructor checks \"$NOTES_TILES\" and stores " +
                     "an ImmutableList, found none or several",
             )
+        val sections = classDefByStrings(NOTES_SECTION, StringComparisonType.EQUALS)
+            .flatMap { owner -> owner.methods.mapNotNull(::notesRowExit) }
+        val section = sections.singleOrNull() ?: throw PatchException(
+            "$CHAT_LIST_PATCH: expected one render loading \"$NOTES_SECTION\" and \"$NOTES_SECTION_KEY\" with an " +
+                "empty way out, found ${sections.size}",
+        )
         val questions = PROMOTION_TAGS.map { tag ->
             val found = classDefByStrings(tag, StringComparisonType.EQUALS).mapNotNull { bannerQuestion(it, tag) }
             found.singleOrNull() ?: throw PatchException(
@@ -93,6 +100,10 @@ val cleanUpChatListPatch = bytecodePatch(
         val tray = mutableClassDefBy(store.method.definingClass).methods.single {
             it.name == store.method.name && it.parameterTypes.map(Any::toString) == store.method.parameterTypes.map(Any::toString)
         }
+        val render = mutableClassDefBy(section.method.definingClass).methods.single {
+            it.name == section.method.name && it.parameterTypes.map(Any::toString) == section.method.parameterTypes.map(Any::toString)
+        }
+        render.requireLocals(CHAT_LIST_PATCH, 1)
         val asks = questions.map { question ->
             mutableClassDefBy(question.definingClass).methods.single {
                 it.name == question.name && it.parameterTypes.map(Any::toString) == question.parameterTypes.map(Any::toString)
@@ -105,6 +116,7 @@ val cleanUpChatListPatch = bytecodePatch(
             it.name == gate.method.name && it.parameterTypes.map(Any::toString) == gate.method.parameterTypes.map(Any::toString)
         }
         tray.emptyTilesWhileHidden(store.store, store.list)
+        render.leaveNotesRowEmptyWhileHidden(section.exit)
         row.dropMetaAiButtonWhileHidden(button)
         picker.lowerMetaAiFlagWhileHidden(gate)
         // 577's diode question has no local at all (it works in its parameter registers), so a
@@ -135,6 +147,24 @@ internal fun MutableMethod.emptyTilesWhileHidden(store: Int, list: Int) {
             invoke-static/range { v$list .. v$list }, $IMMUTABLE_COPY_OF
             move-result-object v$list
         """,
+    )
+}
+
+/**
+ * First thing in the notes row's render: ask the extension, and while the switch says the row goes,
+ * jump to the render's own empty way out at [exit], so the row isn't drawn at all, your own note
+ * tile included. Otherwise Facebook's render runs from its first instruction.
+ */
+internal fun MutableMethod.leaveNotesRowEmptyWhileHidden(exit: Int) {
+    requireLocals(CHAT_LIST_PATCH, 1)
+    addInstructionsWithLabels(
+        0,
+        """
+            invoke-static { }, $HIDES_NOTES_ROW
+            move-result v0
+            if-nez v0, :empty
+        """,
+        ExternalLabel("empty", getInstruction(exit)),
     )
 }
 

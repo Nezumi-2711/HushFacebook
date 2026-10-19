@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
@@ -92,5 +93,38 @@ public class NewCommentsPillTest {
         Settings.HIDE_NEW_COMMENTS_PILL.save(true);
         SettingsContextRule.withoutContext(
                 () -> assertEquals("2 new comments", CommentSheetOptions.newCommentsPill("2 new comments")));
+    }
+
+    /** The newer pill's data (#185): off it goes back as built, on it's answered null and counted. */
+    @Test
+    public void theNewerPillsDataGoesBackOffAndIsDroppedOn() {
+        Object data = new Object();
+        assertSame(data, CommentSheetOptions.newCommentsPillData(data));
+        String line = statusLine();
+        assertNotNull(line);
+        assertTrue("the hook didn't report itself bound: " + line, line.contains("1 found"));
+        assertFalse("counted with the switch off: " + line, line.contains(CommentSheetOptions.PILL_HIDDEN));
+
+        Settings.HIDE_NEW_COMMENTS_PILL.save(true);
+        assertNull(CommentSheetOptions.newCommentsPillData(data));
+        assertTrue(statusLine().contains(CommentSheetOptions.PILL_HIDDEN));
+    }
+
+    @Test
+    public void aMissingNewerPillIsLeftAndNotCounted() {
+        Settings.HIDE_NEW_COMMENTS_PILL.save(true);
+        assertNull(CommentSheetOptions.newCommentsPillData(null));
+        assertFalse(statusLine().contains(CommentSheetOptions.PILL_HIDDEN));
+    }
+
+    @Test
+    public void pausedOrNotReadyLeavesTheNewerPillToFacebook() {
+        Settings.HIDE_NEW_COMMENTS_PILL.save(true);
+        Object data = new Object();
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertSame(data, CommentSheetOptions.newCommentsPillData(data));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertSame(data, CommentSheetOptions.newCommentsPillData(data)));
+        assertFalse(statusLine().contains(CommentSheetOptions.PILL_HIDDEN));
     }
 }

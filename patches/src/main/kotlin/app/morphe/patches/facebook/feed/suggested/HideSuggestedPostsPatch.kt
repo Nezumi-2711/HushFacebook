@@ -180,6 +180,12 @@ val hideSuggestedPostsPatch = bytecodePatch(
         } catch (exception: PatchException) {
             patchLog.warning("${exception.message}, so posts opened from a notification keep their list of more posts.")
         }
+        // The Find friends card where friends' posts run out is part of the end of the feed, not a feed unit (#187).
+        try {
+            hookFindFriendsCard()
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so the end of the feed keeps its Find friends card.")
+        }
         enableStatus("suggestedPosts")
     }
 }

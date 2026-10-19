@@ -16,10 +16,13 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.requireLocals
+import app.morphe.util.ControlFlow
+import app.morphe.util.writersReaching
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
@@ -62,11 +65,22 @@ import com.android.tools.smali.dexlib2.iface.reference.StringReference
  *   The entry reads the video's PlayerOrigin ("surface::subsurface", a kept class) from its params
  *   near the top, before anything else runs. The Reels tab, a profile's reels and the split screen
  *   launcher use the same entry with their own surfaces.
+ * - With its more reels held back, that viewer's list still ends in a loading page that spins for
+ *   good (S25 2026-10-18). The list's builder (LX/97F;->A2b(LX/1tr;)LX/2rh;, the one method of its
+ *   class holding "wearables_consumption_midcard") reads the viewer's params (the entry's LX/96i;)
+ *   from a field near the top, and only past a null check on them reads whether more are coming
+ *   (LX/96I;->A0O:Z) to put the loading page (LX/97F;->A0E) last. The page the S25 showed is the
+ *   other one (a build logging each of the builder's calls, 2026-10-18): its pagination page
+ *   (LX/9hA;->A00, a static method holding "pagination_component" that answers a full-page item),
+ *   which it adds when a data source flag says so (LX/5KL;->A1b()Z, compared with a register set to
+ *   1) and otherwise goes on to its normal list.
  *
  * The Warion step tells the extension a feed video is opening, the reels viewer's entry tells it
  * where the video opens from, and the fragment tells it when a Warion viewer opens and closes.
  * Both fetch mores ask it first, with the object asking, and answer false (nothing fetched) when
- * the extension says so, and the data source's seed check answers yes.
+ * the extension says so, and the data source's seed check answers yes. The list builder hands it
+ * whether more are coming, and separately whether to add its pagination page, each with the viewer's
+ * params, whose origin the extension reads through a stub the patch fills, and takes its answers.
  */
 
 internal const val FEED_VIDEO_ALONE = "$EXTENSION_PACKAGE/reels/FeedVideoAlone;"
@@ -76,6 +90,16 @@ internal const val WARION_OPENING = "$FEED_VIDEO_ALONE->warionOpening(Ljava/lang
 internal const val WARION_CLOSED = "$FEED_VIDEO_ALONE->warionClosed(Ljava/lang/Object;)V"
 internal const val SEED_ONLY = "$FEED_VIDEO_ALONE->seedOnly(Ljava/lang/Object;)Z"
 internal const val VIEWER_OPENING = "$FEED_VIDEO_ALONE->reelsViewerOpening(Ljava/lang/Object;)V"
+internal const val MORE_REELS_COMING = "$FEED_VIDEO_ALONE->moreReelsComing(ZLjava/lang/Object;)Z"
+
+/** The extension's stub the patch fills with the viewer params' origin read. */
+internal const val VIEWER_ORIGIN = "viewerOrigin"
+
+/** A string the reels list's builder holds, along with a few methods that aren't it. */
+internal const val LOADING_PAGE = "wearables_consumption_midcard"
+
+/** What the reels list's pagination page, a full page that's only a loading circle, is named in its builder. */
+internal const val PAGINATION_PAGE = "pagination_component"
 
 /** The line only the reels viewer's entry logs. */
 internal const val VIEWER_ENTRY = "Start new transition for vid[%s] failed"
@@ -103,6 +127,8 @@ internal const val SEED_TAIL = "onFetchMore skipped: suppressing tail load for s
 
 private const val PATCH = "Clean up Reels"
 
+private const val OBJECT = "Ljava/lang/Object;"
+
 /** Whether [method] can be the Warion step: it holds the trace and answers nothing. */
 internal fun isWarionStep(method: Method): Boolean = method.returnType == "V" && holdsString(method, WARION_CLICK)
 
@@ -125,6 +151,113 @@ internal fun originRead(method: Method): OriginRead? {
     val origin = (code[at] as TwoRegisterInstruction).registerA
     return if (origin > 15) null else OriginRead(at + 1, origin)
 }
+
+/** Where the reels list's builder reads whether more are coming: the index right after, and the registers of that answer and of the params. */
+internal data class LoadingPageRead(val index: Int, val more: Int, val params: Int)
+
+/**
+ * Where [method] reads whether more reels are coming: the boolean field read a null check on the
+ * first [paramsType] it loads from a field jumps to, followed by its own check. Null unless there's
+ * exactly one, every way into it still holds the params from that load, nothing jumps past it to
+ * its check, and both registers are small enough for a four-bit call.
+ */
+internal fun loadingPageRead(method: Method, paramsType: String): LoadingPageRead? {
+    val code = method.implementation?.instructions?.toList() ?: return null
+    val load = code.indexOfFirst {
+        it.opcode == Opcode.IGET_OBJECT && ((it as ReferenceInstruction).reference as FieldReference).type == paramsType
+    }
+    if (load < 0) return null
+    val params = (code[load] as TwoRegisterInstruction).registerA
+    if (params > 15) return null
+    val flow = ControlFlow.of(method)
+    val reads = code.indices
+        .filter { code[it].opcode == Opcode.IF_EQZ && (code[it] as OneRegisterInstruction).registerA == params }
+        .flatMap { check -> flow.normal[check].filter { it != check + 1 } }
+        .distinct()
+        .filter { at ->
+            val gate = code.getOrNull(at + 1)
+            code[at].opcode == Opcode.IGET_BOOLEAN && gate?.opcode == Opcode.IF_EQZ &&
+                (gate as OneRegisterInstruction).registerA == (code[at] as TwoRegisterInstruction).registerA
+        }
+    val read = reads.singleOrNull() ?: return null
+    val more = (code[read] as TwoRegisterInstruction).registerA
+    if (more > 15 || more == params) return null
+    if (method.writersReaching(read, params) != listOf(load)) return null
+    val into = code.indices.filter { read + 1 in flow.normal[it] || read + 1 in flow.exceptional[it] }
+    return if (into == listOf(read)) LoadingPageRead(read + 1, more, params) else null
+}
+
+/**
+ * Where [method] reads whether to add its pagination page, a full page that's only a loading
+ * circle: the boolean a call answers right before the branch that, answered false, skips a static
+ * call [buildsPage] says yes to. Null unless exactly one call reads that way, nothing but the
+ * instruction before it leads into the answer, the branch or the straight run from the branch to
+ * the call, the params from the first [paramsType] field load still reach the branch, and both
+ * registers are small enough for a four-bit call. The index is the branch's.
+ */
+internal fun paginationRead(method: Method, paramsType: String, buildsPage: (MethodReference) -> Boolean): LoadingPageRead? {
+    val code = method.implementation?.instructions?.toList() ?: return null
+    val load = code.indexOfFirst {
+        it.opcode == Opcode.IGET_OBJECT && ((it as ReferenceInstruction).reference as FieldReference).type == paramsType
+    }
+    if (load < 0) return null
+    val params = (code[load] as TwoRegisterInstruction).registerA
+    if (params > 15) return null
+    val flow = ControlFlow.of(method)
+    val into = Array(code.size) { mutableSetOf<Int>() }
+    for (at in code.indices) for (next in flow.normal[at] + flow.exceptional[at]) into[next].add(at)
+    fun onlyFromAbove(at: Int) = into[at] == setOf(at - 1)
+    val reads = code.indices.filter { at ->
+        (code[at].opcode == Opcode.INVOKE_STATIC || code[at].opcode == Opcode.INVOKE_STATIC_RANGE) &&
+            buildsPage((code[at] as ReferenceInstruction).reference as MethodReference)
+    }.mapNotNull { call ->
+        var top = call
+        while (top > 0 && onlyFromAbove(top) && flow.normal[top - 1] == listOf(top)) top--
+        val branch = top - 1
+        if (branch < 2 || !onlyFromAbove(top) || !onlyFromAbove(branch) || !onlyFromAbove(branch - 1)) return@mapNotNull null
+        if (code[branch - 1].opcode != Opcode.MOVE_RESULT) return@mapNotNull null
+        val answer = (code[branch - 2] as? ReferenceInstruction)?.reference as? MethodReference
+        if (answer?.returnType != "Z") return@mapNotNull null
+        val more = (code[branch - 1] as OneRegisterInstruction).registerA
+        val test = code[branch]
+        val skipsOnFalse = when (test.opcode) {
+            Opcode.IF_EQZ -> (test as OneRegisterInstruction).registerA == more
+            // if-ne against a register only ever set to 1 skips on false too.
+            Opcode.IF_NE -> {
+                test as TwoRegisterInstruction
+                val other = when (more) {
+                    test.registerA -> test.registerB
+                    test.registerB -> test.registerA
+                    else -> null
+                }
+                other != null && other != more && method.writersReaching(branch, other).let { writers ->
+                    writers.isNotEmpty() && writers.all { at ->
+                        at >= 0 && code[at].opcode in setOf(Opcode.CONST_4, Opcode.CONST_16, Opcode.CONST) &&
+                            (code[at] as NarrowLiteralInstruction).narrowLiteral == 1
+                    }
+                }
+            }
+            else -> false
+        }
+        if (!skipsOnFalse || more > 15 || more == params) return@mapNotNull null
+        if (method.writersReaching(branch, params) != listOf(load)) return@mapNotNull null
+        LoadingPageRead(branch, more, params)
+    }
+    return reads.singleOrNull()
+}
+
+/** Whether [call] answers an object from a method holding [PAGINATION_PAGE]: the pagination page's builder. */
+private fun BytecodePatchContext.buildsPaginationPage(call: MethodReference): Boolean =
+    call.returnType.startsWith("L") && classDefByOrNull(call.definingClass)?.methods?.any {
+        it.name == call.name && it.returnType == call.returnType &&
+            it.parameterTypes.map(CharSequence::toString) == call.parameterTypes.map(CharSequence::toString) &&
+            holdsString(it, PAGINATION_PAGE)
+    } == true
+
+/** Whether [method] can be the reels list's builder: an instance method answering an object, holding [LOADING_PAGE], with its read. */
+internal fun isListBuilder(method: Method, paramsType: String): Boolean =
+    method.returnType.startsWith("L") && !AccessFlags.STATIC.isSet(method.accessFlags) &&
+        holdsString(method, LOADING_PAGE) && loadingPageRead(method, paramsType) != null
 
 /** Whether [method] can be the fetch more: an instance method holding the trace and answering a boolean. */
 internal fun isFetchMore(method: Method): Boolean =
@@ -213,8 +346,9 @@ internal fun implementsSeedCheck(classDef: ClassDef, method: Method, check: Meth
         method.parameterTypes.isEmpty() && method.implementation != null
 
 /**
- * Hooks the Warion step, the reels viewer's entry, the Warion viewer's opening and closing, both
- * reels fetch mores and the data source's seed check. Refuses unless each anchor finds one method.
+ * Hooks the Warion step, the reels viewer's entry, the reels list's loading page, the Warion
+ * viewer's opening and closing, both reels fetch mores and the data source's seed check, and fills
+ * the extension's origin stub. Refuses unless each anchor finds one method.
  */
 internal fun BytecodePatchContext.keepFeedVideosAlone() {
     oneMethodHolding(WARION_CLICK, "Warion step answering void", ::isWarionStep)
@@ -222,7 +356,49 @@ internal fun BytecodePatchContext.keepFeedVideosAlone() {
     val entry = oneMethodHolding(VIEWER_ENTRY, "reels viewer entry answering void", ::isViewerEntry)
     val origin = originRead(entry)
         ?: throw PatchException("$PATCH: the reels viewer's entry reads no $PLAYER_ORIGIN field into a low register")
+    val originField = (entry.getInstruction(origin.index - 1) as ReferenceInstruction).reference as FieldReference
+    val paramsType = originField.definingClass
+    if (paramsType !in entry.parameterTypes.map(CharSequence::toString)) {
+        throw PatchException("$PATCH: the reels viewer's entry reads its origin from $paramsType, not its params")
+    }
+    // The stub reads the origin from the extension's package.
+    val params = classDefByOrNull(paramsType) ?: throw PatchException("$PATCH: this build has no $paramsType")
+    val originDef = params.fields.singleOrNull { it.name == originField.name && it.type == PLAYER_ORIGIN }
+    if (!AccessFlags.PUBLIC.isSet(params.accessFlags) || originDef == null ||
+        !AccessFlags.PUBLIC.isSet(originDef.accessFlags) || AccessFlags.STATIC.isSet(originDef.accessFlags)
+    ) {
+        throw PatchException("$PATCH: $paramsType or its origin field isn't a public instance field the extension can read")
+    }
+    val list = oneMethodHolding(LOADING_PAGE, "reels list builder answering an object") { isListBuilder(it, paramsType) }
+    val gate = loadingPageRead(list, paramsType)
+        ?: throw PatchException("$PATCH: the reels list builder doesn't read whether more are coming past its params check")
+    val paging = paginationRead(list, paramsType) { buildsPaginationPage(it) }
+        ?: throw PatchException("$PATCH: the reels list builder doesn't read whether to add its pagination page")
+    if (classDefByOrNull(FEED_VIDEO_ALONE) == null) throw PatchException("$PATCH: the extension has no $FEED_VIDEO_ALONE")
+    val stub = mutableClassDefBy(FEED_VIDEO_ALONE).methods.singleOrNull {
+        it.name == VIEWER_ORIGIN && it.returnType == OBJECT && AccessFlags.STATIC.isSet(it.accessFlags) &&
+            it.parameterTypes.map(CharSequence::toString) == listOf(OBJECT)
+    } ?: throw PatchException("$PATCH: $FEED_VIDEO_ALONE has no static Object $VIEWER_ORIGIN(Object)")
+
     entry.addInstruction(origin.index, "invoke-static { v${origin.origin} }, $VIEWER_OPENING")
+    stub.addInstructions(
+        0,
+        """
+            check-cast p0, $paramsType
+            iget-object p0, p0, $paramsType->${originField.name}:$PLAYER_ORIGIN
+            return-object p0
+        """,
+    )
+    // The later read first, so the earlier one's index still holds.
+    for (read in listOf(gate, paging).sortedByDescending { it.index }) {
+        list.addInstructions(
+            read.index,
+            """
+                invoke-static { v${read.more}, v${read.params} }, $MORE_REELS_COMING
+                move-result v${read.more}
+            """,
+        )
+    }
     oneMethodHolding(FETCH_MORE, "instance fetch more answering a boolean", ::isFetchMore)
         .holdBackWhen(HOLDS_BACK)
     val loader = oneMethodHolding(SEED_TAIL, "instance loader fetch more answering a boolean", ::isLoaderFetchMore)

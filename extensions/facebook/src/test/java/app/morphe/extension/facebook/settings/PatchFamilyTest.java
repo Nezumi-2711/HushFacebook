@@ -108,16 +108,18 @@ public class PatchFamilyTest {
             List<String> lines = PatchFamily.reportLines(EnumSet.of(PatchFamily.STORY_DOWNLOAD), false);
             assertEquals("Download any story: on (hushfacebook_download_stories=on, hushfacebook_save_story_photos=off)",
                     lines.get(0));
-            assertEquals("Every download patch: hushfacebook_download_compatible=off, hushfacebook_download_quiet=off",
+            assertEquals("Every download patch: hushfacebook_download_compatible=off, hushfacebook_download_convert=off, "
+                            + "hushfacebook_download_quiet=off",
                     lines.get(1));
             assertTrue(lines.get(2), lines.get(2).startsWith("not in this build: "));
 
             Settings.DOWNLOAD_COMPATIBLE.save(true);
             Settings.DOWNLOAD_QUIET.save(true);
-            assertEquals("Every download patch: hushfacebook_download_compatible=on, hushfacebook_download_quiet=on",
+            assertEquals("Every download patch: hushfacebook_download_compatible=on, hushfacebook_download_convert=off, "
+                            + "hushfacebook_download_quiet=on",
                     PatchFamily.reportLines(EnumSet.of(PatchFamily.VIDEO_DOWNLOAD), false).get(1));
             assertEquals("Every download patch: off while paused (saved hushfacebook_download_compatible=on, "
-                            + "hushfacebook_download_quiet=on)",
+                            + "hushfacebook_download_convert=off, hushfacebook_download_quiet=on)",
                     PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DOWNLOAD), true).get(1));
 
             for (String line : PatchFamily.reportLines(EnumSet.of(PatchFamily.SPONSORED_POSTS), false)) {
@@ -469,13 +471,14 @@ public class PatchFamilyTest {
                         + "color, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
                         + "apps, Hushfacebook in the Menu"),
                 running);
-        // Clean up Reels has ten switches, all off to start, and the report names each one.
+        // Clean up Reels has twelve switches, all off to start, and the report names each one.
         Settings.HIDE_REEL_FOLLOW_BUTTON.save(true);
         assertEquals("Clean up Reels: on (hushfacebook_hide_reel_chips=off, hushfacebook_hide_reel_follow_button=on, "
                         + "hushfacebook_hide_reel_social_footer=off, hushfacebook_hide_reel_threads_cards=off, "
                         + "hushfacebook_reel_clean_mode=off, hushfacebook_play_reels_once=off, "
                         + "hushfacebook_original_audio=off, hushfacebook_hide_reel_search_pill=off, "
-                        + "hushfacebook_hide_reel_counts=off, hushfacebook_feed_videos_alone=off)",
+                        + "hushfacebook_hide_reel_counts=off, hushfacebook_hide_reel_save_button=off, "
+                        + "hushfacebook_hide_reel_sound_button=off, hushfacebook_feed_videos_alone=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);

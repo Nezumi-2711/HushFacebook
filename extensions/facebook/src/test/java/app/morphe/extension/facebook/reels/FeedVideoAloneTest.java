@@ -33,11 +33,12 @@ import app.morphe.extension.shared.settings.PauseForTests;
 
 /**
  * Open feed videos on their own (#161): the first new reels feed to ask for more soon after a feed
- * video tap or the reels viewer opening from a feed surface, or from the full-screen player, is that
- * video's player and gets no, every time; so is a
- * feed or data source first asking while a Warion viewer is open, until that viewer closes; a feed
- * that asked before, one asking long after the tap, or one asking from the main screen keeps
- * Facebook's answer; off or paused, nothing is held back.
+ * video tap or the reels viewer opening from a feed surface, or from the full-screen player that
+ * opening created, is that video's player and gets no, every time; so is a feed or data source first
+ * asking while a Warion viewer that opening created is open, until that viewer closes; a feed that
+ * asked before, one asking long after the tap, one asking from the main screen, and one asking in a
+ * viewer or player screen no feed video opened (a link, the Watch page) keeps Facebook's answer; off
+ * or paused, nothing is held back.
  */
 @RunWith(RobolectricTestRunner.class)
 public class FeedVideoAloneTest {
@@ -66,6 +67,21 @@ public class FeedVideoAloneTest {
             if (line.startsWith(FamilyNames.REEL_DECLUTTER + ":")) return line;
         }
         return null;
+    }
+
+    /** A feed video tap opening [viewer], then long enough that only the viewer can hold anything. */
+    private void warionFromFeed(Object viewer) {
+        FeedVideoAlone.feedVideoTapped();
+        FeedVideoAlone.warionOpening(viewer, true);
+        clock.addAndGet(FeedVideoAlone.WINDOW_MS + 1);
+    }
+
+    /** A feed reel opening [player] the way the reshare unit does on 583, past the tap's window after. */
+    private void playerFromFeed(FeedVideoAlone.Screens screens, Activity player) {
+        FeedVideoAlone.reelsViewerOpening(origin("newsfeed::fb_shorts_reshare_feed_unit"));
+        clock.addAndGet(40);
+        screens.onActivityCreated(player, null);
+        clock.addAndGet(FeedVideoAlone.WINDOW_MS + 1);
     }
 
     @Test
@@ -139,9 +155,9 @@ public class FeedVideoAloneTest {
         Object reelsTab = new Object();
         assertFalse("the Reels tab asks from the main screen", FeedVideoAlone.holdsBack(reelsTab));
 
-        screens.onActivityCreated(player, null);
+        playerFromFeed(screens, player);
         Object playersFeed = new Object();
-        assertTrue("no Warion step, the player in front is enough", FeedVideoAlone.holdsBack(playersFeed));
+        assertTrue("no Warion viewer, the feed's player in front is enough", FeedVideoAlone.holdsBack(playersFeed));
         assertFalse("a feed that asked before keeps its answer", FeedVideoAlone.holdsBack(reelsTab));
 
         screens.onActivityResumed(main);
@@ -156,12 +172,70 @@ public class FeedVideoAloneTest {
 
     @Test
     public void offTheFullScreenPlayerHoldsNothingBack() {
-        new FeedVideoAlone.Screens().onActivityCreated(Robolectric.buildActivity(ImmersiveActivity.class).get(), null);
+        Activity player = Robolectric.buildActivity(ImmersiveActivity.class).get();
+        playerFromFeed(new FeedVideoAlone.Screens(), player);
         Settings.FEED_VIDEOS_ALONE.save(false);
         assertFalse(FeedVideoAlone.holdsBack(new Object()));
         PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
         Settings.FEED_VIDEOS_ALONE.save(true);
         assertFalse("paused", FeedVideoAlone.holdsBack(new Object()));
+        PauseForTests.resume();
+        assertTrue("on again, the feed's player still holds", FeedVideoAlone.holdsBack(new Object()));
+    }
+
+    @Test
+    public void aPlayerScreenNoFeedVideoOpenedKeepsFacebooksAnswer() {
+        FeedVideoAlone.Screens screens = new FeedVideoAlone.Screens();
+        Activity watch = Robolectric.buildActivity(ImmersiveActivity.class).get();
+        screens.onActivityCreated(watch, null);
+        assertFalse("the Watch page opened on its own screen", FeedVideoAlone.holdsBack(new Object()));
+        screens.onActivityResumed(watch);
+        assertFalse("and back in front later", FeedVideoAlone.seedOnly(new Object()));
+
+        FeedVideoAlone.feedVideoTapped();
+        clock.addAndGet(FeedVideoAlone.WINDOW_MS + 1);
+        Activity late = Robolectric.buildActivity(ImmersiveActivity.class).get();
+        screens.onActivityCreated(late, null);
+        assertFalse("a player screen created long after a tap", FeedVideoAlone.holdsBack(new Object()));
+
+        FeedVideoAlone.feedVideoTapped();
+        FeedVideoAlone.reelsViewerOpening(origin("video_home::feed_story"));
+        Activity watchVideo = Robolectric.buildActivity(ImmersiveActivity.class).get();
+        screens.onActivityCreated(watchVideo, null);
+        assertFalse("a tap that opened something other than a feed's video", FeedVideoAlone.holdsBack(new Object()));
+
+        Activity player = Robolectric.buildActivity(ImmersiveActivity.class).get();
+        playerFromFeed(screens, player);
+        assertTrue("a feed video's player screen holds", FeedVideoAlone.holdsBack(new Object()));
+        assertTrue(statusLine(), statusLine().contains(FeedVideoAlone.OPENED + " 1"));
+    }
+
+    @Test
+    public void aWarionViewerNoFeedVideoOpenedKeepsFacebooksAnswer() {
+        Object link = new Object();
+        FeedVideoAlone.warionOpening(link, true);
+        assertFalse("the reels viewer opened from a link", FeedVideoAlone.seedOnly(new Object()));
+        assertFalse(FeedVideoAlone.holdsBack(new Object()));
+
+        FeedVideoAlone.feedVideoTapped();
+        FeedVideoAlone.reelsViewerOpening(origin("unknown::fb_shorts_viewer"));
+        Object linkAfterTap = new Object();
+        FeedVideoAlone.warionOpening(linkAfterTap, true);
+        assertFalse("a link opening the reels viewer right after a feed tap", FeedVideoAlone.seedOnly(new Object()));
+
+        FeedVideoAlone.feedVideoTapped();
+        clock.addAndGet(FeedVideoAlone.WINDOW_MS + 1);
+        Object late = new Object();
+        FeedVideoAlone.warionOpening(late, true);
+        assertFalse("a viewer opening long after a tap", FeedVideoAlone.seedOnly(new Object()));
+
+        FeedVideoAlone.reelsViewerOpening(origin("newsfeed::feed_story"));
+        Object feedReel = new Object();
+        FeedVideoAlone.warionOpening(feedReel, true);
+        clock.addAndGet(FeedVideoAlone.WINDOW_MS + 1);
+        assertTrue("a feed reel's viewer holds", FeedVideoAlone.seedOnly(new Object()));
+        assertTrue("and so does its feed asking later", FeedVideoAlone.holdsBack(new Object()));
+        assertTrue(statusLine(), statusLine().contains(FeedVideoAlone.OPENED + " 1"));
     }
 
     @Test
@@ -173,7 +247,7 @@ public class FeedVideoAloneTest {
         assertFalse("a video fragment that isn't a Warion viewer arms nothing", FeedVideoAlone.seedOnly(new Object()));
 
         Object viewer = new Object();
-        FeedVideoAlone.warionOpening(viewer, true);
+        warionFromFeed(viewer);
         Object source = new Object();
         Object loader = new Object();
         assertTrue("the viewer's data source shows the video alone", FeedVideoAlone.seedOnly(source));
@@ -190,7 +264,7 @@ public class FeedVideoAloneTest {
     @Test
     public void closingTheViewerLetsItsObjectsBeDecidedAgain() {
         Object viewer = new Object();
-        FeedVideoAlone.warionOpening(viewer, true);
+        warionFromFeed(viewer);
         Object source = new Object();
         assertTrue(FeedVideoAlone.seedOnly(source));
 
@@ -202,7 +276,7 @@ public class FeedVideoAloneTest {
         assertFalse("that answer sticks", FeedVideoAlone.seedOnly(source));
 
         Object next = new Object();
-        FeedVideoAlone.warionOpening(next, true);
+        warionFromFeed(next);
         assertTrue("a second viewer gets its video alone too", FeedVideoAlone.seedOnly(new Object()));
         assertFalse("but an object that asked from the main screen keeps its answer", FeedVideoAlone.seedOnly(source));
         assertTrue(statusLine(), statusLine().contains(FeedVideoAlone.OPENED + " 2"));
@@ -211,12 +285,13 @@ public class FeedVideoAloneTest {
     @Test
     public void offOrPausedAWarionViewerHoldsNothingBack() {
         Settings.FEED_VIDEOS_ALONE.save(false);
+        FeedVideoAlone.feedVideoTapped();
         FeedVideoAlone.warionOpening(new Object(), true);
         Settings.FEED_VIDEOS_ALONE.save(true);
         assertFalse("a viewer opened while off arms nothing", FeedVideoAlone.seedOnly(new Object()));
 
         Object viewer = new Object();
-        FeedVideoAlone.warionOpening(viewer, true);
+        warionFromFeed(viewer);
         Object source = new Object();
         assertTrue(FeedVideoAlone.seedOnly(source));
         PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
@@ -284,6 +359,39 @@ public class FeedVideoAloneTest {
 
         FeedVideoAlone.reelsViewerOpening(null);
         assertFalse("no origin", FeedVideoAlone.seedOnly(new Object()));
+    }
+
+    @Test
+    public void aFeedReelsViewerShowsNoLoadingPage() {
+        Object home = new Object();
+        Object reelsTab = new Object();
+        FeedVideoAlone.originForTests = params -> params == home ? origin("newsfeed::feed_story")
+                : params == reelsTab ? origin("fb_shorts_tab::fb_shorts_viewer") : null;
+        assertFalse("from the home feed", FeedVideoAlone.moreReelsComing(true, home));
+        assertFalse("asked again", FeedVideoAlone.moreReelsComing(true, home));
+        assertTrue("the Reels tab keeps its loading page", FeedVideoAlone.moreReelsComing(true, reelsTab));
+        assertTrue("params with no origin", FeedVideoAlone.moreReelsComing(true, new Object()));
+        assertTrue("no params", FeedVideoAlone.moreReelsComing(true, null));
+        assertFalse("none coming stays none", FeedVideoAlone.moreReelsComing(false, reelsTab));
+        assertTrue("one viewer, counted once: " + statusLine(), statusLine().contains(FeedVideoAlone.NO_LOADING_PAGE + " 1"));
+    }
+
+    @Test
+    public void offOrPausedEveryViewerKeepsItsLoadingPage() {
+        Object home = new Object();
+        FeedVideoAlone.originForTests = params -> origin("newsfeed::feed_story");
+        Settings.FEED_VIDEOS_ALONE.save(false);
+        assertTrue("off", FeedVideoAlone.moreReelsComing(true, home));
+        Settings.FEED_VIDEOS_ALONE.save(true);
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertTrue("paused", FeedVideoAlone.moreReelsComing(true, home));
+        PauseForTests.resume();
+        FeedVideoAlone.originForTests = params -> {
+            throw new IllegalStateException("no origin field");
+        };
+        assertTrue("a failure keeps Facebook's answer", FeedVideoAlone.moreReelsComing(true, home));
+        FeedVideoAlone.originForTests = null;
+        assertTrue("unpatched, the origin reads as none", FeedVideoAlone.moreReelsComing(true, home));
     }
 
     @Test

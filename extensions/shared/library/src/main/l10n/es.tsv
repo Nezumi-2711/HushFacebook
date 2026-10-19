@@ -378,6 +378,10 @@ Go straight to one group of settings. Back returns to where you were.	Ve directo
 Save videos other apps can open	Guardar videos que otras apps puedan abrir
 # context: summary of that switch; WhatsApp is a name and stays as it is, and saves are the videos the user saved to the phone
 Fixes saved videos that play without sound in WhatsApp, video editors such as CapCut and InShot, or some galleries and players. May lower quality.	Arregla los vídeos guardados que se reproducen sin sonido en WhatsApp, editores de vídeo como CapCut e InShot, o algunas galerías y reproductores. Puede bajar la calidad.
+# context: title of a switch under Downloads; convert means re-encoding the video on the phone
+Convert to keep the full size	Convertir para mantener el tamaño completo
+# context: summary of that switch; Save videos other apps can open is the switch above it, VP9, AV1 and H.264 are video formats and stay as they are
+With Save videos other apps can open on, a full size video Facebook only has as VP9 or AV1 is converted to H.264 on your phone instead of saved smaller. Slower, and videos over 10 minutes stay smaller.	Con Guardar videos que otras apps puedan abrir activado, un video en tamaño completo que Facebook solo tiene en VP9 o AV1 se convierte a H.264 en tu teléfono en vez de guardarse más pequeño. Es más lento, y los videos de más de 10 minutos se guardan más pequeños.
 # context: switch title under Downloads; on, a save shows no message when it starts, finishes or is canceled
 Quiet saves	Guardar sin avisos
 # context: summary of that switch; a toast is Android's short message at the bottom of the screen
@@ -514,6 +518,8 @@ Hides friend requests shown between posts. Your requests stay under Friends.	Ocu
 Hides the card between posts that shows where your friends are.	Oculta la tarjeta entre publicaciones que muestra dónde están tus amigos.
 # context: summary of that switch; "More from your friends" is the heading Facebook shows over that list
 A post you open from a notification ends without the "More from your friends" list Facebook adds under it, which can carry ads.	Una publicación que abres desde una notificación termina sin la lista «Más de tus amigos» que Facebook añade debajo, que puede incluir anuncios.
+Hide the Find friends card	Ocultar la tarjeta Buscar amigos
+Hides the "Want to see more posts from friends?" card with its Find friends button where your friends' posts run out.	Oculta la tarjeta «¿Quieres ver más publicaciones de amigos?» con su botón Buscar amigos donde se acaban las publicaciones de tus amigos.
 # context: summary of that switch; the Stories tray is the row of Stories at the top of the feed
 Hides the row of Stories from people you aren't connected to, between posts. Your friends' Stories and the Stories tray stay.	Oculta la fila de historias de personas con las que no tienes relación, entre publicaciones. Las historias de tus amigos y la bandeja de historias se quedan.
 # context: switch title under Notifications; trending videos Facebook sends as push notifications
@@ -1610,6 +1616,14 @@ Takes the numbers off the Like, Comment and Share buttons under posts, so each s
 Hide counts on reels	Ocultar los números en los reels
 # context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
 Takes the numbers away from under a reel's Like, Comment and Share icons. The icons stay where they are. A change shows from the next reel.	Quita los números debajo de los iconos Me gusta, Comentar y Compartir de un reel. Los iconos se quedan donde están. Un cambio se ve a partir del siguiente reel.
+# context: switch title under Reels and Watch; Save is Facebook's own label for the bookmark button down a reel's right side, so use Facebook's wording in your language
+Hide Save on reels	Ocultar Guardar en los reels
+# context: summary of that switch; the buttons under it are Download and More
+Takes the Save button off the side of reels. The buttons above it move down. A change shows from the next reel.	Quita el botón Guardar del lateral de los reels. Los botones de encima bajan. Un cambio se ve a partir del siguiente reel.
+# context: switch title under Reels and Watch; the speaker is the sound on and off button at the bottom of the row of buttons down a reel's right side
+Hide the speaker button on reels	Ocultar el botón del altavoz en los reels
+# context: summary of that switch
+Takes the speaker button off the bottom of the side of reels. A change shows from the next reel.	Quita el botón del altavoz de la parte inferior del lateral de los reels. Un cambio se ve a partir del siguiente reel.
 # context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
 Hide the reaction preview on posts	Ocultar la vista previa de reacciones en las publicaciones
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions

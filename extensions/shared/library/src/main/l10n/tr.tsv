@@ -378,6 +378,10 @@ Go straight to one group of settings. Back returns to where you were.	Doğrudan 
 Save videos other apps can open	Videoları diğer uygulamaların açabileceği biçimde kaydet
 # context: summary of that switch; WhatsApp is a name and stays as it is, and saves are the videos the user saved to the phone
 Fixes saved videos that play without sound in WhatsApp, video editors such as CapCut and InShot, or some galleries and players. May lower quality.	WhatsApp'ta, CapCut ve InShot gibi video düzenleyicilerde veya bazı galeri ve oynatıcılarda sessiz çalan kayıtlı videoları düzeltir. Kaliteyi düşürebilir.
+# context: title of a switch under Downloads; convert means re-encoding the video on the phone
+Convert to keep the full size	Tam boyutu korumak için dönüştür
+# context: summary of that switch; Save videos other apps can open is the switch above it, VP9, AV1 and H.264 are video formats and stay as they are
+With Save videos other apps can open on, a full size video Facebook only has as VP9 or AV1 is converted to H.264 on your phone instead of saved smaller. Slower, and videos over 10 minutes stay smaller.	Videoları diğer uygulamaların açabileceği biçimde kaydet açıkken, Facebook'ta yalnızca VP9 veya AV1 olarak bulunan tam boyutlu bir video, daha küçük kaydedilmek yerine telefonunda H.264'e dönüştürülür. Daha yavaştır ve 10 dakikadan uzun videolar küçük kalır.
 # context: switch title under Downloads; on, a save shows no message when it starts, finishes or is canceled
 Quiet saves	Sessiz kaydetme
 # context: summary of that switch; a toast is Android's short message at the bottom of the screen
@@ -514,6 +518,8 @@ Hides friend requests shown between posts. Your requests stay under Friends.	Gö
 Hides the card between posts that shows where your friends are.	Gönderilerin arasında arkadaşlarınızın nerede olduğunu gösteren kartı gizler.
 # context: summary of that switch; "More from your friends" is the heading Facebook shows over that list
 A post you open from a notification ends without the "More from your friends" list Facebook adds under it, which can carry ads.	Bir bildirimden açtığınız gönderi, Facebook'un altına eklediği ve reklam içerebilen "Arkadaşlarınızdan daha fazlası" listesi olmadan biter.
+Hide the Find friends card	Arkadaşları bul kartını gizle
+Hides the "Want to see more posts from friends?" card with its Find friends button where your friends' posts run out.	Arkadaşlarınızın gönderileri bittiğinde çıkan, Arkadaşları bul düğmeli "Arkadaşlarınızdan daha fazla gönderi görmek ister misiniz?" kartını gizler.
 # context: summary of that switch; the Stories tray is the row of Stories at the top of the feed
 Hides the row of Stories from people you aren't connected to, between posts. Your friends' Stories and the Stories tray stay.	Gönderilerin arasında, bağlantınız olmayan kişilerin Hikayeler satırını gizler. Arkadaşlarınızın hikayeleri ve Hikayeler çubuğu kalır.
 # context: switch title under Notifications; trending videos Facebook sends as push notifications
@@ -1610,6 +1616,14 @@ Takes the numbers off the Like, Comment and Share buttons under posts, so each s
 Hide counts on reels	Reels'teki sayıları gizle
 # context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
 Takes the numbers away from under a reel's Like, Comment and Share icons. The icons stay where they are. A change shows from the next reel.	Bir reel'in Beğen, Yorum Yap ve Paylaş simgelerinin altındaki sayıları kaldırır. Simgeler yerinde kalır. Değişiklik bir sonraki reel'den itibaren görünür.
+# context: switch title under Reels and Watch; Save is Facebook's own label for the bookmark button down a reel's right side, so use Facebook's wording in your language
+Hide Save on reels	Reels'te Kaydet'i gizle
+# context: summary of that switch; the buttons under it are Download and More
+Takes the Save button off the side of reels. The buttons above it move down. A change shows from the next reel.	Reels'in yanındaki Kaydet düğmesini kaldırır. Üstündeki düğmeler aşağı kayar. Değişiklik bir sonraki reel'den itibaren görünür.
+# context: switch title under Reels and Watch; the speaker is the sound on and off button at the bottom of the row of buttons down a reel's right side
+Hide the speaker button on reels	Reels'te hoparlör düğmesini gizle
+# context: summary of that switch
+Takes the speaker button off the bottom of the side of reels. A change shows from the next reel.	Reels'in yanının altındaki hoparlör düğmesini kaldırır. Değişiklik bir sonraki reel'den itibaren görünür.
 # context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
 Hide the reaction preview on posts	Gönderilerdeki tepki önizlemesini gizle
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions

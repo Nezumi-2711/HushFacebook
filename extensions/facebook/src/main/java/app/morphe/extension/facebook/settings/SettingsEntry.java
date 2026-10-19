@@ -500,6 +500,30 @@ public final class SettingsEntry {
     }
 
     /**
+     * Facebook's call that hides the Facebook logo from accessibility, on the path of the logo's
+     * builder that gives the logo no tap, comes here instead (#12). 583 takes that path when none of
+     * its ways to read the logo's tap is on, as in Arabic, and jumps past the tap, the touch listener
+     * that {@link #setLogoTouchListener} stands in for and the description, so the logo stays
+     * disabled with nothing listening and the long press never opened the settings.
+     *
+     * <p>After Facebook's own call, the logo is enabled, since a disabled view never hands a touch
+     * to its listener, and gets a press that takes the whole touch while the switch is on, since a
+     * logo with no tap wouldn't hear the rest of it otherwise. A tap there did nothing before, and
+     * still does nothing. Off, every touch goes past the logo as it did.
+     */
+    public static void setLogoWithoutTap(View logo, int importance) {
+        // Facebook's own call.
+        logo.setImportantForAccessibility(importance);
+        try {
+            logo.setEnabled(true);
+            logo.setOnTouchListener(new LogoPress(true));
+            Logger.printInfo(() -> "Settings entry: Facebook gave the logo no tap here, so a long press on it opens the settings");
+        } catch (Throwable failure) {
+            Logger.printException(() -> "Settings entry: could not watch the Facebook logo, which has no tap here", failure);
+        }
+    }
+
+    /**
      * Whether a long press on the Facebook logo opens the settings. Its switch, except that when
      * every one of the three ways in is stored off (a backup imported that way, say) the press
      * stays on, so there is always a way back in. The Menu row only counts as a way in on a build
@@ -538,7 +562,8 @@ public final class SettingsEntry {
      * Times a press on the Facebook logo. Every touch still reaches the logo as it did, so a tap
      * is Facebook's. A press held for the phone's long-press time opens this screen, with the
      * same vibration a long press gives, and the rest of that touch is kept from the logo, so
-     * letting go isn't also a tap.
+     * letting go isn't also a tap. On a logo Facebook gave no tap, a timed press takes the whole
+     * touch from the start ({@link #setLogoWithoutTap}).
      *
      * <p>It doesn't use the logo's own long-press handling. Facebook gives the logo an
      * accessibility delegate that puts back the long-press state it saw before the logo had any
@@ -547,12 +572,25 @@ public final class SettingsEntry {
      */
     static final class LogoPress implements View.OnTouchListener {
         private final Runnable fire = this::fire;
+        /**
+         * Whether a timed press takes the whole touch, for a logo Facebook gave no tap, which
+         * wouldn't hear past the finger going down otherwise.
+         */
+        private final boolean claims;
         /** The logo while a press on it is being timed. */
         private View pressed;
         private float downX;
         private float downY;
         /** This touch opened the screen, so the rest of it isn't the logo's. */
         private boolean opened;
+
+        LogoPress() {
+            this(false);
+        }
+
+        LogoPress(boolean claims) {
+            this.claims = claims;
+        }
 
         /** Whether a press on the logo is being timed for a long press. Package-visible for tests. */
         boolean timing() {
@@ -574,7 +612,7 @@ public final class SettingsEntry {
                         downX = event.getX();
                         downY = event.getY();
                         logo.postDelayed(fire, ViewConfiguration.getLongPressTimeout());
-                        return false;
+                        return claims;
                     case MotionEvent.ACTION_MOVE:
                         // The same leeway the logo gives its own press before it lets go.
                         if (pressed != null && !within(logo, event)) stop();

@@ -1,7 +1,7 @@
 ![Hushfacebook. Keep the people. Cut the noise.](assets/readme-hero.png)
 
 <p align="center">
-  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.14.0-0866FF" alt="Version 0.14.0"></a>
+  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.15.0-0866FF" alt="Version 0.15.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%2011%2B-3DDC84" alt="Platform Android 11+">
   <img src="https://img.shields.io/badge/Facebook-583.0.0.39.55-0866FF" alt="Facebook 583.0.0.39.55">
@@ -22,7 +22,7 @@ Each row in the [patch table](#patches) says how its switch starts. The ad filte
 
 This project has no connection to Meta or to the Morphe project. Neither endorses it, and neither wrote it.
 
-The latest release is [v0.14.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.14.0), with 91 patches. It includes all changes since v0.13.0, among them support for Facebook 583, new patches that skip silent parts and post Stories in HD, switches for a tab bar at the top, a reel's original audio and the phone layout on big screens, settings in Vietnamese and fixes for picture-in-picture and the reel progress bar, as the [changelog](CHANGELOG.md) describes.
+The latest release is [v0.15.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.15.0), with 93 patches. It includes all changes since v0.14.0, among them feed videos that open on their own, comments at full height or from a double tap, switches that hide the status bar, the Messenger button and the counts under posts and reels, settings in Simplified Chinese and a working Tap the bar to seek on 583, as the [changelog](CHANGELOG.md) describes.
 
 [Add to Morphe](https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook) | [Download a release](https://github.com/SysAdminDoc/Hushfacebook/releases/latest) | [Browse the patches](#patches)
 
@@ -94,7 +94,7 @@ Each row says what the patch does, how its switch starts and which settings page
 | `Block screenshot detection` | Stops Facebook noticing when you take a screenshot or record the screen, in the feed, Reels, chats and everywhere else, so it can't react to it. Starts off. Turn it on in Hushfacebook settings > Privacy. |
 | `Hide typing indicator` | Others don't see that you're typing, in chats that open inside Facebook and in comment boxes, so you can write without anyone watching. Your messages send as usual. Starts off. Turn on the parts you want in Hushfacebook settings > Privacy. |
 | `Hide read receipts` | People you chat with in chats that open inside Facebook don't see that you've read their messages, so you can read now and reply later. Replying may still show you've read it. Starts off. Turn it on in Hushfacebook settings > Privacy. |
-| `Clean up Reels` | Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template buttons and Threads cards between reels, so more of the video shows, and can play each reel once instead of over and over, keep its original audio instead of a Meta AI dub, drop the search pill under the caption or hide the like, comment and share counts. It can also open a video you tap in the feed on its own, with no reels after it. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch. |
+| `Clean up Reels` | Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template buttons and Threads cards between reels, so more of the video shows, and can play each reel once instead of over and over, keep its original audio instead of a Meta AI dub, drop the search pill under the caption, or hide the like, comment and share counts, the Save button or the speaker button. It can also open a video you tap in the feed on its own, with no reels after it. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch. |
 | `Default playback quality` | Plays videos, reels and video stories at the quality you choose, such as Data saver or up to 720p, instead of what Facebook picks. Lower saves data, higher looks sharper. Starts off. Turn it on and pick a quality in Hushfacebook settings > Playback. |
 | `Default comment order` | Opens comments in the order you choose, Most relevant, Newest or All comments, instead of the one Facebook picks. Handy if you always want the newest first. Starts off. Turn it on and pick an order in Hushfacebook settings > Comments. |
 | `Disable Audience Network` | Stops Facebook serving its ads inside other apps on your phone. Those apps show their own ads or none, and their rewarded ads may fail. Works as soon as you patch it in, with no switch. |

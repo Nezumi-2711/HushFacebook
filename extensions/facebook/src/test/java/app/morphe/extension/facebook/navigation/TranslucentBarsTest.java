@@ -19,6 +19,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import org.junit.After;
 import org.junit.Before;
@@ -153,15 +154,59 @@ public class TranslucentBarsTest {
     @Test
     public void aPageHoldingASurfaceViewIsSeenAnywhereInIt() {
         TranslucentBarsForTests screen = new TranslucentBarsForTests();
-        assertFalse(TranslucentBars.holdsSurface(screen.page));
+        Rect box = new Rect();
+        assertFalse(TranslucentBars.holdsSurface(screen.page, box));
         FrameLayout reel = new FrameLayout(screen.activity);
         reel.addView(new SurfaceView(screen.activity));
         FrameLayout pageOfReels = new FrameLayout(screen.activity);
         pageOfReels.addView(new View(screen.activity));
         pageOfReels.addView(reel);
         screen.page.addView(pageOfReels);
-        assertTrue(TranslucentBars.holdsSurface(screen.page));
-        assertTrue(TranslucentBars.holdsSurface(new SurfaceView(screen.activity)));
+        screen.layOut();
+        assertTrue(TranslucentBars.holdsSurface(screen.page, box));
+        assertTrue(TranslucentBars.holdsSurface(new SurfaceView(screen.activity), box));
+    }
+
+    @Test
+    public void aHiddenPageHoldingASurfaceViewDoesntCount() {
+        TranslucentBarsForTests screen = new TranslucentBarsForTests();
+        FrameLayout reels = new FrameLayout(screen.activity);
+        reels.addView(new SurfaceView(screen.activity));
+        screen.page.addView(reels);
+        screen.layOut();
+        Rect box = new Rect();
+        assertTrue(TranslucentBars.holdsSurface(screen.page, box));
+        reels.setVisibility(View.GONE);
+        assertFalse("a gone page", TranslucentBars.holdsSurface(screen.page, box));
+        reels.setVisibility(View.INVISIBLE);
+        assertFalse("an invisible page", TranslucentBars.holdsSurface(screen.page, box));
+    }
+
+    @Test
+    public void anotherTabsPageWaitingBesideTheScreenDoesntCount() {
+        // Facebook 583 lays each opened tab's page beside the next in one pager and scrolls it to
+        // the one shown, so Reels waits beside Home with its video once it's been opened (#188).
+        TranslucentBarsForTests screen = new TranslucentBarsForTests();
+        LinearLayout pager = new LinearLayout(screen.activity);
+        FrameLayout home = new FrameLayout(screen.activity);
+        FrameLayout reels = new FrameLayout(screen.activity);
+        reels.addView(new SurfaceView(screen.activity));
+        pager.addView(home, new LinearLayout.LayoutParams(720, 1600));
+        pager.addView(reels, new LinearLayout.LayoutParams(720, 1600));
+        screen.page.addView(pager, new FrameLayout.LayoutParams(1440, 1600));
+        screen.layOut();
+        Rect box = new Rect();
+        assertFalse("Home shown, Reels beside it", TranslucentBars.holdsSurface(screen.page, box));
+        pager.scrollTo(720, 0);
+        assertTrue("Reels shown", TranslucentBars.holdsSurface(screen.page, box));
+        pager.scrollTo(360, 0);
+        assertTrue("halfway between them", TranslucentBars.holdsSurface(screen.page, box));
+        pager.scrollTo(0, 0);
+        reels.setTranslationX(-720);
+        assertTrue("slid over Home", TranslucentBars.holdsSurface(screen.page, box));
+        reels.setTranslationX(0);
+        assertFalse(TranslucentBars.holdsSurface(screen.page, box));
+        assertEquals("the scratch box is the page's", new Rect(0, 0, 720, 1600), box);
     }
 
     @Test

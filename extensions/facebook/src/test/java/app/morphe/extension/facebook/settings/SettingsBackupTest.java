@@ -143,6 +143,8 @@ public class SettingsBackupTest {
                         + "file can't carry the font itself, and the name alone would point at nothing on another phone.");
         out.put("hushfacebook_seen_share_items",
                 "it records the share items this install's Facebook offered, which the hook writes, not a choice.");
+        out.put("hushfacebook_seen_menu_tiles",
+                "it records the Menu tiles this install's Facebook showed, which the hook writes, not a choice.");
         return Collections.unmodifiableMap(out);
     }
 
@@ -205,6 +207,7 @@ public class SettingsBackupTest {
         Settings.HIDDEN_SOURCES.resetToDefault();
         Settings.HIDDEN_SHARE_ITEMS.resetToDefault();
         Settings.HIDDEN_MENU_TILES.resetToDefault();
+        Settings.SEEN_MENU_TILES.resetToDefault();
         Settings.SEEN_SHARE_ITEMS.resetToDefault();
         BaseSettings.PAUSED.resetToDefault();
         BaseSettings.DEBUG.resetToDefault();
@@ -913,14 +916,19 @@ public class SettingsBackupTest {
     public void menuTilePicksRoundTripWithKeysThisBuildDoesntList() throws Exception {
         String picks = "marketplace,gaming,hologram";
         Settings.HIDDEN_MENU_TILES.save(picks);
+        Settings.SEEN_MENU_TILES.save("marketplace=Marketplace\nhologram=Hologram");
         String file = SettingsBackup.create();
-        assertEquals(picks, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.MENU_TILES.key));
+        JSONObject written = new JSONObject(file).getJSONObject("settings");
+        assertEquals(picks, written.get(SettingsBackup.MENU_TILES.key));
+        assertFalse("the tiles Facebook showed went into the file", written.has(Settings.SEEN_MENU_TILES.key));
         Settings.HIDDEN_MENU_TILES.resetToDefault();
+        Settings.SEEN_MENU_TILES.resetToDefault();
 
         SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
         assertEquals(picks, snapshot.menuTilesChange());
         assertEquals(1, SettingsBackup.apply(snapshot));
         assertEquals(picks, Settings.HIDDEN_MENU_TILES.savedValue());
+        assertEquals("an import wrote the tiles Facebook showed", "", Settings.SEEN_MENU_TILES.savedValue());
         assertEquals("a file read back is the file", file, SettingsBackup.create());
         assertEquals(0, SettingsBackup.parse(file).changes().size());
         assertEquals("Your list of Menu tiles to hide will hold 3 tiles.",

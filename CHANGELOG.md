@@ -6,8 +6,36 @@ Changes in each Hushfacebook version, newest first.
 
 ### Added
 
+* **Facebook:** New switch under News feed, `Hide the Find friends card`. The "Want to see more posts from friends?" card with its Find friends button stops showing where your friends' posts run out, and the "You're all caught up with friends" line above it goes too, since Facebook builds them as one block. It starts off (issue #187).
+* **Facebook:** New switch under Downloads, `Convert to keep the full size`. With `Save videos other apps can open` on, a full size video Facebook only has as VP9 or AV1 gets converted to H.264 on your phone, so it isn't saved at a smaller size any more. It's slower, videos over 10 minutes still save smaller, and it starts off (issue #189).
+* **Facebook:** New switch under Reels and Watch, `Hide Save on reels`. It takes the Save button off the side of reels, and the buttons above it move down. It's part of `Clean up Reels` and starts off (issue #190).
+* **Facebook:** New switch under Reels and Watch, `Hide the speaker button on reels`. It takes the speaker button off the bottom of the side of reels, and your phone's volume buttons still turn the sound on. It's part of `Clean up Reels` and starts off (issue #190).
+
+### Changed
+
+* **Tooling:** The device audit no longer fails a run just because Facebook didn't serve a sponsored post on the profile or a new-reels badge that day. Families that wait on what Facebook serves are named by `-MayIdle` and recorded in the baseline under `mayIdle`. A walk notes whether each one ran, and a new baseline never lists them among the families that must run.
+
+### Fixed
+
+* **Facebook:** `Default comment order` applies on a post's own page too, the one a link, a notification or a post's date opens (issue #192). That page asks Facebook for its comments another way than the comment sheet does, so Most relevant or Newest only took hold in the sheet and the page kept Facebook's order.
+* **Facebook:** `Hide the new comments pill` takes away the newer pill as well, the one with the commenters' pictures on it (issue #185). Facebook has two of them now and the switch only knew the older one.
+* **Facebook:** With `View stories anonymously` on, a story you watched to the end stays grey through the feed's refreshes (issue #165). Facebook rebuilds the story tray a dozen times a second when it opens and again with each refresh, and only the first eight copies in a minute got marked, so a ring could turn back blue moments after it went grey.
+* **Facebook:** `Leave calls and chats to Messenger` works with a Messenger installed under another name beside Meta's apps, the way HushMessenger's "install beside" option makes one (issue #193). Facebook only counted Meta's own Messenger package, so with a renamed copy it kept ringing and posting the same chat notification Messenger posted. The Messenger icon at the top and the Get Messenger card already counted such a copy.
+* **Facebook:** `Hide the notes and active now row` takes the whole row away now. Your own "Your note" tile used to stay behind and keep the row at full height.
+* **Facebook:** With `Save videos other apps can open` on, a long video Facebook only has as VP9 or AV1 keeps its full size when it's made H.264. A thin four minute 1080p reel used to run out of the room set aside for the conversion and save at 720p instead (issue #189).
+* **Facebook:** With `Save videos other apps can open` on, a video over 10 minutes that Facebook only has as VP9 or AV1 goes straight to its smaller H.264 file. Before, it downloaded the full size first, gave up on converting it and showed two error messages on the way.
+* **Facebook:** `See-through bars` keeps its blur on Home after you've been to Reels. Before, a trip to Reels could leave the bars plain see-through until Facebook restarted (issue #188).
+* **Facebook:** `Menu tiles to hide` now hides Feeds, Reels, Memories, Birthdays, Dating and Pages, which it missed on 583, and tiles you ticked before carry over. The list shows the tiles your own Menu has, by the names Facebook gives them, so Crisis response, Community Notes, Pokes and the rest can go too (issue #153).
+* **Facebook:** A long press on the Facebook logo opens the Hushfacebook settings with Facebook in Arabic too. In some languages Facebook gives the logo nothing to do when it's tapped, and the long press never got set up there (issue #12).
+
+## 0.15.0 (2026-10-18)
+
+* **Facebook:** Most of this release comes from your requests. A video you tap in the feed can open on its own now, so a swipe up doesn't drop you into an endless reels feed, and the comment sheet can open at full height or from a double tap on a reel. There are new switches to hide the status bar, the Messenger button, the counts under posts and reels, reaction previews and the people row in the share sheet. Settings come in Simplified Chinese, new ones carry a small dot, and Remember what you watch keeps a list so a reel that vanished on refresh is easy to find again. On the fix side, Tap the bar to seek works on 583 again and stories you finish stay watched with View stories anonymously on.
+
+### Added
+
 * **Facebook:** New switch under Comment sheet options, `Hide the new comments pop-up`. The "3 new comments" bubble stops popping up over the comments while you read them, and new comments still land in the list. It starts off (issue #185).
-* **Facebook:** New switch in Clean up Reels, `Open feed videos on their own`. A video you tap in the feed opens full screen by itself, and no more reels load after it, so a swipe up can't lead into an endless reels feed. The Reels tab keeps scrolling as before. It also catches a reel someone shared to your feed, which some accounts open straight in the reels viewer. It starts off (issue #161).
+* **Facebook:** New switch in Clean up Reels, `Open feed videos on their own`. A video you tap in the feed opens full screen by itself, and no more reels load after it, so a swipe up can't lead into an endless reels feed. The Reels tab, the Watch page and a reel you open from a link keep scrolling as before. It also catches a reel someone shared to your feed, which some accounts open straight in the reels viewer, and a swipe past that video no longer lands on a loading circle that never ends. It starts off (issue #161).
 * **Facebook:** New switch, `Hide the status bar`, under Appearance with the other bar switches. The phone's status bar with the time and battery goes from Facebook's main screen, so the feed gets the whole screen, and a swipe down from the top edge shows it for a moment. It starts off (issue #124).
 
 * **Facebook:** New patch, `Open comments at full height`. With its switch under Comments on, the comment sheet opens all the way up instead of stopping part way, on posts, videos, reels and stories. On reels and videos, the Comment button opens that sheet instead of the split view with the video on top, and the reel Facebook keeps showing above the comments, on the Reels tab too, is hidden so they get the whole sheet. It starts off (issue #179).
@@ -70,6 +98,8 @@ Changes in each Hushfacebook version, newest first.
 * **Tooling:** The device audit starts Facebook through the launcher entry the phone has turned on, so a run, and the phone smoke walk, still work after you pick another app icon. They read the entry from the phone, never change a component, and stop before touching any setting if they find none or more than one.
 
 * **Tooling:** The device audit's walk gets through a test account with no profile picture and the pages Facebook's links open now. Notifications restored partway down, the profile's Add profile picture button and the Menu opened as a page of its own all count as arrived. A row that repeats its label on a part inside it, like the Menu's Settings and privacy, can be tapped, and the tap still has to land inside that row.
+* **Tooling:** The device audit's Watch and Shorts stops no longer hang on a playing reel. The phone can't read a screen while a video plays, so the walk now proves the reel viewer from Facebook's own screen state: the right screen in front and the reel page showing, with nothing hiding it. A reel stop still takes swipes and Back but never a tap, since a second tap likes the reel.
+* **Tooling:** The device audit's walk no longer types stray letters into Facebook search. Search opens with the keyboard up, and the walk's swipes across it were typing into the search box. The walk now sends no swipe or tap while a keyboard is open. A new search step types one fixed word and submits it, so the search hooks run on purpose instead of by accident. Typing anything else, or typing at any other step, is refused.
 
 * **Tooling:** The script contract tests pass on a published index again. Their check that the release facts refuse a second Facebook build swapped one into the CHANGELOG part of the index, which the facts check skips on purpose, so it failed as soon as a changelog bullet named the target build. It now swaps it into the facts.
 
