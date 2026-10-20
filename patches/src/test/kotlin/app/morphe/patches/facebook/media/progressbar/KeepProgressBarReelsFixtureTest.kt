@@ -712,6 +712,55 @@ class KeepProgressBarReelsFixtureTest {
     }
 
     @Test
+    fun `each declared build tells the extension of each registry ask and of a reel with no scrubber`() = bundles { bundle ->
+        val name = bundle.name
+        val base = scrubber(bundle).progress.base
+        val holders = FixtureDex.classesHolding(bundle, NEW_REELS_UNIT_SHOWN).filterNot { it.type.startsWith(EXTENSION_CLASSES) }
+        val handOver = reelHandOver(holders, base.type)
+        val returns = registryReturns(handOver)
+        val owner = holders.single { it.type == handOver.method.definingClass }
+        val where = "$name: ${owner.type}->${handOver.method.name}"
+        val original = handOver.method.code()
+        // #120: a reel that froze with another reel's bar logged no hand-over, so the registry returned at
+        // its hide flag or for want of a scrubber holder, both ahead of the hand-over's hook.
+        assertTrue("$where: the flag's test isn't ahead of the holder's", returns.test < returns.noHolder)
+        assertTrue("$where: the holder's test isn't ahead of the hand-over", returns.noHolder < handOver.at)
+
+        val context = PatchContexts.of(listOf(owner))
+        val method = context.mutableClassDefBy(owner.type).methods.single { it.sameAs(handOver.method) }
+        method.notesNoScrubber(returns)
+        method.notesRegistryAsk(returns)
+        val patched = method.code()
+        val test = returns.test
+        val none = returns.noHolder + 1
+        assertEquals("$where gains three instructions", original.size + 3, patched.size)
+        assertEquals("$where: the extension is asked at the flag's test", REGISTRY_ASKS, patched[test].reference())
+        val ask = patched[test] as FiveRegisterInstruction
+        assertEquals("$where: with the flag and the reel's key", listOf(2, returns.flag, returns.key),
+            listOf(ask.registerCount, ask.registerC, ask.registerD))
+        assertEquals("$where: Facebook's test of the flag comes right after", Opcode.IF_EQZ, patched[test + 1].opcode)
+        assertEquals("$where: Facebook's return after hiding every bar", Opcode.RETURN_VOID, patched[test + 3].opcode)
+        assertEquals("$where: the holder's test is the hook's", Opcode.IF_NEZ, patched[none].opcode)
+        assertEquals("$where: on the holder", returns.holder, (patched[none] as OneRegisterInstruction).registerA)
+        assertEquals("$where: the extension is told there's no scrubber", NO_SCRUBBER, patched[none + 1].reference())
+        assertEquals("$where: with nothing", 0, (patched[none + 1] as FiveRegisterInstruction).registerCount)
+        assertEquals("$where: Facebook's test for a holder comes right after", Opcode.IF_EQZ, patched[none + 2].opcode)
+        val flow = ControlFlow.of(method)
+        assertEquals("$where: something jumps onto the ask", setOf(test - 1), patched.indices.filter { test in flow.normal[it] }.toSet())
+        assertEquals("$where: something jumps onto the holder's hook", setOf(none - 1),
+            patched.indices.filter { none in flow.normal[it] }.toSet())
+        assertEquals("$where: a holder doesn't go straight on to Facebook's test", setOf(none + 1, none + 2), flow.normal[none].toSet())
+        assertEquals("$where: something jumps onto Facebook's test for a holder", setOf(none, none + 1),
+            patched.indices.filter { none + 2 in flow.normal[it] }.toSet())
+        assertEquals("$where: no holder no longer returns where the hide does", setOf(test + 2, none + 2),
+            patched.indices.filter { test + 3 in flow.normal[it] }.toSet())
+        assertEquals("$where: Facebook's code changed", original.map { it.opcode },
+            patched.indices.filterNot { it in setOf(test, none, none + 1) }.map { patched[it].opcode })
+        extensionHas(where, REGISTRY_ASKS)
+        extensionHas(where, NO_SCRUBBER)
+    }
+
+    @Test
     fun `each declared build reports the light mount and asks the extension for each look first`() = bundles { bundle ->
         val name = bundle.name
         val found = scrubber(bundle)

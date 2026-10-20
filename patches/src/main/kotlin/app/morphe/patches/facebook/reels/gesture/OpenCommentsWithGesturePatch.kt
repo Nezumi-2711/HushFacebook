@@ -18,6 +18,8 @@ import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.facebook.misc.extension.parameterRegister
 import app.morphe.patches.facebook.misc.extension.requireLocals
 import app.morphe.patches.facebook.misc.extension.requireStatusMethod
+import app.morphe.patches.facebook.media.taptoplay.FRAGMENT_ACTIVITY
+import app.morphe.patches.facebook.media.taptoplay.touchDispatches
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.facebook.reels.doubletap.GESTURE_REACTION
 import app.morphe.patches.facebook.reels.doubletap.MUTATE_LIKE
@@ -42,8 +44,8 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 /**
- * Open a reel's comments with a double tap or a long press (issue #179). See GestureAnchors.kt for
- * where each hook goes and what it relies on.
+ * Open a reel's comments with a double tap or a long press, and a feed post's with a long press
+ * (issue #179). See GestureAnchors.kt for where each hook goes and what it relies on.
  *
  * It rides on two patches that are already there. Turn off double tap to like puts the hooks that
  * stop a double tap from liking or showing a heart, which the extension's DoubleTapLike also answers
@@ -56,7 +58,8 @@ val openCommentsWithGesturePatch = bytecodePatch(
     // The README table check reads this literal; PATCH carries the same text for the messages.
     name = "Open comments with a gesture",
     description = "Open a reel's comments with a double tap or a long press, on the sheet the Comment button opens, " +
-        "instead of liking or holding. Starts off. Turn it on in Hushfacebook settings > Reels and Watch.",
+        "instead of liking or holding, and a feed post's with a long press on its photo or name line. Starts off. " +
+        "Turn it on in Hushfacebook settings > Reels and Watch.",
 ) {
     category("Reels")
     dependsOn(settingsPatch, turnOffDoubleTapLikePatch, holdReelFor2xPatch)
@@ -87,6 +90,8 @@ internal class GestureAnchors(
     val heart: Method,
     /** Each long-press handler's invoke, and the Unit field it ends by returning. */
     val handlers: List<LongPressHook>,
+    /** FbFragmentActivity's touch dispatch, where a feed post's long press is timed. */
+    val dispatch: Method,
 )
 
 /** One long-press handler's `invoke` and the static field of the Unit it returns. */
@@ -141,7 +146,12 @@ internal fun BytecodePatchContext.findGestureAnchors(): GestureAnchors {
             ?: refuse("expected ${handler.type}->invoke to return one Unit field, found ${units.size}")
         LongPressHook(invoke, unit)
     }
-    return GestureAnchors(button, click, constructor, itemParameter, doubleTapLike, heart, handlers)
+
+    val activity = classDefByOrNull(FRAGMENT_ACTIVITY) ?: refuse("this build has no $FRAGMENT_ACTIVITY")
+    val dispatches = touchDispatches(activity)
+    val dispatch = dispatches.singleOrNull()
+        ?: refuse("expected $FRAGMENT_ACTIVITY to declare one dispatchTouchEvent(MotionEvent)Z, found ${dispatches.size}")
+    return GestureAnchors(button, click, constructor, itemParameter, doubleTapLike, heart, handlers, dispatch)
 }
 
 internal fun BytecodePatchContext.applyGestureAnchors(anchors: GestureAnchors) {
@@ -216,6 +226,11 @@ internal fun BytecodePatchContext.applyGestureAnchors(anchors: GestureAnchors) {
             ExternalLabel("stock", handler.getInstruction(0)),
         )
     }
+
+    // Every touch on a Facebook screen, with the activity, for a press held on a feed post. The
+    // extension may turn the rest of a gesture it took into a cancel; the range form borrows no register.
+    mutableClassDefBy(FRAGMENT_ACTIVITY).findMutableMethodOf(anchors.dispatch)
+        .addInstruction(0, "invoke-static/range { p0 .. p1 }, $FEED_PRESS")
 }
 
 /** The static Unit fields [invoke] returns: a static read of a field of its own type, returned straight away. */

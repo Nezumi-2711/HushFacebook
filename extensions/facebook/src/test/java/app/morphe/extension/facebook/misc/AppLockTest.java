@@ -249,6 +249,25 @@ public class AppLockTest {
         assertTrue(shadowOf(activity).isTaskMovedToBack());
     }
 
+    /**
+     * Facebook targets API 36, so on Android 16 Back never arrives as a key: the dialog's own back
+     * callback calls onBackPressed instead, and that has to send Facebook away too.
+     */
+    @Test
+    public void backFromTheBackCallbackSendsFacebookAway() {
+        Settings.APP_LOCK.save(true);
+        Activity activity = screen();
+        front(activity);
+        asked.get(0).answer.refused(BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED, "Cancelled");
+        Dialog cover = ShadowDialog.getLatestDialog();
+        assertTrue(AppLock.covered(activity));
+
+        cover.onBackPressed();
+        assertTrue("Back closed the cover", cover.isShowing());
+        assertTrue(AppLock.covered(activity));
+        assertTrue("Back left Facebook in front", shadowOf(activity).isTaskMovedToBack());
+    }
+
     /** Facebook opens a dialog on a locked screen, and the window manager hands it the focus. */
     private static Dialog facebooksDialogOver(Activity activity, Dialog cover) {
         Dialog facebooks = new Dialog(activity);

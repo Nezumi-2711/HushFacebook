@@ -1707,8 +1707,10 @@ public class HushfacebookPreferenceFragmentTest {
             assertEquals("Home shows the same posts as All in the Feeds tab.", String.valueOf(feed.getSummary()));
             pick(feed, "FRIENDS");
             assertEquals(FeedsSubtab.FRIENDS, Settings.HOME_FEED.savedValue());
-            assertEquals("Home shows the same posts as Friends in the Feeds tab. If Facebook doesn't have that feed, "
-                    + "Home shows All.", String.valueOf(feed.getSummary()));
+            assertEquals("Home asks Facebook for the posts Friends shows in the Feeds tab. When there's nothing new "
+                    + "there, Facebook can fill Home with suggested posts and reels, which Hide \"Suggested for you\" "
+                    + "posts and Hide Reels in the feed take out. If Facebook doesn't have that feed, Home shows All.",
+                    String.valueOf(feed.getSummary()));
 
             assertTrue(following.getOnPreferenceChangeListener().onPreferenceChange(following, false));
             Settings.FOLLOWING_FEED_HOME.save(false);

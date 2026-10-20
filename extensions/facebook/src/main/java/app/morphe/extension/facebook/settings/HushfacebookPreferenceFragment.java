@@ -1257,12 +1257,16 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
 
     /**
      * What Home shows with [feed], for the row's summary. A filter Facebook hasn't got leaves Home
-     * on All, so the summary says so rather than promise the filter.
+     * on All, so the summary says so rather than promise the filter. Home only asks for the filter:
+     * on the S22 (583, 2026-10-20) Home with Friends got 39 suggested posts, 21 ads and 2 friends'
+     * posts in the request that drew it, so the summary names the switches that take those out.
      */
     static String homeFeedSummary(FeedsSubtab feed) {
         if (feed == FeedsSubtab.ALL) return L10n.t("Home shows the same posts as All in the Feeds tab.");
-        return L10n.f("Home shows the same posts as %1$s in the Feeds tab. If Facebook doesn't have that feed, "
-                + "Home shows All.", feedsSubtabLabel(feed));
+        return L10n.f("Home asks Facebook for the posts %1$s shows in the Feeds tab. When there's nothing new "
+                + "there, Facebook can fill Home with suggested posts and reels, which %2$s and %3$s take out. "
+                + "If Facebook doesn't have that feed, Home shows All.", feedsSubtabLabel(feed),
+                SwitchLabels.title(Settings.HIDE_SUGGESTED_FOR_YOU), SwitchLabels.title(Settings.HIDE_FEED_REELS));
     }
 
     /**

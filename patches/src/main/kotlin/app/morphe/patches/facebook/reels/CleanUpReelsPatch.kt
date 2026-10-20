@@ -55,7 +55,8 @@ private const val PATCH = "Clean up Reels"
  * tenth, also off, leaves the Save button out of that sidebar (see ReelSaveButton.kt). An
  * eleventh, also off, opens a video tapped in the feed on its own, with no reels after it (see
  * FeedVideoAlone.kt). A twelfth, also off, leaves the speaker button out of the bottom of the
- * sidebar (see ReelSoundButton.kt).
+ * sidebar (see ReelSoundButton.kt). With Debug logging on, it also reports whether a reel that ends
+ * is on the player the Reels auto-advance controller holds (see ReelBinding.kt), with no switch.
  *
  * Every anchor is a kept name or literal (see ReelAnchors.kt), and every one of them is required: a
  * build where one can't be found stops the patch with what's missing, rather than shipping a switch
@@ -74,7 +75,7 @@ val cleanUpReelsPatch = bytecodePatch(
 ) {
     category("Reels")
     dependsOn(settingsPatch)
-    dependsOn(facebookExtensionPatch, reelLoopPatch)
+    dependsOn(facebookExtensionPatch, reelLoopPatch, reelBindingPatch)
     compatibleWith(*AppCompatibilities.facebook())
 
     execute {

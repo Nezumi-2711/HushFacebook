@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
+import app.morphe.extension.facebook.settings.Settings;
+import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.diagnostics.HookStatus;
 
 /**
@@ -109,6 +111,23 @@ public final class AmoledTheme {
      */
     private static final Set<String> FILL_TOKENS = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList("PRIMARY_UI", "BACKGROUND_PRIMARY_UI")));
+
+    /**
+     * FDS's tokens for a secondary button's fill, such as the Menu's See more and Log out: #333334,
+     * or #46484B for the opaque and floating ones, in dark mode. Route one leaves them as Facebook
+     * drew them, unless Black cards is on ({@link #flatCards}): then the card under one takes the
+     * page's colour, and the button takes an input's fill ({@link #buttonFill}) so it keeps a shape
+     * on the page, issue #191.
+     */
+    private static final Set<String> BUTTON_TOKENS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "SECONDARY_BUTTON_BACKGROUND", "SECONDARY_BUTTON_BACKGROUND_OPAQUE",
+            "SECONDARY_BUTTON_BACKGROUND_FLOATING")));
+
+    /** The largest value a channel of a secondary button's dark fill can have: the opaque one's #46484B. */
+    static final int MAX_BUTTON_CHANNEL = 0x4B;
+
+    /** FDS's dark card, the grey an input's fill is a {@link #FILL_SHIFT} below. */
+    private static final int CARD_GREY = 0xFF333334;
 
     /**
      * FDS's token for the row of an unread notification. Facebook's dark theme gives it a 10% blue,
@@ -275,7 +294,9 @@ public final class AmoledTheme {
      * the background colour, in Facebook's dark mode, or {@code color} unchanged. The background
      * colour itself comes back as it is, from route two's resources. An unread notification's tint
      * comes back stronger ({@link #unreadRow}). On a lighter Background colour the steps are
-     * smaller ({@link #scaled}) and a text role comes back lifted ({@link #foreground}).
+     * smaller ({@link #scaled}) and a text role comes back lifted ({@link #foreground}). With Black
+     * cards on, a raised surface comes back as the background colour and a secondary button's fill
+     * as {@link #buttonFill}.
      */
     public static int apply(int color, Object token) {
         HookStatus.invoked(FamilyNames.AMOLED_THEME);
@@ -283,20 +304,47 @@ public final class AmoledTheme {
             if ((color >>> 24) < NEW_NOTIFICATION_ALPHA) {
                 return token instanceof Enum && DarkMode.on() ? unreadRow(color, ((Enum<?>) token).name()) : color;
             }
+            if (isDarkNeutral(color, MAX_BUTTON_CHANNEL) && token instanceof Enum && DarkMode.on()
+                    && BUTTON_TOKENS.contains(((Enum<?>) token).name())) {
+                return flatCards() ? buttonFill() : color;
+            }
             return step < LIGHTEST_STEP && token instanceof Enum && DarkMode.on()
                     ? foreground(color, ((Enum<?>) token).name())
                     : color;
         }
         if (!(token instanceof Enum) || !DarkMode.on()) return color;
         String name = ((Enum<?>) token).name();
+        if (BUTTON_TOKENS.contains(name)) {
+            return !isDarkNeutral(color, MAX_CHANNEL) && flatCards() ? buttonFill() : color;
+        }
         if (!BACKGROUND_TOKENS.contains(name)) return color;
         if (color == BLACK || color == background) return color;
 
         if (isDarkNeutral(color, MAX_CHANNEL)) return background;
+        boolean fill = FILL_TOKENS.contains(name);
+        if (!fill && flatCards()) return background;
         // Every channel of a grey above the black band is at least MAX_CHANNEL + 1 - MAX_SPREAD,
         // above either shift, so no channel borrows from the next.
-        int shift = FILL_TOKENS.contains(name) ? FILL_SHIFT : RAISED_SHIFT;
+        int shift = fill ? FILL_SHIFT : RAISED_SHIFT;
         return raise(background, scaled(color - shift * 0x010101));
+    }
+
+    /**
+     * Whether Black cards is on (issue #191): a card, a comment or a popover takes the page's
+     * colour rather than the near black of {@link #RAISED_SHIFT}. Off until the settings are ready,
+     * and while Hushfacebook is paused.
+     */
+    static boolean flatCards() {
+        return Utils.settingsReady() && Settings.AMOLED_FLAT_CARDS.get();
+    }
+
+    /**
+     * A secondary button's fill with Black cards on: what an input's fill is ({@link #FILL_SHIFT}
+     * below a card's grey, #262627 on black), so a button that sat on a card still shows once the
+     * card is gone into the page.
+     */
+    static int buttonFill() {
+        return raise(background, scaled(CARD_GREY - FILL_SHIFT * 0x010101));
     }
 
     /**
@@ -413,6 +461,74 @@ public final class AmoledTheme {
     }
 
     /**
+     * Route three for a colour Facebook writes into its code for its dark theme only, issue #191:
+     * the patch sends here each colour {@code const} that is the first thing Facebook does once its
+     * own dark check said yes. The Create story tile at the start of the stories tray is #333334
+     * written that way, a card's grey above the greys route three blackens, so it stayed grey with
+     * every other card gone black.
+     *
+     * <p>With Material You in the build, its stand-in for the same {@code const} comes after this
+     * one, so it gets the page's colour this gives, and black stays black there.
+     *
+     * @return the background colour for a card's grey, up to {@link #MAX_SERVER_CARD_CHANNEL} as
+     * route four takes one with no token, with Black cards on, in Facebook's dark mode, otherwise
+     * {@code color}. Black stays black, and so does a lighter grey such as a popover's #3B3C3E.
+     */
+    public static int darkBranch(int color) {
+        HookStatus.invoked(FamilyNames.AMOLED_THEME);
+        if (color == BLACK || !isDarkNeutral(color, MAX_SERVER_CARD_CHANNEL) || !DarkMode.on() || !flatCards()) return color;
+        return background;
+    }
+
+    /** The colour resource the patch adds, which holds the Background colour, for {@link #tokenResource}. */
+    static final String PAGE_COLOUR = "hushfacebook_amoled_page";
+
+    /** {@link #PAGE_COLOUR}'s id: 0 until {@link #pageColour} looks it up, -1 when the build has none. */
+    private static volatile int pageColourId;
+
+    /**
+     * Route one for a token's colour resource, issue #191. FDS's token lookup (582 {@code
+     * LX/24i;->A02}) answers the colour resource a token's theme attribute points at, and the code
+     * that asked reads the resource itself: the band behind the Menu's Log out button is a drawable
+     * of CARD_BACKGROUND_FLAT's, past every resolver, so it stayed #333334 with Black cards on.
+     * Facebook's dark style points a dozen tokens at that one #333334 resource, cards, buttons and
+     * inputs alike, so a read of it can't tell which token it's for. The patch sends each answer here
+     * with the lookup's context and token instead, and a card's answer becomes a resource of the
+     * page's colour.
+     *
+     * @return {@link #PAGE_COLOUR}'s id for a background token whose colour {@link #apply} makes the
+     * page's, with Black cards on in Facebook's dark mode, otherwise {@code id} as it came. An
+     * input's fill and a button aren't the page's, so they keep theirs, and so does every resource
+     * when the build has no {@link #PAGE_COLOUR}.
+     */
+    public static int tokenResource(int id, @Nullable Context context, Object token) {
+        if (id == 0 || context == null || !(token instanceof Enum) || !DarkMode.on() || !flatCards()) return id;
+        if (!BACKGROUND_TOKENS.contains(((Enum<?>) token).name())) return id;
+        int color;
+        try {
+            color = context.getColor(id);
+        } catch (Resources.NotFoundException notAColour) {
+            return id;
+        }
+        if (color == background || apply(color, token) != background) return id;
+        int page = pageColour(context);
+        return page > 0 ? page : id;
+    }
+
+    /** {@link #PAGE_COLOUR}'s id, looked up once. */
+    private static int pageColour(Context context) {
+        int id = pageColourId;
+        if (id != 0) return id;
+        id = context.getResources().getIdentifier(PAGE_COLOUR, "color", context.getPackageName());
+        pageColourId = id = id != 0 ? id : -1;
+        return id;
+    }
+
+    static void forgetPageColourForTests() {
+        pageColourId = 0;
+    }
+
+    /**
      * Route four: a colour that the server sends as text.
      *
      * <p>The patch replaces each call to {@link Color#parseColor} in the app with a call to this
@@ -452,11 +568,13 @@ public final class AmoledTheme {
         return isDarkNeutral(color, MAX_SERVER_CARD_CHANNEL) && DarkMode.on();
     }
 
-    /** Route four's rule for a colour that comes with no token. */
+    /** Route four's rule for a colour that comes with no token. With Black cards on, a card's grey takes the page's colour too. */
     private static int withoutToken(int color) {
         if (!ownsWithoutToken(color)) return color;
         if (color == BLACK || color == background) return color;
-        return isDarkNeutral(color, MAX_CHANNEL) ? background : raise(background, scaled(color - RAISED_SHIFT * 0x010101));
+        return isDarkNeutral(color, MAX_CHANNEL) || flatCards()
+                ? background
+                : raise(background, scaled(color - RAISED_SHIFT * 0x010101));
     }
 
     /**

@@ -77,6 +77,7 @@ import app.morphe.extension.facebook.feed.FindFriendsCard;
 import app.morphe.extension.facebook.feed.SeenPostsForTests;
 import app.morphe.extension.facebook.feed.FeedsHeader;
 import app.morphe.extension.facebook.feed.FollowingHome;
+import app.morphe.extension.facebook.feed.GroupPosts;
 import app.morphe.extension.facebook.feed.ReturnRefresh;
 import app.morphe.extension.facebook.feed.FeedGuardForTests;
 import app.morphe.extension.facebook.feed.MetaAiQuestions;
@@ -104,6 +105,7 @@ import app.morphe.extension.facebook.media.ResumePlaybackForTests;
 import app.morphe.extension.facebook.media.TapToPlay;
 import app.morphe.extension.facebook.media.TapToPlayForTests;
 import app.morphe.extension.facebook.media.TapToSeek;
+import app.morphe.extension.facebook.menu.MenuPanel;
 import app.morphe.extension.facebook.menu.MenuSectionsForTests;
 import app.morphe.extension.facebook.misc.MetaUpsells;
 import app.morphe.extension.facebook.misc.AnalyticsUploads;
@@ -143,10 +145,13 @@ import app.morphe.extension.facebook.reels.ReelMidCardsForTests;
 import app.morphe.extension.facebook.reels.ReelPrompts;
 import app.morphe.extension.facebook.reels.SeenStateSendForTests;
 import app.morphe.extension.facebook.search.MetaAiSearchForTests;
+import app.morphe.extension.facebook.search.PreSearchSectionsForTests;
 import app.morphe.extension.facebook.stories.StoryAdvance;
 import app.morphe.extension.facebook.stories.StorySeenForTests;
 import app.morphe.extension.facebook.stories.StoryUpload;
 import app.morphe.extension.facebook.stories.SuggestedStoriesForTests;
+import app.morphe.extension.facebook.theme.AmoledTheme;
+import app.morphe.extension.facebook.theme.DarkMode;
 import app.morphe.extension.facebook.theme.ForceDarkModeForTests;
 import app.morphe.extension.facebook.updates.UpdatePrompts;
 import app.morphe.extension.shared.SettingsContextRule;
@@ -247,6 +252,9 @@ public class PausedHooksTest {
     /** Stands in for Facebook's icon enum, whose constants the reel sidebar walks one button each. */
     private enum SidebarIcon { LIKE, BOOKMARK }
 
+    /** Stands in for FDS's colour token enum: the theme goes by the constant's name. */
+    private enum Surface { CARD_BACKGROUND }
+
     @After
     public void restore() {
         PauseForTests.resume();
@@ -270,6 +278,7 @@ public class PausedHooksTest {
         probes.put(Settings.CHECK_FOR_RELEASES, ReleaseCheckForTests::aStartAsksGitHub);
         probes.put(Settings.SAVED_SHORTCUT, SavedShortcutTest::aStartPublishes);
         probes.put(Settings.WATCH_HISTORY_SHORTCUT, WatchHistoryShortcutTest::aStartPublishes);
+        probes.put(Settings.FREE_STUFF_SHORTCUT, FreeStuffShortcutTest::aStartPublishes);
         // A start puts the Hushfacebook settings shortcut in the launcher icon's menu.
         probes.put(Settings.SETTINGS_SHORTCUT, SettingsEntryTest::aStartPublishes);
         // A finger on the logo is timed for a long press, and the Menu list gets the Hushfacebook row.
@@ -345,6 +354,11 @@ public class PausedHooksTest {
                         FeedGuardForTests.recommendationContext(true)),
                 () -> FeedGuardForTests.hides(Category.ORGANIC, TypedFeedUnit.peopleYouMayKnow()),
                 () -> FeedGuardForTests.hides(Category.ORGANIC, TypedFeedUnit.suggestedGroups()),
+                // A friend's post in a public group you're not in.
+                () -> FeedGuardForTests.hidesGroupPost(Category.ORGANIC, FeedGuardForTests.group(),
+                        FeedGuardForTests.JoinState.CAN_JOIN),
+                // Home is asked for each group's join state where Facebook wouldn't ask.
+                () -> GroupPosts.askForJoinState(false),
                 // A row of Stories from people you aren't connected to.
                 () -> FeedGuardForTests.hides(Category.ORGANIC, FeedGuardForTests.storiesRow(true)),
                 // Your own profile's People you may know carousel builds nothing.
@@ -352,7 +366,9 @@ public class PausedHooksTest {
                 // A post opened from a notification is asked for without its list of more posts.
                 () -> !NotificationFooter.show(true),
                 // The end of the feed is built without its Find friends card.
-                () -> FindFriendsCard.unit("card") == null));
+                () -> FindFriendsCard.unit("card") == null,
+                // The search screen draws its For you section as an empty row.
+                PreSearchSectionsForTests::drawsForYouEmpty));
         // Each of the feed's two Stories tray adapters, and the composer row's, new to the hook,
         // counts no rows.
         probes.put(PatchFamily.STORIES_TRAY, Arrays.asList(
@@ -698,6 +714,11 @@ public class PausedHooksTest {
                 }));
         // Facebook's dark mode controller answers dark where it answered light.
         probes.put(PatchFamily.FORCE_DARK_MODE, Collections.singletonList(ForceDarkModeForTests::forcesDark));
+        // Black cards: a card's dark grey takes the page's black, where the theme alone keeps it near black.
+        probes.put(PatchFamily.AMOLED_THEME, Collections.singletonList(() -> {
+            DarkMode.answer(true);
+            return AmoledTheme.apply(0xFF333334, Surface.CARD_BACKGROUND) == 0xFF000000;
+        }));
         // A request for a post's comments that names no order asks for the chosen one, and with
         // All comments chosen, the menu its answer draws is picked in.
         probes.put(PatchFamily.DEFAULT_COMMENT_ORDER, Arrays.asList(
@@ -753,12 +774,14 @@ public class PausedHooksTest {
                 MessengerHandoffForTests::dropsARing,
                 MessengerHandoffForTests::dropsAMessage));
         // The Menu's Upgrades and Also from Meta groups build nothing, in the section Facebook
-        // draws and in the one carrying what the server sends.
+        // draws and in the one carrying what the server sends, and the side panel gets Facebook's own
+        // Menu instead of the Bloks one.
         probes.put(PatchFamily.MENU_PROMOTIONS, Arrays.asList(
                 MenuSectionsForTests::hidesUpgrades,
                 MenuSectionsForTests::hidesAlsoFromMeta,
                 MenuSectionsForTests::hidesServerUpgrades,
-                MenuSectionsForTests::hidesServerAlsoFromMeta));
+                MenuSectionsForTests::hidesServerAlsoFromMeta,
+                () -> !MenuPanel.bloksPanel(true)));
         // Edits' header flag and both shapes of its pill request, the Threads cross-posting
         // onboarding and the share sheet's Threads and Muse items, the Meta Verified sheet and label, an avatar
         // sticker upsell, Imagine's post button, composer capability and Create story tile, and the

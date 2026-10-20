@@ -34,9 +34,14 @@ import app.morphe.extension.shared.L10n;
  * route that opens many screens keys by the screen it names instead. A key the list doesn't know
  * is carried like any other, so a newer Facebook's tile survives a settings file.
  *
- * <p>The hook writes down each tile the Menu shows, by key and by the name Facebook gives it, so
- * the list offers this person's own tiles in Facebook's words. Before the Menu has been opened
- * the list offers the catalog.
+ * <p>The rows of the Help and support and the Settings and privacy groups ride on the same list
+ * ({@link MenuRows}). They have no deep link to key on, so each is keyed by its group and the id
+ * Facebook gives the row ({@link #rowKey}), {@code help_1188...} or {@code settings_...}. Our own
+ * rows have negative ids and never get a key, so the Hushfacebook settings row always stays.
+ *
+ * <p>The hooks write down each tile and row the Menu shows, by key and by the name Facebook gives
+ * it, so the list offers this person's own tiles in Facebook's words. Before the Menu has been
+ * opened the list offers the catalog.
  */
 public final class MenuTiles {
     private MenuTiles() {
@@ -46,13 +51,21 @@ public final class MenuTiles {
     static final int URL = "url".hashCode();
 
     /**
-     * The longest the saved list gets, in chars, room for every tile in the catalog many times
-     * over and little enough that a settings file holding it beside the other lists still fits.
+     * The longest the saved list gets, in chars, room for every tile in the catalog and every
+     * Help and Settings row many times over, and little enough that a settings file holding it
+     * beside the other lists still fits.
      */
-    public static final int MAX_HIDDEN_CHARS = 512;
+    public static final int MAX_HIDDEN_CHARS = 1024;
 
-    /** At most this many tiles are written down, about a full Menu twice over. */
-    static final int SEEN_LIMIT = 48;
+    /** At most this many tiles and rows are written down, about a full Menu twice over. */
+    static final int SEEN_LIMIT = 96;
+
+    /** The group prefixes of a row's key, in the order the list offers them after the tiles. */
+    static final String HELP = "help";
+    static final String SETTINGS = "settings";
+
+    /** A row's key: its group, an underscore and Facebook's id for the row. */
+    private static final Pattern ROW_KEY = Pattern.compile("(help|settings)_[1-9][0-9]{0,18}");
 
     /** A written-down name is cut to this many chars. */
     static final int NAME_CHARS = 48;
@@ -79,10 +92,17 @@ public final class MenuTiles {
 
     /**
      * What the list calls [key]: the name Facebook gave the tile on this phone, else the tile's
-     * usual name, or the key read out in words.
+     * usual name, or the key read out in words. A row's name follows its group's, and a row never
+     * seen on this phone shows its id.
      */
     public static String label(String key) {
         String name = seen().get(key);
+        if (isRowKey(key)) {
+            String row = name != null ? name : key.substring(key.indexOf('_') + 1);
+            return key.startsWith(HELP + "_")
+                    ? L10n.f("Help and support: %s", row)
+                    : L10n.f("Settings and privacy: %s", row);
+        }
         if (name != null) return name;
         switch (key) {
             case "recent_feed": return L10n.t("Feeds");
@@ -234,14 +254,42 @@ public final class MenuTiles {
     }
 
     /**
-     * The tiles the list offers: the ones the Menu has shown, or the catalog before it has, then
-     * any picked earlier that those don't name.
+     * The key of the row Facebook gave [id] in [group] ({@link #HELP} or {@link #SETTINGS}), or
+     * null for an id that isn't one of Facebook's: ours are negative.
+     */
+    @Nullable
+    static String rowKey(String group, long id) {
+        if (id <= 0) return null;
+        String key = group + "_" + id;
+        return ROW_KEY.matcher(key).matches() ? key : null;
+    }
+
+    /** Whether [key] names a Help and support or Settings and privacy row rather than a tile. */
+    static boolean isRowKey(String key) {
+        return ROW_KEY.matcher(key).matches();
+    }
+
+    /** Where [key] goes in the list: tiles first, then Help and support rows, then Settings and privacy's. */
+    private static int place(String key) {
+        if (!isRowKey(key)) return 0;
+        return key.startsWith(HELP + "_") ? 1 : 2;
+    }
+
+    /**
+     * The tiles and rows the list offers: the ones the Menu has shown, or the catalog before it
+     * has, then any picked earlier that those don't name, tiles first, then Help and support's
+     * rows, then Settings and privacy's, each in the order the Menu showed them.
      */
     public static List<String> choices() {
         Set<String> all = new LinkedHashSet<>(seen().keySet());
-        if (all.isEmpty()) all.addAll(CATALOG);
+        boolean tileSeen = false;
+        for (String key : all) tileSeen |= !isRowKey(key);
+        if (!tileSeen) all.addAll(CATALOG);
         all.addAll(hidden());
-        return new ArrayList<>(all);
+        List<String> ordered = new ArrayList<>(all);
+        // A stable sort, so each part keeps the Menu's order.
+        Collections.sort(ordered, (one, other) -> Integer.compare(place(one), place(other)));
+        return ordered;
     }
 
     /**

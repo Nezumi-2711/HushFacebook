@@ -79,8 +79,17 @@ public class ReelGesturesTest {
     }
 
     private final List<Pressed> pressed = new ArrayList<>();
+    /** ReelGestures holds buttons weakly, so the test keeps them, as a reel's views do on a phone. */
+    private final List<Object> buttons = new ArrayList<>();
     private ReelGestures.Opener saved;
     private View view;
+
+    /** A Comment button object that stays alive until the test ends, so a GC can't drop it mid-test. */
+    private Object button() {
+        Object button = new Object();
+        buttons.add(button);
+        return button;
+    }
 
     @Before
     public void setUp() {
@@ -147,7 +156,7 @@ public class ReelGesturesTest {
     public void aDoubleTapWithoutAViewDoesNotLikeEither() {
         ReelGestures.reset();
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         assertTrue(ReelGestures.doubleTap(reel));
         assertTrue(pressed.isEmpty());
         assertTrue(statusLine(), statusLine().contains(ReelGestures.NO_VIEW + " 1"));
@@ -156,7 +165,7 @@ public class ReelGesturesTest {
     @Test
     public void offOrPausedADoubleTapIsFacebooks() {
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         Settings.DOUBLE_TAP_OPENS_COMMENTS.save(false);
         assertFalse(ReelGestures.doubleTap(reel));
         Settings.DOUBLE_TAP_OPENS_COMMENTS.save(true);
@@ -173,7 +182,7 @@ public class ReelGesturesTest {
     @Test
     public void turnOffDoubleTapToLikeStillWins() {
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         Settings.TURN_OFF_DOUBLE_TAP_LIKE.save(true);
         assertFalse(ReelGestures.doubleTap(reel));
         assertTrue(pressed.isEmpty());
@@ -184,7 +193,7 @@ public class ReelGesturesTest {
         Object reel = new Object();
         Object other = new Object();
         Object button = new Object();
-        ReelGestures.remember(new Object(), other);
+        ReelGestures.remember(button(),other);
         ReelGestures.remember(button, reel);
         assertTrue(ReelGestures.longPress(new Handler(reel), new Holder(view)));
         assertEquals(1, pressed.size());
@@ -195,7 +204,7 @@ public class ReelGesturesTest {
     @Test
     public void aLongPressThatCannotOpenCommentsIsFacebooks() {
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         assertFalse("no button for this reel", ReelGestures.longPress(new Handler(new Object()), new Holder(view)));
         assertFalse("no view", ReelGestures.longPress(new Handler(reel), new Holder(null)));
         assertFalse("no holder", ReelGestures.longPress(new Handler(reel), null));
@@ -208,7 +217,7 @@ public class ReelGesturesTest {
     @Test
     public void offOrPausedALongPressIsFacebooks() {
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         Settings.LONG_PRESS_OPENS_COMMENTS.save(false);
         assertFalse(ReelGestures.longPress(new Handler(reel), new Holder(view)));
         Settings.LONG_PRESS_OPENS_COMMENTS.save(true);
@@ -222,7 +231,7 @@ public class ReelGesturesTest {
     @Test
     public void theOtherSwitchDoesNotOpenComments() {
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         Settings.LONG_PRESS_OPENS_COMMENTS.save(false);
         assertFalse(ReelGestures.longPress(new Handler(reel), new Holder(view)));
         Settings.LONG_PRESS_OPENS_COMMENTS.save(true);
@@ -247,7 +256,7 @@ public class ReelGesturesTest {
     @Test
     public void onlyAHandfulOfButtonsAreKept() {
         Object first = new Object();
-        ReelGestures.remember(new Object(), first);
+        ReelGestures.remember(button(),first);
         for (int i = 0; i < 40; i++) ReelGestures.remember(new Object(), new Object());
         assertNull("the oldest was dropped", ReelGestures.buttonFor(first));
     }
@@ -255,7 +264,7 @@ public class ReelGesturesTest {
     @Test
     public void aFailingPressIsReportedAndFacebookGoesOn() {
         Object reel = new Object();
-        ReelGestures.remember(new Object(), reel);
+        ReelGestures.remember(button(),reel);
         ReelGestures.opener = (v, button) -> {
             throw new IllegalStateException("boom");
         };
@@ -274,7 +283,7 @@ public class ReelGesturesTest {
     @Test
     public void rememberingNothingIsHarmless() {
         ReelGestures.remember(null, new Object());
-        ReelGestures.remember(new Object(), null);
+        ReelGestures.remember(button(),null);
         ReelGestures.noteView(null);
         assertNull(ReelGestures.buttonFor(new Object()));
     }

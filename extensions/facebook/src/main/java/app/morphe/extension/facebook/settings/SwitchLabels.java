@@ -27,12 +27,14 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_SUGGESTED_FOR_YOU) return L10n.t("Hide \"Suggested for you\" posts");
         if (setting == Settings.HIDE_PEOPLE_YOU_MAY_KNOW) return L10n.t("Hide \"People you may know\"");
         if (setting == Settings.HIDE_SUGGESTED_GROUPS) return L10n.t("Hide suggested groups");
+        if (setting == Settings.HIDE_GROUP_POSTS_NOT_JOINED) return L10n.t("Hide posts from groups you're not in");
         if (setting == Settings.HIDE_STORIES_YOU_MIGHT_LIKE) return L10n.t("Hide \"Stories you might like\"");
         if (setting == Settings.HIDE_FEED_MEMORIES) return L10n.t("Hide Memories in the feed");
         if (setting == Settings.HIDE_FEED_FRIEND_REQUESTS) return L10n.t("Hide friend requests in the feed");
         if (setting == Settings.HIDE_FRIENDS_LOCATIONS) return L10n.t("Hide friends' locations");
         if (setting == Settings.HIDE_NOTIFICATION_POST_FOOTER) return L10n.t("Hide more posts under notification posts");
         if (setting == Settings.HIDE_FIND_FRIENDS_CARD) return L10n.t("Hide the Find friends card");
+        if (setting == Settings.HIDE_SEARCH_FOR_YOU) return L10n.t("Hide For you in search");
         if (setting == Settings.HIDE_TOP_STORIES_TRAY) return L10n.t("Hide the Stories tray");
         if (setting == Settings.HIDE_STORIES_BETWEEN_POSTS) return L10n.t("Hide Stories between posts");
         if (setting == Settings.HIDE_HOME_COMPOSER) return L10n.t("Hide the composer row");
@@ -179,6 +181,7 @@ final class SwitchLabels {
         if (setting == Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER) return L10n.t("Leave calls and chats to Messenger");
         if (setting == Settings.SAVED_SHORTCUT) return L10n.t("Saved shortcut");
         if (setting == Settings.WATCH_HISTORY_SHORTCUT) return L10n.t("Watch history shortcut");
+        if (setting == Settings.FREE_STUFF_SHORTCUT) return L10n.t("Free stuff shortcut");
         if (setting == Settings.SETTINGS_SHORTCUT) return L10n.t("Settings shortcut on the app icon");
         if (setting == Settings.SETTINGS_LOGO_PRESS) return L10n.t("Open settings from the logo");
         if (setting == Settings.SETTINGS_MENU_ROW) return L10n.t("Settings row in Menu");
@@ -236,6 +239,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_MESSENGER_COUNT) return L10n.t("Hide the Messenger count");
         if (setting == Settings.HIDE_FACEBOOK_LOGO) return L10n.t("Hide the Facebook logo");
         if (setting == Settings.FORCE_DARK_MODE) return L10n.t("Force dark mode");
+        if (setting == Settings.AMOLED_FLAT_CARDS) return L10n.t("Black cards");
         throw new IllegalArgumentException("No individual switch label: " + setting.key);
     }
 }

@@ -16,6 +16,8 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.w3c.dom.Element
+import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * The reads of a colour resource, sent to the extension so light mode can have back what route two
@@ -217,5 +219,18 @@ class ColourCallRerouteTest {
         assertEquals("a name of Facebook's own", null, decodedColourId("fds_surface_background"))
         assertEquals("another type's", null, decodedColourId("dimen_0x7f070012"))
         assertEquals("a partial id", null, decodedColourId("color_0x7f06"))
+    }
+
+    /** Black cards' page colour (#191): one colour resource of the patch's own, holding the colour it's given. */
+    @Test
+    fun `the page's colour is added as a resource of its own`() {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+            .also { it.appendChild(it.createElement("resources")) }
+        addPageColour(document, "#ff000000")
+        val colours = document.documentElement.getElementsByTagName("color")
+        assertEquals(1, colours.length)
+        val colour = colours.item(0) as Element
+        assertEquals(PAGE_COLOUR, colour.getAttribute("name"))
+        assertEquals("#ff000000", colour.textContent)
     }
 }

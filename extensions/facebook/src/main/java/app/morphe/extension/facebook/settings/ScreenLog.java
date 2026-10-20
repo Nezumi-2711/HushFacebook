@@ -31,8 +31,9 @@ import app.morphe.extension.shared.settings.preference.LogBufferManager;
  * <p>Each line keeps the screen's class, the intent's action, and a Meta link's host and path; any
  * other link is written as an outside link and nothing more. A link's query, fragment and user part
  * are never kept, and the report's redaction runs over every line as it does over every section.
- * When Facebook's module download screen closes, its line also says which modules it was fetching
- * and the error it kept. With Debug logging off nothing is recorded.
+ * When Facebook's module download screen closes, its line also says which modules it was fetching,
+ * the error it kept, and what its downloader did ({@link ModuleDownloadEvidence}). With Debug
+ * logging off nothing is recorded.
  */
 final class ScreenLog {
     /** The screens kept, oldest dropped first. */
@@ -121,7 +122,8 @@ final class ScreenLog {
         String error = String.join(" | ", texts);
         if (error.length() > ERROR_LIMIT) error = error.substring(0, ERROR_LIMIT) + "...";
         return "module download closed" + (modules.isEmpty() ? ", modules unknown" : " for " + String.join(", ", modules))
-                + (error.isEmpty() ? ", no error kept" : ", error: " + error);
+                + (error.isEmpty() ? ", no error kept" : ", error: " + error)
+                + ModuleDownloadEvidence.forScreen(modules, SystemClock.elapsedRealtime());
     }
 
     static void add(long at, String line) {
@@ -207,5 +209,6 @@ final class ScreenLog {
         }
         lastScreen = null;
         lastIntent = null;
+        ModuleDownloadEvidence.clearForTests();
     }
 }

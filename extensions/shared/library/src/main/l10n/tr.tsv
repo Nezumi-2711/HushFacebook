@@ -119,6 +119,10 @@ The top bar and the tab bar turn see-through, so the feed shows through them as 
 Force dark mode	Karanlık modu zorla
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row
 Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook has no Dark mode switch. Restart Facebook to see the change.	Facebook'un kendi ayarı ne olursa olsun karanlık kalmasını sağlar. Facebook'ta Karanlık mod anahtarı olmayan tabletler için. Değişikliği görmek için Facebook'u yeniden başlatın.
+# context: switch title under Appearance, shown with the AMOLED black theme; it makes cards, comments and menus pure black like the page
+Black cards	Siyah kartlar
+# context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
+Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	Kartlar ve menüler, onları ayıran neredeyse siyah renk yerine sayfanın kendi rengini alır. Düğmeler ve arama alanları koyu gri dolgusunu korur, böylece onları görmeye devam edersiniz. Değişikliği görmek için Facebook'u yeniden başlatın.
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	Facebook'un yazılarını telefonunuzun yazı tipiyle veya aşağıdan seçtiğiniz bir yazı tipi dosyasıyla gösterir. Değişikliği görmek için Facebook'u yeniden başlatın.
 Font file	Yazı tipi dosyası
 Use your phone's font	Telefonun yazı tipini kullan
@@ -208,6 +212,10 @@ Saved to %1$s	Şuraya kaydedildi: %1$s
 Saved to the gallery	Galeriye kaydedildi
 Saved to %1$s in lower quality than on Facebook	Şuraya Facebook'takinden düşük kalitede kaydedildi: %1$s
 Saved to the gallery in lower quality than on Facebook	Galeriye Facebook'takinden düşük kalitede kaydedildi
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the folder, %2$s the smaller file's quality, such as 480p
+Saved to %1$s at %2$s, since the bigger file is over 512 MB	Büyük dosya 512 MB'ı aştığı için %2$s olarak kaydedildi: %1$s
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the smaller file's quality, such as 480p
+Saved to the gallery at %1$s, since the bigger file is over 512 MB	Büyük dosya 512 MB'ı aştığı için galeriye %1$s olarak kaydedildi
 Saved. Restart Facebook to see the change.	Kaydedildi. Değişikliği görmek için Facebook'u yeniden başlatın.
 Saves your switches and download choices to a file, to back up or copy to another phone. Pause, Debug logging and the update check aren't included.	Anahtarlarınızı ve indirme seçimlerinizi bir dosyaya kaydeder; yedeklemek veya başka bir telefona taşımak için. Duraklat, Hata ayıklama günlüğü ve güncelleme denetimi dahil değildir.
 # The release check: its switch and Check now row under Updates, the status card's line about a newer release, and what a failed try says.
@@ -969,8 +977,8 @@ The Feeds tab will open on %1$s.	Akışlar sekmesi %1$s filtresinde açılacak.
 # context: title of the list under Following feed on Home that picks which Feeds tab filter Home shows
 Home shows	Ana Sayfa'da gösterilen
 Home shows the same posts as All in the Feeds tab.	Ana Sayfa, Akışlar sekmesindeki Tümü ile aynı gönderileri gösterir.
-# context: %1$s is a Feeds tab filter's name, like Friends or Groups
-Home shows the same posts as %1$s in the Feeds tab. If Facebook doesn't have that feed, Home shows All.	Ana Sayfa, Akışlar sekmesindeki %1$s ile aynı gönderileri gösterir. Facebook'ta bu akış yoksa Ana Sayfa Tümü'nü gösterir.
+# context: %1$s is a Feeds tab filter's name, like Friends or Groups; %2$s is the Hide "Suggested for you" posts switch and %3$s the Hide Reels in the feed switch
+Home asks Facebook for the posts %1$s shows in the Feeds tab. When there's nothing new there, Facebook can fill Home with suggested posts and reels, which %2$s and %3$s take out. If Facebook doesn't have that feed, Home shows All.	Ana Sayfa, Akışlar sekmesinde %1$s filtresinin gösterdiği gönderileri Facebook'tan ister. Orada yeni bir şey yoksa Facebook Ana Sayfa'yı önerilen gönderiler ve reels videolarıyla doldurabilir. %2$s ve %3$s bunları kaldırır. Facebook'ta bu akış yoksa Ana Sayfa Tümü'nü gösterir.
 # context: settings import preview; %1$s is the Following feed on Home switch, %2$s a Feeds tab filter
 With %1$s on, Home will show the same posts as %2$s in the Feeds tab.	%1$s açıkken Ana Sayfa, Akışlar sekmesindeki %2$s ile aynı gönderileri gösterecek.
 Saved	Kaydedilenler
@@ -1000,7 +1008,7 @@ Tap Resume, then restart Facebook.	Devam et'e dokunun, ardından Facebook'u yeni
 Turn off haptics	Dokunsal titreşimi kapat
 Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard and phone vibrations aren't affected.	Facebook'un dokunma veya kaydırma sırasında yaptığı küçük titreşimleri durdurur. Klavyenizin ve telefonunuzun titreşimleri etkilenmez.
 Turn off screen transitions	Ekran geçişlerini kapat
-Tabs, the Menu and screens that open over Facebook appear at once instead of sliding in. Swiping between tabs still works.	Sekmeler, Menü ve Facebook'un üzerinde açılan ekranlar kayarak gelmek yerine hemen görünür. Sekmeler arasında kaydırma yine çalışır.
+Tabs, the Menu, photos and screens that open over Facebook appear at once instead of sliding or zooming in. Swiping between tabs still works.	Sekmeler, Menü, fotoğraflar ve Facebook'un üzerinde açılan ekranlar kayarak ya da yakınlaşarak gelmek yerine hemen görünür. Sekmeler arasında kaydırma yine çalışır.
 Unlock app icons	Uygulama simgelerinin kilidini aç
 Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	Facebook'un Facebook Plus'a ayırdığı uygulama simgelerini, Facebook'un Uygulama simgesi sayfasında seçmenizi sağlar. Uygulama simgesi seç satırı bu sayfayı açar. Bunu kapatsanız da seçiminiz kalır, geri dönmek için önce mavi olanı seçin.
 # context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
@@ -1640,6 +1648,10 @@ Moves Download to phone and Save photo from the end of a post's three-dot menu t
 Menu tiles to hide	Gizlenecek Menü kutucukları
 # context: title of the list of Menu tiles to hide
 Hide from the Menu	Menüden gizle
+# context: a row's name in the list of Menu tiles to hide; "Help and support" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Report a problem
+Help and support: %s	Yardım ve destek: %s
+# context: a row's name in the list of Menu tiles to hide; "Settings and privacy" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Orders and payments
+Settings and privacy: %s	Ayarlar ve gizlilik: %s
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's short videos
 Reels	Reels
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the games section
@@ -1667,7 +1679,7 @@ Long press opens comments	Basılı tutma yorumları açar
 # context: summary of the double tap switch
 A double tap on a reel opens its comments instead of liking it. Turn off double tap to like still wins when it's on. Off by default, since it hasn't been tried on a real account yet.	Bir reel'e çift dokunmak, onu beğenmek yerine yorumlarını açar. "Beğenmek için çift dokunmayı kapat" açıksa o ayar önceliklidir. Varsayılan olarak kapalıdır, çünkü henüz gerçek bir hesapta denenmedi.
 # context: summary of the long press switch
-Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Off by default, since it hasn't been tried on a real account yet.	Bir reel'i basılı tutmak, Facebook'un uzun basma menüsü veya 2x tutma yerine yorumlarını açar. Reel'in daha fazla düğmesi o menüyü açmaya devam eder. Varsayılan olarak kapalıdır, çünkü henüz gerçek bir hesapta denenmedi.
+Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Holding a feed post's photo or the line with its name opens that post's comments, and holding its text or a profile picture works as before. Off by default, since it hasn't been tried on a real account yet.	Bir reel'i basılı tutmak, Facebook'un uzun basma menüsü veya 2x tutma yerine yorumlarını açar. Reel'in daha fazla düğmesi o menüyü açmaya devam eder. Akıştaki bir gönderinin fotoğrafını veya adının yazdığı satırı basılı tutmak o gönderinin yorumlarını açar, metnini veya bir profil fotoğrafını basılı tutmak ise eskisi gibi çalışır. Varsayılan olarak kapalıdır, çünkü henüz gerçek bir hesapta denenmedi.
 # context: switch title under Downloads; the switch adds the post menu row "Open in another app" to feed and Watch videos
 Open videos in another app	Videoları başka uygulamada aç
 # context: summary of that switch; "Open in another app" is the menu row; VLC and Web Video Caster are app names, keep them
@@ -1719,3 +1731,25 @@ A video you tap in the feed opens full screen by itself, with no reels to swipe 
 Hide the new comments pop-up	Yeni yorumlar açılır bildirimini gizle
 # context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
 The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	Yorumları okurken “yeni yorumlar” baloncuğu artık çıkmaz. Yeni yorumlar listede görünmeye devam eder.
+# context: the name of a launcher shortcut and a Menu row that open Marketplace's free listings (Facebook's website calls that category Free Stuff)
+Free stuff	Ücretsiz ürünler
+Free stuff shortcut	Ücretsiz ürünler kısayolu
+Free stuff isn't available in this build.	Ücretsiz ürünler bu sürümde kullanılamıyor.
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room, and a Free stuff row in Settings and privacy. Existing shortcuts stay.	Facebook simgesine basılı tutunca açılan menüye, yer varsa Ücretsiz ürünler seçeneğini (ücretsiz Marketplace ilanları) ve Ayarlar ve gizlilik içine bir Ücretsiz ürünler satırı ekler. Mevcut kısayollar kalır.
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room. Existing shortcuts stay.	Facebook simgesine basılı tutunca açılan menüye, yer varsa Ücretsiz ürünler seçeneğini (ücretsiz Marketplace ilanları) ekler. Mevcut kısayollar kalır.
+# context: row in a video's menu while Skip silent parts is on; the video's silent parts are skipped
+Skip silent parts: on	Sessiz kısımları atla: açık
+# context: the same row after a tap; this one video keeps its silent parts
+Skip silent parts: off for this video	Sessiz kısımları atla: bu videoda kapalı
+# context: short message after tapping the row; this video now plays its silent parts
+Silent parts play in this video	Sessiz kısımlar bu videoda oynatılır
+# context: short message after tapping the row again; silent parts are skipped again
+Skipping silent parts again	Sessiz kısımlar yeniden atlanıyor
+# context: switch title under News feed; posts Facebook shows from groups the user hasn't joined, which come with a Join button next to the group's name
+Hide posts from groups you're not in	Üyesi olmadığınız grupların gönderilerini gizle
+# context: summary of that switch; a friend's share of a group post is a post on the friend's own profile that shares a group post, and it stays
+Hides posts from groups you haven't joined, like a friend's post in a public group. Posts from your groups and a friend's share of a group post stay.	Katılmadığınız grupların gönderilerini gizler, örneğin bir arkadaşınızın herkese açık bir gruptaki gönderisini. Üyesi olduğunuz grupların gönderileri ve bir arkadaşınızın paylaştığı grup gönderileri kalır.
+# context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
+Hide For you in search	Aramada Sizin İçin bölümünü gizle
+# context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
+Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	Aramayı açtığınızda Facebook'un önerdiği Sizin İçin aramalarını gizler. Son aramalarınız ve yazarken çıkan öneriler kalır.

@@ -54,8 +54,9 @@ private const val COPY_OF = "$IMMUTABLE_LIST->copyOf(Ljava/util/Collection;)$IMM
 val hushfacebookInTheMenuPatch = bytecodePatch(
     name = "Hushfacebook in the Menu",
     description = "Adds a Hushfacebook settings row to Facebook's Menu, at the end of Settings and privacy, so " +
-        "the settings are easy to find. A Saved row joins it while the Saved shortcut switch is on, and a Watch " +
-        "history row while the Watch history shortcut switch is. On by default. Turn it off with Settings row in Menu in Hushfacebook settings > Menu, unless it's the last " +
+        "the settings are easy to find. A Saved row joins it while the Saved shortcut switch is on, a Watch " +
+        "history row while the Watch history shortcut switch is, and a Free stuff row, Marketplace's free listings, " +
+        "while the Free stuff shortcut switch under Marketplace is. On by default. Turn it off with Settings row in Menu in Hushfacebook settings > Menu, unless it's the last " +
         "way into the settings still on.",
     default = true,
 ) {

@@ -8,7 +8,10 @@ import app.morphe.ExtensionDex
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patches.facebook.feed.FixtureDex
+import app.morphe.patches.facebook.media.taptoplay.FRAGMENT_ACTIVITY
 import app.morphe.patches.facebook.media.taptoplay.MOTION_EVENT
+import app.morphe.patches.facebook.media.taptoplay.touchDispatches
+import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.facebook.reels.doubletap.GESTURE_REACTION
@@ -33,6 +36,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -82,6 +86,7 @@ class OpenCommentsFixtureTest {
         val handlers: List<ClassDef>,
         val attachmentClass: ClassDef,
         val owners: List<ClassDef>,
+        val activity: ClassDef,
     )
 
     /** The classes the patch reads in [bundle], each the only one of its kind. */
@@ -114,7 +119,9 @@ class OpenCommentsFixtureTest {
         val attachmentClass = FixtureDex.classesHolding(bundle, HEART_RISE).single { owner ->
             owner.methods.any { isAttachmentDoubleTap(it, doubleTapLike) }
         }
-        return Found(helper, doubleTapLike, component, view, heart, button, click, handlers, attachmentClass, owners)
+        val activity = FixtureDex.classes(bundle, setOf(FRAGMENT_ACTIVITY)).getValue(FRAGMENT_ACTIVITY)
+        assertEquals("$name: FbFragmentActivity's touch dispatches", 1, touchDispatches(activity).size)
+        return Found(helper, doubleTapLike, component, view, heart, button, click, handlers, attachmentClass, owners, activity)
     }
 
     @Test
@@ -163,7 +170,7 @@ class OpenCommentsFixtureTest {
             for (bundle in bundles) {
                 val name = bundle.name
                 val found = read(bundle)
-                val classes = (listOf(found.helper, found.component, found.view, found.attachmentClass, found.button) +
+                val classes = (listOf(found.helper, found.component, found.view, found.attachmentClass, found.button, found.activity) +
                     found.owners + found.handlers).distinctBy { it.type } +
                     ExtensionDex.classDef(SETTINGS_STATUS) + ExtensionDex.classDef(REEL_GESTURES)
                 val context = PatchContexts.of(classes)
@@ -179,6 +186,7 @@ class OpenCommentsFixtureTest {
                 val heartBefore = anchors.heart.code()
                 val doubleTapBefore = anchors.doubleTapLike.code()
                 val constructorBefore = anchors.constructor.code()
+                val dispatchBefore = anchors.dispatch.code()
                 context.applyGestureAnchors(anchors)
 
                 fun patched(method: Method): Method =
@@ -225,6 +233,16 @@ class OpenCommentsFixtureTest {
                         before.getValue(hook.invoke.definingClass).map { it.opcode }, handler.drop(5).map { it.opcode })
                 }
 
+                // Every touch: the activity and the event (p0 and p1) handed over first, the rest Facebook's.
+                val dispatch = patched(anchors.dispatch)
+                val touch = dispatch.code()
+                assertEquals("$name: the touch hook", FEED_PRESS, touch[0].call.toString())
+                val range = touch[0] as RegisterRangeInstruction
+                assertEquals("$name: the touch hook's registers", listOf(dispatch.implementation!!.registerCount - 2, 2),
+                    listOf(range.startRegister, range.registerCount))
+                assertEquals("$name: the rest of the dispatch is Facebook's", dispatchBefore.map { it.opcode },
+                    touch.drop(1).map { it.opcode })
+
                 // The stub in the extension presses the button's click handler.
                 val stub = context.mutableClassDefBy(REEL_GESTURES).methods.single { it.name == OPEN_STUB }.code()
                 assertEquals("$name: the stub's press", "${found.button.type}->${found.click.name}", stub.first { it.opcode == Opcode.INVOKE_STATIC }.call!!.let { it.definingClass + "->" + it.name })
@@ -252,5 +270,13 @@ class OpenCommentsFixtureTest {
         assertEquals(DOUBLE_TAP, shape("doubleTap"))
         assertEquals(LONG_PRESS, shape("longPress"))
         assertEquals("$REEL_GESTURES->$OPEN_STUB(Ljava/lang/Object;Ljava/lang/Object;Z)Z", shape(OPEN_STUB))
+
+        val feed = ExtensionDex.classDef("$EXTENSION_PACKAGE/reels/PostLongPress;")
+        val touch = feed.methods.singleOrNull {
+            it.name == "touch" && AccessFlags.PUBLIC.isSet(it.accessFlags) && it.parameterTypes.firstOrNull()?.toString() == "Landroid/app/Activity;"
+        }
+        assertNotNull("PostLongPress has no public touch(Activity, MotionEvent)", touch)
+        assertTrue("touch isn't static", AccessFlags.STATIC.isSet(touch!!.accessFlags))
+        assertEquals(FEED_PRESS, "${touch.definingClass}->${touch.name}(${touch.parameterTypes.joinToString("")})${touch.returnType}")
     }
 }

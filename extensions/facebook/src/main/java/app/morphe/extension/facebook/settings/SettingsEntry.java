@@ -189,6 +189,7 @@ public final class SettingsEntry {
             publishShortcutNow(app);
             SavedShortcut.refreshNow(app);
             WatchHistoryShortcut.refreshNow(app);
+            FreeStuffShortcut.refreshNow(app);
         });
     }
 
@@ -436,6 +437,7 @@ public final class SettingsEntry {
                 keepFirstNow(app);
                 SavedShortcut.refreshNow(app);
                 WatchHistoryShortcut.refreshNow(app);
+                FreeStuffShortcut.refreshNow(app);
             });
             if (!queued) keepFirstQueued.set(false);
         } catch (Throwable t) {
@@ -717,6 +719,7 @@ public final class SettingsEntry {
             relabelIfStale(activity);
             SavedShortcut.refresh(activity);
             WatchHistoryShortcut.refresh(activity);
+            FreeStuffShortcut.refresh(activity);
         }
 
         @Override

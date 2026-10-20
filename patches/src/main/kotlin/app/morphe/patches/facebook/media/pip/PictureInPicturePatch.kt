@@ -186,6 +186,13 @@ internal const val SHOWN_AGAIN = "$PICTURE_IN_PICTURE->shownAgain(${VIEW}I)V"
  * extension hears each view hidden and keeps how it showed, and the handler's call that shows it
  * again goes through the extension, which puts that back.
  *
+ * A reel floating from the full-screen viewer has the viewer at the root of the window's task, and a
+ * link opened from another app starts that viewer for its page: Android only brought the reel back.
+ * A link that builds Facebook's main screen under its page cleared the window's task instead. The
+ * extension looks at each start first thing in Facebook's launch step (583 `LX/0Oe;->A01`), the
+ * static method every start passes with its context and intent, and gives those two kinds a task of
+ * their own (#126).
+ *
  * A reel's More sheet gets a Picture-in-picture row while the window is armed on its screen, and
  * its tap opens the window at once (#44). A second switch, Only from a reel's More menu, keeps
  * auto-enter off so that row is the only way in; the extension does that part.
@@ -237,6 +244,12 @@ val pictureInPicturePatch = bytecodePatch(
             applyScreenRestore(findScreenRestore(opening))
         } catch (exception: PatchException) {
             patchLog.warning("${exception.message}, so a reel back from the window may show Facebook's switcher button.")
+        }
+        // A page started while a reel floats gets a task of its own (#126); the window works without it.
+        try {
+            applyOwnTask(findLaunchStep())
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so a link opened while a reel floats may bring the reel back instead of its page.")
         }
         // The More sheet row (#44). The fixture tests hold it on every declared build; on another
         // one, leaving Facebook still opens the window, so a miss here is a warning.
@@ -969,4 +982,43 @@ internal fun BytecodePatchContext.applyScreenRestore(restore: ScreenRestore) {
         refuse("${shower.definingClass}->${shower.name} shows a view from past v15")
     }
     shower.replaceInstruction(show, "invoke-static { v${registers.registerC}, v${registers.registerD} }, $SHOWN_AGAIN")
+}
+
+private const val ANDROID_CONTEXT = "Landroid/content/Context;"
+private const val ANDROID_INTENT = "Landroid/content/Intent;"
+
+/**
+ * What Facebook logs when it adds FLAG_ACTIVITY_NEW_TASK to a start from no activity, in its
+ * launcher class's starts (583 `LX/0Oe;`) and the link handler's task stack (583 `LX/7y4;->A0A`).
+ */
+internal const val LAUNCH_WARNING = "Warning: launching intent with a non-Activity Context requires FLAG_ACTIVITY_NEW_TASK, " +
+    "or the Android Runtime will throw a AndroidRuntimeException. Adding the flag to prevent a crash. This might lead to " +
+    "unexpected behavior with the back button. Please pass in an Activity Context."
+
+/** The extension's look at each start's context and intent. */
+internal const val OWN_TASK = "$PICTURE_IN_PICTURE->ownTask($ANDROID_CONTEXT$ANDROID_INTENT)V"
+
+/** Whether [method] is a static (Context, Intent, its own class, Integer) -> Intent method with code. */
+internal fun isLaunchStep(method: Method): Boolean =
+    AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == ANDROID_INTENT && method.implementation != null &&
+        method.parameterTypes.map(CharSequence::toString) ==
+        listOf(ANDROID_CONTEXT, ANDROID_INTENT, method.definingClass, "Ljava/lang/Integer;")
+
+/**
+ * Facebook's launch step (583 `LX/0Oe;->A01`), the one launch step in a class logging
+ * [LAUNCH_WARNING]. Every start of a Facebook screen passes it with the context it starts from and
+ * the intent: startActivity, the starts for a result, startActivities and the link handler's task
+ * stack. It runs Facebook's interceptors on the intent and returns the one to start. Changes nothing.
+ */
+internal fun BytecodePatchContext.findLaunchStep(): Method {
+    val steps = classDefByStrings(LAUNCH_WARNING, StringComparisonType.EQUALS)
+        .filterNot { it.type.startsWith(EXTENSION_CLASSES) }
+        .flatMap { holder -> holder.methods.filter(::isLaunchStep) }
+    return steps.singleOrNull()
+        ?: refuse("expected one launch step in a class logging Facebook's NEW_TASK warning, found ${steps.size}")
+}
+
+/** The extension sees each start's context and intent first, and may give the intent a task of its own (#126). */
+internal fun BytecodePatchContext.applyOwnTask(step: Method) {
+    mutableClassDefBy(step.definingClass).findMutableMethodOf(step).addInstructions(0, "invoke-static { p0, p1 }, $OWN_TASK")
 }

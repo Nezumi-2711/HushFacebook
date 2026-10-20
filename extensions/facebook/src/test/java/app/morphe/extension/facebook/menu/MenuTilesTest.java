@@ -195,6 +195,44 @@ public class MenuTilesTest {
         assertEquals("", Settings.HIDDEN_MENU_TILES.savedValue());
     }
 
+    /** A Help or Settings row keys by its group and Facebook's id; ours, with negative ids, never key. */
+    @Test
+    public void aRowKeysByItsGroupAndIdAndOursNever() {
+        assertEquals("help_1188456", MenuTiles.rowKey(MenuTiles.HELP, 1188456));
+        assertEquals("settings_" + Long.MAX_VALUE, MenuTiles.rowKey(MenuTiles.SETTINGS, Long.MAX_VALUE));
+        assertNull(MenuTiles.rowKey(MenuTiles.HELP, 0));
+        assertNull(MenuTiles.rowKey(MenuTiles.SETTINGS, MenuSettingsRow.ROW_ID));
+        assertNull(MenuTiles.rowKey(MenuTiles.SETTINGS, MenuSettingsRow.SAVED_ROW_ID));
+        assertTrue(MenuTiles.isRowKey("help_12"));
+        assertFalse("a tile's key isn't a row's", MenuTiles.isRowKey("help_center"));
+        assertFalse(MenuTiles.isRowKey("settings_0"));
+        assertFalse(MenuTiles.isRowKey("gaming_12"));
+        assertEquals("rows are kept like tiles", "help_12,gaming,settings_99", MenuTiles.clean("help_12,gaming,settings_99"));
+        assertEquals("Settings and privacy: 42", MenuTiles.label("settings_42"));
+    }
+
+    /** Every row of both groups fits beside every tile of the catalog. */
+    @Test
+    public void everyRowOfBothGroupsFitsBesideTheCatalog() {
+        List<String> keys = new ArrayList<>(MenuTiles.CATALOG);
+        for (int i = 0; i < 30; i++) keys.add(MenuTiles.rowKey(i % 2 == 0 ? MenuTiles.HELP : MenuTiles.SETTINGS, 0x438c058b24a72L + i));
+        assertEquals(MenuTiles.Hidden.SAVED, MenuTiles.hide(keys));
+        assertEquals(keys, new ArrayList<>(MenuTiles.hidden()));
+    }
+
+    /** Rows seen before any tile leave the catalog offered, and the tiles come first whatever the order seen. */
+    @Test
+    public void tilesComeFirstThenHelpThenSettings() {
+        Map<String, String> shown = new LinkedHashMap<>();
+        shown.put("settings_5", "Orders and payments");
+        shown.put("help_9", "Report a problem");
+        shown.put("gaming", "Gaming");
+        shown.put("help_3", "Support");
+        MenuTiles.remember(shown);
+        assertEquals(Arrays.asList("gaming", "help_9", "help_3", "settings_5"), MenuTiles.choices());
+        assertEquals("Help and support: Support", MenuTiles.label("help_3"));
+    }
+
     @Test
     public void everyCatalogTileHasAReadableLabel() {
         for (String key : MenuTiles.CATALOG) {

@@ -159,8 +159,9 @@ final class VideoPages {
                             + "still wins when it's on. Off by default, since it hasn't been tried on a real account yet.")));
             reels.addPreference(toggle(context, Settings.LONG_PRESS_OPENS_COMMENTS,
                     L10n.t("Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The "
-                            + "reel's more button still opens that menu. Off by default, since it hasn't been tried on a real "
-                            + "account yet.")));
+                            + "reel's more button still opens that menu. Holding a feed post's photo or the line with its "
+                            + "name opens that post's comments, and holding its text or a profile picture works as before. "
+                            + "Off by default, since it hasn't been tried on a real account yet.")));
         }
         if (build.contains(PatchFamily.KEEP_REEL_SPEED)) {
             reels.addPreference(toggle(context, Settings.KEEP_REEL_SPEED,

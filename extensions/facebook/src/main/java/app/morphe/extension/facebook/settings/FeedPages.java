@@ -149,6 +149,9 @@ final class FeedPages {
                                 : L10n.t("Hides friend suggestions between posts and on your own profile.")));
                 feed.addPreference(toggle(context, Settings.HIDE_SUGGESTED_GROUPS,
                         L10n.t("Hides the row of groups to join between posts. Posts from groups you're in stay.")));
+                feed.addPreference(toggle(context, Settings.HIDE_GROUP_POSTS_NOT_JOINED,
+                        L10n.t("Hides posts from groups you haven't joined, like a friend's post in a public group. Posts "
+                                + "from your groups and a friend's share of a group post stay.")));
                 feed.addPreference(toggle(context, Settings.HIDE_STORIES_YOU_MIGHT_LIKE,
                         L10n.t("Hides the row of Stories from people you aren't connected to, between posts. Your friends' Stories "
                                 + "and the Stories tray stay.")));

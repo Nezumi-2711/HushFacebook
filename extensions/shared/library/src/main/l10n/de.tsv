@@ -119,6 +119,10 @@ The top bar and the tab bar turn see-through, so the feed shows through them as 
 Force dark mode	Dunkelmodus erzwingen
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row
 Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook has no Dark mode switch. Restart Facebook to see the change.	Hält Facebook immer dunkel, egal was seine eigene Einstellung sagt. Gedacht für Tablets, auf denen Facebook keinen Dunkelmodus-Schalter hat. Starte Facebook neu, um die Änderung zu sehen.
+# context: switch title under Appearance, shown with the AMOLED black theme; it makes cards, comments and menus pure black like the page
+Black cards	Schwarze Karten
+# context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
+Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	Karten und Menüs bekommen die Farbe der Seite statt des fast schwarzen Tons, der sie abhebt. Schaltflächen und Suchfelder behalten eine dunkelgraue Füllung, damit du sie weiterhin siehst. Starte Facebook neu, um die Änderung zu sehen.
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	Zeigt Facebooks Text in der Schrift deines Telefons oder in einer Schriftdatei, die du unten wählst. Starte Facebook neu, um die Änderung zu sehen.
 Font file	Schriftdatei
 Use your phone's font	Schriftart des Handys verwenden
@@ -208,6 +212,10 @@ Saved to %1$s	Gespeichert unter %1$s
 Saved to the gallery	In der Galerie gespeichert
 Saved to %1$s in lower quality than on Facebook	Gespeichert unter %1$s, in geringerer Qualität als auf Facebook
 Saved to the gallery in lower quality than on Facebook	In der Galerie gespeichert, in geringerer Qualität als auf Facebook
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the folder, %2$s the smaller file's quality, such as 480p
+Saved to %1$s at %2$s, since the bigger file is over 512 MB	Gespeichert unter %1$s in %2$s, da die größere Datei über 512 MB groß ist
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the smaller file's quality, such as 480p
+Saved to the gallery at %1$s, since the bigger file is over 512 MB	In der Galerie in %1$s gespeichert, da die größere Datei über 512 MB groß ist
 Saved. Restart Facebook to see the change.	Gespeichert. Starte Facebook neu, um die Änderung zu sehen.
 Saves your switches and download choices to a file, to back up or copy to another phone. Pause, Debug logging and the update check aren't included.	Speichert deine Schalter und Download-Auswahl in einer Datei, zur Sicherung oder für ein anderes Telefon. Pause, Debug-Protokollierung und die Update-Prüfung sind nicht enthalten.
 # The release check: its switch and Check now row under Updates, the status card's line about a newer release, and what a failed try says.
@@ -969,8 +977,8 @@ The Feeds tab will open on %1$s.	Der Feeds-Tab zeigt dann %1$s.
 # context: title of the list under Following feed on Home that picks which Feeds tab filter Home shows
 Home shows	Start zeigt
 Home shows the same posts as All in the Feeds tab.	Start zeigt dieselben Beiträge wie Alle im Feeds-Tab.
-# context: %1$s is a Feeds tab filter's name, like Friends or Groups
-Home shows the same posts as %1$s in the Feeds tab. If Facebook doesn't have that feed, Home shows All.	Start zeigt dieselben Beiträge wie %1$s im Feeds-Tab. Hat Facebook diesen Feed nicht, zeigt Start Alle.
+# context: %1$s is a Feeds tab filter's name, like Friends or Groups; %2$s is the Hide "Suggested for you" posts switch and %3$s the Hide Reels in the feed switch
+Home asks Facebook for the posts %1$s shows in the Feeds tab. When there's nothing new there, Facebook can fill Home with suggested posts and reels, which %2$s and %3$s take out. If Facebook doesn't have that feed, Home shows All.	Start fragt Facebook nach den Beiträgen, die %1$s im Feeds-Tab zeigt. Gibt es dort nichts Neues, kann Facebook Start mit vorgeschlagenen Beiträgen und Reels füllen, die %2$s und %3$s entfernen. Hat Facebook diesen Feed nicht, zeigt Start Alle.
 # context: settings import preview; %1$s is the Following feed on Home switch, %2$s a Feeds tab filter
 With %1$s on, Home will show the same posts as %2$s in the Feeds tab.	Mit %1$s an zeigt Start dann dieselben Beiträge wie %2$s im Feeds-Tab.
 Saved	Gespeichert
@@ -1000,7 +1008,7 @@ Tap Resume, then restart Facebook.	Tippe auf Fortsetzen und starte Facebook dann
 Turn off haptics	Haptik ausschalten
 Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard and phone vibrations aren't affected.	Stoppt die kleinen Vibrationen, die Facebook beim Tippen oder Wischen macht. Tastatur und Telefon vibrieren weiterhin.
 Turn off screen transitions	Bildschirmübergänge ausschalten
-Tabs, the Menu and screens that open over Facebook appear at once instead of sliding in. Swiping between tabs still works.	Tabs, das Menü und Seiten, die sich über Facebook öffnen, erscheinen sofort, ohne einzugleiten. Das Wischen zwischen Tabs funktioniert weiterhin.
+Tabs, the Menu, photos and screens that open over Facebook appear at once instead of sliding or zooming in. Swiping between tabs still works.	Tabs, das Menü, Fotos und Seiten, die sich über Facebook öffnen, erscheinen sofort, ohne einzugleiten oder heranzuzoomen. Das Wischen zwischen Tabs funktioniert weiterhin.
 Unlock app icons	App-Symbole freischalten
 Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	Du kannst auch die App-Symbole wählen, die Facebook für Facebook Plus vorbehält, auf Facebooks Seite „App-Symbol“. Die Zeile „App-Symbol wählen“ öffnet sie. Deine Wahl bleibt, wenn du das ausschaltest. Wähle also zuerst das blaue, um zurückzuwechseln.
 # context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
@@ -1640,6 +1648,10 @@ Moves Download to phone and Save photo from the end of a post's three-dot menu t
 Menu tiles to hide	Menükacheln zum Ausblenden
 # context: title of the list of Menu tiles to hide
 Hide from the Menu	Im Menü ausblenden
+# context: a row's name in the list of Menu tiles to hide; "Help and support" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Report a problem
+Help and support: %s	Hilfe und Support: %s
+# context: a row's name in the list of Menu tiles to hide; "Settings and privacy" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Orders and payments
+Settings and privacy: %s	Einstellungen und Privatsphäre: %s
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's short videos
 Reels	Reels
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the games section
@@ -1667,7 +1679,7 @@ Long press opens comments	Gedrückthalten öffnet Kommentare
 # context: summary of the double tap switch
 A double tap on a reel opens its comments instead of liking it. Turn off double tap to like still wins when it's on. Off by default, since it hasn't been tried on a real account yet.	Doppeltippen auf ein Reel öffnet dessen Kommentare, statt es zu liken. „Doppeltippen zum Liken ausschalten“ hat Vorrang, wenn es an ist. Standardmäßig aus, weil es noch nicht mit einem echten Konto getestet wurde.
 # context: summary of the long press switch
-Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Off by default, since it hasn't been tried on a real account yet.	Ein Reel gedrückt zu halten öffnet dessen Kommentare, statt Facebooks Long-Press-Menü oder das 2x-Halten. Der Mehr-Button des Reels öffnet das Menü weiterhin. Standardmäßig aus, weil es noch nicht mit einem echten Konto getestet wurde.
+Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Holding a feed post's photo or the line with its name opens that post's comments, and holding its text or a profile picture works as before. Off by default, since it hasn't been tried on a real account yet.	Ein Reel gedrückt zu halten öffnet dessen Kommentare, statt Facebooks Long-Press-Menü oder das 2x-Halten. Der Mehr-Button des Reels öffnet das Menü weiterhin. Hältst du das Foto eines Beitrags im Feed oder die Zeile mit seinem Namen gedrückt, öffnen sich die Kommentare dieses Beitrags. Text und Profilbilder gedrückt zu halten funktioniert wie bisher. Standardmäßig aus, weil es noch nicht mit einem echten Konto getestet wurde.
 # context: switch title under Downloads; the switch adds the post menu row "Open in another app" to feed and Watch videos
 Open videos in another app	Videos in einer anderen App öffnen
 # context: summary of that switch; "Open in another app" is the menu row; VLC and Web Video Caster are app names, keep them
@@ -1719,3 +1731,25 @@ A video you tap in the feed opens full screen by itself, with no reels to swipe 
 Hide the new comments pop-up	Pop-up für neue Kommentare ausblenden
 # context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
 The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	Die Blase „neue Kommentare“ erscheint nicht mehr, während du Kommentare liest. Neue Kommentare stehen weiter in der Liste.
+# context: the name of a launcher shortcut and a Menu row that open Marketplace's free listings (Facebook's website calls that category Free Stuff)
+Free stuff	Zu verschenken
+Free stuff shortcut	Verknüpfung „Zu verschenken“
+Free stuff isn't available in this build.	„Zu verschenken“ ist in dieser Version nicht verfügbar.
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room, and a Free stuff row in Settings and privacy. Existing shortcuts stay.	Fügt „Zu verschenken“, also kostenlose Marketplace-Angebote, zum Menü hinzu, das beim langen Drücken des Facebook-Symbols erscheint, wenn Platz ist, sowie eine Zeile „Zu verschenken“ unter Einstellungen und Privatsphäre. Vorhandene Verknüpfungen bleiben.
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room. Existing shortcuts stay.	Fügt „Zu verschenken“, also kostenlose Marketplace-Angebote, zum Menü hinzu, das beim langen Drücken des Facebook-Symbols erscheint, wenn Platz ist. Vorhandene Verknüpfungen bleiben.
+# context: row in a video's menu while Skip silent parts is on; the video's silent parts are skipped
+Skip silent parts: on	Stille Stellen überspringen: an
+# context: the same row after a tap; this one video keeps its silent parts
+Skip silent parts: off for this video	Stille Stellen überspringen: aus für dieses Video
+# context: short message after tapping the row; this video now plays its silent parts
+Silent parts play in this video	Stille Stellen werden in diesem Video abgespielt
+# context: short message after tapping the row again; silent parts are skipped again
+Skipping silent parts again	Stille Stellen werden wieder übersprungen
+# context: switch title under News feed; posts Facebook shows from groups the user hasn't joined, which come with a Join button next to the group's name
+Hide posts from groups you're not in	Beiträge aus Gruppen ausblenden, in denen du nicht bist
+# context: summary of that switch; a friend's share of a group post is a post on the friend's own profile that shares a group post, and it stays
+Hides posts from groups you haven't joined, like a friend's post in a public group. Posts from your groups and a friend's share of a group post stay.	Blendet Beiträge aus Gruppen aus, denen du nicht beigetreten bist, etwa den Beitrag eines Freundes in einer öffentlichen Gruppe. Beiträge aus deinen Gruppen und das Teilen eines Gruppenbeitrags durch einen Freund bleiben.
+# context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
+Hide For you in search	Für dich in der Suche ausblenden
+# context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
+Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	Blendet die Suchen unter „Für dich“ aus, die Facebook vorschlägt, wenn du die Suche öffnest. Deine letzten Suchen und die Vorschläge beim Tippen bleiben.

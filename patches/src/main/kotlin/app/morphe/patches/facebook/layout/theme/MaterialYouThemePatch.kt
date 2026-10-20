@@ -697,20 +697,24 @@ internal const val DARK_BRANCH = "$MATERIAL_YOU->darkBranch(I)I"
  * Route three for the colours Facebook writes into its code for its dark theme only (issue #37): an
  * opaque colour `const` that is the first instruction once [darkCheck] has said yes, as in
  * `invoke-static {..}, darkCheck; move-result vR; if-eqz vR, :light; const vX, colour`. Each goes
- * through [DARK_BRANCH] into the same register right after the `const`. The light branch jumps past
+ * through [target] into the same register right after the `const`. The light branch jumps past
  * it, and so does any jump to what follows the `const`, since a label stays on the instruction it
  * was on. A `const` something else jumps to is left, as it doesn't only run on the dark branch. On
  * 582 the Create story tile at the start of the stories tray is two of these (`LX/3Nj;->invoke`, the
  * AddToStoryTileSplitCardComponentSpec, and `LX/374;->render`), #333334, which isn't one of
  * [SURFACE_FIELDS]. Answers how many it changed.
+ *
+ * AMOLED's Black cards reads the same sites through [AMOLED_DARK_BRANCH] (issue #191), and its call
+ * always answers first: a later call goes in after AMOLED's, and AMOLED's goes in next to the
+ * `const`. So a card's grey Black cards gave the page's colour reaches [DARK_BRANCH] as that colour.
  */
-internal fun BytecodePatchContext.readDarkBranchLiterals(darkCheck: String): Int {
+internal fun BytecodePatchContext.readDarkBranchLiterals(darkCheck: String, target: String = DARK_BRANCH): Int {
     val owners = mutableSetOf<String>()
     classDefForEach { classDef ->
         if (classDef.type.startsWith(EXTENSION_PACKAGE)) return@classDefForEach
         if (classDef.methods.any { it.darkBranchLiterals(darkCheck).isNotEmpty() }) owners += classDef.type
     }
-    return owners.sumOf { type -> mutableClassDefBy(type).methods.sumOf { it.readDarkBranchLiterals(darkCheck) } }
+    return owners.sumOf { type -> mutableClassDefBy(type).methods.sumOf { it.readDarkBranchLiterals(darkCheck, target) } }
 }
 
 /** The indexes of this method's colour `const`s on [darkCheck]'s dark branch, for [readDarkBranchLiterals]. */
@@ -731,14 +735,15 @@ internal fun Method.darkBranchLiterals(darkCheck: String): List<Int> {
 }
 
 /** [readDarkBranchLiterals] for one method. `move-result` takes any register a `const` does. */
-internal fun MutableMethod.readDarkBranchLiterals(darkCheck: String): Int {
+internal fun MutableMethod.readDarkBranchLiterals(darkCheck: String, target: String = DARK_BRANCH): Int {
     val sites = darkBranchLiterals(darkCheck)
     sites.asReversed().forEach { index ->
         val register = getInstruction<OneRegisterInstruction>(index).registerA
+        val amoledFirst = getInstruction<Instruction>(index + 1).referenceText() == AMOLED_DARK_BRANCH
         addInstructions(
-            index + 1,
+            if (amoledFirst) index + 3 else index + 1,
             """
-                invoke-static/range { v$register .. v$register }, $DARK_BRANCH
+                invoke-static/range { v$register .. v$register }, $target
                 move-result v$register
             """,
         )

@@ -8,6 +8,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.ContentProvider;
@@ -625,6 +626,77 @@ public class MediaSaveTest {
         Shadows.shadowOf(Looper.getMainLooper()).idle();
         toast = String.valueOf(ShadowToast.getTextOfLatestToast());
         assertTrue(toast, toast.startsWith("Saved to ") && !toast.contains("lower quality"));
+    }
+
+    /**
+     * A two-hour reel's 720p file was announced at 645 MB and the save ended with nothing, though a
+     * 480p file was on offer. Now each file announced over the cap hands over to the next smaller
+     * one, the report says which, and the toast names the quality saved. Files that state no
+     * quality, and the smaller ones past the first that fits, are never fetched.
+     */
+    @Test
+    public void aSingleFileOverTheCapSavesTheNextSmallerOne() throws InterruptedException {
+        byte[] big = mp4(150_000);
+        serve("/clip_720p.mp4", "video/mp4", big, big.length);
+        byte[] alsoBig = mp4(120_000);
+        serve("/clip_540p.mp4", "video/mp4", alsoBig, alsoBig.length);
+        byte[] fits = mp4(60_000);
+        serve("/clip_480p.mp4", "video/mp4", fits, fits.length);
+        byte[] small = mp4(20_000);
+        serve("/clip_360p.mp4", "video/mp4", small, small.length);
+        serve("/clip.mp4", "video/mp4", small, small.length);
+        MediaDownload.capForTests = 100_000;
+        List<String> candidates = Arrays.asList(origin + "/clip.mp4", origin + "/clip_360p.mp4",
+                origin + "/clip_480p.mp4", origin + "/clip_540p.mp4", origin + "/clip_720p.mp4");
+
+        Thread worker = MediaDownload.start(context, true,
+                MediaDownload.fileJob(context, origin + "/clip_720p.mp4", candidates));
+        worker.join(30_000);
+        assertFalse("the save never finished", worker.isAlive());
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+
+        assertEquals(1, gallery.inserts.size());
+        assertArrayEquals("the gallery didn't get the 480p file", fits, published.toByteArray());
+        assertEquals("a smaller file than the first that fits was fetched", 0, server.hits("/clip_360p.mp4"));
+        assertEquals("a file stating no quality was fetched", 0, server.hits("/clip.mp4"));
+        String toast = String.valueOf(ShadowToast.getTextOfLatestToast());
+        assertTrue(toast, toast.startsWith("Saved to ") && toast.endsWith(" at 480p, since the bigger file is over 512 MB"));
+        String report = LogBufferManager.buildExportText();
+        assertTrue(report, report.contains("the mp4 (720p) file is over the cap (TOO_LARGE (the server announced 150000 "
+                + "bytes"));
+        assertTrue(report, report.contains("saving the smaller mp4 (540p) instead"));
+        assertTrue(report, report.contains("the mp4 (540p) file is over the cap (TOO_LARGE (the server announced 120000 "
+                + "bytes"));
+        assertTrue(report, report.contains("saving the smaller mp4 (480p) instead"));
+        assertEquals("the quality saved goes ahead of the lower-quality note",
+                "Saved to the gallery at 480p, since the bigger file is over 512 MB",
+                MediaDownload.message(context, Downloader.Status.OK, null, null, true, 480));
+    }
+
+    /**
+     * With no smaller file that states its quality, a file over the cap ends as it always did, and
+     * a picked file that states none hands over to nothing, since nothing says another is smaller.
+     */
+    @Test
+    public void aFileOverTheCapWithNothingSmallerIsStillNotSaved() {
+        byte[] big = mp4(150_000);
+        serve("/clip_720p.mp4", "video/mp4", big, big.length);
+        serve("/clip_1080p.mp4", "video/mp4", big, big.length);
+        byte[] small = mp4(20_000);
+        serve("/clip.mp4", "video/mp4", small, small.length);
+        MediaDownload.capForTests = 100_000;
+
+        Downloader.Result result = MediaDownload.fileJob(context, origin + "/clip_720p.mp4",
+                Arrays.asList(origin + "/clip.mp4", origin + "/clip_1080p.mp4", origin + "/clip_720p.mp4"))
+            .run(new MediaStoreWriter(context, true), Downloader.SILENT);
+
+        assertEquals(result.toString(), Downloader.Status.TOO_LARGE, result.status);
+        assertEquals(0, result.smaller);
+        assertEquals(0, server.hits("/clip.mp4"));
+        assertEquals(0, server.hits("/clip_1080p.mp4"));
+        assertNothingWasCreated("a file over the cap with nothing smaller", result);
+        assertNull(MediaDownload.smallerVideo(Arrays.asList(origin + "/clip_360p.mp4"), origin + "/clip.mp4",
+                DownloadQuality.BEST));
     }
 
     /**

@@ -557,7 +557,7 @@
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: Meta AI in Facebook's search. On Facebook 577 and 580 the patch finds three of Facebook's own decisions from kept names and literals. The results page's question of whether to add a Meta AI answer is the one boolean over FbUserSession and SearchResultsMutableContext that both callers of the meta_ai_answer_entities page builder ask first, and the patch answers no there. A page of results is built by one constructor from a list of result modules, whose role is a constant of the enum Facebook loads where it logs a failed GraphQLGraphSearchResultRole parse, and the extension leaves out Meta AI's answer and prompt roles (SEARCH_META_AI_ANSWER with its body, full body and loading state, HCM_SEARCH_META_AI_ANSWER, HCM_RELATED_META_AI_PROMPTS with its loading state, and HCM_SEARCH_AI_MODE) and keeps every other role. The page's name comes along, so the Meta AI tab's own page, the one its builder names search_meta_ai_answer_module, keeps its answer. A suggestion's flag to open Meta AI is the boolean the results router asks GraphSearchQuerySpec before it sends a search to META_AI_TAB, and the patch hands it to the extension where the suggestion parser stores it from the server's reply. The Meta AI button and the results page's Meta AI tab go around all three."
+      "changes": "Written for Hushfacebook: Meta AI in Facebook's search. On Facebook 577 and 580 the patch finds three of Facebook's own decisions from kept names and literals. The results page's question of whether to add a Meta AI answer is the one boolean over FbUserSession and SearchResultsMutableContext that both callers of the meta_ai_answer_entities page builder ask first, and the patch answers no there. A page of results is built by one constructor from a list of result modules, whose role is a constant of the enum Facebook loads where it logs a failed GraphQLGraphSearchResultRole parse, and the extension leaves out Meta AI's answer and prompt roles (SEARCH_META_AI_ANSWER with its body, full body and loading state, HCM_SEARCH_META_AI_ANSWER, HCM_RELATED_META_AI_PROMPTS with its loading state, and HCM_SEARCH_AI_MODE) and keeps every other role. The page's name comes along, so the Meta AI tab's own page, the one its builder names search_meta_ai_answer_module, keeps its answer. A suggestion's flag to open Meta AI is the boolean the results router asks GraphSearchQuerySpec before it sends a search to META_AI_TAB, and the patch hands it to the extension where the suggestion parser stores it from the server's reply. The Meta AI button and the results page's Meta AI tab go around all three. The same folder holds the search screen before anything is typed: on 583 the section naming itself SearchTypeaheadPaginableSection draws each entry of null_state_results_paginating from a module tree it reads off the entry's node, and an empty row when that is null. The patch hands the node and the module to the extension right after the read and keeps its answer, which is null for the entry whose node type is SearchNullStateNativeTemplatesResult and whose rendered_modules string lists TRENDING_QUERY_SUGGESTION, the For you section, while that switch is on. With Debug logging on, the extension also logs each entry's type and module names."
     },
     {
       "paths": [
@@ -600,6 +600,24 @@
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
       "changes": "Written for Hushfacebook: the list of more posts under a post opened from a notification. A post opened from Notifications is fetched with a query whose builder sets show_notification_permalink_footer to a MobileConfig answer, once per query variant, and with it true the server adds a footer of more posts that never passes the feed's edge filter. The patch hands each answer to the extension right where the builder reads it, and the extension answers false while the switch is on."
+    },
+    {
+      "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/suggested/FindFriendsCard.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the Find friends card where the feed runs out of friends' posts. In Facebook 583 the end of the feed is one section whose children builder adds a part for each of its pieces, and the card is the one that names itself EndOfFeedCIUnitSection. The builder reads a string off the section's settings and builds the card only when that string isn't null. The patch finds the one String field read guarded by a null check right before the card's section is created, and hands the string to the extension, which answers null while the switch is on so the card is skipped the way some feed types already skip it."
+    },
+    {
+      "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/suggested/GroupJoinState.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: posts from groups you aren't in. In Facebook 583 a post in a group carries the group as its to field, a Profile model that answers the type name Group, and that model reads viewer_join_state through getCachedEnum as an enum naming CAN_JOIN, CAN_REQUEST, MEMBER and the rest. Facebook's Join button shows for CAN_JOIN and CAN_REQUEST. The patch finds the one GraphQLStory accessor of to by its field key and type tag, the one accessor of viewer_join_state on that model by its key, and the enum by the names its static initializer holds, and fills two extension stubs with calls to them. The extension hides a post whose group answers either Join button state while the switch is on."
     },
     {
       "paths": [
@@ -1109,14 +1127,17 @@
       "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/ScreenTransitions.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/Fingerprints.kt",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/FragmentSlides.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/PagerTabs.kt",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/PhotoPage.kt",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/PhotoZoom.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/TransitionAnchors.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/transitions/TurnOffScreenTransitionsPatch.kt"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: Turn off screen transitions, an idea from De-Vanced's Facebook clean-up patch, written here from Facebook 577, 580 and 581. The activity callbacks the settings patch registers ask Android for no transition as a screen comes to the front and as it closes, and the tab bar's pager controller and the sliding panel ask the extension before they decide to slide. Tab strips inside a screen ask too: the listener Facebook's TabbedViewPagerIndicator puts on each tab, found from the Redex name of the strip's onPageSelected runnable, hands its slide flag to the extension first, and the composer's kept MinutiaeTabbedPickerActivity.setTab calls the pager's two-argument setCurrentItem with no slide while the switch is on."
+      "changes": "Written for Hushfacebook: Turn off screen transitions, an idea from De-Vanced's Facebook clean-up patch, written here from Facebook 577, 580 and 581. The activity callbacks the settings patch registers ask Android for no transition as a screen comes to the front and as it closes, and the tab bar's pager controller and the sliding panel ask the extension before they decide to slide. Tab strips inside a screen ask too: the listener Facebook's TabbedViewPagerIndicator puts on each tab, found from the Redex name of the strip's onPageSelected runnable, hands its slide flag to the extension first, and the composer's kept MinutiaeTabbedPickerActivity.setTab calls the pager's two-argument setCurrentItem with no slide while the switch is on. From Facebook 583, screens opened inside the app ask too: the fragment transaction's setter of its four custom animations, found from the field labels in BackStackRecord's dump, hands each one to the extension, which answers none. The photo viewer's open and close zoom, the Rebound spring the kept SutroPhotoAnimationDialogFragment sets going, is put at its end value at once while the switch is on. The page a multi-photo post's photo opens on, the kept PhotoAnimationDialogFragment, grows its photo with a ValueAnimator method that takes its length as a Long, and its open, close and slide-away methods hand their animators and background fade a long length; each goes through the extension, which answers 0 while the switch is on."
     },
     {
       "paths": [

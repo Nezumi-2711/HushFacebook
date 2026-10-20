@@ -85,6 +85,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_suggested_groups", TRUE);
 
     /**
+     * Posts from groups you aren't in, such as a friend's post in a public group, found by the join
+     * state Facebook's own Join button reads off the group the story was posted to (#195). Posts from
+     * groups you're in and a friend's share of a group post stay. Off until picked.
+     */
+    public static final BooleanSetting HIDE_GROUP_POSTS_NOT_JOINED =
+            new BooleanSetting("hushfacebook_hide_group_posts_not_joined", FALSE);
+
+    /**
      * The row of Stories from people you aren't connected to that Facebook puts between posts,
      * "Stories you might like", found by the flag Facebook's own Discover unit reads for it. A row
      * of your friends' Stories and the Stories tray stay.
@@ -1144,6 +1152,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_meta_ai_in_search", TRUE);
 
     /**
+     * The For you section of searches Facebook suggests, on the search screen before anything is
+     * typed (#80), found by the module name Facebook gives its entry. Recent searches, the search box
+     * and the suggestions while typing stay. Part of Hide suggested and promoted posts, off until picked.
+     */
+    public static final BooleanSetting HIDE_SEARCH_FOR_YOU =
+            new BooleanSetting("hushfacebook_hide_search_for_you", FALSE);
+
+    /**
      * Push notifications Facebook types TOP_TRENDING_VIDEO or PERSONALIZED_REELS: trending videos
      * and reels it picked for you. Off by default, like every notification switch: each one drops a
      * whole kind of notification, so it's yours to turn on.
@@ -1234,6 +1250,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting WATCH_HISTORY_SHORTCUT =
             new BooleanSetting("hushfacebook_watch_history_shortcut", FALSE);
+
+    /**
+     * A launcher shortcut and a Menu row to Marketplace's free listings (the web's Free Stuff
+     * category, which Facebook's link handler opens in Marketplace), added only when the shortcut
+     * won't displace an existing entry (Discussion #52).
+     */
+    public static final BooleanSetting FREE_STUFF_SHORTCUT =
+            new BooleanSetting("hushfacebook_free_stuff_shortcut", FALSE);
 
     /**
      * The Hushfacebook settings shortcut in the menu a long press on Facebook's launcher icon opens
@@ -1585,6 +1609,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting FORCE_DARK_MODE =
             new BooleanSetting("hushfacebook_force_dark_mode", FALSE, true);
+
+    /**
+     * With the AMOLED black theme, a card, a comment or a popover takes the page's colour instead of
+     * the near black that keeps its edge, and a secondary button takes an input's fill so it still
+     * shows ({@link app.morphe.extension.facebook.theme.AmoledTheme}, issue #191). Facebook asks for
+     * colours as each screen builds, so a change shows fully after a restart.
+     */
+    public static final BooleanSetting AMOLED_FLAT_CARDS =
+            new BooleanSetting("hushfacebook_amoled_flat_cards", FALSE, true);
 
     /**
      * The strip some posts carry ("Are you interested in this post?", "Show less", who recently

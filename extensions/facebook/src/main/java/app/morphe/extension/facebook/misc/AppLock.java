@@ -20,7 +20,6 @@ import android.os.SystemClock;
 import android.provider.Settings.Global;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -1108,12 +1107,16 @@ public final class AppLock {
                 window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                 window.setWindowAnimations(0);
             }
-            setOnKeyListener((dialog, keyCode, event) -> {
-                if (keyCode != KeyEvent.KEYCODE_BACK) return false;
-                if (event.getAction() == KeyEvent.ACTION_UP) activity.moveTaskToBack(true);
-                return true;
-            });
             showReason();
+        }
+
+        /**
+         * Back, as a key or as the back callback. Facebook targets API 36, so on Android 16 Back
+         * never arrives as a key: the dialog's own callback calls this instead.
+         */
+        @Override
+        public void onBackPressed() {
+            activity.moveTaskToBack(true);
         }
 
         @Override

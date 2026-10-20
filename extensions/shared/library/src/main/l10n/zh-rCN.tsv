@@ -119,6 +119,10 @@ The top bar and the tab bar turn see-through, so the feed shows through them as 
 Force dark mode	强制深色模式
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row
 Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook has no Dark mode switch. Restart Facebook to see the change.	无论 Facebook 自己的设置如何，都保持 Facebook 为深色。适用于 Facebook 没有深色模式开关的平板。重启 Facebook 后可看到更改。
+# context: switch title under Appearance, shown with the AMOLED black theme; it makes cards, comments and menus pure black like the page
+Black cards	黑色卡片
+# context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
+Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	卡片和菜单改用页面本身的颜色，而不是用来区分它们的近黑色。按钮和搜索框保留深灰色填充，让你仍能看清。重启 Facebook 后可看到更改。
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	用手机的字体显示 Facebook 的文字，或使用你在下方选择的字体文件。重启 Facebook 后可看到更改。
 Font file	字体文件
 Use your phone's font	使用手机的字体
@@ -208,6 +212,10 @@ Saved to %1$s	已保存到 %1$s
 Saved to the gallery	已保存到相册
 Saved to %1$s in lower quality than on Facebook	已保存到 %1$s，画质低于 Facebook 上的画质
 Saved to the gallery in lower quality than on Facebook	已保存到相册，画质低于 Facebook 上的画质
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the folder, %2$s the smaller file's quality, such as 480p
+Saved to %1$s at %2$s, since the bigger file is over 512 MB	已以 %2$s 保存到 %1$s，因为更大的文件超过 512 MB
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the smaller file's quality, such as 480p
+Saved to the gallery at %1$s, since the bigger file is over 512 MB	已以 %1$s 保存到相册，因为更大的文件超过 512 MB
 Saved. Restart Facebook to see the change.	已保存。重启 Facebook 后可看到更改。
 Saves your switches and download choices to a file, to back up or copy to another phone. Pause, Debug logging and the update check aren't included.	把你的开关和下载选项保存到文件中，用于备份或复制到另一部手机。不包括暂停、调试日志和更新检查。
 # The release check: its switch and Check now row under Updates, the status card's line about a newer release, and what a failed try says.
@@ -966,8 +974,8 @@ The Feeds tab will open on %1$s.	“动态”标签页将显示“%1$s”。
 # context: title of the list under Following feed on Home that picks which Feeds tab filter Home shows
 Home shows	主页显示
 Home shows the same posts as All in the Feeds tab.	主页显示与“动态”标签页中“全部”相同的帖子。
-# context: %1$s is a Feeds tab filter's name, like Friends or Groups
-Home shows the same posts as %1$s in the Feeds tab. If Facebook doesn't have that feed, Home shows All.	主页显示与“动态”标签页中“%1$s”相同的帖子。如果 Facebook 没有该动态，主页会显示“全部”。
+# context: %1$s is a Feeds tab filter's name, like Friends or Groups; %2$s is the Hide "Suggested for you" posts switch and %3$s the Hide Reels in the feed switch
+Home asks Facebook for the posts %1$s shows in the Feeds tab. When there's nothing new there, Facebook can fill Home with suggested posts and reels, which %2$s and %3$s take out. If Facebook doesn't have that feed, Home shows All.	主页会向 Facebook 请求“动态”标签页中“%1$s”显示的帖子。那里没有新内容时，Facebook 可能会用推荐的帖子和 Reels 填满主页，%2$s 和 %3$s 可以把它们去掉。如果 Facebook 没有该动态，主页会显示“全部”。
 # context: settings import preview; %1$s is the Following feed on Home switch, %2$s a Feeds tab filter
 With %1$s on, Home will show the same posts as %2$s in the Feeds tab.	开启“%1$s”后，主页将显示与“动态”标签页中“%2$s”相同的帖子。
 Saved	收藏
@@ -996,7 +1004,7 @@ Tap Resume, then restart Facebook.	点按“恢复”，然后重启 Facebook。
 Turn off haptics	关闭触感反馈
 Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard and phone vibrations aren't affected.	停止 Facebook 在你点按或滑动时产生的轻微震动。你的键盘和手机震动不受影响。
 Turn off screen transitions	关闭屏幕转场
-Tabs, the Menu and screens that open over Facebook appear at once instead of sliding in. Swiping between tabs still works.	标签页、菜单和在 Facebook 上方打开的页面会立即出现，而不是滑入。在标签页之间滑动仍然有效。
+Tabs, the Menu, photos and screens that open over Facebook appear at once instead of sliding or zooming in. Swiping between tabs still works.	标签页、菜单、照片和在 Facebook 上方打开的页面会立即出现，而不是滑入或放大。在标签页之间滑动仍然有效。
 Unlock app icons	解锁应用图标
 Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	让你在 Facebook 的“应用图标”页面中选择 Facebook 为 Facebook Plus 保留的应用图标。“选择应用图标”这一行会打开该页面。即使你关闭此项，你的选择也会保留，所以要换回蓝色图标，请先选择蓝色的那个。
 # context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
@@ -1635,6 +1643,10 @@ Moves Download to phone and Save photo from the end of a post's three-dot menu t
 Menu tiles to hide	要隐藏的菜单图块
 # context: title of the list of Menu tiles to hide
 Hide from the Menu	从菜单中隐藏
+# context: a row's name in the list of Menu tiles to hide; "Help and support" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Report a problem
+Help and support: %s	帮助与支持：%s
+# context: a row's name in the list of Menu tiles to hide; "Settings and privacy" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Orders and payments
+Settings and privacy: %s	设置和隐私：%s
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's short videos
 Reels	Reels
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the games section
@@ -1662,7 +1674,7 @@ Long press opens comments	长按打开评论
 # context: summary of the double tap switch
 A double tap on a reel opens its comments instead of liking it. Turn off double tap to like still wins when it's on. Off by default, since it hasn't been tried on a real account yet.	双击 Reels 会打开它的评论，而不是点赞。开启“关闭双击点赞”时，以它为准。默认关闭，因为尚未在真实账号上试过。
 # context: summary of the long press switch
-Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Off by default, since it hasn't been tried on a real account yet.	按住 Reels 会打开它的评论，取代 Facebook 的长按菜单或 2 倍速按住。Reels 的“更多”按钮仍可打开那个菜单。默认关闭，因为尚未在真实账号上试过。
+Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Holding a feed post's photo or the line with its name opens that post's comments, and holding its text or a profile picture works as before. Off by default, since it hasn't been tried on a real account yet.	按住 Reels 会打开它的评论，取代 Facebook 的长按菜单或 2 倍速按住。Reels 的“更多”按钮仍可打开那个菜单。按住动态中帖子的照片或带名字的那一行会打开该帖子的评论，按住文字或头像则和以前一样。默认关闭，因为尚未在真实账号上试过。
 # context: switch title under Downloads; the switch adds the post menu row "Open in another app" to feed and Watch videos
 Open videos in another app	用其他应用打开视频
 # context: summary of that switch; "Open in another app" is the menu row; VLC and Web Video Caster are app names, keep them
@@ -1714,3 +1726,25 @@ A video you tap in the feed opens full screen by itself, with no reels to swipe 
 Hide the new comments pop-up	隐藏新评论弹窗
 # context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
 The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	阅读评论时不再弹出“新评论”气泡。新评论仍会显示在列表中。
+# context: the name of a launcher shortcut and a Menu row that open Marketplace's free listings (Facebook's website calls that category Free Stuff)
+Free stuff	免费物品
+Free stuff shortcut	“免费物品”快捷方式
+Free stuff isn't available in this build.	此版本中没有“免费物品”。
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room, and a Free stuff row in Settings and privacy. Existing shortcuts stay.	如果有空位，把“免费物品”（Marketplace 上的免费商品）添加到长按 Facebook 图标时出现的菜单中，并在“设置和隐私”中添加一行“免费物品”。现有的快捷方式保留。
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room. Existing shortcuts stay.	如果有空位，把“免费物品”（Marketplace 上的免费商品）添加到长按 Facebook 图标时出现的菜单中。现有的快捷方式保留。
+# context: row in a video's menu while Skip silent parts is on; the video's silent parts are skipped
+Skip silent parts: on	跳过无声片段：开
+# context: the same row after a tap; this one video keeps its silent parts
+Skip silent parts: off for this video	跳过无声片段：此视频关闭
+# context: short message after tapping the row; this video now plays its silent parts
+Silent parts play in this video	此视频会播放无声片段
+# context: short message after tapping the row again; silent parts are skipped again
+Skipping silent parts again	已重新跳过无声片段
+# context: switch title under News feed; posts Facebook shows from groups the user hasn't joined, which come with a Join button next to the group's name
+Hide posts from groups you're not in	隐藏你未加入的小组的帖子
+# context: summary of that switch; a friend's share of a group post is a post on the friend's own profile that shares a group post, and it stays
+Hides posts from groups you haven't joined, like a friend's post in a public group. Posts from your groups and a friend's share of a group post stay.	隐藏你未加入的小组中的帖子，比如朋友在公开小组里发的帖子。你所在小组的帖子以及朋友分享的小组帖子会保留。
+# context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
+Hide For you in search	在搜索中隐藏“为你推荐”
+# context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
+Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	打开搜索时不再显示 Facebook 推荐的“为你推荐”搜索。你的最近搜索和输入时的建议会保留。

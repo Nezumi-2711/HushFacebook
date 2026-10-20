@@ -119,6 +119,10 @@ The top bar and the tab bar turn see-through, so the feed shows through them as 
 Force dark mode	Buộc dùng chế độ tối
 # context: description of that switch; on some tablets Facebook's own Settings page has no Dark mode row
 Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook has no Dark mode switch. Restart Facebook to see the change.	Giữ Facebook ở chế độ tối bất kể cài đặt của Facebook. Dành cho máy tính bảng mà Facebook không có công tắc Chế độ tối. Khởi động lại Facebook để thấy thay đổi.
+# context: switch title under Appearance, shown with the AMOLED black theme; it makes cards, comments and menus pure black like the page
+Black cards	Thẻ màu đen
+# context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
+Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	Thẻ và menu dùng màu của chính trang thay cho màu gần đen giúp tách chúng ra. Nút và ô tìm kiếm vẫn giữ nền xám đậm để bạn còn nhìn thấy. Khởi động lại Facebook để thấy thay đổi.
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	Hiển thị chữ của Facebook bằng phông chữ của điện thoại, hoặc bằng tệp phông chữ bạn chọn bên dưới. Khởi động lại Facebook để thấy thay đổi.
 Font file	Tệp phông chữ
 Use your phone's font	Dùng phông chữ của điện thoại
@@ -208,6 +212,10 @@ Saved to %1$s	Đã lưu vào %1$s
 Saved to the gallery	Đã lưu vào thư viện
 Saved to %1$s in lower quality than on Facebook	Đã lưu vào %1$s với chất lượng thấp hơn trên Facebook
 Saved to the gallery in lower quality than on Facebook	Đã lưu vào thư viện với chất lượng thấp hơn trên Facebook
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the folder, %2$s the smaller file's quality, such as 480p
+Saved to %1$s at %2$s, since the bigger file is over 512 MB	Đã lưu vào %1$s ở %2$s vì tệp lớn hơn vượt quá 512 MB
+# context: a video save's end message when the best file was over 512 MB and a smaller one was saved instead; %1$s is the smaller file's quality, such as 480p
+Saved to the gallery at %1$s, since the bigger file is over 512 MB	Đã lưu vào thư viện ở %1$s vì tệp lớn hơn vượt quá 512 MB
 Saved. Restart Facebook to see the change.	Đã lưu. Khởi động lại Facebook để thấy thay đổi.
 Saves your switches and download choices to a file, to back up or copy to another phone. Pause, Debug logging and the update check aren't included.	Lưu các công tắc và lựa chọn tải xuống của bạn vào một tệp, để sao lưu hoặc chép sang điện thoại khác. Không bao gồm Tạm dừng, Ghi nhật ký gỡ lỗi và kiểm tra cập nhật.
 # The release check: its switch and Check now row under Updates, the status card's line about a newer release, and what a failed try says.
@@ -969,8 +977,8 @@ The Feeds tab will open on %1$s.	Tab Bảng feed sẽ mở ở %1$s.
 # context: title of the list under Following feed on Home that picks which Feeds tab filter Home shows
 Home shows	Trang chủ hiện
 Home shows the same posts as All in the Feeds tab.	Trang chủ hiện cùng bài viết như Tất cả trong tab Bảng feed.
-# context: %1$s is a Feeds tab filter's name, like Friends or Groups
-Home shows the same posts as %1$s in the Feeds tab. If Facebook doesn't have that feed, Home shows All.	Trang chủ hiện cùng bài viết như %1$s trong tab Bảng feed. Nếu Facebook không có bảng feed đó, Trang chủ hiện Tất cả.
+# context: %1$s is a Feeds tab filter's name, like Friends or Groups; %2$s is the Hide "Suggested for you" posts switch and %3$s the Hide Reels in the feed switch
+Home asks Facebook for the posts %1$s shows in the Feeds tab. When there's nothing new there, Facebook can fill Home with suggested posts and reels, which %2$s and %3$s take out. If Facebook doesn't have that feed, Home shows All.	Trang chủ yêu cầu Facebook gửi các bài viết mà %1$s hiện trong tab Bảng feed. Khi ở đó không có gì mới, Facebook có thể lấp Trang chủ bằng bài viết và thước phim được gợi ý, mà %2$s và %3$s sẽ ẩn đi. Nếu Facebook không có bảng feed đó, Trang chủ hiện Tất cả.
 # context: settings import preview; %1$s is the Following feed on Home switch, %2$s a Feeds tab filter
 With %1$s on, Home will show the same posts as %2$s in the Feeds tab.	Khi %1$s bật, Trang chủ sẽ hiện cùng bài viết như %2$s trong tab Bảng feed.
 Saved	Đã lưu
@@ -1000,7 +1008,7 @@ Tap Resume, then restart Facebook.	Nhấn Tiếp tục, rồi khởi động l�
 Turn off haptics	Tắt rung phản hồi
 Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard and phone vibrations aren't affected.	Ngừng các rung nhẹ Facebook tạo ra khi bạn nhấn hoặc vuốt. Rung của bàn phím và điện thoại không bị ảnh hưởng.
 Turn off screen transitions	Tắt hiệu ứng chuyển màn hình
-Tabs, the Menu and screens that open over Facebook appear at once instead of sliding in. Swiping between tabs still works.	Các tab, Menu và màn hình mở đè lên Facebook xuất hiện ngay thay vì trượt vào. Vuốt giữa các tab vẫn hoạt động.
+Tabs, the Menu, photos and screens that open over Facebook appear at once instead of sliding or zooming in. Swiping between tabs still works.	Các tab, Menu, ảnh và màn hình mở đè lên Facebook xuất hiện ngay thay vì trượt hay phóng to vào. Vuốt giữa các tab vẫn hoạt động.
 Unlock app icons	Mở khóa biểu tượng ứng dụng
 Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	Cho phép bạn chọn các biểu tượng ứng dụng Facebook dành riêng cho Facebook Plus, trên trang Biểu tượng ứng dụng của Facebook. Dòng Chọn biểu tượng ứng dụng mở trang đó. Lựa chọn của bạn vẫn giữ nếu bạn tắt mục này, vì vậy hãy chọn biểu tượng màu xanh dương trước để quay lại.
 # context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
@@ -1640,6 +1648,10 @@ Moves Download to phone and Save photo from the end of a post's three-dot menu t
 Menu tiles to hide	Ô trong Menu cần ẩn
 # context: title of the list of Menu tiles to hide
 Hide from the Menu	Ẩn khỏi Menu
+# context: a row's name in the list of Menu tiles to hide; "Help and support" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Report a problem
+Help and support: %s	Trợ giúp và hỗ trợ: %s
+# context: a row's name in the list of Menu tiles to hide; "Settings and privacy" is Facebook's own Menu heading, use Facebook's wording; %s is the row's name, such as Orders and payments
+Settings and privacy: %s	Cài đặt và quyền riêng tư: %s
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; Facebook's short videos
 Reels	Reels
 # context: a Menu tile's name in the list of tiles to hide; Facebook's own name for it; the games section
@@ -1667,7 +1679,7 @@ Long press opens comments	Nhấn giữ mở bình luận
 # context: summary of the double tap switch
 A double tap on a reel opens its comments instead of liking it. Turn off double tap to like still wins when it's on. Off by default, since it hasn't been tried on a real account yet.	Nhấn đúp vào reel sẽ mở bình luận của reel thay vì thích. Nếu "Tắt nhấn đúp để thích" đang bật thì cài đặt đó được ưu tiên. Mặc định tắt, vì chưa được thử trên tài khoản thật.
 # context: summary of the long press switch
-Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Off by default, since it hasn't been tried on a real account yet.	Nhấn giữ reel sẽ mở bình luận của reel thay vì menu nhấn giữ của Facebook hoặc tốc độ 2x khi giữ. Nút thêm của reel vẫn mở menu đó. Mặc định tắt, vì chưa được thử trên tài khoản thật.
+Holding a reel opens its comments instead of Facebook's long-press menu or the 2x hold. The reel's more button still opens that menu. Holding a feed post's photo or the line with its name opens that post's comments, and holding its text or a profile picture works as before. Off by default, since it hasn't been tried on a real account yet.	Nhấn giữ reel sẽ mở bình luận của reel thay vì menu nhấn giữ của Facebook hoặc tốc độ 2x khi giữ. Nút thêm của reel vẫn mở menu đó. Nhấn giữ ảnh của một bài viết trong bảng tin hoặc dòng có tên người đăng sẽ mở bình luận của bài đó, còn nhấn giữ chữ hoặc ảnh đại diện vẫn hoạt động như trước. Mặc định tắt, vì chưa được thử trên tài khoản thật.
 # context: switch title under Downloads; the switch adds the post menu row "Open in another app" to feed and Watch videos
 Open videos in another app	Mở video trong ứng dụng khác
 # context: summary of that switch; "Open in another app" is the menu row; VLC and Web Video Caster are app names, keep them
@@ -1719,3 +1731,25 @@ A video you tap in the feed opens full screen by itself, with no reels to swipe 
 Hide the new comments pop-up	Ẩn bong bóng bình luận mới
 # context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
 The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	Bong bóng "bình luận mới" không còn bật lên khi bạn đọc bình luận. Bình luận mới vẫn hiện trong danh sách.
+# context: the name of a launcher shortcut and a Menu row that open Marketplace's free listings (Facebook's website calls that category Free Stuff)
+Free stuff	Đồ miễn phí
+Free stuff shortcut	Lối tắt Đồ miễn phí
+Free stuff isn't available in this build.	Đồ miễn phí không có trong bản dựng này.
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room, and a Free stuff row in Settings and privacy. Existing shortcuts stay.	Thêm Đồ miễn phí (các tin đăng miễn phí trên Marketplace) vào menu hiện ra khi nhấn giữ biểu tượng Facebook, nếu còn chỗ, và thêm dòng Đồ miễn phí trong Cài đặt & quyền riêng tư. Các lối tắt hiện có vẫn giữ nguyên.
+Adds Free stuff, Marketplace's free listings, to the menu you get by holding Facebook's icon, if there's room. Existing shortcuts stay.	Thêm Đồ miễn phí (các tin đăng miễn phí trên Marketplace) vào menu hiện ra khi nhấn giữ biểu tượng Facebook, nếu còn chỗ. Các lối tắt hiện có vẫn giữ nguyên.
+# context: row in a video's menu while Skip silent parts is on; the video's silent parts are skipped
+Skip silent parts: on	Bỏ qua đoạn im lặng: bật
+# context: the same row after a tap; this one video keeps its silent parts
+Skip silent parts: off for this video	Bỏ qua đoạn im lặng: tắt cho video này
+# context: short message after tapping the row; this video now plays its silent parts
+Silent parts play in this video	Đoạn im lặng được phát trong video này
+# context: short message after tapping the row again; silent parts are skipped again
+Skipping silent parts again	Lại bỏ qua đoạn im lặng
+# context: switch title under News feed; posts Facebook shows from groups the user hasn't joined, which come with a Join button next to the group's name
+Hide posts from groups you're not in	Ẩn bài viết từ nhóm bạn chưa tham gia
+# context: summary of that switch; a friend's share of a group post is a post on the friend's own profile that shares a group post, and it stays
+Hides posts from groups you haven't joined, like a friend's post in a public group. Posts from your groups and a friend's share of a group post stay.	Ẩn bài viết từ các nhóm bạn chưa tham gia, như bài viết của bạn bè trong một nhóm công khai. Bài viết từ nhóm của bạn và bài viết nhóm do bạn bè chia sẻ vẫn giữ nguyên.
+# context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
+Hide For you in search	Ẩn Dành cho bạn trong tìm kiếm
+# context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
+Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	Ẩn các tìm kiếm Dành cho bạn mà Facebook gợi ý khi bạn mở tìm kiếm. Các tìm kiếm gần đây và gợi ý khi bạn gõ vẫn giữ nguyên.

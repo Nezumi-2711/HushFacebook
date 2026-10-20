@@ -45,9 +45,9 @@ public enum PatchFamily {
             Settings.HIDE_SPONSORED_POSTS, Settings.HIDE_PROMOTED_POSTS),
     SUGGESTED_POSTS(FamilyNames.SUGGESTED_POSTS, "suggestedPosts", null,
             Settings.HIDE_SUGGESTED_POSTS, Settings.HIDE_SUGGESTED_FOR_YOU, Settings.HIDE_PEOPLE_YOU_MAY_KNOW,
-            Settings.HIDE_SUGGESTED_GROUPS, Settings.HIDE_STORIES_YOU_MIGHT_LIKE, Settings.HIDE_FEED_MEMORIES,
-            Settings.HIDE_FEED_FRIEND_REQUESTS, Settings.HIDE_FRIENDS_LOCATIONS, Settings.HIDE_NOTIFICATION_POST_FOOTER,
-            Settings.HIDE_FIND_FRIENDS_CARD),
+            Settings.HIDE_SUGGESTED_GROUPS, Settings.HIDE_GROUP_POSTS_NOT_JOINED, Settings.HIDE_STORIES_YOU_MIGHT_LIKE,
+            Settings.HIDE_FEED_MEMORIES, Settings.HIDE_FEED_FRIEND_REQUESTS, Settings.HIDE_FRIENDS_LOCATIONS,
+            Settings.HIDE_NOTIFICATION_POST_FOOTER, Settings.HIDE_FIND_FRIENDS_CARD, Settings.HIDE_SEARCH_FOR_YOU),
     STORIES_TRAY(FamilyNames.STORIES_TRAY, "storiesTray", null,
             Settings.HIDE_TOP_STORIES_TRAY, Settings.HIDE_STORIES_BETWEEN_POSTS, Settings.HIDE_HOME_COMPOSER),
     FEED_REELS(FamilyNames.FEED_REELS, "feedReels", null,
@@ -237,7 +237,8 @@ public enum PatchFamily {
     AD_PREFETCH(FamilyNames.AD_PREFETCH, "adPrefetch", "No ads downloaded in advance"),
     AD_TELEMETRY(FamilyNames.AD_TELEMETRY, "adTelemetry", "No ad tracking"),
     AUDIENCE_NETWORK(FamilyNames.AUDIENCE_NETWORK, "audienceNetwork", "No Facebook ads in other apps"),
-    AMOLED_THEME(FamilyNames.AMOLED_THEME, "amoledTheme", FamilyNames.AMOLED_THEME),
+    // The theme is written into the APK and stays; Pause takes Black cards back to near black.
+    AMOLED_THEME(FamilyNames.AMOLED_THEME, "amoledTheme", FamilyNames.AMOLED_THEME, Settings.AMOLED_FLAT_CARDS),
     MATERIAL_YOU_THEME(FamilyNames.MATERIAL_YOU_THEME, "materialYouTheme", FamilyNames.MATERIAL_YOU_THEME),
     // No switch: a list picks the accent, and Pause makes it read Facebook's blue, so nothing stays in.
     ACCENT_COLOR(FamilyNames.ACCENT_COLOR, "accentColor", Settings.ACCENT_COLOR),
@@ -285,14 +286,15 @@ public enum PatchFamily {
 
     /**
      * The switches of the settings entry itself, which no family owns: every build with this screen
-     * carries them. These are the release check, the Saved, Watch history and settings shortcuts, the logo
-     * press and Menu row that open the settings, and Lock Facebook. Pause turns them off like a family's
-     * switches, so the screen draws them above the Pause row with the rest, but for Lock Facebook and the
-     * three ways into the settings, which a pause leaves as they are.
+     * carries them. These are the release check, the Saved, Watch history, Free stuff and settings
+     * shortcuts, the logo press and Menu row that open the settings, and Lock Facebook. Pause turns them
+     * off like a family's switches, so the screen draws them above the Pause row with the rest, but for
+     * Lock Facebook and the three ways into the settings, which a pause leaves as they are.
      */
     static final List<BooleanSetting> ENTRY_SWITCHES = Collections.unmodifiableList(
             java.util.Arrays.asList(Settings.CHECK_FOR_RELEASES, Settings.SAVED_SHORTCUT,
-                    Settings.WATCH_HISTORY_SHORTCUT, Settings.SETTINGS_SHORTCUT, Settings.SETTINGS_LOGO_PRESS,
+                    Settings.WATCH_HISTORY_SHORTCUT, Settings.FREE_STUFF_SHORTCUT, Settings.SETTINGS_SHORTCUT,
+                    Settings.SETTINGS_LOGO_PRESS,
                     Settings.SETTINGS_MENU_ROW, Settings.APP_LOCK,
                     Settings.SAVE_CRASH_FILE));
 
@@ -456,7 +458,8 @@ public enum PatchFamily {
     /**
      * "on", "disabled by its switch" or "disabled while paused", then the saved switches. A
      * family with independent switches is on while either is. Options need their main switch. A
-     * family set by its list says so, with its switches saved beside the list.
+     * family set by its list says so, with its switches saved beside the list. The AMOLED theme is
+     * on either way, its one switch being an option on it.
      */
     private String reportLine(boolean paused) {
         StringBuilder line = new StringBuilder(patchName).append(": ");
@@ -491,7 +494,12 @@ public enum PatchFamily {
                     || Settings.HIDE_LINK_POSTS.savedValue() || Settings.HIDE_BACKGROUND_POSTS.savedValue()
                     || Settings.HIDE_REPOSTS.savedValue();
         }
-        line.append(paused ? "disabled while paused (saved " : anyOn ? "on (" : "disabled by its switch (");
+        // The theme runs with Black cards off and while paused: its switch only flattens the cards.
+        if (this == AMOLED_THEME) {
+            line.append(paused ? "on, its switch off while paused (saved " : "on (");
+        } else {
+            line.append(paused ? "disabled while paused (saved " : anyOn ? "on (" : "disabled by its switch (");
+        }
         for (int i = 0; i < switches.size(); i++) {
             if (i > 0) line.append(", ");
             BooleanSetting setting = switches.get(i);
@@ -517,7 +525,10 @@ public enum PatchFamily {
         LogBufferManager.registerReportSection(PushDiagnostics.REPORT);
         LogBufferManager.registerReportSection(NetworkUsage.REPORT);
         for (PatchFamily family : values()) {
-            if (family.switches.isEmpty() && family.choice == null) HookStatus.runsWhilePaused(family.patchName);
+            // The theme's hooks run paused too: only Black cards, its one switch, steps back.
+            if ((family.switches.isEmpty() && family.choice == null) || family == AMOLED_THEME) {
+                HookStatus.runsWhilePaused(family.patchName);
+            }
         }
     }
 

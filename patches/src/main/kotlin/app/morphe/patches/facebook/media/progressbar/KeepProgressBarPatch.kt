@@ -131,6 +131,8 @@ internal const val REPLACES_PARKED = "$PROGRESS_BAR->replacesParkedLook(Ljava/la
 internal const val HANDS_OVER =
     "$PROGRESS_BAR->handsOver(Landroid/view/ViewGroup;Landroid/view/View;Ljava/lang/String;Ljava/lang/String;)V"
 internal const val LEFT_ON_LAST_REEL = "$PROGRESS_BAR->leftOnLastReel()V"
+internal const val REGISTRY_ASKS = "$PROGRESS_BAR->registryAsks(ZLjava/lang/Integer;)V"
+internal const val NO_SCRUBBER = "$PROGRESS_BAR->noScrubber()V"
 internal const val MOUNTS = "$PROGRESS_BAR->mounts(Landroid/view/ViewGroup;Ljava/lang/Object;)V"
 
 /** The extension's stub the patch fills with a call to the scrubber base's progress update. */
@@ -332,6 +334,7 @@ val keepProgressBarPatch = bytecodePatch(
             progress.base.type,
         )
         handOver.method.freeLocalsAt(PATCH, handOver.at, 3)
+        val returns = registryReturns(handOver)
         val another = anotherVideo(progress.base, info.builder.returnType, handOver)
         // Only a mount of the base's own is run virtually, so only then can a class extending it skip it.
         val baseMount = another.mount.definingClass == progress.base.type
@@ -393,6 +396,9 @@ val keepProgressBarPatch = bytecodePatch(
             reportsMount(scrubber, another)
         }
         handOverMethod.notesHandOver(handOver, scrubber, another)
+        // The registry's two early returns come ahead of the hook at the id's test, the later one first.
+        handOverMethod.notesNoScrubber(returns)
+        handOverMethod.notesRegistryAsk(returns)
         mutableClassDefBy(scrubber.type).methods.single { it.sameAs(lengthCheck) }.longEnoughWhileKept()
         mutableClassDefBy(scrubber.type).methods.single { it.sameAs(shortCheck) }.notShortWhileKept()
         for ((type, check) in overrides) {
@@ -802,6 +808,69 @@ internal fun reelHandOver(holders: List<ClassDef>, base: String): ReelHandOver {
     }
     if (code.indices.any { it != end - 1 && end in flow.normal[it] }) refuse("$where has a jump onto its return")
     return ReelHandOver(method, at, shown, holder, scrubber, end)
+}
+
+/**
+ * The two ways the Reels scrubber registry's hand-over returns ahead of [ReelHandOver.at] (583
+ * `LX/8fL;->A00`, indices 2 to 5 and 13): the test of its hide flag ([test]), a boolean field of its
+ * own read into [flag] right before, which when set has its own one-`Integer` method hide every
+ * scrubber's bar for the reel's key ([key]) and returns; and its test for a scrubber holder
+ * ([noHolder], of [holder]), the reel's own or its default one, which returns at that same
+ * `return-void` when there's neither.
+ */
+internal class RegistryReturns(val test: Int, val flag: Int, val key: Int, val noHolder: Int, val holder: Int)
+
+/**
+ * Finds [RegistryReturns] in [handOver]'s method. Refuses unless the flag is read off the method's
+ * own class ahead of the hand-over's hook and tested right after, with nothing else jumping onto
+ * the test; the hide is the one call between that test and a `return-void`, on the method's own
+ * class, taking just the key, which nothing writes before; exactly one other instruction, an
+ * `if-eqz` ahead of the hook that only the instruction before reaches, jumps onto that return, and
+ * that instruction reads the default holder off a field of the method's own class into the
+ * register tested; and the flag, key and holder sit at v15 or below.
+ */
+internal fun registryReturns(handOver: ReelHandOver): RegistryReturns {
+    val method = handOver.method
+    val where = "${method.definingClass}->${method.name}"
+    val code = method.implementation!!.instructions.toList()
+    val read = (0 until handOver.at).firstOrNull { index ->
+        code[index].opcode == Opcode.IGET_BOOLEAN &&
+            ((code[index] as ReferenceInstruction).reference as FieldReference).definingClass == method.definingClass
+    } ?: refuse("$where no longer reads a flag of its own ahead of its hand-over")
+    val flag = (code[read] as TwoRegisterInstruction).registerA
+    val test = read + 1
+    if (code.getOrNull(test)?.opcode != Opcode.IF_EQZ || (code[test] as OneRegisterInstruction).registerA != flag) {
+        refuse("$where no longer tests its flag right after reading it")
+    }
+    val hide = code.getOrNull(test + 1)
+    val hides = (hide as? ReferenceInstruction)?.reference as? MethodReference
+    if (hide?.opcode != Opcode.INVOKE_VIRTUAL || hides == null || hides.definingClass != method.definingClass ||
+        hides.returnType != "V" || hides.parameterTypes.map(CharSequence::toString) != listOf("Ljava/lang/Integer;")
+    ) {
+        refuse("$where no longer hides every bar for the reel's key when its flag is set")
+    }
+    val key = (hide as FiveRegisterInstruction).registerD
+    if ((0 until test).any { writes(code[it], key) }) refuse("$where writes v$key, the reel's key, before its flag's test")
+    val back = test + 2
+    if (code.getOrNull(back)?.opcode != Opcode.RETURN_VOID) refuse("$where no longer returns right after hiding every bar")
+    val flow = ControlFlow.of(method)
+    if (code.indices.any { it != read && test in flow.normal[it] }) refuse("$where has a jump onto its test of the flag")
+    val jumps = code.indices.filter { it != test + 1 && back in flow.normal[it] }
+    val noHolder = jumps.singleOrNull()
+        ?: refuse("$where returns at its hide's return-void from ${jumps.size} other places, expected one")
+    if (code[noHolder].opcode != Opcode.IF_EQZ || noHolder >= handOver.at) {
+        refuse("$where no longer tests for a scrubber holder ahead of its hand-over")
+    }
+    if (code.indices.any { it != noHolder - 1 && noHolder in flow.normal[it] }) refuse("$where has a jump onto its test for a scrubber holder")
+    val holder = (code[noHolder] as OneRegisterInstruction).registerA
+    val fallback = code.getOrNull(noHolder - 1)
+    if (fallback?.opcode != Opcode.IGET_OBJECT || (fallback as TwoRegisterInstruction).registerA != holder ||
+        ((fallback as ReferenceInstruction).reference as FieldReference).definingClass != method.definingClass
+    ) {
+        refuse("$where no longer reads its default scrubber holder right before testing for one")
+    }
+    if (maxOf(flag, key, holder) > 15) refuse("$where keeps its flag, the reel's key or the holder past v15")
+    return RegistryReturns(test, flag, key, noHolder, holder)
 }
 
 /**
@@ -1508,6 +1577,32 @@ internal fun MutableMethod.notesHandOver(handOver: ReelHandOver, looks: Scrubber
  */
 internal fun MutableMethod.checksHandOver(handOver: ReelHandOver) {
     addInstructions(handOver.end, "invoke-static { }, $LEFT_ON_LAST_REEL")
+}
+
+/**
+ * In the registry's hand-over, between the read of its hide flag and the test of it
+ * ([RegistryReturns.test]): hand the extension the flag and the reel's key, both still in their
+ * registers, so each call the registry gets is seen ahead of both early returns. Nothing is
+ * borrowed, and only the read reaches the test.
+ */
+internal fun MutableMethod.notesRegistryAsk(returns: RegistryReturns) {
+    addInstructions(returns.test, "invoke-static { v${returns.flag}, v${returns.key} }, $REGISTRY_ASKS")
+}
+
+/**
+ * At the registry's test for a scrubber holder ([RegistryReturns.noHolder]): with none, tell the
+ * extension, then Facebook's test returns as before. A holder goes straight to Facebook's test.
+ * Nothing is borrowed, and only the instruction before reaches the test.
+ */
+internal fun MutableMethod.notesNoScrubber(returns: RegistryReturns) {
+    addInstructionsWithLabels(
+        returns.noHolder,
+        """
+            if-nez v${returns.holder}, :facebook
+            invoke-static { }, $NO_SCRUBBER
+        """,
+        ExternalLabel("facebook", getInstruction(returns.noHolder)),
+    )
 }
 
 /**

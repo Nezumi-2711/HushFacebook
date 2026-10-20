@@ -10,7 +10,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
-import app.morphe.patches.facebook.chats.jumpTargets
+import app.morphe.patches.facebook.layout.theme.branchTargets
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.facebookExtensionPatch
 import app.morphe.patches.facebook.misc.extension.patchLog
@@ -21,6 +21,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import org.w3c.dom.Attr
 import org.w3c.dom.Document
@@ -227,55 +228,124 @@ internal fun Method.remoteViewsPackageLoads(packageName: String): List<Int> =
  * context.getPackageName() in Google's source that Facebook's build spelled out; and a chat
  * notification's intent is set to the package. In a clone those reach the stock app or nothing.
  *
+ * The same goes for the other places that can only mean the running app. An ApplicationInfo or an
+ * icon of the package: Firebase's own-app meta-data ("Couldn't get own application info"), the
+ * build revision Facebook reads from its manifest's meta-data, and AppInfoCore. An explicit intent
+ * to one of its own activities: ProxyAuth, which a login deep link, the consent deep link and the
+ * device-login module open by setClassName(package, class). The package Xiaomi's launcher badge is
+ * set for. And a resource lookup: Morphe renames the resource table with the package, so in a clone
+ * getIdentifier(name, type, "com.facebook.katana") finds nothing, which left Firebase's
+ * notification text, icon and sound unresolved. A load a resource lookup reads is handed over
+ * whole, because whatever else reads that same name builds from the same table: Firebase's sound
+ * goes on to make android.resource://<package>/raw/<name> out of it.
+ *
  * Left alone, because there the name means Meta's Facebook app: getPackageInfo reads of its
  * version or signatures (the in-app browser's FB4A version check among them), String.equals of a
- * caller's or a target's package against it, the launch of Facebook after a check that it or
- * its in-house build is installed, and Messenger's warm-start hint (ThreadSettingsActivity), which
- * checks that Facebook is installed and then sends its WarmStartBroadcastReceiver a broadcast. A
- * load that anything else reads, such as that install check or a ComponentName, stays as it is.
+ * caller's or a target's package against it (FBNS push's "am I FB4A" check among them, which push
+ * in a clone has to stay native for), the launch of Facebook after a check that it or its in-house
+ * build is installed (Horizon's link launcher), the pick of whichever Facebook app is installed to
+ * open a link, the installer reads of Facebook for attribution and Google Play's overlay, and
+ * Messenger's warm-start hint (ThreadSettingsActivity), which checks that Facebook is installed and
+ * then sends its WarmStartBroadcastReceiver a broadcast. A load that anything else reads, such as
+ * that install check or a ComponentName, stays as it is. SharedPermissionsFixtureTest holds each
+ * declared build's list of both.
  */
 
 internal const val SET_PACKAGE = "Landroid/content/Intent;->setPackage(Ljava/lang/String;)Landroid/content/Intent;"
+internal const val SET_CLASS_NAME =
+    "Landroid/content/Intent;->setClassName(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;"
 internal const val LAUNCH_INTENT =
     "Landroid/content/pm/PackageManager;->getLaunchIntentForPackage(Ljava/lang/String;)Landroid/content/Intent;"
 internal const val APPLICATION_INFO =
     "Landroid/content/pm/PackageManager;->getApplicationInfo(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;"
+internal const val APPLICATION_ICON =
+    "Landroid/content/pm/PackageManager;->getApplicationIcon(Ljava/lang/String;)Landroid/graphics/drawable/Drawable;"
+internal const val PROVIDER_CALL =
+    "Landroid/content/ContentResolver;->call(Landroid/net/Uri;Ljava/lang/String;Ljava/lang/String;Landroid/os/Bundle;)Landroid/os/Bundle;"
+internal const val RESOURCE_ID = "Landroid/content/res/Resources;->getIdentifier(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I"
+internal const val REDEX_RESOURCE_ID =
+    "Lcom/facebook/resources/compat/RedexResourcesCompat;->getIdentifier(Landroid/content/res/Resources;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I"
 internal const val FIREBASE_MESSAGING = "Lcom/google/firebase/messaging/FirebaseMessagingService;"
+
+/** Each call that names this app to Android wherever it's made, with the argument the name goes in (0 is the receiver). */
+private val OWN_PACKAGE_ARGUMENTS = mapOf(
+    SET_PACKAGE to 1,
+    SET_CLASS_NAME to 1,
+    APPLICATION_INFO to 1,
+    APPLICATION_ICON to 1,
+    PROVIDER_CALL to 3,
+)
+
+/** Each resource lookup, with the argument its package goes in. */
+private val RESOURCE_PACKAGE_ARGUMENTS = mapOf(RESOURCE_ID to 3, REDEX_RESOURCE_ID to 3)
+
+/** The launch intent Firebase's notification code asks for when nothing else opens. */
+private val FIREBASE_PACKAGE_ARGUMENTS = mapOf(LAUNCH_INTENT to 1)
+
+private val CALLS = setOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_STATIC, Opcode.INVOKE_VIRTUAL_RANGE, Opcode.INVOKE_STATIC_RANGE)
+
+/** Whether [instruction] calls one of [calls] with [register] as the argument named there and as no other. */
+private fun passesOnlyAs(instruction: Instruction, register: Int, calls: Map<String, Int>): Boolean {
+    if (instruction.opcode !in CALLS) return false
+    val called = ((instruction as ReferenceInstruction).reference as? MethodReference)?.toString() ?: return false
+    val position = calls[called] ?: return false
+    val arguments = when (instruction) {
+        is FiveRegisterInstruction -> listOf(
+            instruction.registerC, instruction.registerD, instruction.registerE, instruction.registerF, instruction.registerG,
+        ).take(instruction.registerCount)
+        is RegisterRangeInstruction -> (instruction.startRegister until instruction.startRegister + instruction.registerCount).toList()
+        else -> return false
+    }
+    return arguments.getOrNull(position) == register && arguments.count { it == register } == 1
+}
 
 /**
  * Whether [instruction] hands the package name in [register] to a call that means this app, and
- * reads it for nothing else: an intent's setPackage anywhere, and in Firebase's notification code
- * ([firebase]) a launch intent or an ApplicationInfo for it as well.
+ * reads it for nothing else: one of [OWN_PACKAGE_ARGUMENTS] anywhere, and in Firebase's notification
+ * code ([firebase]) a launch intent for it as well.
  */
-private fun callsOwnPackage(instruction: Instruction, register: Int, firebase: Boolean): Boolean {
-    if (instruction.opcode != Opcode.INVOKE_VIRTUAL) return false
-    val called = ((instruction as ReferenceInstruction).reference as? MethodReference)?.toString() ?: return false
-    if (called != SET_PACKAGE && !(firebase && (called == LAUNCH_INTENT || called == APPLICATION_INFO))) return false
-    val call = instruction as FiveRegisterInstruction
-    return call.registerD == register && call.registerC != register && (call.registerCount < 3 || call.registerE != register)
-}
+private fun callsOwnPackage(instruction: Instruction, register: Int, firebase: Boolean): Boolean =
+    passesOnlyAs(instruction, register, OWN_PACKAGE_ARGUMENTS) ||
+        (firebase && passesOnlyAs(instruction, register, FIREBASE_PACKAGE_ARGUMENTS))
 
-/** Where [this] loads [packageName] only to name this app to Android ([callsOwnPackage]). */
+/**
+ * Where [this] loads [packageName] only to name this app to Android ([callsOwnPackage]), or to
+ * look up one of its resources, whatever else reads it then.
+ */
 internal fun Method.ownPackageCallLoads(packageName: String): List<Int> {
     val firebase = definingClass == FIREBASE_MESSAGING
-    return packageLoadsReadOnlyBy(packageName) { instruction, register -> callsOwnPackage(instruction, register, firebase) }
+    return packageLoadsReadBy(packageName) { readers, code, register ->
+        readers.all { callsOwnPackage(code[it], register, firebase) } ||
+            readers.any { passesOnlyAs(code[it], register, RESOURCE_PACKAGE_ARGUMENTS) }
+    }
 }
 
 /**
  * The index of each const-string of [packageName] in [this] whose value only [reads] reads before
- * its register is written again. A load something jumps in right after is left out, since the jump
- * would pass the call that goes there.
+ * its register is written again. A load a branch or switch case lands right after is left out, since
+ * the jump would pass the call that goes there.
  */
-private fun Method.packageLoadsReadOnlyBy(packageName: String, reads: (Instruction, Int) -> Boolean): List<Int> {
+private fun Method.packageLoadsReadOnlyBy(packageName: String, reads: (Instruction, Int) -> Boolean): List<Int> =
+    packageLoadsReadBy(packageName) { readers, code, register -> readers.all { reads(code[it], register) } }
+
+/**
+ * The index of each const-string of [packageName] in [this] that something reads before its
+ * register is written again and whose readers [take] accepts. A load a branch or switch case lands
+ * right after is left out, since the jump would pass the call that goes there.
+ */
+private fun Method.packageLoadsReadBy(
+    packageName: String,
+    take: (readers: List<Int>, code: List<Instruction>, register: Int) -> Boolean,
+): List<Int> {
     val code = implementation?.instructions?.toList() ?: return emptyList()
     val loads = code.indices.filter { code[it].loadedString() == packageName }
     if (loads.isEmpty()) return emptyList()
-    val targets = jumpTargets(code)
+    val targets = branchTargets(code)
     return loads.filter { at ->
         val register = (code[at] as OneRegisterInstruction).registerA
         if (at + 1 in targets || register > 255) return@filter false
         val readers = readsAfter(at, register)
-        readers.isNotEmpty() && readers.all { reads(code[it], register) }
+        readers.isNotEmpty() && take(readers, code, register)
     }
 }
 
@@ -287,8 +357,9 @@ internal fun BytecodePatchContext.routeRemoteViewsPackage(packageName: String): 
     routePackageLoads(packageName) { it.remoteViewsPackageLoads(packageName) }
 
 /**
- * Hands every load of [packageName] that only names this app to Android ([ownPackageCallLoads]) to
- * the extension, which answers the running app's package. Answers how many it handed over.
+ * Hands every load of [packageName] that names this app to Android or looks up its resources
+ * ([ownPackageCallLoads]) to the extension, which answers the running app's package. Answers how
+ * many it handed over.
  */
 internal fun BytecodePatchContext.routeOwnPackageCalls(packageName: String): Int =
     routePackageLoads(packageName) { it.ownPackageCallLoads(packageName) }
@@ -346,7 +417,7 @@ internal const val MESSENGER_DEBUG = "com.facebook.orca.debug"
 internal fun Method.metaAppLookupReads(): List<Int> {
     val code = implementation?.instructions?.toList() ?: return emptyList()
     if (code.none { it.loadedString() == MESSENGER_DEBUG }) return emptyList()
-    val targets = jumpTargets(code)
+    val targets = branchTargets(code)
     return code.indices.filter { at ->
         val call = code[at]
         val moved = code.getOrNull(at + 1) ?: return@filter false

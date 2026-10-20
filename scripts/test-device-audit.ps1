@@ -118,7 +118,7 @@ try {
     try { Assert-Throws { Invoke-Adb shell input tap 10 10 } 'A locked lease permitted input.' }
     finally { $held.Dispose() }
 
-    foreach ($unsafe in @('tap:Like', 'tap:Follow', 'tap:Add friend', 'tap:Send', 'tap:Alice', 'fb://friends', 'fb://feed; input tap 1 1')) {
+    foreach ($unsafe in @('tap:Like', 'tap:Follow', 'tap:Add friend', 'tap:Send', 'tap:Alice', 'fb://friends', 'fb://messaging_thread', 'fb://feed; input tap 1 1')) {
         $Visit = @($unsafe)
         Assert-Throws { Assert-AuditSteps } "Unsafe step accepted: $unsafe"
     }

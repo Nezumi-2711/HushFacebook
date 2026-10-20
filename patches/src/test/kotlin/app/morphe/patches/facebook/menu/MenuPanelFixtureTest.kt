@@ -1,0 +1,100 @@
+/*
+ * Copyright 2026 Hushfacebook contributors
+ * https://github.com/SysAdminDoc/Hushfacebook
+ */
+package app.morphe.patches.facebook.menu
+
+import app.morphe.ExtensionDex
+import app.morphe.Fixtures
+import app.morphe.PatchContexts
+import app.morphe.patches.facebook.feed.FixtureDex
+import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
+import app.morphe.patches.shared.compat.AppCompatibilities
+import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * The side panel's Menu (#184) on every Facebook bundle of every declared build: one method sets the
+ * panel up, it asks MobileConfig once whether the panel is the Bloks Menu, and the patch hands that
+ * answer to the extension in its own register right before Facebook tests it. Reads the fixture
+ * bundles from HUSHFACEBOOK_FIXTURE_DIR and skips without it.
+ */
+class MenuPanelFixtureTest {
+    /** The MobileConfig flag the panel asks, read from 583's arm64 and armv7 dex. */
+    private val bloksPanelFlag = 0x10101a200581627L
+
+    private fun Method.code(): List<Instruction> = implementation!!.instructions.toList()
+
+    private fun Instruction.called() = (this as? ReferenceInstruction)?.reference as? MethodReference
+
+    @Test
+    fun `each declared bundle asks the extension which Menu goes in the side panel`() {
+        val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }.toSet()
+        assertTrue("the bundle declares no Facebook build", versions.isNotEmpty())
+        val bundles = versions.flatMap { version -> Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") } }
+        val checked = mutableMapOf<String, String>()
+        for (bundle in bundles) {
+            val name = bundle.name
+            val classes = FixtureDex.classesHolding(bundle, PANEL_SETUP)
+                .filterNot { it.type.startsWith(EXTENSION_PACKAGE) }.distinctBy { it.type }
+            val context = PatchContexts.of(classes)
+            val setups = context.menuPanelSetups()
+            assertEquals("$name: methods setting the panel up ${setups.map { "${it.definingClass}->${it.name}" }}", 1, setups.size)
+            val method = setups.single()
+            val code = method.code()
+            val answer = bloksPanelAnswer(method)
+            assertNotNull("$name: ${method.definingClass}->${method.name} doesn't ask once whether its panel is the Bloks Menu " +
+                "(MobileConfig answers at ${mobileConfigAnswers(code)})", answer)
+            // Positive control: the answer is the one for the panel's flag, by its id.
+            val flag = code.subList(maxOf(0, answer!! - 4), answer).filterIsInstance<WideLiteralInstruction>()
+                .map { it.wideLiteral }
+            assertTrue("$name: the answer at $answer isn't for flag ${bloksPanelFlag.toString(16)}, saw $flag",
+                bloksPanelFlag in flag)
+            val register = (code[answer] as OneRegisterInstruction).registerA
+
+            context.askAboutBloksPanel()
+            val patched = context.mutableClassDefBy(method.definingClass).methods
+                .single { patchedMethod ->
+                    patchedMethod.name == method.name &&
+                        patchedMethod.parameterTypes.map(CharSequence::toString) == method.parameterTypes.map(CharSequence::toString)
+                }.code()
+            assertEquals("$name: two instructions added", code.size + 2, patched.size)
+            val ask = patched[answer + 1]
+            assertEquals("$name: the extension asked", BLOKS_PANEL, ask.called()?.toString())
+            assertEquals("$name: handed the answer",
+                listOf(Opcode.INVOKE_STATIC_RANGE, register, 1),
+                listOf(ask.opcode, (ask as RegisterRangeInstruction).startRegister, ask.registerCount))
+            assertEquals("$name: its answer back in the same register",
+                listOf(Opcode.MOVE_RESULT, register),
+                listOf(patched[answer + 2].opcode, (patched[answer + 2] as OneRegisterInstruction).registerA))
+            assertEquals("$name: Facebook's test right after", listOf(Opcode.IF_EQZ, register),
+                listOf(patched[answer + 3].opcode, (patched[answer + 3] as OneRegisterInstruction).registerA))
+            val rest = patched.filterIndexed { index, _ -> index != answer + 1 && index != answer + 2 }
+            assertEquals("$name: the rest is Facebook's", code.map { it.opcode }, rest.map { it.opcode })
+            checked[name] = "${method.definingClass}->${method.name} answer at $answer in v$register"
+        }
+        assertEquals("a declared bundle went unchecked: $checked", bundles.map { it.name }.toSet(), checked.keys)
+        assertTrue("no declared build has a fixture bundle", checked.isNotEmpty())
+    }
+
+    @Test
+    fun `the extension has the hook the patch calls`() {
+        val hook = ExtensionDex.classDef("$EXTENSION_PACKAGE/menu/MenuPanel;").methods
+            .singleOrNull { it.name == "bloksPanel" }
+        assertNotNull("the extension has no MenuPanel.bloksPanel", hook)
+        assertEquals("bloksPanel's shape", BLOKS_PANEL,
+            "${hook!!.definingClass}->${hook.name}(${hook.parameterTypes.joinToString("")})${hook.returnType}")
+        assertTrue("bloksPanel isn't static", AccessFlags.STATIC.isSet(hook.accessFlags))
+    }
+}

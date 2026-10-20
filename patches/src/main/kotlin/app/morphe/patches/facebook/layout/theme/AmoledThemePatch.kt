@@ -38,6 +38,7 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import app.morphe.patches.facebook.feed.refresh.enumConstant
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 
@@ -332,6 +333,10 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
 
         check(changed > 0) { "No dark colour resource found, so the theme would stay grey" }
 
+        // The page's colour as a resource of its own, which the token lookup hands a card with Black
+        // cards on (#191). Added after the rewrites, so none of them reads it.
+        if (get(DEFAULT_COLORS, false).exists()) document(DEFAULT_COLORS).use { addPageColour(it, written) }
+
         routeTwoRestores = routeTwoTable(rewritten, rewrittenAtNight, references) { name ->
             resourceIds.getOrNull(ResourceType.COLOR, name) ?: decodedColourId(name)
         }
@@ -339,6 +344,19 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
             "No colour route two rewrote has a resource id, so light mode's Video tab would stay black"
         }
     }
+}
+
+/** The colour resource that holds the Background colour, AmoledTheme.PAGE_COLOUR. */
+internal const val PAGE_COLOUR = "hushfacebook_amoled_page"
+
+/** Adds [PAGE_COLOUR] with [colour] to a `colors.xml` [document]. */
+internal fun addPageColour(document: Document, colour: String) {
+    document.documentElement.appendChild(
+        document.createElement("color").also {
+            it.setAttribute("name", PAGE_COLOUR)
+            it.textContent = colour
+        },
+    )
 }
 
 /**
@@ -402,8 +420,9 @@ private fun isDarkBackground(value: String): Boolean {
 val amoledThemePatch = bytecodePatch(
     name = "AMOLED black theme",
     description = "Makes Facebook's dark mode black, or a dark color you pick, instead of dark gray, which can " +
-        "save battery on OLED screens. Turn on dark mode in Facebook first. It isn't selected by default because " +
-        "undoing it means patching again. Turn on Expert mode in Manager to pick it.",
+        "save battery on OLED screens. Cards and menus stay a shade lighter than the page. Turn on Black cards in " +
+        "Hushfacebook settings > Appearance to make them black too. Turn on dark mode in Facebook first. It isn't " +
+        "selected by default because undoing it means patching again. Turn on Expert mode in Manager to pick it.",
     default = false,
 ) {
     category("Theme")
@@ -463,6 +482,24 @@ val amoledThemePatch = bytecodePatch(
         // resource reaches them.
         check(blackenColourLiterals(background()) > 0) { "No dark colour written in code, so the chrome would stay grey" }
 
+        // The colours Facebook writes for its dark theme only, past route three's greys: the Create
+        // story tile's #333334 stayed grey with Black cards on (#191). Material You reads the same
+        // sites after this and puts its stand-in after AMOLED's, so it gets AMOLED's answer.
+        if (readDarkBranchLiterals(darkCheck, AMOLED_DARK_BRANCH) == 0) {
+            patchLog.warning("No colour written on Facebook's dark branch found, so Black cards leaves the Create story tile grey")
+        }
+
+        // The colour resource FDS's token lookup answers, which the code then reads itself: the band
+        // behind the Menu's Log out button is a drawable of CARD_BACKGROUND_FLAT's (#191). Material
+        // You hooks the same returns after this, so it notes the resource AMOLED answered.
+        try {
+            fdsTokenResourceLookup().hookTokenResourceReturns(TOKEN_RESOURCE_DARK)
+        } catch (moved: IllegalStateException) {
+            patchLog.warning("${moved.message}. Black cards leaves the band behind the Menu's Log out button grey.")
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. Black cards leaves the band behind the Menu's Log out button grey.")
+        }
+
         // Route four. The server sends some colours as strings, and the app parses them with
         // Color.parseColor. Each of those calls goes to the extension instead, and so does each
         // read of a colour resource, where light mode gets back what route two wrote black over.
@@ -508,6 +545,9 @@ val amoledThemePatch = bytecodePatch(
 
 /** Gets the banner wrapper's colour after route one. Gives the colour to paint. */
 internal const val FLEX_BANNER = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->flexBanner(I)I"
+
+/** Gets a colour Facebook writes on its dark branch only, for Black cards (#191). Gives the colour to paint. */
+internal const val AMOLED_DARK_BRANCH = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->darkBranch(I)I"
 
 /** The FDS token the Data mode banner paints its wrapper with. */
 private const val CARD_BACKGROUND = "CARD_BACKGROUND"
@@ -960,6 +1000,26 @@ internal fun MutableMethod.hookColorReturns(tokenParameterIndex: Int, target: St
     requireParameterIntact("Colour token hook", tokenParameterIndex, returnSites("int to recolour").map { it.first })
 
     hookReturns("int to recolour") { register -> "invoke-static { v$register, v$tokenRegister }, $target" }
+}
+
+/** Gets the resource FDS's token lookup answers, with the lookup's context and token. Gives the resource to read. */
+internal const val TOKEN_RESOURCE_DARK = "$AMOLED->tokenResource(I${CONTEXT}Ljava/lang/Object;)I"
+
+/**
+ * Sends each resource id FDS's token lookup returns through [target], with the lookup's context
+ * (parameter 0) and token (parameter 1), and returns what comes back. A card's resource and a
+ * button's can be one resource, so this is where the token still tells them apart (#191).
+ */
+internal fun MutableMethod.hookTokenResourceReturns(target: String) {
+    check(parameterTypes.firstOrNull()?.toString() == CONTEXT) { "$definingClass->$name doesn't take a Context first" }
+    val context = parameterRegisterNumber(0)
+    val token = parameterRegisterNumber(1)
+    check(context < 16 && token < 16) { "$definingClass->$name: v$context or v$token is out of invoke-static range" }
+    val reads = returnSites("resource id").map { it.first }
+    requireParameterIntact("Token resource hook", 0, reads)
+    requireParameterIntact("Token resource hook", 1, reads)
+
+    hookReturns("resource id") { register -> "invoke-static { v$register, v$context, v$token }, $target" }
 }
 
 /**

@@ -111,6 +111,9 @@ val settingsPatch = bytecodePatch(
     // With Debug logging on, a report names the video formats Facebook's decoders were set up
     // with, so it says whether a video was HDR whatever was picked. See PlaybackFormatEvidencePatch.kt.
     dependsOn(playbackFormatEvidencePatch)
+    // With Debug logging on, a module download's line says what Facebook's downloader did before
+    // its screen closed (#168). See ModuleDownloadEvidencePatch.kt.
+    dependsOn(moduleDownloadEvidencePatch)
     // A re-signed build's push service rejects Facebook and restarts itself in a loop unless its
     // signer read gets the original certificate, whatever was picked. See FbnsSignersPatch.kt.
     dependsOn(fbnsSignersPatch)

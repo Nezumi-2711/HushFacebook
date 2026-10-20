@@ -314,7 +314,7 @@ public final class FeedFilter {
                 RecommendationLabel.PATCHED, SettingsStatus.aiDetectedPosts(), GenAiLabel.PATCHED,
                 SettingsStatus.feedReels(), ShowcaseType.PATCHED, SettingsStatus.postWords(), PostText.MESSAGE,
                 PostText.ATTACHED, GenAiLabel.SELF_LABEL_PATCHED, AiCharacterPosts.ATTACHMENTS,
-                AiCharacterPosts.STYLES, PostTypes.READERS);
+                AiCharacterPosts.STYLES, PostTypes.READERS, GroupPosts.PATCHED);
     }
 
     /** The guard with the sponsored and suggested patch-time flags passed in, and no GenAI rule. */
@@ -423,6 +423,23 @@ public final class FeedFilter {
             StoryFlag.Accessor messageAccessor, StoryFlag.Accessor attachedAccessor,
             StoryFlag.Accessor aiLabelAccessor, @Nullable StoryFlag.Accessor attachmentsAccessor,
             @Nullable AiCharacterPosts.Finder styleFinder, @Nullable PostTypes.Readers typeReaders) {
+        return hideEdge(category, feedUnit, sponsoredPatched, suggestedPatched, recommendationAccessor, aiPatched,
+                aiAccessor, reelsPatched, showcaseAccessor, wordsPatched, messageAccessor, attachedAccessor,
+                aiLabelAccessor, attachmentsAccessor, styleFinder, typeReaders, null);
+    }
+
+    /**
+     * The guard with the two readers of the groups rule passed in too, so a test can stand in for
+     * the stubs Hide suggested and promoted posts fills: the story's {@code to} and that group's join
+     * state. Null readers leave the rule out, as the overloads above do.
+     */
+    static boolean hideEdge(Object category, Object feedUnit, boolean sponsoredPatched, boolean suggestedPatched,
+            StoryFlag.Accessor recommendationAccessor, boolean aiPatched, StoryFlag.Accessor aiAccessor,
+            boolean reelsPatched, StoryFlag.Accessor showcaseAccessor, boolean wordsPatched,
+            StoryFlag.Accessor messageAccessor, StoryFlag.Accessor attachedAccessor,
+            StoryFlag.Accessor aiLabelAccessor, @Nullable StoryFlag.Accessor attachmentsAccessor,
+            @Nullable AiCharacterPosts.Finder styleFinder, @Nullable PostTypes.Readers typeReaders,
+            @Nullable GroupPosts.Readers groupReaders) {
         boolean trayPatched = storiesTrayInBuild();
         try {
             if (sponsoredPatched) HookStatus.invoked(FamilyNames.SPONSORED_POSTS);
@@ -447,14 +464,18 @@ public final class FeedFilter {
             // only read with the patch that fills their accessor.
             Logger.printDebug(() -> {
                 String type = typeName(feedUnit);
+                String id = SeenPosts.shortId(feedUnit);
                 return "Feed edge: " + categoryName + " " + type + " ifr="
                         + (suggestedPatched ? recommendationFlag(feedUnit, recommendationAccessor) : "none")
                         + (reelsPatched ? " showcase=" + showcaseFor(type, feedUnit, showcaseAccessor) : "")
                         + (suggestedPatched && DISCOVER_UNIT_TYPE.equals(type)
                                 ? " stories=" + unconnectedStories(feedUnit) : "")
+                        + (suggestedPatched && groupReaders != null
+                                ? " group=" + GroupPosts.read(feedUnit, groupReaders) : "")
                         + (aiPatched ? " genai=" + flagValue(GenAiLabel.FLAG, feedUnit, aiAccessor)
                                 + " ailabel=" + flagValue(GenAiLabel.SELF_LABEL, feedUnit, aiLabelAccessor) : "")
-                        + (ENGAGEMENT_PROMO.equals(categoryName) ? " qp=" + promotionId(feedUnit) : "");
+                        + (ENGAGEMENT_PROMO.equals(categoryName) ? " qp=" + promotionId(feedUnit) : "")
+                        + (id != null ? " id=" + id : "");
             });
             // An edge a prefetch adds before the settings are ready stays: no switch can be read yet.
             if (!Utils.settingsReady()) return false;
@@ -494,6 +515,9 @@ public final class FeedFilter {
                     if (reason == null && storiesYouMightLike && DISCOVER_UNIT_TYPE.equals(type)) {
                         reason = unconnectedStoriesReason(feedUnit);
                     }
+                }
+                if (reason == null && groupReaders != null && Settings.HIDE_GROUP_POSTS_NOT_JOINED.get()) {
+                    reason = groupReason(feedUnit, groupReaders);
                 }
             }
             if (reason == null && trayPatched && Settings.HIDE_STORIES_BETWEEN_POSTS.get()) {
@@ -764,6 +788,22 @@ public final class FeedFilter {
         FeedFilterCounters.removed(WORDS_ROUTE, 1, verdict.reason);
         PostWords.HIDDEN.incrementAndGet();
         return WORDS_REASON;
+    }
+
+    /**
+     * Hide posts from groups you're not in: the group type and the join state, such as
+     * {@code Group:CAN_JOIN}, when the post was posted in a group Facebook would show a Join button
+     * for, otherwise null. Nothing is read while the switch is off, and a post that can't be read
+     * stays. Each post it reads is counted on its route by what the read found.
+     */
+    static String groupReason(Object feedUnit, GroupPosts.Readers readers) {
+        String kind = GroupPosts.read(feedUnit, readers);
+        FeedFilterCounters.sawList(GroupPosts.ROUTE, 1);
+        FeedFilterCounters.sawKind(GroupPosts.ROUTE, kind);
+        if (!GroupPosts.notJoined(kind)) return null;
+        String reason = GroupPosts.GROUP_TYPE + ":" + kind;
+        FeedFilterCounters.removed(GroupPosts.ROUTE, 1, reason);
+        return reason;
     }
 
     /**

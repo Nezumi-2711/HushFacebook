@@ -42,6 +42,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import app.morphe.extension.facebook.media.ResumePlaybackForTests;
+import app.morphe.extension.facebook.media.SkipSilenceForTests;
 import app.morphe.extension.facebook.settings.Settings;
 import app.morphe.extension.shared.SettingsContextRule;
 import app.morphe.extension.shared.diagnostics.HookStatus;
@@ -96,6 +98,8 @@ public class VideoMenuItemTest {
         MediaDownload.policyForTests = null;
         MediaDownload.detailsForTests = null;
         PauseForTests.resume();
+        SkipSilenceForTests.forget();
+        Settings.SKIP_SILENT_PARTS.resetToDefault();
         Settings.DOWNLOAD_VIDEOS.resetToDefault();
         Settings.POST_MENU_DOWNLOAD_FIRST.resetToDefault();
         LogBufferManager.clearLogBuffer();
@@ -215,6 +219,44 @@ public class VideoMenuItemTest {
         }
         PauseForTests.resume();
         assertEquals("running again", 3, filled(VideoMenuItemForTests.videoPost()).size());
+    }
+
+    /** Skip silent parts (#144): its row goes below Facebook's, and a tap keeps that video's silent parts. */
+    @Test
+    public void skipSilentPartsAddsItsRowBelowTheDownloadItem() {
+        Settings.SKIP_SILENT_PARTS.save(true);
+        SkipSilenceForTests.playing("1234567890123456");
+        Menu menu = filled(VideoMenuItemForTests.videoPost());
+
+        assertEquals(4, menu.size());
+        assertEquals("Download to phone", String.valueOf(menu.getItem(2).getTitle()));
+        assertEquals("Skip silent parts: on", String.valueOf(menu.getItem(3).getTitle()));
+    }
+
+    /** Alone, the row is the menu's only one without an id, so a tap by id reaches it. */
+    @Test
+    public void skipSilentPartsAloneGetsItsRowAndNoDownloadCount() {
+        Settings.DOWNLOAD_VIDEOS.save(false);
+        Settings.SKIP_SILENT_PARTS.save(true);
+        assertEquals("a row before any video started", 2, filled(VideoMenuItemForTests.videoPost()).size());
+
+        ResumePlaybackForTests.Player player = SkipSilenceForTests.playing("1234567890123456");
+        Menu menu = filled(VideoMenuItemForTests.videoPost());
+        assertEquals(3, menu.size());
+        MenuItem row = menu.getItem(2);
+        assertEquals("Skip silent parts: on", String.valueOf(row.getTitle()));
+        assertTrue("the tap wasn't taken", menu.performIdentifierAction(row.getItemId(), 0));
+        assertEquals("the playing video wasn't sought in place", Collections.singletonList("BY_PLAYER@12000"), player.seeks);
+        assertEquals("Skip silent parts: off for this video",
+                String.valueOf(filled(VideoMenuItemForTests.videoPost()).getItem(2).getTitle()));
+        assertEquals("a post without a video got the row", 2, filled(new GraphQLStory(null)).size());
+        for (String line : HookStatus.report()) {
+            assertFalse("Download any video counted a menu it added nothing to: " + line,
+                    line.startsWith("Download any video:"));
+        }
+
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertEquals("paused, the menu got the row", 2, filled(VideoMenuItemForTests.videoPost()).size());
     }
 
     @Test

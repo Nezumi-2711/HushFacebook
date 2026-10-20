@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
+import app.morphe.extension.facebook.settings.FreeStuffShortcut;
 import app.morphe.extension.facebook.settings.SavedShortcut;
 import app.morphe.extension.facebook.settings.SettingsEntry;
 import app.morphe.extension.facebook.settings.WatchHistoryShortcut;
@@ -46,7 +47,8 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * opens Facebook's own Saved route. One UI's launcher hides the appended launcher entry, so this
  * row is the way to Saved that every phone shows. Pause turns the switch off, and the row with it.
  * The Watch history shortcut switch adds a Watch history row ({@link #WATCH_HISTORY_ROW_ID}) the
- * same way, after Saved, which opens the videos you've watched.
+ * same way, after Saved, which opens the videos you've watched, and the Free stuff shortcut switch
+ * a Free stuff row ({@link #FREE_STUFF_ROW_ID}) after that, which opens Marketplace's free listings.
  */
 public final class MenuSettingsRow {
     /**
@@ -60,6 +62,9 @@ public final class MenuSettingsRow {
 
     /** The Watch history row's id, next to the Saved row's. */
     public static final long WATCH_HISTORY_ROW_ID = -0x4855534846420003L;
+
+    /** The Free stuff row's id, next to the Watch history row's. */
+    public static final long FREE_STUFF_ROW_ID = -0x4855534846420004L;
 
     /** The static factory the patch adds to the row item class: (template, title, id) to a new row. */
     static final String FACTORY = "hushfacebookRow";
@@ -127,11 +132,11 @@ public final class MenuSettingsRow {
             }
             Context context = Utils.getContext();
             if (context == null) return rows;
-            // Switched off, the row stays out and the Saved and Watch history rows go in as they would.
+            // Switched off, the row stays out and the Saved, Watch history and Free stuff rows go in as they would.
             Object ours = wanted ? found.factory.invoke(null, template, L10n.t(context, "Hushfacebook settings"), ROW_ID) : null;
             if (wanted && ours == null) return rows;
             HookStatus.bound(FamilyNames.MENU_SETTINGS_ROW, LIST_HOOK);
-            List<Object> withOurs = new ArrayList<>(rows.size() + 3);
+            List<Object> withOurs = new ArrayList<>(rows.size() + 4);
             withOurs.addAll(rows);
             if (SavedShortcut.wanted(context)) {
                 Object saved = found.factory.invoke(null, template, L10n.t(context, "Saved"), SAVED_ROW_ID);
@@ -141,6 +146,10 @@ public final class MenuSettingsRow {
                 Object watched = found.factory.invoke(null, template, L10n.t(context, "Watch history"),
                         WATCH_HISTORY_ROW_ID);
                 if (watched != null) withOurs.add(watched);
+            }
+            if (FreeStuffShortcut.wanted(context)) {
+                Object free = found.factory.invoke(null, template, L10n.t(context, "Free stuff"), FREE_STUFF_ROW_ID);
+                if (free != null) withOurs.add(free);
             }
             if (ours != null) withOurs.add(ours);
             return withOurs.size() == rows.size() ? rows : withOurs;
@@ -187,6 +196,12 @@ public final class MenuSettingsRow {
                     Logger.printInfo(() -> "Watch history shortcut: the Menu row couldn't open the videos you've watched");
                     if (context != null) Utils.showToastShort(WatchHistoryShortcut.unavailable());
                 }
+            } else if (id == FREE_STUFF_ROW_ID) {
+                Context context = activity != null ? activity : Utils.getContext();
+                if (context == null || !FreeStuffShortcut.open(context)) {
+                    Logger.printInfo(() -> "Free stuff shortcut: the Menu row couldn't open Marketplace's free listings");
+                    if (context != null) Utils.showToastShort(FreeStuffShortcut.unavailable());
+                }
             } else if (activity == null || !SettingsEntry.open(activity)) {
                 Logger.printInfo(() -> "Hushfacebook in the Menu: the settings didn't open over "
                         + (activity == null ? "no activity" : activity.getClass().getSimpleName()));
@@ -204,7 +219,7 @@ public final class MenuSettingsRow {
 
     /** Injection point, first thing in the row's loggers. True for the rows of ours, which they skip. */
     public static boolean isRow(long id) {
-        return id == ROW_ID || id == SAVED_ROW_ID || id == WATCH_HISTORY_ROW_ID;
+        return id == ROW_ID || id == SAVED_ROW_ID || id == WATCH_HISTORY_ROW_ID || id == FREE_STUFF_ROW_ID;
     }
 
     /** The activity a view's context wraps, or null. The depth guards against a wrapper that wraps itself. */

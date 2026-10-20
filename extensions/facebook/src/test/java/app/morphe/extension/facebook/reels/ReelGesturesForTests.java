@@ -60,13 +60,15 @@ public final class ReelGesturesForTests {
         boolean[] pressed = {false};
         ReelGestures.reset();
         try {
-            ReelGestures.opener = (view, button) -> {
-                pressed[0] = true;
+            // The opener holds the button, which ReelGestures only keeps weakly, until the gesture ends.
+            Object button = new Object();
+            ReelGestures.opener = (view, pressedButton) -> {
+                pressed[0] = pressedButton == button;
                 return true;
             };
             Object reel = new Object();
             View view = new View(RuntimeEnvironment.getApplication());
-            ReelGestures.remember(new Object(), reel);
+            ReelGestures.remember(button, reel);
             ReelGestures.noteView(view);
             gesture.run(reel, view);
             return pressed[0];

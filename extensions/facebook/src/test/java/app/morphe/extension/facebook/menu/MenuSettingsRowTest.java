@@ -444,4 +444,77 @@ public class MenuSettingsRowTest {
         ShadowLooper.idleMainLooper();
         assertEquals("Watch history isn't available in this build.", ShadowToast.getTextOfLatestToast());
     }
+
+    /** The web's Free Stuff category link, taken by an activity of the app's own package (Discussion #52). */
+    private static void addFreeStuffRoute(Context context) {
+        ResolveInfo info = new ResolveInfo();
+        info.activityInfo = new ActivityInfo();
+        info.activityInfo.packageName = context.getPackageName();
+        info.activityInfo.name = context.getPackageName() + ".IntentUriHandler";
+        shadowOf(context.getPackageManager()).addResolveInfoForIntent(new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.facebook.com/marketplace/category/free")).setPackage(context.getPackageName()), info);
+    }
+
+    @Test
+    public void theFreeStuffRowComesAfterWatchHistoryAndBeforeTheSettingsRow() {
+        addWatchHistoryRoute(RuntimeEnvironment.getApplication());
+        addFreeStuffRoute(RuntimeEnvironment.getApplication());
+        Settings.WATCH_HISTORY_SHORTCUT.save(true);
+        Settings.FREE_STUFF_SHORTCUT.save(true);
+        try {
+            List<?> rows = MenuSettingsRow.withRow(Arrays.asList(settings, language));
+            assertEquals(5, rows.size());
+            assertEquals(MenuSettingsRow.WATCH_HISTORY_ROW_ID, ((Row) rows.get(2)).id);
+            Row free = (Row) rows.get(3);
+            assertEquals("Free stuff", free.title.toString());
+            assertEquals(MenuSettingsRow.FREE_STUFF_ROW_ID, free.id);
+            assertEquals("the row has the first row's icon", 17, free.icon);
+            assertNull("the row has an address Facebook would open", free.address);
+            assertEquals(MenuSettingsRow.ROW_ID, ((Row) rows.get(4)).id);
+            assertSame("a list holding our rows is handed back as it is", rows, MenuSettingsRow.withRow(rows));
+
+            Settings.FREE_STUFF_SHORTCUT.save(false);
+            assertEquals(4, MenuSettingsRow.withRow(Arrays.asList(settings, language)).size());
+            Settings.FREE_STUFF_SHORTCUT.save(true);
+            PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+            assertEquals("paused, only the settings row stays", 3,
+                    MenuSettingsRow.withRow(Arrays.asList(settings, language)).size());
+        } finally {
+            Settings.WATCH_HISTORY_SHORTCUT.resetToDefault();
+            Settings.FREE_STUFF_SHORTCUT.resetToDefault();
+        }
+    }
+
+    @Test
+    public void theFreeStuffRowIsKnownByAnIdFacebookNeverUses() {
+        assertTrue(MenuSettingsRow.FREE_STUFF_ROW_ID < 0);
+        assertTrue(MenuSettingsRow.FREE_STUFF_ROW_ID != MenuSettingsRow.ROW_ID);
+        assertTrue(MenuSettingsRow.FREE_STUFF_ROW_ID != MenuSettingsRow.SAVED_ROW_ID);
+        assertTrue(MenuSettingsRow.FREE_STUFF_ROW_ID != MenuSettingsRow.WATCH_HISTORY_ROW_ID);
+        assertTrue(MenuSettingsRow.isRow(MenuSettingsRow.FREE_STUFF_ROW_ID));
+    }
+
+    @Test
+    public void aTapOnTheFreeStuffRowOpensMarketplacesFreeListingsInsideTheTask() {
+        addFreeStuffRoute(RuntimeEnvironment.getApplication());
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            assertTrue(MenuSettingsRow.onTap(new View(activity), MenuSettingsRow.FREE_STUFF_ROW_ID));
+            Intent started = shadowOf(activity).getNextStartedActivity();
+            assertNotNull("Free stuff didn't open", started);
+            assertEquals(Uri.parse("https://www.facebook.com/marketplace/category/free"), started.getData());
+            assertEquals("the link went to the browser", activity.getPackageName(), started.getComponent().getPackageName());
+            assertEquals("Free stuff opened in a new task", 0, started.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK);
+            ShadowLooper.idleMainLooper();
+            assertNull("the settings opened instead", activity.getFragmentManager().findFragmentByTag("hushfacebook_settings"));
+            assertNull("a toast said it couldn't open", ShadowToast.getTextOfLatestToast());
+        }
+    }
+
+    @Test
+    public void aFreeStuffTapWithNoRouteSaysSoAndStaysOurs() {
+        assertTrue(MenuSettingsRow.onTap(null, MenuSettingsRow.FREE_STUFF_ROW_ID));
+        ShadowLooper.idleMainLooper();
+        assertEquals("Free stuff isn't available in this build.", ShadowToast.getTextOfLatestToast());
+    }
 }
