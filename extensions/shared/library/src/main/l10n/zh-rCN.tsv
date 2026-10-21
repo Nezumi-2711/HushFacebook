@@ -123,6 +123,10 @@ Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook 
 Black cards	黑色卡片
 # context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
 Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	卡片和菜单改用页面本身的颜色，而不是用来区分它们的近黑色。按钮和搜索框保留深灰色填充，让你仍能看清。重启 Facebook 后可看到更改。
+# context: switch title under Appearance, shown with the AMOLED black theme; it draws a thin gray line in the gap between posts in the feed
+Lines between posts	帖子之间的分隔线
+# context: description of that switch; the black page is the AMOLED theme's pure black background
+A thin gray line between posts in the feed, so posts without photos don't run together on the black page.	在动态消息的帖子之间显示一条细灰线，让没有照片的帖子在黑色页面上不会连成一片。
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	用手机的字体显示 Facebook 的文字，或使用你在下方选择的字体文件。重启 Facebook 后可看到更改。
 Font file	字体文件
 Use your phone's font	使用手机的字体
@@ -465,6 +469,9 @@ A long press on Like doesn't open the reactions. A tap still likes.	长按“赞
 Hide GIF and sticker buttons	隐藏 GIF 和贴纸按钮
 # context: summary of that switch; the comment box is where you type a comment
 The comment box loses its GIF and sticker buttons. Typing, photos and posting work as before.	评论框不再显示 GIF 和贴纸按钮。输入、照片和发布照常使用。
+# context: switch title under Comments: hides the Add a comment field at the bottom of the full-screen video viewer
+Hide the video comment box	隐藏视频评论框
+The Add a comment box under a full-screen video goes away. Comment boxes on posts stay.	全屏视频下方的评论框会消失。帖子里的评论框不受影响。
 # context: switch title under Comments; a reply thread is the replies under a comment, which Facebook folds behind View replies
 Open every reply thread	展开所有回复
 # context: summary of that switch; View replies is the link Facebook shows under a comment that has replies
@@ -777,7 +784,7 @@ Turn off double tap to like	关闭双击点赞
 A double tap on a reel or video no longer likes it or shows a heart. A single tap and the Like button work as before.	双击 Reels 或视频不再点赞，也不会显示爱心。单击和“赞”按钮照常使用。
 Keep the reel speed	保持 Reels 播放速度
 # context: summary of that switch
-A playback speed you pick in a reel's menu stays for the next reels until you pick another or Facebook restarts. Off, every reel starts at normal speed.	你在 Reels 菜单中选择的播放速度会保留给后面的 Reels，直到你选择其他速度或 Facebook 重启。关闭后，每个 Reels 都以正常速度开始。
+A playback speed you pick in a reel's menu stays for the next reels, after a restart too, until you pick another. Off, every reel starts at normal speed.	你在 Reels 菜单中选择的播放速度会保留给后面的 Reels，重启后也一样，直到你选择其他速度。关闭后，每个 Reels 都以正常速度开始。
 Hold a reel for 2x	按住 Reels 以 2 倍速播放
 # context: summary of that switch; more button is the reel's own button with three dots
 Holding a reel plays it at double speed until you let go, in place of Facebook's long-press menu. The reel's more button still opens that menu.	按住 Reels 会以两倍速播放，直到你松手，取代 Facebook 的长按菜单。Reels 的“更多”按钮仍可打开那个菜单。
@@ -1229,6 +1236,9 @@ Hides posts that share another post, with or without a caption. Original posts s
 Lock Facebook	锁定 Facebook
 Save crashes to Downloads	将崩溃记录保存到“下载”
 When Facebook crashes, the error goes in a text file in Download/Hushfacebook, so you can send it with a bug report even if Facebook won't open. Links and IDs are left out. The newest five are kept.	Facebook 崩溃时，错误信息会存入 Download/Hushfacebook 中的文本文件，这样即使 Facebook 打不开，你也能随错误反馈一起发送。其中不含链接和 ID。会保留最新的五份。
+# context: switch title in Privacy: Facebook quits fully a few seconds after you switch away from it
+Close Facebook when you leave it	离开时关闭 Facebook
+A few seconds after you leave Facebook, it closes all the way and leaves your recent apps, so it isn't running in the background. It waits for uploads and saves to finish first. Notifications may come late, or not until you open Facebook again.	离开 Facebook 几秒后，它会完全关闭并从最近使用的应用中移除，不再在后台运行。它会先等上传和保存完成。通知可能会延迟，或要等你再次打开 Facebook 才收到。
 # context: summary of the Lock Facebook switch; the time below is the Lock after row under it
 Facebook asks for your fingerprint, face or screen lock at startup and when you return after the time below. Your phone needs a screen lock.	Facebook 会在启动时，以及你在下方设定的时间后返回时，要求验证你的指纹、面部或屏幕锁。你的手机需要设置屏幕锁。
 # context: toast when Lock Facebook is turned on and the phone has no screen lock to ask for
@@ -1598,7 +1608,7 @@ Takes the row of profile pictures off the share sheet, the people Facebook sugge
 Hide who is typing in comments	隐藏评论中谁在输入
 Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.	移除提示有人正在输入评论的那一行。你自己的输入状态由“隐私”下的另一个开关控制。
 Hide the search pill on reels	隐藏 Reels 上的搜索胶囊
-Hides the search suggestion under a reel's caption, the magnifier with a question to look up.	隐藏 Reels 说明文字下方的搜索建议，即带问题的放大镜，用于查找相关内容。
+Hides the search suggestion under a reel's caption, the magnifier with a question to look up, the one at the top of its comments and the search bar over reels you open from a profile.	隐藏 Reels 说明文字下方的搜索建议（即带问题的放大镜，用于查找相关内容）、评论顶部的那一个，以及从个人主页打开的 Reels 顶部的搜索栏。
 # context: switch title under Appearance; the button is Facebook's Messenger icon in the top bar of Home
 Hide the Messenger button	隐藏 Messenger 按钮
 # context: summary of that switch; the other top bar buttons move over to fill the space; Hushfacebook is the app's name
@@ -1748,3 +1758,11 @@ Hides posts from groups you haven't joined, like a friend's post in a public gro
 Hide For you in search	在搜索中隐藏“为你推荐”
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
 Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	打开搜索时不再显示 Facebook 推荐的“为你推荐”搜索。你的最近搜索和输入时的建议会保留。
+# context: switch title under Search; on, what the user searches for isn't added to their Facebook search history
+Don't save search history	不保存搜索记录
+# context: summary of that switch; searches already in the history are the user's own past searches, which stay until the user deletes them
+What you search for isn't added to your Facebook search history. Searches already there stay until you delete them.	你搜索的内容不会加入你的 Facebook 搜索记录。已有的搜索会保留，直到你删除。
+# context: switch title under Reels and Watch; the audio line is the scrolling line at the bottom of a reel naming its sound, like "Name · Original audio" or a song title
+Hide the audio line on reels	隐藏 Reels 上的音频行
+# context: summary of that switch; "Original audio" is Facebook's own label, so use the wording Facebook shows in this language
+Takes the line with the reel's sound, "Original audio" or a song, off the bottom of reels. Other info stays. A change shows from the next reel.	去掉 Reels 底部显示声音的那一行（“原创音频”或歌曲）。其他信息保留。更改会从下一个 Reels 开始显示。

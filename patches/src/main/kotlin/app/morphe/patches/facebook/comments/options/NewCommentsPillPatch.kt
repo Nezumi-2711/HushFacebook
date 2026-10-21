@@ -41,7 +41,10 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
  * their names and avatars, writes the text with the plural helper and always returns the pill's
  * data. Its one caller, a lambda, returns that data or null when the comment is missing, and a
  * null draws no pill. The hook goes right before each return in the builder: the extension answers
- * null while the switch is on, which the caller already takes.
+ * null while the switch is on, which the caller already takes. The answer comes back as an Object,
+ * so it's cast back to the builder's declared return type before the return: without that cast ART
+ * rejects the whole builder class, and every comment sheet that draws the pill crashes with a
+ * VerifyError whether the switch is on or not (0.16.0, #203, #204).
  */
 
 private const val LIST_LAYOUT = "Landroidx/recyclerview/widget/LinearLayoutManager;"
@@ -93,7 +96,10 @@ internal fun BytecodePatchContext.hookNewCommentsPill(classes: Iterable<ClassDef
     )
 }
 
-/** The newer pill's data goes through the extension before each return, found among [classes]. */
+/**
+ * The newer pill's data goes through the extension before each return, found among [classes], and
+ * is cast back to the builder's return type so the verifier sees the type the method declares.
+ */
 internal fun BytecodePatchContext.hookNewCommentsPillData(classes: Iterable<ClassDef>) {
     val data = newCommentsPillData(classes)
     val method = mutableClassDefBy(data.method.definingClass).findMutableMethodOf(data.method)
@@ -104,6 +110,7 @@ internal fun BytecodePatchContext.hookNewCommentsPillData(classes: Iterable<Clas
             """
                 invoke-static/range { v$register .. v$register }, $NEW_COMMENTS_PILL_DATA
                 move-result-object v$register
+                check-cast v$register, ${data.method.returnType}
             """,
         )
     }

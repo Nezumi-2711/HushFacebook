@@ -1141,26 +1141,35 @@ public class BadDexFixture {
      * flag says so, as the tab links patch does.
      */
     private static ClassDef tabLinks(boolean launched, boolean friends, boolean configured) {
+        return tabLinks(launched, friends, configured, true);
+    }
+
+    /** The same, with the launch lookup handing back the extension's Object answer uncast unless [castBack]. */
+    private static ClassDef tabLinks(boolean launched, boolean friends, boolean configured, boolean castBack) {
         return new ImmutableClassDef(TAB_LINKS, AccessFlags.PUBLIC.getValue(), OBJECT, null, null, null, null,
                 Arrays.asList(
                         define(TAB_LINKS, "launchTab", TAB_TAG, false,
-                                tabLinkBody("extra_launch_uri", launched ? LAUNCHED_TAB : null, 5, 1), INTENT, FB_USER_SESSION),
+                                tabLinkBody("extra_launch_uri", launched ? LAUNCHED_TAB : null, 5, 1, castBack),
+                                INTENT, FB_USER_SESSION),
                         define(TAB_LINKS, "friendsLink", INTENT, false,
-                                tabLinkBody("DEEPLINK", friends ? FRIENDS_TAB : null, 6, 4), CONTEXT, INTENT, FB_USER_SESSION),
+                                tabLinkBody("DEEPLINK", friends ? FRIENDS_TAB : null, 6, 4, true), CONTEXT, INTENT, FB_USER_SESSION),
                         define(TAB_LINKS, "targetTabLink", INTENT, false, configuredTabBody(configured),
                                 CONTEXT, INTENT, FB_USER_SESSION)));
     }
 
-    /** [string] in v0 and no tab in v1, [hook] asked about the tab with its answer cast back, then v[returned] returned. */
+    /**
+     * [string] in v0 and no tab in v1, [hook] asked about the tab with its answer cast back when
+     * [castBack], then v[returned] returned.
+     */
     private static ImmutableMethodImplementation tabLinkBody(String string, ImmutableMethodReference hook, int registers,
-            int returned) {
+            int returned, boolean castBack) {
         List<Instruction> instructions = new ArrayList<>();
         instructions.add(new ImmutableInstruction21c(Opcode.CONST_STRING, 0, new ImmutableStringReference(string)));
         instructions.add(new ImmutableInstruction11n(Opcode.CONST_4, 1, 0));
         if (hook != null) {
             instructions.add(new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, 1, 1, hook));
             instructions.add(op(Opcode.MOVE_RESULT_OBJECT, 1));
-            instructions.add(new ImmutableInstruction21c(Opcode.CHECK_CAST, 1, new ImmutableTypeReference(TAB_TAG)));
+            if (castBack) instructions.add(new ImmutableInstruction21c(Opcode.CHECK_CAST, 1, new ImmutableTypeReference(TAB_TAG)));
         }
         instructions.add(op(Opcode.RETURN_OBJECT, returned));
         return new ImmutableMethodImplementation(registers, instructions, null, null);
@@ -2316,6 +2325,9 @@ public class BadDexFixture {
         dexes.put("bad-tab-links-launch-hook-missing", replaced(good(), tabLinks(false, true, true)));
         dexes.put("bad-tab-links-friends-hook-missing", replaced(good(), tabLinks(true, false, true)));
         dexes.put("bad-tab-links-check-hook-missing", replaced(good(), tabLinks(true, true, false)));
+        // type: the launch lookup returns the extension's Object answer without casting it back to
+        // the TabTag it's declared to return, the shape that failed Comment sheet options in 0.16.0.
+        dexes.put("bad-uncast-return", replaced(good(), tabLinks(true, true, true, false)));
 
         // contract: each of the sources filter's story stubs left as the extension ships it.
         dexes.put("bad-post-message-stub-not-filled", replaced(good(), postText(UNFILLED_STUB, FILLED_STUB)));

@@ -65,6 +65,7 @@ public class CommentSheetOptionsTest {
         PauseForTests.resume();
         Settings.LIKE_ONLY.resetToDefault();
         Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.resetToDefault();
+        Settings.HIDE_VIDEO_COMMENT_COMPOSER.resetToDefault();
         Settings.OPEN_REPLY_THREADS.resetToDefault();
         Settings.LOAD_WHOLE_REPLY_THREADS.resetToDefault();
         Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS.resetToDefault();
@@ -99,6 +100,20 @@ public class CommentSheetOptionsTest {
         assertTrue("the viewer bar kept its GIF and sticker buttons", CommentSheetOptions.holdsViewerButtons());
         assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 2, 1 found, 0 missing. Counted: "
                 + CommentSheetOptions.BUTTON_HIDDEN + " 1", statusLine());
+    }
+
+    @Test
+    public void videoCommentComposerUsesItsOwnSwitch() {
+        assertFalse("the video comment composer was hidden by default",
+                CommentSheetOptions.hidesVideoCommentComposer());
+        Settings.LIKE_ONLY.save(true);
+        assertFalse("Like only hid the video comment composer",
+                CommentSheetOptions.hidesVideoCommentComposer());
+        Settings.HIDE_VIDEO_COMMENT_COMPOSER.save(true);
+        assertTrue("the video comment composer stayed visible",
+                CommentSheetOptions.hidesVideoCommentComposer());
+        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 3, 1 found, 0 missing. Counted: "
+                + CommentSheetOptions.COMPOSER_HIDDEN + " 1", statusLine());
     }
 
     @Test

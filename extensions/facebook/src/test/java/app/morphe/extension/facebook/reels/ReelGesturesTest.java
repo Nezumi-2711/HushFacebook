@@ -34,8 +34,9 @@ import app.morphe.extension.shared.settings.PauseForTests;
 
 /**
  * Open comments with a gesture: a double tap or a long press on a reel presses the reel's Comment
- * button, with the switch on, and leaves everything to Facebook with it off, while Hushfacebook is
- * paused, and whenever the reel or the view isn't known.
+ * button, or in Clean mode builds its sheet from the reel's long-press handler, with the switch on,
+ * and leaves everything to Facebook with it off, while Hushfacebook is paused, and whenever the reel
+ * or the view isn't known.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -62,6 +63,31 @@ public class ReelGesturesTest {
         }
     }
 
+    /** Facebook's long-press handler as the overlay makes it: the reel and what the comment sheet needs. */
+    @SuppressWarnings("unused")
+    private static final class FullHandler {
+        final Object $shortFormVideoUnit;
+        final Object $fbUserSession = new Object();
+        final Object $environment = new Object();
+        final Object $videoGraphQLPhoton = new Object();
+        final Object $immersiveFeedPlayerConfig = new Object();
+
+        FullHandler(Object reel) {
+            this.$shortFormVideoUnit = reel;
+        }
+    }
+
+    /** What the sheet opener was handed. */
+    private static final class Built {
+        final View view;
+        final Object[] parts;
+
+        Built(View view, Object... parts) {
+            this.view = view;
+            this.parts = parts;
+        }
+    }
+
     /** A handler of some other shape: no reel in it. */
     private static final class OtherHandler {
         final Object other = new Object();
@@ -79,9 +105,11 @@ public class ReelGesturesTest {
     }
 
     private final List<Pressed> pressed = new ArrayList<>();
+    private final List<Built> built = new ArrayList<>();
     /** ReelGestures holds buttons weakly, so the test keeps them, as a reel's views do on a phone. */
     private final List<Object> buttons = new ArrayList<>();
     private ReelGestures.Opener saved;
+    private ReelGestures.SheetOpener savedSheet;
     private View view;
 
     /** A Comment button object that stays alive until the test ends, so a GC can't drop it mid-test. */
@@ -94,10 +122,16 @@ public class ReelGesturesTest {
     @Before
     public void setUp() {
         saved = ReelGestures.opener;
+        savedSheet = ReelGestures.sheetOpener;
         ReelGestures.reset();
         pressed.clear();
+        built.clear();
         ReelGestures.opener = (v, button) -> {
             pressed.add(new Pressed((View) v, button));
+            return true;
+        };
+        ReelGestures.sheetOpener = (v, session, item, environment, story, config) -> {
+            built.add(new Built((View) v, session, item, environment, story, config));
             return true;
         };
         view = new View(RuntimeEnvironment.getApplication());
@@ -109,6 +143,7 @@ public class ReelGesturesTest {
     @After
     public void restore() {
         ReelGestures.opener = saved;
+        ReelGestures.sheetOpener = savedSheet;
         ReelGestures.reset();
         PauseForTests.resume();
         Settings.DOUBLE_TAP_OPENS_COMMENTS.resetToDefault();
@@ -278,13 +313,87 @@ public class ReelGesturesTest {
     @Test
     public void theUnpatchedStubPressesNothing() {
         assertFalse(ReelGestures.openStub(new Object(), new Object(), false));
+        Object any = new Object();
+        assertFalse(ReelGestures.openSheetStub(any, any, any, any, any, any));
+    }
+
+    @Test
+    public void inCleanModeALongPressBuildsTheSheetFromItsOwnHandler() {
+        Object reel = new Object();
+        FullHandler handler = new FullHandler(reel);
+        assertTrue(ReelGestures.longPress(handler, new Holder(view)));
+        assertTrue("there's no button to press", pressed.isEmpty());
+        assertEquals(1, built.size());
+        Built sheet = built.get(0);
+        assertSame(view, sheet.view);
+        assertSame(handler.$fbUserSession, sheet.parts[0]);
+        assertSame(reel, sheet.parts[1]);
+        assertSame(handler.$environment, sheet.parts[2]);
+        assertSame(handler.$videoGraphQLPhoton, sheet.parts[3]);
+        assertSame(handler.$immersiveFeedPlayerConfig, sheet.parts[4]);
+        assertTrue(statusLine(), statusLine().contains(ReelGestures.OPENED_WITHOUT_BUTTON + " 1"));
+    }
+
+    @Test
+    public void inCleanModeADoubleTapBuildsTheSheetFromTheNewestHandlerOfItsReel() {
+        Object reel = new String("reel");
+        FullHandler older = new FullHandler(reel);
+        FullHandler newer = new FullHandler(reel);
+        FullHandler other = new FullHandler(new Object());
+        ReelGestures.rememberHandler(older, reel);
+        ReelGestures.rememberHandler(newer, reel);
+        ReelGestures.rememberHandler(other, other.$shortFormVideoUnit);
+        assertTrue(ReelGestures.doubleTap(new String("reel")));
+        assertEquals(1, built.size());
+        assertSame(newer.$fbUserSession, built.get(0).parts[0]);
+        assertSame(view, built.get(0).view);
+        assertSame(newer, ReelGestures.handlerFor(reel));
+    }
+
+    @Test
+    public void theButtonWinsOverTheHandler() {
+        Object reel = new Object();
+        Object button = new Object();
+        ReelGestures.remember(button, reel);
+        FullHandler handler = new FullHandler(reel);
+        ReelGestures.rememberHandler(handler, reel);
+        assertTrue(ReelGestures.longPress(handler, new Holder(view)));
+        assertTrue(ReelGestures.doubleTap(reel));
+        assertEquals(2, pressed.size());
+        assertTrue(built.isEmpty());
+        assertTrue(statusLine(), statusLine().contains(ReelGestures.OPENED + " 2"));
+    }
+
+    @Test
+    public void aHandlerMissingWhatTheSheetNeedsIsNoButton() {
+        Object reel = new Object();
+        Handler handler = new Handler(reel);
+        ReelGestures.rememberHandler(handler, reel);
+        assertFalse(ReelGestures.longPress(handler, new Holder(view)));
+        assertTrue(ReelGestures.doubleTap(reel));
+        assertTrue(built.isEmpty());
+        assertTrue(statusLine(), statusLine().contains(ReelGestures.NO_BUTTON + " 2"));
+    }
+
+    @Test
+    public void aSheetThatCannotBeBuiltIsReportedAndTheLongPressIsFacebooks() {
+        ReelGestures.sheetOpener = (v, session, item, environment, story, config) -> false;
+        Object reel = new Object();
+        assertFalse(ReelGestures.longPress(new FullHandler(reel), new Holder(view)));
+        assertFalse("no view", ReelGestures.longPress(new FullHandler(reel), new Holder(null)));
+        assertTrue(statusLine(), statusLine().contains("threw"));
+        ReelGestures.sheetOpener = savedSheet;
+        assertFalse("the unpatched stub", ReelGestures.longPress(new FullHandler(reel), new Holder(view)));
     }
 
     @Test
     public void rememberingNothingIsHarmless() {
         ReelGestures.remember(null, new Object());
         ReelGestures.remember(button(),null);
+        ReelGestures.rememberHandler(null, new Object());
+        ReelGestures.rememberHandler(new Object(), null);
         ReelGestures.noteView(null);
         assertNull(ReelGestures.buttonFor(new Object()));
+        assertNull(ReelGestures.handlerFor(new Object()));
     }
 }

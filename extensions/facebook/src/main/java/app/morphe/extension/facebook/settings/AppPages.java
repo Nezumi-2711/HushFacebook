@@ -206,7 +206,7 @@ final class AppPages {
     static void search(HushfacebookPreferenceFragment page, PreferenceScreen screen, Context context,
             Set<PatchFamily> build) {
         if (build.contains(PatchFamily.META_AI_SEARCH) || build.contains(PatchFamily.SPONSORED_SEARCH)
-                || build.contains(PatchFamily.SUGGESTED_POSTS)) {
+                || build.contains(PatchFamily.SUGGESTED_POSTS) || build.contains(PatchFamily.SEARCH_HISTORY)) {
             PreferenceCategory search = category(screen, L10n.t("Search"));
             if (build.contains(PatchFamily.META_AI_SEARCH)) {
                 search.addPreference(toggle(context, Settings.HIDE_META_AI_IN_SEARCH,
@@ -221,6 +221,11 @@ final class AppPages {
                 search.addPreference(toggle(context, Settings.HIDE_SEARCH_FOR_YOU,
                         L10n.t("Hides the For you searches Facebook suggests when you open search. Your recent searches "
                                 + "and the suggestions as you type stay.")));
+            }
+            if (build.contains(PatchFamily.SEARCH_HISTORY)) {
+                search.addPreference(toggle(context, Settings.DONT_SAVE_SEARCH_HISTORY,
+                        L10n.t("What you search for isn't added to your Facebook search history. Searches already there "
+                                + "stay until you delete them.")));
             }
         }
     }
@@ -536,6 +541,11 @@ final class AppPages {
         privacy.addPreference(toggle(context, Settings.SAVE_CRASH_FILE,
                 L10n.t("When Facebook crashes, the error goes in a text file in Download/Hushfacebook, so you can send it with a "
                         + "bug report even if Facebook won't open. Links and IDs are left out. The newest five are kept.")));
+        // The settings entry's own as well: it watches Facebook's screens from the application hook.
+        privacy.addPreference(toggle(context, Settings.CLOSE_WHEN_LEFT,
+                L10n.t("A few seconds after you leave Facebook, it closes all the way and leaves your recent apps, so it "
+                        + "isn't running in the background. It waits for uploads and saves to finish first. Notifications "
+                        + "may come late, or not until you open Facebook again.")));
         if (build.contains(PatchFamily.ANALYTICS_UPLOADS)) {
             // XAnalytics resumes its uploader once, as Facebook starts.
             privacy.addPreference(toggle(context, Settings.HOLD_ANALYTICS_UPLOADS,

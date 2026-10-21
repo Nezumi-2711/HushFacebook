@@ -66,6 +66,9 @@ internal const val VIEWER_STICKER = "FbShortsComposerAttachmentComponentSpec_STI
 /** The name the same bar gives its GIF button. */
 internal const val VIEWER_GIF = "FbShortsComposerAttachmentComponentSpec_GIF"
 
+/** The transition key the whole of that bar, the Add a comment box and its buttons, is laid out under, in its render. */
+internal const val VIDEO_COMMENT_BAR = "comment_bar_layout_transition_key"
+
 /** The name the socket under a post's comments gives itself, in the methods that go through its plugins. */
 internal const val BOTTOM_SOCKET = "FeedbackSurfaceBottomContentSocket"
 
@@ -104,6 +107,7 @@ private const val OBJECTS = "[Ljava/lang/Object;"
 internal const val COMMENT_SHEET_OPTIONS = "$EXTENSION_PACKAGE/comments/CommentSheetOptions;"
 internal const val HOLDS_BUTTON = "$COMMENT_SHEET_OPTIONS->holdsButton(Ljava/lang/String;)Z"
 internal const val HOLDS_VIEWER_BUTTONS = "$COMMENT_SHEET_OPTIONS->holdsViewerButtons()Z"
+internal const val HIDES_VIDEO_COMMENT_COMPOSER = "$COMMENT_SHEET_OPTIONS->hidesVideoCommentComposer()Z"
 internal const val HOLDS_BOTTOM_CONTENT = "$COMMENT_SHEET_OPTIONS->holdsBottomContent(Ljava/lang/String;)Z"
 internal const val SKIP_PICKER = "$COMMENT_SHEET_OPTIONS->skipReactionPicker()Z"
 internal const val OPEN_REPLY_THREADS = "$COMMENT_SHEET_OPTIONS->openReplyThreads(Z)Z"
@@ -130,6 +134,11 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * [VIEWER_GIF], then passes all three to a builder whose child list skips a missing one (582
  * `LX/9xu;->A1H` into `LX/1bP;->A00`). Once the GIF button is built the extension is asked, and
  * while the switch is on both buttons' registers are cleared, so the bar keeps only mention.
+ *
+ * Hide the video comment box (#213): those buttons are only the box's inner row. The whole bar is
+ * another component, the one class naming [VIDEO_COMMENT_BAR] that builds the row's class (583
+ * `LX/98j;`, whose `A0G` builds `LX/ALy`). First thing in its render the extension is asked, and
+ * while the switch is on the render returns nothing, so the box is gone with its outline.
  *
  * Hide related groups: what comes after a post's comments is drawn through another socket, the one
  * that names itself [BOTTOM_SOCKET] in the two comment surfaces' methods going through its plugins
@@ -184,7 +193,7 @@ val commentSheetOptionsPatch = bytecodePatch(
     name = "Comment sheet options",
     description = "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and " +
         "sticker buttons, show every reply without tapping View replies, load a whole reply thread as you " +
-        "scroll, hide Related groups under group posts, hide comments with shop links or your words, and hide who is typing and the new comments pop-up. Starts off. Turn on the parts you want in " +
+        "scroll, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in " +
         "Hushfacebook settings > Comments.",
 ) {
     category("Comments")
@@ -213,6 +222,7 @@ val commentSheetOptionsPatch = bytecodePatch(
         val drawn = commentDraw(holders(COMMENT_SECTION))
         val replyList = replyList(holders(EXPANDED_REPLIES), holders(COMMENT_LIST))
         val viewer = viewerButtons(holders(VIEWER_GIF))
+        val videoBar = videoCommentBar(holders(VIDEO_COMMENT_BAR), viewer.render)
 
         mutableClassDefBy(buttons.check.definingClass).methods.single { it.descriptor() == buttons.check.descriptor() }
             .holdButtons(buttons.table)
@@ -229,6 +239,8 @@ val commentSheetOptionsPatch = bytecodePatch(
             .loadWholeReplyThreads(replyList)
         mutableClassDefBy(viewer.render.definingClass).methods.single { it.descriptor() == viewer.render.descriptor() }
             .holdViewerButtons(viewer)
+        mutableClassDefBy(videoBar.definingClass).methods.single { it.descriptor() == videoBar.descriptor() }
+            .hideVideoCommentComposer()
         enableStatus("commentSheetOptions")
     }
 }
@@ -749,5 +761,50 @@ internal fun MutableMethod.holdViewerButtons(buttons: ViewerButtons) {
             ${clear(buttons.gif)}
         """,
         ExternalLabel("bar", getInstruction(buttons.at)),
+    )
+}
+
+/**
+ * The render of the video viewer's whole comment bar: among [holders], the classes loading
+ * [VIDEO_COMMENT_BAR], the one with a method building [buttons]' class, the box's inner row. Its
+ * render names [VIDEO_COMMENT_BAR] and has the row render's name, parameters and return. Refuses
+ * unless there's exactly one.
+ */
+internal fun videoCommentBar(holders: List<ClassDef>, buttons: Method): Method {
+    val row = buttons.definingClass
+    fun builds(method: Method) = method.implementation?.instructions?.any {
+        it.opcode == Opcode.NEW_INSTANCE && ((it as ReferenceInstruction).reference as TypeReference).type == row
+    } == true
+    val renders = holders.filter { holder -> holder.methods.any(::builds) }
+        .flatMap { methodsHolding(it, VIDEO_COMMENT_BAR) }
+        .filter {
+            it.name == buttons.name && it.returnType == buttons.returnType &&
+                it.parameterTypes.map(CharSequence::toString) == buttons.parameterTypes.map(CharSequence::toString)
+        }
+        .distinctBy { it.descriptor() }
+    return renders.singleOrNull()
+        ?: refuse("expected one render naming \"$VIDEO_COMMENT_BAR\" in a class building $row, found ${renders.size}")
+}
+
+/**
+ * First thing where the video viewer's comment bar renders: on a yes from the extension it returns
+ * nothing, so the Add a comment box under a full-screen video is gone with its outline (#213, from
+ * @dijitalcozum's patch, which cleared only the box's button row). Asking at the start covers every
+ * way out of the render, including the returns its jumps land on, which code put in front of a
+ * return would be stepped past. Nothing local is live yet there, so v0 holds the answer.
+ */
+internal fun MutableMethod.hideVideoCommentComposer() {
+    if (!returnType.startsWith("L")) refuse("${descriptor()} doesn't return an object")
+    if (localRegisterCount() < 1) refuse("${descriptor()} has no local register for the hook")
+    addInstructionsWithLabels(
+        0,
+        """
+            invoke-static {}, $HIDES_VIDEO_COMMENT_COMPOSER
+            move-result v0
+            if-eqz v0, :bar
+            const/4 v0, 0x0
+            return-object v0
+        """,
+        ExternalLabel("bar", getInstruction(0)),
     )
 }

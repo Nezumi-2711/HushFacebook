@@ -90,12 +90,13 @@ import app.morphe.extension.shared.settings.StringSetting;
  */
 public final class SettingsBackup {
     /**
-     * Far more than a settings file needs: one is a few hundred bytes, or about 81 KB at most with
-     * both word lists filling the room they share and the sources list filling its own. The 16 KB
-     * left past the two lists' 72 KB is for every other value, switches and the 2 KB of share sheet
-     * items included, and leaves room for switches to come.
+     * Far more than a settings file needs: one is a few hundred bytes, or about 88 KB at most with
+     * both word lists filling the room they share, the sources list filling its own and every
+     * other value at its longest, switches and the 2 KB of share sheet items included. That leaves
+     * about 8 KB for switches to come. SettingsBackupTest's longest-file check fails once they've
+     * used it; raise this then.
      */
-    public static final int MAX_BYTES = 88 * 1024;
+    public static final int MAX_BYTES = 96 * 1024;
     public static final String FORMAT = "hushfacebook-settings";
     /** The file shape this build writes and the newest it reads. A file declaring more is refused. */
     static final int SCHEMA = 1;
@@ -181,6 +182,7 @@ public final class SettingsBackup {
             Settings.HIDE_REEL_COUNTS,
             Settings.HIDE_REEL_SAVE_BUTTON,
             Settings.HIDE_REEL_SOUND_BUTTON,
+            Settings.HIDE_REEL_AUDIO_LINE,
             Settings.FEED_VIDEOS_ALONE,
             Settings.DONT_SEND_REEL_WATCH_HISTORY,
             Settings.HOLD_ANALYTICS_UPLOADS,
@@ -216,6 +218,7 @@ public final class SettingsBackup {
             Settings.HIDE_COMMENTS_WITH_WORDS,
             Settings.HIDE_INCOMING_COMMENT_TYPING,
             Settings.HIDE_NEW_COMMENTS_PILL,
+            Settings.HIDE_VIDEO_COMMENT_COMPOSER,
             Settings.OPEN_COMMENTS_FULL_HEIGHT,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT,
             Settings.TAP_TO_PLAY,
@@ -264,6 +267,7 @@ public final class SettingsBackup {
             Settings.SETTINGS_MENU_ROW,
             Settings.APP_LOCK,
             Settings.SAVE_CRASH_FILE,
+            Settings.CLOSE_WHEN_LEFT,
             Settings.MARKETPLACE_ONLY,
             Settings.EVENTS_ONLY,
             Settings.MARKETPLACE_QUIET_NOTIFICATIONS,
@@ -304,6 +308,7 @@ public final class SettingsBackup {
             Settings.HIDE_FACEBOOK_LOGO,
             Settings.FORCE_DARK_MODE,
             Settings.AMOLED_FLAT_CARDS,
+            Settings.AMOLED_FEED_GAPS,
             Settings.HIDE_REEL_PROMPTS,
             Settings.HIDE_GET_MESSENGER_CARD,
             Settings.HIDE_CHAT_NOTES_TRAY,
@@ -324,6 +329,7 @@ public final class SettingsBackup {
             Settings.HIDE_META_AI_IMAGINE,
             Settings.HIDE_META_AI_POST_BUTTONS,
             Settings.HIDE_META_AI_IN_SEARCH,
+            Settings.DONT_SAVE_SEARCH_HISTORY,
             Settings.BLOCK_TRENDING_VIDEO_NOTIFICATIONS,
             Settings.BLOCK_MEMORY_NOTIFICATIONS,
             Settings.BLOCK_BIRTHDAY_NOTIFICATIONS,

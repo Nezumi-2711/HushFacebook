@@ -136,4 +136,38 @@ public class MenuPanelTest {
         assertTrue(bloks[1]);
         assertFalse(MenuPanel.bloksPanel(true));
     }
+
+    /**
+     * #184's 0.16.0 report: the server gives the account the Bloks Menu, so the swapped panel opens
+     * the Menu page and the page's factory asks the same flag. Both answers turn into Facebook's own
+     * Menu, each counted under its own reason.
+     */
+    @Test
+    public void aBloksAccountsPanelAndPageBothGetFacebooksOwnMenu() {
+        assertFalse(MenuPanel.bloksPanel(true));
+        assertFalse(MenuPanel.bloksMenu(true));
+        assertEquals(MenuPanel.ROUTE + ": 2 lists, 2 items, 2 removed. Last reason: " + MenuPanel.SWAPPED_PAGE
+                        + ". Removed: " + MenuPanel.SWAPPED + " 1, " + MenuPanel.SWAPPED_PAGE + " 1",
+                line(FeedFilterCounters.report(), MenuPanel.ROUTE));
+        assertEquals(FamilyNames.MENU_PROMOTIONS + ": invoked 2, 1 found, 0 missing",
+                line(HookStatus.report(), FamilyNames.MENU_PROMOTIONS));
+    }
+
+    @Test
+    public void theMenuPageIsTheServersWithEverySwitchOffOrPaused() {
+        assertFalse("a native page stays native", MenuPanel.bloksMenu(false));
+        allSwitchesOff();
+        assertTrue(MenuPanel.bloksMenu(true));
+        assertFalse(MenuPanel.bloksMenu(false));
+        assertNull("a page left alone was counted", line(FeedFilterCounters.report(), MenuPanel.ROUTE));
+
+        Settings.HIDDEN_MENU_TILES.save("gaming");
+        assertFalse(MenuPanel.bloksMenu(true));
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertTrue(MenuPanel.bloksMenu(true));
+        PauseForTests.resume();
+        boolean[] bloks = {false};
+        SettingsContextRule.withoutContext(() -> bloks[0] = MenuPanel.bloksMenu(true));
+        assertTrue("before the settings are ready the page is the server's", bloks[0]);
+    }
 }

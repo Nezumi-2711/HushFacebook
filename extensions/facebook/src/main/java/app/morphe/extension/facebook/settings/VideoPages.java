@@ -126,7 +126,8 @@ final class VideoPages {
                             + "account yet.")));
             // The pill is built as each reel's footer is, so a change shows from the next reel.
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SEARCH_PILL,
-                    L10n.t("Hides the search suggestion under a reel's caption, the magnifier with a question to look up.")));
+                    L10n.t("Hides the search suggestion under a reel's caption, the magnifier with a question to look up, "
+                            + "the one at the top of its comments and the search bar over reels you open from a profile.")));
             // The sidebar buttons are built as each reel is, so a change shows from the next reel.
             reels.addPreference(toggle(context, Settings.HIDE_REEL_COUNTS,
                     L10n.t("Takes the numbers away from under a reel's Like, Comment and Share icons. "
@@ -137,6 +138,10 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SOUND_BUTTON,
                     L10n.t("Takes the speaker button off the bottom of the side of reels. "
                             + "A change shows from the next reel.")));
+            // The audio line is one of the chips, built as each reel's footer is.
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_AUDIO_LINE,
+                    L10n.t("Takes the line with the reel's sound, \"Original audio\" or a song, off the bottom of "
+                            + "reels. Other info stays. A change shows from the next reel.")));
             // Asked as a feed video's player asks for more, so a change shows from the next feed video.
             reels.addPreference(toggle(context, Settings.FEED_VIDEOS_ALONE,
                     L10n.t("A video you tap in the feed opens full screen by itself, with no reels to swipe to after it. "
@@ -165,8 +170,8 @@ final class VideoPages {
         }
         if (build.contains(PatchFamily.KEEP_REEL_SPEED)) {
             reels.addPreference(toggle(context, Settings.KEEP_REEL_SPEED,
-                    L10n.t("A playback speed you pick in a reel's menu stays for the next reels until you pick another "
-                            + "or Facebook restarts. Off, every reel starts at normal speed.")));
+                    L10n.t("A playback speed you pick in a reel's menu stays for the next reels, after a restart too, "
+                            + "until you pick another. Off, every reel starts at normal speed.")));
             reels.addPreference(toggle(context, Settings.KEEP_VIDEO_SPEED,
                     L10n.t("The speed you pick in a feed or Watch video's menu carries over to the next videos. Reels keep "
                             + "their own speed. Off by default, since it hasn't been tried on a real account yet.")));

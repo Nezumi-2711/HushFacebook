@@ -12,6 +12,7 @@ import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
@@ -73,6 +74,13 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
  *   and makes items without a speed, which the pick parses the same way. With it true each item
  *   carries its float and the pick reads that. Every caller passes false but one, which passes a
  *   field.
+ * - The speed the gear menu's sheet checks (read from 583, 2026-10-20): before the labels, the
+ *   builder (583 LX/XzW;->A02) looks its player up with a static call taking the PlayerOrigin and
+ *   answering FbGrootPlayer (583 LX/RzC;->A0g) and reads the player's speed with its ()F getter
+ *   (583 Bwc). With no origin or no player found, it loads 1f into the same register and goes
+ *   back to the getter's path. Each item is checked when its speed equals that one, and the
+ *   checked item can't be picked. On a phone the sheet found no player for reels, so it checked
+ *   Normal whatever the reel played at, while the pick (583 LX/YRo;->E6b) found it another way.
  */
 
 internal const val REEL_SPEED = "$EXTENSION_PACKAGE/media/ReelSpeed;"
@@ -110,6 +118,8 @@ internal const val GEAR_SHEET = "PlayerControlsPlaybackSpeedBottomSheet"
 internal const val GEAR_VALUES = "$REEL_SPEED->gearValues(Z)Z"
 internal const val GEAR_SPEEDS = "$REEL_SPEED->gearSpeeds([F)[F"
 internal const val GEAR_LABELS = "$REEL_SPEED->gearLabels([Ljava/lang/String;)[Ljava/lang/String;"
+internal const val GEAR_SHEET_SPEED = "$REEL_SPEED->gearSheetSpeed(F)F"
+internal const val SPEED_STUB = "playerSpeed"
 private const val LOCALE_NUMBERS = "Ljava/text/NumberFormat;->getInstance(Ljava/util/Locale;)Ljava/text/NumberFormat;"
 
 /**
@@ -198,6 +208,55 @@ internal fun gearMeets(method: Method): List<GearMeet> {
         GearMeet(index, labels, (speed as ThreeRegisterInstruction).registerB, values)
     }
 }
+
+/**
+ * Where the gear menu's speed sheet builder falls back to normal speed for the speed it checks:
+ * [index] is the const/high16 loading 1f into [speed], the register the found player's [getter]
+ * fills on the other path.
+ */
+internal class GearMiss(val index: Int, val speed: Int, val getter: MethodReference)
+
+/**
+ * Where [method] looks up its player with a static call taking a PlayerOrigin and answering
+ * [owner], and on finding it reads its speed with an [owner] ()F getter into a register: the
+ * if-eqz on the lookup's answer lands on a const/high16 of 1f into that register, followed by a
+ * goto to the instruction after the getter's move-result.
+ */
+internal fun gearMisses(method: Method, owner: String): List<GearMiss> {
+    val code = method.implementation?.instructions?.toList() ?: return emptyList()
+    val addresses = code.runningFold(0) { address, instruction -> address + instruction.codeUnits }
+    fun at(address: Int) = addresses.indexOf(address).takeIf { it in code.indices }
+    fun target(index: Int) = at(addresses[index] + (code[index] as OffsetInstruction).codeOffset)
+    fun called(index: Int) = (code.getOrNull(index) as? ReferenceInstruction)?.reference as? MethodReference
+    return code.indices.mapNotNull { index ->
+        val lookup = called(index) ?: return@mapNotNull null
+        if (code[index].opcode != Opcode.INVOKE_STATIC && code[index].opcode != Opcode.INVOKE_STATIC_RANGE) return@mapNotNull null
+        if (lookup.returnType != owner || lookup.parameterTypes.none { it.toString() == PLAYER_ORIGIN }) return@mapNotNull null
+        val found = code.getOrNull(index + 1)
+        if (found?.opcode != Opcode.MOVE_RESULT_OBJECT) return@mapNotNull null
+        val player = (found as OneRegisterInstruction).registerA
+        val check = code.getOrNull(index + 2)
+        if (check?.opcode != Opcode.IF_EQZ || (check as OneRegisterInstruction).registerA != player) return@mapNotNull null
+        val getter = called(index + 3)
+        if (code.getOrNull(index + 3)?.opcode != Opcode.INVOKE_VIRTUAL || getter == null || getter.definingClass != owner ||
+            getter.returnType != "F" || getter.parameterTypes.isNotEmpty()
+        ) return@mapNotNull null
+        val read = code.getOrNull(index + 4)
+        if (read?.opcode != Opcode.MOVE_RESULT) return@mapNotNull null
+        val speed = (read as OneRegisterInstruction).registerA
+        val miss = target(index + 2) ?: return@mapNotNull null
+        val normal = code[miss]
+        if (normal.opcode != Opcode.CONST_HIGH16 || (normal as OneRegisterInstruction).registerA != speed ||
+            (normal as NarrowLiteralInstruction).narrowLiteral != NORMAL_SPEED.toRawBits()
+        ) return@mapNotNull null
+        val back = code.getOrNull(miss + 1)
+        if (back?.opcode !in GOTOS || target(miss + 1) != index + 5) return@mapNotNull null
+        GearMiss(miss, speed, getter)
+    }
+}
+
+private const val NORMAL_SPEED = 1f
+private val GOTOS = setOf(Opcode.GOTO, Opcode.GOTO_16, Opcode.GOTO_32)
 
 private fun Method.isStatic() = AccessFlags.STATIC.isSet(accessFlags)
 private fun Method.parameters() = parameterTypes.map(CharSequence::toString)

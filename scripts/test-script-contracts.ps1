@@ -524,6 +524,7 @@ foreach ($name in $consumerScripts) {
 # --- release receipt -------------------------------------------------------------------------
 
 . (Join-Path $PSScriptRoot 'release-receipt.ps1')
+. (Join-Path $PSScriptRoot 'walk-receipt.ps1')
 
 $manifestLines = @(
     'N: android=http://schemas.android.com/apk/res/android (line=1)',
@@ -837,6 +838,12 @@ try {
     Assert-True ($identity.Present -and $identity.Valid -and $identity.SourceState -ceq 'clean' -and
         $identity.SourceCommit -ceq $template.release.commit) 'Bound clean identity was not read.'
     Assert-True (Test-IdentityReceipt).Valid 'A receipt refused its bound clean bundle identity.'
+    # The walk gate words that identity the way BundleIdentity.fromJar does, which is what the
+    # patched app reports, and a bundle with none has nothing to hold a walk to.
+    Assert-True ((Get-BundlePatchBuild -BundlePath $identityBundle) -ceq ("sha256=$($identity.PayloadSha256); source=clean:" +
+            "$($template.release.commit); tree=$('a' * 40); inputs=$('b' * 64)")) `
+        "The walk gate words a bundle's identity otherwise than the app reports it: $(Get-BundlePatchBuild -BundlePath $identityBundle)"
+    Assert-True ($null -eq (Get-BundlePatchBuild -BundlePath $bundle)) 'The walk gate found an identity in a legacy bundle.'
     # The SBOM check holds that identity to the commit it's given, as the receipt build and the
     # receipt check both call it; given none, it says so rather than refusing every new bundle.
     $identitySbom = Join-Path $identityRoot 'patches-9.9.9.cdx.json'
@@ -3623,8 +3630,8 @@ try {
         'scripts/test-facebook-sources.ps1' = @('audit-facebook-sources.ps1', 'facebook-sources.ps1', 'gitlab-coverage.ps1',
             'patch-target.ps1', 'scan-gitlab-coverage.ps1', 'test-facebook-sources.ps1')
         'scripts/test-release-text.ps1' = @('release/release.ps1', 'test-release-text.ps1')
-        'scripts/test-phone-smoke.ps1' = @('phone-smoke.ps1', 'test-phone-smoke.ps1', 'device-audit.ps1',
-            'device-audit-expectations.json')
+        'scripts/test-phone-smoke.ps1' = @('phone-smoke.ps1', 'test-phone-smoke.ps1', 'device-audit.ps1', 'walk-receipt.ps1',
+            'device-audit-expectations.json', 'device-audit-expectations-s22.json')
     }
     foreach ($suite in @('scripts/test-script-contracts.ps1') + @($verifierRoutes.Keys)) {
         Assert-True (Test-PushGateRunsSuite $prePushScript $suite) "The push gate does not run $suite."
@@ -7825,6 +7832,7 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $flowRepo 'scripts/release') -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'common.ps1') -Destination (Join-Path $flowRepo 'scripts')
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'patch-target.ps1') -Destination (Join-Path $flowRepo 'scripts')
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'walk-receipt.ps1') -Destination (Join-Path $flowRepo 'scripts')
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'release/release.ps1') -Destination (Join-Path $flowRepo 'scripts/release')
     Set-Content -LiteralPath (Join-Path $flowRepo 'gradle.properties') -Value 'version = 1.2.3' -Encoding ASCII
     Set-Content -LiteralPath (Join-Path $flowRepo 'CHANGELOG.md') -Value '# Changelog' -Encoding ASCII
@@ -7888,6 +7896,13 @@ try {
         "    if ((Get-Content -LiteralPath '$failLiteral' -ErrorAction SilentlyContinue) -eq 'rebuilt') {",
         '        return [pscustomobject]@{ Valid = $false; Reason = ''the stand-in found a changed class''; Comparison = $null } }',
         '    return [pscustomobject]@{ Valid = $true; Reason = $null; Comparison = [pscustomobject]@{ Compared = 3; Identity = @() } }',
+        '}',
+        # The identity the stand-in bundles carry follows their bytes, so a walk of one bundle
+        # names another's identity once the bytes differ.
+        'function Get-BundleIdentityFacts([string]$BundlePath) {',
+        '    return [pscustomobject]@{ Present = $true; Valid = $true; SourceState = ''clean''; SourceCommit = (''1'' * 40)',
+        '        SourceTree = (''2'' * 40); InputSha256 = (''3'' * 64)',
+        '        PayloadSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $BundlePath).Hash.ToLowerInvariant() }',
         '}')
     $flowWrapper = Join-Path $releaseFlow 'wrapper.ps1'
     Set-Content -LiteralPath $flowWrapper -Encoding UTF8 -Value @(
@@ -8066,6 +8081,22 @@ try {
     Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 6> $null } '*-Checked*' 'Publish ran without a checked paragraph.'
     $flowChecked = Join-Path $releaseFlow 'checked.txt'
     Set-Content -LiteralPath $flowChecked -Value 'Checked.' -Encoding ASCII
+    # Nor without the receipt of a whole-app walk.
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null } '*-Walk*' 'Publish ran without a walk receipt.'
+    Assert-True (@(Read-FlowLog).Count -eq 0) 'Publish ran a step before asking for the walk receipt.'
+    # The walk publish holds the bundle to: a full PASS on a release phone, written the way
+    # device-audit writes it, naming the identity the staged bundle carries. -Change bends one field.
+    $flowWalk = Join-Path $releaseFlow 'walk-receipt.json'
+    function Write-FlowWalk([hashtable]$Change = @{}) {
+        $walkIdentity = 'sha256=' + (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $flowAssets 'patches-1.2.3.mpp')).Hash.ToLowerInvariant() +
+            '; source=clean:' + ('1' * 40) + '; tree=' + ('2' * 40) + '; inputs=' + ('3' * 64)
+        $walkReceipt = New-WalkReceipt -Result PASS -Full $true -Serial 'TESTPHONE01' -Device 'SM-S908U1' -Facebook '583.0.0.39.55' `
+            -PatchBuild $walkIdentity -InstalledApkSha256 ('4' * 64) -Started '2026-10-21T16:00:00Z' -Finished '2026-10-21T16:30:00Z' `
+            -FamiliesRan 120 -Families 160 -Crashes 0
+        foreach ($key in $Change.Keys) { $walkReceipt[$key] = $Change[$key] }
+        Set-Content -LiteralPath $flowWalk -Value ($walkReceipt | ConvertTo-Json -Depth 4) -Encoding ASCII
+    }
+    Write-FlowWalk
 
     # Rebuild comes first. Publish refuses a staged bundle no rebuild has backed, before the notes,
     # the tag or GitHub.
@@ -8073,7 +8104,7 @@ try {
     $flowBundle = Join-Path $flowAssets 'patches-1.2.3.mpp'
     $flowNote = Join-Path $flowAssets 'rebuild-1.2.3.json'
     function Test-FlowUntagged { return -not (& git -C $flowRepo tag --list v1.2.3) -and -not (& git -C $flowOrigin tag --list v1.2.3) }
-    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*Run -Stage rebuild first*' `
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } '*Run -Stage rebuild first*' `
         'Publish went ahead with a bundle the rebuild stage never compared.'
     Assert-True (@(Read-FlowLog).Count -eq 0 -and (Test-FlowUntagged)) 'Publish ran a step or tagged before the rebuild stage had run.'
 
@@ -8115,7 +8146,7 @@ try {
         Assert-True ($flow.Count -eq 1) "A failed rebuild still ran what follows it: $($flow -join ' | ')"
         $null = Assert-RebuildCleanedUp $flow[0] 'A failed rebuild'
         Assert-True (-not (Test-Path -LiteralPath $flowNote)) 'A failed rebuild left a note for publish to read.'
-        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*Run -Stage rebuild first*' `
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } '*Run -Stage rebuild first*' `
             'Publish went ahead after a rebuild that failed.'
         Assert-True (@(Read-FlowLog).Count -eq 0 -and (Test-FlowUntagged)) 'Publish ran a step or tagged after a rebuild that failed.'
 
@@ -8155,7 +8186,7 @@ try {
         # A bundle changed since isn't the one that was compared, and publish refuses it before the tag.
         $keptBundle = [System.IO.File]::ReadAllBytes($flowBundle)
         [System.IO.File]::AppendAllText($flowBundle, 'changed')
-        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } `
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } `
             "*isn't the bundle a rebuild of $flowHead was compared with, so nothing was tagged*" `
             'Publish went ahead with a bundle changed since its rebuild.'
         [System.IO.File]::WriteAllBytes($flowBundle, $keptBundle)
@@ -8165,7 +8196,7 @@ try {
         # Nor does a note for another commit back this one: publish refuses, and the stage builds again.
         $keptNote = Get-Content -LiteralPath $flowNote -Raw
         Set-Content -LiteralPath $flowNote -Value $keptNote.Replace($flowHead, ('b' * 40)) -Encoding ASCII -NoNewline
-        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } `
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } `
             "*isn't the bundle a rebuild of $flowHead was compared with, so nothing was tagged*" `
             'Publish went ahead on a rebuild of another commit.'
         Assert-True (@(Read-FlowLog).Count -eq 1 -and (Test-FlowUntagged)) 'Publish ran a step or tagged on a rebuild of another commit.'
@@ -8184,7 +8215,7 @@ try {
     $keptReceipt = Get-Content -LiteralPath $flowReceipt -Raw
     foreach ($other in @(('{"release":{"commit":"' + ('b' * 40) + '"}}'), '{"release":{}}')) {
         Set-Content -LiteralPath $flowReceipt -Value $other -Encoding ASCII -NoNewline
-        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*The receipt is for*' `
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } '*The receipt is for*' `
             "Publish went ahead with a receipt that isn't for HEAD: $other"
     }
     Set-Content -LiteralPath $flowReceipt -Value $keptReceipt -Encoding ASCII -NoNewline
@@ -8193,7 +8224,7 @@ try {
     # A staged release its check refuses stops the stage before the notes, the tag or GitHub, and
     # the copy it checked goes.
     Set-Content -LiteralPath $flowFails -Value 'staged' -Encoding ASCII
-    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*nothing was tagged: the stand-in refused it*' `
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } '*nothing was tagged: the stand-in refused it*' `
         'Publish went ahead with a staged release its check refused.'
     Remove-Item -LiteralPath $flowFails -Force
     $flow = @(Read-FlowLog)
@@ -8204,7 +8235,7 @@ try {
     # A link in the copy, which could be pointed elsewhere before gh reads it, stops the stage before
     # the notes, the tag or GitHub. Removing the copy takes the link away, not what it points at.
     Set-Content -LiteralPath $flowFails -Value 'link' -Encoding ASCII
-    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*linked in the publishing copy is a link, so nothing was tagged*' `
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } '*linked in the publishing copy is a link, so nothing was tagged*' `
         'Publish went ahead with a link in the copy it checked.'
     Remove-Item -LiteralPath $flowFails -Force
     $flow = @(Read-FlowLog)
@@ -8213,7 +8244,33 @@ try {
     $linkedCopy = [regex]::Match($flow[0], ' folder=(.+) files=').Groups[1].Value
     Assert-True ($linkedCopy -and -not (Test-Path -LiteralPath $linkedCopy)) 'A publish refused for a link left its copy behind.'
     Assert-True (Test-Path -LiteralPath (Join-Path $flowLinkTarget 'keep.txt') -PathType Leaf) 'Removing the publish copy emptied what its link pointed at.'
-    & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null
+    # A walk that failed, stopped short, crashed, ran on another phone or walked another bundle
+    # stops the stage before the notes, the tag or GitHub, once the copy is checked.
+    foreach ($badWalk in @(
+            @{ Why = 'a failed walk'; Change = @{ result = 'FAIL' }; Pattern = '*walk ended FAIL, not PASS*' },
+            @{ Why = 'a partial audit'; Change = @{ result = 'PARTIAL'; full = $false }; Pattern = '*walk ended PARTIAL, not PASS*' },
+            @{ Why = 'a PASS marked partial'; Change = @{ full = $false }; Pattern = '*skipped part of the audit*' },
+            @{ Why = 'a crash'; Change = @{ crashes = 1 }; Pattern = '*recorded a Facebook crash*' },
+            @{ Why = 'another phone'; Change = @{ device = 'Pixel 9' }; Pattern = "*Pixel 9 isn't one of the release walk phones*" },
+            @{ Why = 'a phone posing as an emulator'; Change = @{ device = 'Pixel 9'; emulator = $true }; Pattern = "*Pixel 9 isn't one of the release walk phones*" },
+            @{ Why = 'another bundle'; Change = @{ patchBuild = 'sha256=' + ('9' * 64) + '; source=clean:' + ('1' * 40) }; Pattern = '*walked app reported patch build*' },
+            @{ Why = 'another schema'; Change = @{ schema = 2 }; Pattern = "*walk receipt isn't schema 1*" })) {
+        Write-FlowWalk $badWalk.Change
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } $badWalk.Pattern `
+            "Publish went ahead on $($badWalk.Why)."
+        $flow = @(Read-FlowLog)
+        Assert-True ($flow.Count -eq 1 -and $flow[0] -like 'staged *' -and (Test-FlowUntagged)) `
+            "Publish ran a step or tagged on $($badWalk.Why): $($flow -join ' | ')"
+        $refusedCopy = [regex]::Match($flow[0], ' folder=(.+) files=').Groups[1].Value
+        Assert-True ($refusedCopy -and -not (Test-Path -LiteralPath $refusedCopy)) "Publish refused for $($badWalk.Why) left its copy behind."
+    }
+    Set-Content -LiteralPath $flowWalk -Value 'not json' -Encoding ASCII
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } "*walk receipt doesn't read as JSON*" `
+        'Publish went ahead on a walk receipt that does not read.'
+    Assert-True (@(Read-FlowLog).Count -eq 1 -and (Test-FlowUntagged)) 'Publish tagged on a walk receipt that does not read.'
+    # An emulator walks for a release as well as a phone does.
+    Write-FlowWalk @{ serial = 'emulator-5554'; device = 'Hushfacebook_API36'; emulator = $true }
+    & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null
     $flow = @(Read-FlowLog)
     Assert-True ($flow.Count -eq 4 -and $flow[0] -like ("staged version=1.2.3 commit=$flowHead swap=refused folder=* files=patches-1.2.3.cdx.json," +
             'patches-1.2.3.mpp,patches-1.2.3.tooling.json,release-receipt-1.2.3.json,SHA256SUMS.txt') -and
@@ -8237,7 +8294,7 @@ try {
     Assert-True ((& git -C $flowOrigin rev-parse 'v1.2.3^{commit}') -eq (& git -C $flowRepo rev-parse HEAD)) `
         'Publish did not push a v1.2.3 tag on the source commit.'
     $flowTamper = 'patches-1.2.3.mpp'
-    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked 6> $null 3> $null } '*hosted patches-1.2.3.mpp differs*' `
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk 6> $null 3> $null } '*hosted patches-1.2.3.mpp differs*' `
         'Publish passed a release whose hosted bundle is not the one it built.'
     $flowTamper = $null
     $null = Read-FlowLog

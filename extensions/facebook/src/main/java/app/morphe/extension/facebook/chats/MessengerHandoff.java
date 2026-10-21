@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import app.morphe.extension.facebook.notifications.NotificationKinds;
 import app.morphe.extension.facebook.settings.FamilyNames;
 import app.morphe.extension.facebook.settings.Settings;
 import app.morphe.extension.shared.Utils;
@@ -34,10 +35,11 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * <p>The local hooks stay as a fallback for already-routed work: {@link #dropCallPush} runs first in
  * Facebook's push handlers for VOIP pushes, {@link #dropRing} runs first in the parser every
  * incoming ring goes through (from FCM, from Facebook's own MQTT connection and from its call
- * signaling), and {@link #dropChat} runs first where Facebook hands a chat notification to its
- * notifiers. While the switch is on and Meta's Messenger is installed and enabled, a call push is
- * dropped, a ring parses to nothing, and a new message, reaction, message request or missed call
- * isn't posted by Facebook.
+ * signaling), {@link #dropChat} runs first where Facebook hands a chat notification to its
+ * notifiers, and {@link #dropChatPush} runs first where Facebook posts a push notification, which
+ * is how a message in Facebook's own Chats arrives. While the switch is on and Meta's Messenger is
+ * installed and enabled, a call push is dropped, a ring parses to nothing, and a new message,
+ * reaction, message request or missed call isn't posted by Facebook.
  *
  * <p>Messenger is looked up afresh on every question, never kept. A missed call costs far more than
  * a package lookup, and a Messenger uninstalled or disabled a minute ago has to stop the local drop
@@ -84,6 +86,27 @@ public final class MessengerHandoff {
             "com.facebook.messaging.notify.type.MessageRequestNotification",
             "com.facebook.messaging.rtc.callstatus.notification.MissedCallNotification",
             "com.facebook.messaging.tincan.tincanoverwamsys.backgroundsync.generic.notify.MessengerGenericTincanMessage")));
+
+    /**
+     * The same chats as {@link #CHAT_KINDS} where Facebook posts them as push notifications, by
+     * NotificationType's constant names: a new message in Facebook's own Chats, the ones after it
+     * and an edit to one, the older message pushes, a message request, a reaction, a missed call
+     * and an end-to-end encrypted message. #193's report counted three MESSAGING_IN_BLUE_DIRECT_MESSAGE
+     * pushes reaching Facebook's tray, none of them the dispatcher, while a copy of Messenger
+     * notified for the same messages. Page inboxes, community chats and Facebook's message
+     * reminders aren't among them.
+     */
+    static final Set<String> CHAT_PUSH_KINDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "MESSAGING_IN_BLUE_DIRECT_MESSAGE",
+            "MESSAGING_IN_BLUE_SUBSEQUENT_MESSAGE",
+            "MESSAGING_IN_BLUE_EDIT_MESSAGE",
+            "MSG",
+            "ORCA_MESSAGE",
+            "ORCA_FRIEND_MSG",
+            "MESSAGE_REQUEST",
+            "MESSENGER_REACTIONS",
+            "MESSENGER_E2EE_MISSED_CALL",
+            "GENERIC_TINCAN_MESSAGE")));
 
     private MessengerHandoff() {
     }
@@ -153,6 +176,24 @@ public final class MessengerHandoff {
     /** Whether a notification of the class named {@code className} is one Messenger posts itself. */
     static boolean isChatKind(@Nullable String className) {
         return className != null && CHAT_KINDS.contains(className);
+    }
+
+    /**
+     * Injection point, first thing in the method that posts Facebook's push notifications, with the
+     * push's type as its payload carried it. True when its kind is one of {@link #CHAT_PUSH_KINDS}
+     * and Messenger takes it, so Facebook posts nothing. Every other kind isn't counted. Never
+     * throws.
+     */
+    public static boolean dropChatPush(@Nullable String type) {
+        try {
+            HookStatus.invoked(FamilyNames.MESSENGER_ICON);
+            String kind = NotificationKinds.kindOf(type);
+            if (kind == null || !CHAT_PUSH_KINDS.contains(kind)) return false;
+            return handOff(CHAT_DROPPED);
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.MESSENGER_ICON, "Messenger chat pushes", failure);
+            return false;
+        }
     }
 
     /**

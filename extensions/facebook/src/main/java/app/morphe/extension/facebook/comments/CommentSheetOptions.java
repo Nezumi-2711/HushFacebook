@@ -100,6 +100,9 @@ public final class CommentSheetOptions {
     /** The member the report names once the video viewer's comment bar has built its GIF and sticker buttons. */
     static final String VIEWER_BUTTONS = "video viewer comment buttons";
 
+    static final String VIEWER_COMPOSER = "video viewer comment composer";
+    static final String COMPOSER_HIDDEN = "Video comment composer hidden";
+
     /** The member the report names once the socket under a post's comments has asked about Related groups. */
     static final String BOTTOM = "related groups under comments";
 
@@ -214,6 +217,24 @@ public final class CommentSheetOptions {
             return true;
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "video viewer comment bar", failure);
+            return false;
+        }
+    }
+
+    /**
+     * The hook immediately before the full-screen video's comment bar returns its rendered object.
+     * True replaces that object with null while Hide the video comment box is on; false preserves
+     * Facebook's original render result.
+     */
+    public static boolean hidesVideoCommentComposer() {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, VIEWER_COMPOSER);
+            if (!Utils.settingsReady() || !Settings.HIDE_VIDEO_COMMENT_COMPOSER.get()) return false;
+            HookStatus.counted(FAMILY, COMPOSER_HIDDEN);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "video viewer comment composer", failure);
             return false;
         }
     }

@@ -48,7 +48,8 @@ import java.io.File
  * is found by its name, and the one paging flag of the comment list it builds goes through the
  * extension just before it's written (#140). The video viewer's comment bar is found by the names
  * of its sticker and GIF buttons, and once both are built the extension is asked and a yes clears
- * them. Reads the fixture bundles from
+ * them. The whole bar around them is the class naming its layout transition that builds that row,
+ * and its render asks first and returns nothing on a yes (#213). Reads the fixture bundles from
  * HUSHFACEBOOK_FIXTURE_DIR and skips without it.
  */
 class CommentSheetOptionsFixtureTest {
@@ -343,6 +344,35 @@ class CommentSheetOptionsFixtureTest {
             cleared.map { (it as OneRegisterInstruction).registerA }.toSet())
         assertEquals("$where: Facebook's code after the buttons stays", original.drop(at).map { it.opcode },
             patched.drop(at + 5).map { it.opcode })
+    }
+
+    private fun videoComposer(bundle: File) {
+        val row = viewerButtons(holders(bundle, VIEWER_GIF)).render
+        val render = videoCommentBar(holders(bundle, VIDEO_COMMENT_BAR), row)
+        val where = "${bundle.name}: ${render.descriptor()}"
+        assertNotEquals("$where: the bar was expected in another class than its button row",
+            row.definingClass, render.definingClass)
+        val bar = FixtureDex.classes(bundle, setOf(render.definingClass)).values.single()
+        val context = PatchContexts.of(listOf(bar))
+        val method = context.mutableClassDefBy(bar.type).methods.single { it.descriptor() == render.descriptor() }
+        val original = method.implementation!!.instructions.toList()
+
+        method.hideVideoCommentComposer()
+        val patched = method.implementation!!.instructions.toList()
+        assertEquals("$where gains five instructions", original.size + 5, patched.size)
+        assertEquals("$where: the extension is asked first", HIDES_VIDEO_COMMENT_COMPOSER, patched[0].reference())
+        assertEquals("$where: its answer", 0, (patched[1] as OneRegisterInstruction).registerA)
+        assertEquals("$where: a no goes on to Facebook", Opcode.IF_EQZ, patched[2].opcode)
+        assertEquals("$where: and lands on Facebook's first instruction", 5,
+            (patched[2] as BuilderOffsetInstruction).target.location.index)
+        assertEquals("$where: a yes returns nothing", listOf(Opcode.CONST_4, Opcode.RETURN_OBJECT),
+            patched.subList(3, 5).map { it.opcode })
+        assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(5).map { it.opcode })
+    }
+
+    @Test
+    fun `each declared build can hide the full-screen video comment composer`() = bundles { bundle ->
+        videoComposer(bundle)
     }
 
     @Test

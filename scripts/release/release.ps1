@@ -29,7 +29,10 @@
                worktree is removed whatever happens.
     publish    A copy of the five assets, held to SHA256SUMS.txt and the receipt (the bundle, SBOM
                and tooling report it names, at the source commit) before anything else runs, and
-               the bundle in it to the rebuild stage's note by its hash. Then
+               the bundle in it to the rebuild stage's note by its hash, and -Walk to that bundle:
+               the walk-receipt.json scripts/device-audit.ps1 left after walking an APK patched
+               from it, which has to be a full PASS with no crash, on a release phone or an
+               emulator, naming the patch build identity this bundle carries. Then
                notes from the whole CHANGELOG section with -Checked as What was checked, a
                lightweight tag, and the GitHub release with that checked copy, each file downloaded
                back and compared. -Checked must say "applied ... to Facebook <version>" with
@@ -48,7 +51,7 @@
     scripts/release/release.ps1 -Stage preflight -Version 0.9.0
     scripts/release/release.ps1 -Stage bundle -Version 0.9.0
     scripts/release/release.ps1 -Stage rebuild -Version 0.9.0
-    scripts/release/release.ps1 -Stage publish -Version 0.9.0 -Checked checked.txt
+    scripts/release/release.ps1 -Stage publish -Version 0.9.0 -Checked checked.txt -Walk <audit folder>/walk-receipt.json
     scripts/release/release.ps1 -Stage index -Version 0.9.0 -ReadmeSummary readme.txt -BundleSummary bundle.txt
 #>
 [CmdletBinding()]
@@ -60,6 +63,8 @@ param(
     [string]$Date,
     # publish: a file holding the What was checked paragraph.
     [string]$Checked,
+    # publish: the walk-receipt.json of the whole-app walk on an APK patched from the staged bundle.
+    [string]$Walk,
     # index: files holding the README's line about the release and Manager's text for the bundle.
     [string]$ReadmeSummary,
     [string]$BundleSummary,
@@ -71,6 +76,7 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $root 'scripts/common.ps1')
 . (Join-Path $root 'scripts/patch-target.ps1')
 . (Join-Path $root 'scripts/release-receipt.ps1')
+. (Join-Path $root 'scripts/walk-receipt.ps1')
 
 $tag = "v$Version"
 $assets = Join-Path $root "build/release-assets/$Version"
@@ -388,6 +394,7 @@ try {
         'publish' {
             $head = Assert-PushedHead
             Assert-File $Checked '-Checked, the file holding the What was checked paragraph,'
+            Assert-File $Walk '-Walk, the walk-receipt.json the whole-app walk of this bundle left,'
             foreach ($name in $assetNames + 'SHA256SUMS.txt') {
                 if (-not (Test-Path -LiteralPath (Join-Path $assets $name) -PathType Leaf)) { throw "No $name in $assets. Run -Stage bundle first." }
             }
@@ -440,6 +447,14 @@ try {
                     throw ("The staged $($builtNames[0]) isn't the bundle a rebuild of $head was compared with, so nothing " +
                         'was tagged. Run -Stage rebuild again.')
                 }
+                # Nothing goes out that hasn't been walked: the whole app, on an APK patched from
+                # this very bundle, with the app's own word for which bundle that was.
+                $walked = Test-WalkReceipt -Path $Walk -PatchBuild (Get-BundlePatchBuild -BundlePath (Join-Path $publishing $builtNames[0]))
+                if (-not $walked.Valid) {
+                    throw ("The whole-app walk doesn't back the staged $($builtNames[0]), so nothing was tagged: $($walked.Reason). " +
+                        'Patch an APK from this bundle, run scripts/device-audit.ps1 on a release phone or an emulator, and pass its walk-receipt.json as -Walk.')
+                }
+                Step "walked on $($walked.Receipt.device): $($walked.Receipt.familiesRan) of $($walked.Receipt.families) hook families ran, no crash"
 
                 $notes = Join-Path $assets 'notes.md'
                 Invoke-ReleaseText 'The release notes' @('github-notes', '--version', $Version, '--checked', $Checked, '--out', $notes)

@@ -146,12 +146,14 @@ import app.morphe.extension.facebook.reels.ReelPrompts;
 import app.morphe.extension.facebook.reels.SeenStateSendForTests;
 import app.morphe.extension.facebook.search.MetaAiSearchForTests;
 import app.morphe.extension.facebook.search.PreSearchSectionsForTests;
+import app.morphe.extension.facebook.search.SearchHistory;
 import app.morphe.extension.facebook.stories.StoryAdvance;
 import app.morphe.extension.facebook.stories.StorySeenForTests;
 import app.morphe.extension.facebook.stories.StoryUpload;
 import app.morphe.extension.facebook.stories.SuggestedStoriesForTests;
 import app.morphe.extension.facebook.theme.AmoledTheme;
 import app.morphe.extension.facebook.theme.DarkMode;
+import app.morphe.extension.facebook.theme.FeedGapsForTests;
 import app.morphe.extension.facebook.theme.ForceDarkModeForTests;
 import app.morphe.extension.facebook.updates.UpdatePrompts;
 import app.morphe.extension.shared.SettingsContextRule;
@@ -288,6 +290,8 @@ public class PausedHooksTest {
         probes.put(Settings.APP_LOCK, AppLockForTests::aStartLocks);
         // A crash that ends the app writes its file to Downloads.
         probes.put(Settings.SAVE_CRASH_FILE, app.morphe.extension.shared.settings.preference.CrashFileForTests::aCrashWritesAFile);
+        // Leaving Facebook ends its processes a few seconds later.
+        probes.put(Settings.CLOSE_WHEN_LEFT, app.morphe.extension.facebook.misc.CloseWhenLeftForTests::aLeaveCloses);
         return probes;
     }
 
@@ -522,6 +526,10 @@ public class PausedHooksTest {
         // footer queries, a Threads card between reels, and a reel starting outside Clean mode.
         probes.put(PatchFamily.REEL_DECLUTTER, Arrays.asList(
                 () -> ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsRemixAttribution"))) != null,
+                // The audio line goes under its own switch.
+                () -> ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsSoundtrackTitle"))) != null,
+                // So does the Reels tab's own audio line row.
+                ReelDeclutter::hideAudioLine,
                 ReelDeclutter::hideFollowButton,
                 ReelDeclutter::hideFollowingButton,
                 ReelDeclutter::skipHotComment,
@@ -533,6 +541,10 @@ public class PausedHooksTest {
                 () -> !"es".equals(OriginalAudio.language("es")),
                 // The search pill is answered as empty only while the patch runs.
                 ReelDeclutter::hideSearchPill,
+                // So is the prompt over a reel's comments.
+                () -> ReelDeclutter.commentSearchPrompt(new Object()) == null,
+                // And the search bar over a reel opened from a profile.
+                () -> ReelDeclutter.searchBarPart(new Object()) == null,
                 // A sidebar button's count loses its number only while the patch runs.
                 () -> !"12".equals(ReelDeclutter.countText("12")),
                 // The sidebar's Save button is skipped only while the patch runs.
@@ -715,10 +727,16 @@ public class PausedHooksTest {
         // Facebook's dark mode controller answers dark where it answered light.
         probes.put(PatchFamily.FORCE_DARK_MODE, Collections.singletonList(ForceDarkModeForTests::forcesDark));
         // Black cards: a card's dark grey takes the page's black, where the theme alone keeps it near black.
-        probes.put(PatchFamily.AMOLED_THEME, Collections.singletonList(() -> {
-            DarkMode.answer(true);
-            return AmoledTheme.apply(0xFF333334, Surface.CARD_BACKGROUND) == 0xFF000000;
-        }));
+        // Lines between posts: a feed row paints the gap under its content.
+        probes.put(PatchFamily.AMOLED_THEME, Arrays.asList(
+                () -> {
+                    DarkMode.answer(true);
+                    return AmoledTheme.apply(0xFF333334, Surface.CARD_BACKGROUND) == 0xFF000000;
+                },
+                () -> {
+                    DarkMode.answer(true);
+                    return FeedGapsForTests.drawsTheGap();
+                }));
         // A request for a post's comments that names no order asks for the chosen one, and with
         // All comments chosen, the menu its answer draws is picked in.
         probes.put(PatchFamily.DEFAULT_COMMENT_ORDER, Arrays.asList(
@@ -767,21 +785,24 @@ public class PausedHooksTest {
                 () -> ChatList.metaAiButton(new Object()) == null,
                 () -> !ChatList.showsSearchMetaAiButton(true)));
         // With Messenger installed, a tap on the top bar's Messenger icon opens Messenger instead of
-        // Chats, and an incoming call's push, its ring and a new message are left to Messenger.
+        // Chats, and an incoming call's push, its ring and a new message, handed to the notifiers or
+        // posted as a push, are left to Messenger.
         probes.put(PatchFamily.MESSENGER_ICON, Arrays.asList(
                 MessengerIconForTests::opensMessenger,
                 MessengerHandoffForTests::dropsACallPush,
                 MessengerHandoffForTests::dropsARing,
-                MessengerHandoffForTests::dropsAMessage));
+                MessengerHandoffForTests::dropsAMessage,
+                MessengerHandoffForTests::dropsAChatPush));
         // The Menu's Upgrades and Also from Meta groups build nothing, in the section Facebook
-        // draws and in the one carrying what the server sends, and the side panel gets Facebook's own
-        // Menu instead of the Bloks one.
+        // draws and in the one carrying what the server sends, and the side panel and the Menu page
+        // get Facebook's own Menu instead of the Bloks one.
         probes.put(PatchFamily.MENU_PROMOTIONS, Arrays.asList(
                 MenuSectionsForTests::hidesUpgrades,
                 MenuSectionsForTests::hidesAlsoFromMeta,
                 MenuSectionsForTests::hidesServerUpgrades,
                 MenuSectionsForTests::hidesServerAlsoFromMeta,
-                () -> !MenuPanel.bloksPanel(true)));
+                () -> !MenuPanel.bloksPanel(true),
+                () -> !MenuPanel.bloksMenu(true)));
         // Edits' header flag and both shapes of its pill request, the Threads cross-posting
         // onboarding and the share sheet's Threads and Muse items, the Meta Verified sheet and label, an avatar
         // sticker upsell, Imagine's post button, composer capability and Create story tile, and the
@@ -811,6 +832,8 @@ public class PausedHooksTest {
                 MetaAiSearchForTests::hidesAnswer,
                 MetaAiSearchForTests::dropsPrompts,
                 MetaAiSearchForTests::stopsSuggestionRoute));
+        // A search Facebook would add to your history is kept out.
+        probes.put(PatchFamily.SEARCH_HISTORY, Collections.singletonList(() -> SearchHistory.skipSave(false)));
         // XAnalytics' upload and uploader resume are skipped, and the Papaya job finishes unrun.
         probes.put(PatchFamily.ANALYTICS_UPLOADS, Arrays.asList(
                 AnalyticsUploads::holdXAnalyticsUpload,

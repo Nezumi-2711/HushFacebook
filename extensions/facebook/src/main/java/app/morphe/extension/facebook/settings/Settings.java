@@ -460,7 +460,11 @@ public class Settings extends BaseSettings {
     /**
      * The search pill under a reel's caption, Facebook's "search this" prompt with a suggested
      * query ({@link app.morphe.extension.facebook.reels.ReelDeclutter#hideSearchPill}, #173). The
-     * component that draws it isn't built. Off until it's turned on, since the pill depends on a
+     * component that draws it isn't built, and the comment sheet gets no prompt for the one over a
+     * reel's comments ({@link app.morphe.extension.facebook.reels.ReelDeclutter#commentSearchPrompt},
+     * #197). The search bar and send button over a reel opened from a profile stay out of its header
+     * too ({@link app.morphe.extension.facebook.reels.ReelDeclutter#searchBarPart}, #201). Off until
+     * it's turned on, since the pill depends on a
      * server setting and nobody has seen it go on a signed-in Reels feed yet.
      */
     public static final BooleanSetting HIDE_REEL_SEARCH_PILL =
@@ -489,6 +493,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_REEL_SOUND_BUTTON =
             new BooleanSetting("hushfacebook_hide_reel_sound_button", FALSE);
+
+    /**
+     * The line under a reel naming its sound, "Original audio" or a song, isn't drawn, and the other
+     * chips stay ({@link app.morphe.extension.facebook.reels.ReelDeclutter#filterChips}, #200). Off
+     * by default. A change shows from the next reel.
+     */
+    public static final BooleanSetting HIDE_REEL_AUDIO_LINE =
+            new BooleanSetting("hushfacebook_hide_reel_audio_line", FALSE);
 
     /**
      * A video tapped in the feed opens in the full-screen player on its own, with no reels to swipe
@@ -711,6 +723,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_COMMENT_GIF_STICKER_BUTTONS =
             new BooleanSetting("hushfacebook_hide_comment_gif_sticker_buttons", FALSE);
+
+    /**
+     * The comment composer at the bottom of Facebook's full-screen video viewer is omitted from
+     * the viewer's render method ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}).
+     * Comment boxes on ordinary posts are unchanged. Off by default.
+     */
+    public static final BooleanSetting HIDE_VIDEO_COMMENT_COMPOSER =
+            new BooleanSetting("hushfacebook_hide_video_comment_composer", FALSE);
 
     /**
      * Every comment starts with its reply thread open, as if View replies had been tapped
@@ -1152,6 +1172,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_meta_ai_in_search", TRUE);
 
     /**
+     * What you search for, from the main search bar, Reels or Watch, stops being added to your
+     * Facebook search history: the recent searches store takes Facebook's own "don't add this one"
+     * branch ({@link app.morphe.extension.facebook.search.SearchHistory}, #196). Searches already
+     * in the history stay. Off by default.
+     */
+    public static final BooleanSetting DONT_SAVE_SEARCH_HISTORY =
+            new BooleanSetting("hushfacebook_dont_save_search_history", FALSE);
+
+    /**
      * The For you section of searches Facebook suggests, on the search screen before anything is
      * typed (#80), found by the module name Facebook gives its entry. Recent searches, the search box
      * and the suggestions while typing stay. Part of Hide suggested and promoted posts, off until picked.
@@ -1302,6 +1331,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting SAVE_CRASH_FILE =
             new BooleanSetting("hushfacebook_save_crash_file", TRUE);
+
+    /**
+     * A few seconds after you leave Facebook, its tasks leave the recent apps and its processes end
+     * ({@link app.morphe.extension.facebook.misc.CloseWhenLeft}, #202). The settings entry's own
+     * switch, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off by default: the next
+     * start is a cold one, and notifications that need Facebook running can wait for it.
+     */
+    public static final BooleanSetting CLOSE_WHEN_LEFT =
+            new BooleanSetting("hushfacebook_close_when_left", FALSE);
 
     static {
         // The crash handler is the shared library's, which can't name this class.
@@ -1618,6 +1656,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting AMOLED_FLAT_CARDS =
             new BooleanSetting("hushfacebook_amoled_flat_cards", FALSE, true);
+
+    /**
+     * With the AMOLED black theme, the gap Facebook leaves between a list's rows, posts in the feed
+     * among them, shows as a thin gray line instead of the page's black
+     * ({@link app.morphe.extension.facebook.theme.FeedGaps}, issue #206). Rows read it as they
+     * draw, so a change shows on the rows drawn after it.
+     */
+    public static final BooleanSetting AMOLED_FEED_GAPS =
+            new BooleanSetting("hushfacebook_amoled_feed_gaps", FALSE, false);
 
     /**
      * The strip some posts carry ("Are you interested in this post?", "Show less", who recently

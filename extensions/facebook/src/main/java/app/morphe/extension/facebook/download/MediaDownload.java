@@ -100,6 +100,11 @@ public final class MediaDownload {
         return reservation;
     }
 
+    /** Whether a save holds a slot now, so Close Facebook when you leave it waits for it (#202). */
+    public static boolean saving() {
+        return SAVE_SLOTS.availablePermits() < MAX_IN_FLIGHT;
+    }
+
     /**
      * Whether every save slot is taken, saying so on screen when it is. The post menu items ask this
      * before they save, so a tap while saves fill every slot hears why nothing started instead of a

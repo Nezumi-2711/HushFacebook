@@ -193,6 +193,10 @@ final class HushfacebookPages {
                     L10n.t("Cards and menus take the page's own color instead of the near black that sets them apart. "
                             + "Buttons and search fields keep a dark gray fill, so you can still see them. Restart "
                             + "Facebook to see the change.")));
+            // Rows read it as they draw, so the next posts that scroll in show it.
+            appearance.addPreference(toggle(context, Settings.AMOLED_FEED_GAPS,
+                    L10n.t("A thin gray line between posts in the feed, so posts without photos don't run together on "
+                            + "the black page.")));
         }
         if (build.contains(PatchFamily.HAPTICS)) {
             appearance.addPreference(toggle(context, Settings.TURN_OFF_HAPTICS,

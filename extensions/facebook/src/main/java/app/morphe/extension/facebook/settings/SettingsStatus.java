@@ -374,6 +374,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean searchHistory() {
+        return false;
+    }
+
     public static boolean menuSettingsRow() {
         return false;
     }

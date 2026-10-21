@@ -1460,8 +1460,9 @@ public class SettingsNavigationTest {
         page = page(dialog);
         Map<String, Object> before = savedValues();
         page.navigation.navigate("Privacy");
-        // Save crashes to Downloads belongs to no patch, so every build has it.
-        List<String> expected = new ArrayList<>(Arrays.asList("Lock Facebook", "Lock after", "Save crashes to Downloads"));
+        // Save crashes to Downloads and Close Facebook when you leave it belong to no patch, so every build has them.
+        List<String> expected = new ArrayList<>(Arrays.asList("Lock Facebook", "Lock after", "Save crashes to Downloads",
+                "Close Facebook when you leave it"));
         expected.addAll(ADS_MAP);
         assertEquals(expected, titles());
 

@@ -283,9 +283,9 @@ public class PatchFamilyTest {
                 PatchFamily.SYSTEM_FONT, PatchFamily.SYSTEM_EMOJI, PatchFamily.HAPTICS,
                 PatchFamily.SCREEN_TRANSITIONS, PatchFamily.VIDEO_DOWNLOAD, PatchFamily.START_TAB,
                 PatchFamily.REELS_TAB, PatchFamily.META_UPSELLS, PatchFamily.SHARE_SHEET_ITEMS,
-                PatchFamily.ANALYTICS_UPLOADS, PatchFamily.SCREENSHOTS, PatchFamily.SCREENSHOT_DETECTION,
+                PatchFamily.SEARCH_HISTORY, PatchFamily.ANALYTICS_UPLOADS, PatchFamily.SCREENSHOTS, PatchFamily.SCREENSHOT_DETECTION,
                 PatchFamily.TYPING_INDICATOR, PatchFamily.READ_RECEIPTS, PatchFamily.ACCENT_COLOR);
-        assertEquals(34, joined.size());
+        assertEquals(35, joined.size());
         for (PatchFamily family : joined) {
             assertTrue(family.patchName + " isn't in the default selection",
                     PatchFamily.DEFAULT_SELECTION.contains(family));
@@ -442,7 +442,7 @@ public class PatchFamilyTest {
                         + "tab, Hide the Reels tab dot, Hide tab badges, Hide tabs, Tab bar at the bottom, Force dark "
                         + "mode, Hide the Get Messenger card, Clean up Facebook's chat list, Open Messenger from the "
                         + "top bar, Hide Menu promotions, Hide Meta upsells, Share sheet items, Hide Meta AI in search, "
-                        + "Hold back analytics uploads, Allow screenshots, Block screenshot detection, Hide typing indicator, "
+                        + "Don't save search history, Hold back analytics uploads, Allow screenshots, Block screenshot detection, Hide typing indicator, "
                         + "Hide read receipts, Send chat photos and videos at original quality, Block promotional "
                         + "notifications, Block ad telemetry, Disable Audience Network, AMOLED black theme, Material "
                         + "You theme, Accent color, Restore screens on re-signed builds, Start on x86 devices, "
@@ -465,20 +465,21 @@ public class PatchFamilyTest {
                         + "the Reels tab, Hide the Reels tab dot, Hide tab badges, Hide tabs, Tab bar at the bottom, "
                         + "Force dark mode, Hide the Get Messenger card, Clean up Facebook's chat list, Open "
                         + "Messenger from the top bar, Hide Menu promotions, Hide Meta upsells, Share sheet items, Hide "
-                        + "Meta AI in search, Hold back analytics uploads, Allow screenshots, Block screenshot detection, Hide "
+                        + "Meta AI in search, Don't save search history, Hold back analytics uploads, Allow screenshots, Block screenshot detection, Hide "
                         + "typing indicator, Hide read receipts, Send chat photos and videos at original quality, "
                         + "Block promotional notifications, Block ad telemetry, Disable Audience Network, Accent "
                         + "color, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
                         + "apps, Hushfacebook in the Menu"),
                 running);
-        // Clean up Reels has twelve switches, all off to start, and the report names each one.
+        // Clean up Reels has thirteen switches, all off to start, and the report names each one.
         Settings.HIDE_REEL_FOLLOW_BUTTON.save(true);
         assertEquals("Clean up Reels: on (hushfacebook_hide_reel_chips=off, hushfacebook_hide_reel_follow_button=on, "
                         + "hushfacebook_hide_reel_social_footer=off, hushfacebook_hide_reel_threads_cards=off, "
                         + "hushfacebook_reel_clean_mode=off, hushfacebook_play_reels_once=off, "
                         + "hushfacebook_original_audio=off, hushfacebook_hide_reel_search_pill=off, "
                         + "hushfacebook_hide_reel_counts=off, hushfacebook_hide_reel_save_button=off, "
-                        + "hushfacebook_hide_reel_sound_button=off, hushfacebook_feed_videos_alone=off)",
+                        + "hushfacebook_hide_reel_sound_button=off, hushfacebook_hide_reel_audio_line=off, "
+                        + "hushfacebook_feed_videos_alone=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);
@@ -489,12 +490,13 @@ public class PatchFamilyTest {
                         + "hushfacebook_hide_share_group_buttons=on, hushfacebook_hide_share_people_row=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.SHARE_SHEET_ITEMS), true).get(0));
         Settings.HIDE_SHARE_GROUP_BUTTONS.resetToDefault();
-        // The theme runs with Black cards off, and paused: only Black cards steps back.
-        assertEquals("AMOLED black theme: on (hushfacebook_amoled_flat_cards=off); stays in while paused: AMOLED black theme",
+        // The theme runs with its switches off, and paused: only Black cards and the lines step back.
+        assertEquals("AMOLED black theme: on (hushfacebook_amoled_flat_cards=off, hushfacebook_amoled_feed_gaps=off); "
+                        + "stays in while paused: AMOLED black theme",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.AMOLED_THEME), false).get(0));
         Settings.AMOLED_FLAT_CARDS.save(true);
-        assertEquals("AMOLED black theme: on, its switch off while paused (saved hushfacebook_amoled_flat_cards=on); "
-                        + "stays in while paused: AMOLED black theme",
+        assertEquals("AMOLED black theme: on, its switches off while paused (saved hushfacebook_amoled_flat_cards=on, "
+                        + "hushfacebook_amoled_feed_gaps=off); stays in while paused: AMOLED black theme",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.AMOLED_THEME), true).get(0));
         Settings.AMOLED_FLAT_CARDS.resetToDefault();
         // The reel button has a switch now, so the report says what it's set to.

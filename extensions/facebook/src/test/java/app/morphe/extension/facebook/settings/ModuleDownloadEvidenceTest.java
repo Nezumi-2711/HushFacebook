@@ -5,6 +5,7 @@
 package app.morphe.extension.facebook.settings;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.os.SystemClock;
@@ -26,7 +27,8 @@ import app.morphe.extension.shared.settings.BaseSettings;
 /**
  * #168's module download evidence: with Debug logging on, the download screen's line says which of
  * the downloader's steps it took for that module and what the failed task held; with it off, or for
- * another module's steps, nothing is added.
+ * another module's steps, nothing is added. Google Play is never the downloader, and the line says
+ * when Facebook wanted it.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -214,5 +216,23 @@ public class ModuleDownloadEvidenceTest {
                         + " VoltronDownloadManagerImpl: No downloader available. isAppLastInstalledByGP: true,"
                         + " steps: RequestAction{modules=[ludo_club]_LOAD}, task: no exception, no result",
                 ScreenLog.moduleDownload(new ScreenLogTest.DownloadScreen()));
+    }
+
+    @Test
+    public void googlePlayIsNeverTheDownloaderAndTheLineSaysWhenItWasWanted() {
+        assertFalse(ModuleDownloads.fromPlay(true));
+        assertEquals("off, nothing kept", "", ModuleDownloadEvidence.forScreen(instantGames(), SystemClock.elapsedRealtime()));
+        BaseSettings.DEBUG.save(true);
+        assertFalse(ModuleDownloads.fromPlay(false));
+        assertEquals("not wanted, nothing said", "", ModuleDownloadEvidence.forScreen(instantGames(), SystemClock.elapsedRealtime()));
+        assertFalse(ModuleDownloads.fromPlay(true));
+        ModuleDownloadEvidence.step(new Action("instantgames", "LOAD"));
+        long now = SystemClock.elapsedRealtime();
+        assertEquals(", Google Play skipped, steps: RequestAction{modules=[instantgames]_LOAD}",
+                ModuleDownloadEvidence.forScreen(instantGames(), now));
+        assertEquals("taken once", "", ModuleDownloadEvidence.forScreen(instantGames(), now));
+        assertFalse(ModuleDownloads.fromPlay(true));
+        assertEquals("an old skip is left out", "", ModuleDownloadEvidence.forScreen(instantGames(),
+                SystemClock.elapsedRealtime() + ModuleDownloadEvidence.WINDOW + 1));
     }
 }

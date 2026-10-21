@@ -19,6 +19,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -88,13 +89,62 @@ class MenuPanelFixtureTest {
         assertTrue("no declared build has a fixture bundle", checked.isNotEmpty())
     }
 
+    /**
+     * #184's 0.16.0 report: the native Menu the panel swap asks for is the Menu page, whose factory
+     * asks the same flag and builds the Bloks Menu page on a yes. Its answer goes to the extension too.
+     */
     @Test
-    fun `the extension has the hook the patch calls`() {
-        val hook = ExtensionDex.classDef("$EXTENSION_PACKAGE/menu/MenuPanel;").methods
-            .singleOrNull { it.name == "bloksPanel" }
-        assertNotNull("the extension has no MenuPanel.bloksPanel", hook)
-        assertEquals("bloksPanel's shape", BLOKS_PANEL,
-            "${hook!!.definingClass}->${hook.name}(${hook.parameterTypes.joinToString("")})${hook.returnType}")
-        assertTrue("bloksPanel isn't static", AccessFlags.STATIC.isSet(hook.accessFlags))
+    fun `each declared bundle asks the extension whether the Menu page is the Bloks one`() {
+        val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }.toSet()
+        val bundles = versions.flatMap { version -> Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") } }
+        val checked = mutableMapOf<String, String>()
+        for (bundle in bundles) {
+            val name = bundle.name
+            val context = PatchContexts.of(FixtureDex.classes(bundle, setOf(MENU_FACTORY)).values.toList())
+            val method = context.menuPageFactory()
+            assertNotNull("$name: no $MENU_FACTORY->$CREATE_FRAGMENT", method)
+            val code = method!!.code()
+            val answer = bloksMenuPageAnswer(method)
+            assertNotNull("$name: $CREATE_FRAGMENT doesn't ask once whether to build $BLOKS_MENU_PAGE", answer)
+            // Positive control: the page asks the panel's flag, by its id.
+            val flag = code.subList(maxOf(0, answer!! - 4), answer).filterIsInstance<WideLiteralInstruction>()
+                .map { it.wideLiteral }
+            assertTrue("$name: the answer at $answer isn't for flag ${bloksPanelFlag.toString(16)}, saw $flag",
+                bloksPanelFlag in flag)
+            val register = (code[answer] as OneRegisterInstruction).registerA
+
+            context.askAboutBloksMenuPage()
+            val patched = context.mutableClassDefBy(MENU_FACTORY).methods.single { it.name == CREATE_FRAGMENT }.code()
+            assertEquals("$name: two instructions added", code.size + 2, patched.size)
+            val ask = patched[answer + 1]
+            assertEquals("$name: the extension asked", BLOKS_MENU, ask.called()?.toString())
+            assertEquals("$name: handed the answer",
+                listOf(Opcode.INVOKE_STATIC_RANGE, register, 1),
+                listOf(ask.opcode, (ask as RegisterRangeInstruction).startRegister, ask.registerCount))
+            assertEquals("$name: its answer back in the same register",
+                listOf(Opcode.MOVE_RESULT, register),
+                listOf(patched[answer + 2].opcode, (patched[answer + 2] as OneRegisterInstruction).registerA))
+            assertEquals("$name: Facebook's test right after", listOf(Opcode.IF_EQZ, register),
+                listOf(patched[answer + 3].opcode, (patched[answer + 3] as OneRegisterInstruction).registerA))
+            assertEquals("$name: a yes still builds the Bloks page", BLOKS_MENU_PAGE,
+                ((patched[answer + 4] as ReferenceInstruction).reference as TypeReference).type)
+            val rest = patched.filterIndexed { index, _ -> index != answer + 1 && index != answer + 2 }
+            assertEquals("$name: the rest is Facebook's", code.map { it.opcode }, rest.map { it.opcode })
+            checked[name] = "answer at $answer in v$register"
+        }
+        assertEquals("a declared bundle went unchecked: $checked", bundles.map { it.name }.toSet(), checked.keys)
+        assertTrue("no declared build has a fixture bundle", checked.isNotEmpty())
+    }
+
+    @Test
+    fun `the extension has the hooks the patch calls`() {
+        val methods = ExtensionDex.classDef("$EXTENSION_PACKAGE/menu/MenuPanel;").methods
+        for ((name, shape) in listOf("bloksPanel" to BLOKS_PANEL, "bloksMenu" to BLOKS_MENU)) {
+            val hook = methods.singleOrNull { it.name == name }
+            assertNotNull("the extension has no MenuPanel.$name", hook)
+            assertEquals("$name's shape", shape,
+                "${hook!!.definingClass}->${hook.name}(${hook.parameterTypes.joinToString("")})${hook.returnType}")
+            assertTrue("$name isn't static", AccessFlags.STATIC.isSet(hook.accessFlags))
+        }
     }
 }

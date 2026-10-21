@@ -100,7 +100,8 @@ public enum PatchFamily {
             Settings.HIDE_REEL_CHIPS, Settings.HIDE_REEL_FOLLOW_BUTTON, Settings.HIDE_REEL_SOCIAL_FOOTER,
             Settings.HIDE_REEL_THREADS_CARDS, Settings.REEL_CLEAN_MODE, Settings.PLAY_REELS_ONCE,
             Settings.ORIGINAL_AUDIO, Settings.HIDE_REEL_SEARCH_PILL, Settings.HIDE_REEL_COUNTS,
-            Settings.HIDE_REEL_SAVE_BUTTON, Settings.HIDE_REEL_SOUND_BUTTON, Settings.FEED_VIDEOS_ALONE),
+            Settings.HIDE_REEL_SAVE_BUTTON, Settings.HIDE_REEL_SOUND_BUTTON, Settings.HIDE_REEL_AUDIO_LINE,
+            Settings.FEED_VIDEOS_ALONE),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
@@ -121,7 +122,8 @@ public enum PatchFamily {
             Settings.LIKE_ONLY, Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS, Settings.OPEN_REPLY_THREADS,
             Settings.LOAD_WHOLE_REPLY_THREADS, Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS,
             Settings.HIDE_SHOP_LINK_COMMENTS, Settings.HIDE_COMMENTS_WITH_WORDS,
-            Settings.HIDE_INCOMING_COMMENT_TYPING, Settings.HIDE_NEW_COMMENTS_PILL),
+            Settings.HIDE_INCOMING_COMMENT_TYPING, Settings.HIDE_NEW_COMMENTS_PILL,
+            Settings.HIDE_VIDEO_COMMENT_COMPOSER),
     FULL_HEIGHT_COMMENTS(FamilyNames.FULL_HEIGHT_COMMENTS, "fullHeightComments", null,
             Settings.OPEN_COMMENTS_FULL_HEIGHT),
     TAG_SUGGESTIONS(FamilyNames.TAG_SUGGESTIONS, "tagSuggestions", null,
@@ -215,6 +217,8 @@ public enum PatchFamily {
             new BooleanSetting[]{Settings.HIDE_SHARE_GROUP_BUTTONS, Settings.HIDE_SHARE_PEOPLE_ROW}),
     META_AI_SEARCH(FamilyNames.META_AI_SEARCH, "metaAiSearch", null,
             Settings.HIDE_META_AI_IN_SEARCH),
+    SEARCH_HISTORY(FamilyNames.SEARCH_HISTORY, "searchHistory", null,
+            Settings.DONT_SAVE_SEARCH_HISTORY),
     ANALYTICS_UPLOADS(FamilyNames.ANALYTICS_UPLOADS, "analyticsUploads", null,
             Settings.HOLD_ANALYTICS_UPLOADS, Settings.HOLD_CAMERA_ROLL_PROCESSING),
     SCREENSHOTS(FamilyNames.SCREENSHOTS, "allowScreenshots", null,
@@ -237,8 +241,9 @@ public enum PatchFamily {
     AD_PREFETCH(FamilyNames.AD_PREFETCH, "adPrefetch", "No ads downloaded in advance"),
     AD_TELEMETRY(FamilyNames.AD_TELEMETRY, "adTelemetry", "No ad tracking"),
     AUDIENCE_NETWORK(FamilyNames.AUDIENCE_NETWORK, "audienceNetwork", "No Facebook ads in other apps"),
-    // The theme is written into the APK and stays; Pause takes Black cards back to near black.
-    AMOLED_THEME(FamilyNames.AMOLED_THEME, "amoledTheme", FamilyNames.AMOLED_THEME, Settings.AMOLED_FLAT_CARDS),
+    // The theme is written into the APK and stays; Pause takes Black cards back to near black and the lines away.
+    AMOLED_THEME(FamilyNames.AMOLED_THEME, "amoledTheme", FamilyNames.AMOLED_THEME, Settings.AMOLED_FLAT_CARDS,
+            Settings.AMOLED_FEED_GAPS),
     MATERIAL_YOU_THEME(FamilyNames.MATERIAL_YOU_THEME, "materialYouTheme", FamilyNames.MATERIAL_YOU_THEME),
     // No switch: a list picks the accent, and Pause makes it read Facebook's blue, so nothing stays in.
     ACCENT_COLOR(FamilyNames.ACCENT_COLOR, "accentColor", Settings.ACCENT_COLOR),
@@ -296,7 +301,7 @@ public enum PatchFamily {
                     Settings.WATCH_HISTORY_SHORTCUT, Settings.FREE_STUFF_SHORTCUT, Settings.SETTINGS_SHORTCUT,
                     Settings.SETTINGS_LOGO_PRESS,
                     Settings.SETTINGS_MENU_ROW, Settings.APP_LOCK,
-                    Settings.SAVE_CRASH_FILE));
+                    Settings.SAVE_CRASH_FILE, Settings.CLOSE_WHEN_LEFT));
 
     /**
      * The switches the download patches share and none of them owns: each shapes what every
@@ -459,7 +464,7 @@ public enum PatchFamily {
      * "on", "disabled by its switch" or "disabled while paused", then the saved switches. A
      * family with independent switches is on while either is. Options need their main switch. A
      * family set by its list says so, with its switches saved beside the list. The AMOLED theme is
-     * on either way, its one switch being an option on it.
+     * on either way, its switches being options on it.
      */
     private String reportLine(boolean paused) {
         StringBuilder line = new StringBuilder(patchName).append(": ");
@@ -494,9 +499,9 @@ public enum PatchFamily {
                     || Settings.HIDE_LINK_POSTS.savedValue() || Settings.HIDE_BACKGROUND_POSTS.savedValue()
                     || Settings.HIDE_REPOSTS.savedValue();
         }
-        // The theme runs with Black cards off and while paused: its switch only flattens the cards.
+        // The theme runs with its switches off and while paused: they only flatten the cards and draw the lines.
         if (this == AMOLED_THEME) {
-            line.append(paused ? "on, its switch off while paused (saved " : "on (");
+            line.append(paused ? "on, its switches off while paused (saved " : "on (");
         } else {
             line.append(paused ? "disabled while paused (saved " : anyOn ? "on (" : "disabled by its switch (");
         }

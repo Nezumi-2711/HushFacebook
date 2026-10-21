@@ -504,7 +504,9 @@ try {
         'scripts/test-phone-smoke.ps1',
         'scripts/test-device-audit.ps1',
         'scripts/device-audit.ps1',
-        'scripts/device-audit-expectations.json'
+        'scripts/walk-receipt.ps1',
+        'scripts/device-audit-expectations.json',
+        'scripts/device-audit-expectations-s22.json'
     )
     $touchesPhoneSmoke = @($paths | Where-Object {
         $_ -in $phoneSmokePaths

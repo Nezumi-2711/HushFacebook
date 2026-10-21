@@ -21,6 +21,10 @@ import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.parameterRegister
 import app.morphe.patches.facebook.misc.extension.requireLocals
 import app.morphe.patches.facebook.misc.settings.settingsPatch
+import app.morphe.patches.facebook.notifications.TRAY_MANAGER
+import app.morphe.patches.facebook.notifications.TrayPost
+import app.morphe.patches.facebook.notifications.postNothingWhenBlocked
+import app.morphe.patches.facebook.notifications.trayPost
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -34,6 +38,7 @@ private const val HANDOFF = "$EXTENSION_PACKAGE/chats/MessengerHandoff;"
 internal const val DROP_CALL_PUSH = "$HANDOFF->dropCallPush()Z"
 internal const val DROP_RING = "$HANDOFF->dropRing()Z"
 internal const val DROP_CHAT = "$HANDOFF->dropChat(Ljava/lang/Object;)Z"
+internal const val DROP_CHAT_PUSH = "$HANDOFF->dropChatPush(Ljava/lang/String;)Z"
 internal const val CLIENT_CAPABILITIES = "$HANDOFF->clientCapabilities(J)J"
 
 /**
@@ -52,9 +57,12 @@ internal const val CLIENT_CAPABILITIES = "$HANDOFF->clientCapabilities(J)J"
  * (issues #39, #100 and #157): Facebook and Messenger both ring for a call and both notify for a message,
  * and with the switch on and Messenger installed only Messenger does. The patch asks the extension
  * first where Facebook supplies its MQTT client capabilities, in Facebook's VOIP push handlers, in
- * the parser every incoming ring goes through and in the dispatcher that hands chat notifications
- * to Facebook's notifiers (MessengerHandoffAnchors.kt). Without Messenger, or with it disabled when
- * Facebook starts, the extension leaves the VOIP capability and Facebook rings as before. Every
+ * the parser every incoming ring goes through, in the dispatcher that hands chat notifications
+ * to Facebook's notifiers (MessengerHandoffAnchors.kt), and in the method that posts Facebook's
+ * own push notifications (NotificationAnchors.kt), where a message in Facebook's Chats arrives as
+ * a push typed MESSAGING_IN_BLUE_DIRECT_MESSAGE and never reaches the dispatcher (#193). Without
+ * Messenger, or with it disabled when Facebook starts, the extension leaves the VOIP capability
+ * and Facebook rings as before. Every
  * anchor is found before anything changes, so a build missing one stops the patch whole.
  */
 @Suppress("unused")
@@ -104,6 +112,8 @@ val openMessengerFromTopBarPatch = bytecodePatch(
         }
         mutableClassDefBy(handoff.ringParse.definingClass).methods.single { it.isSameAs(handoff.ringParse) }.parseNoRingFirst()
         mutableClassDefBy(MESSAGES_NOTIFICATION_MANAGER).methods.single { it.isSameAs(handoff.chatDispatch) }.dropChatFirst()
+        mutableClassDefBy(TRAY_MANAGER).methods.single { it.isSameAs(handoff.trayPost.method) }
+            .postNothingWhenBlocked(handoff.trayPost.notification, DROP_CHAT_PUSH, ICON_PATCH)
         enableStatus("messengerIcon")
     }
 }
@@ -114,12 +124,13 @@ internal class HandoffTargets(
     val callPushes: List<Method>,
     val ringParse: Method,
     val chatDispatch: Method,
+    val trayPost: TrayPost,
 )
 
 /**
- * Finds the VOIP push handlers' handle methods, the ring parser's parse and the chat dispatcher
- * (see MessengerHandoffAnchors.kt), or stops the patch naming what this build lacks. One pass over
- * the classes finds both the handlers and the parser.
+ * Finds the VOIP push handlers' handle methods, the ring parser's parse, the chat dispatcher (see
+ * MessengerHandoffAnchors.kt) and the push tray's post method, or stops the patch naming what
+ * this build lacks. One pass over the classes finds both the handlers and the parser.
  */
 internal fun BytecodePatchContext.handoffTargets(): HandoffTargets {
     val mqttDelegate = classDefByOrNull(MQTT_XPLAT_SERVICE_DELEGATE)
@@ -164,7 +175,7 @@ internal fun BytecodePatchContext.handoffTargets(): HandoffTargets {
         "$ICON_PATCH: expected one static dispatcher of $MESSAGES_NOTIFICATION_MANAGER handing a notification to " +
             "the notifiers, found ${dispatches.size}",
     )
-    return HandoffTargets(mqtt, callPushes, ringParse, chatDispatch)
+    return HandoffTargets(mqtt, callPushes, ringParse, chatDispatch, trayPost(ICON_PATCH))
 }
 
 /**

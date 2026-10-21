@@ -33,6 +33,12 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * {@link #longPress}; with the switch on they find the button object of that reel and press it
  * the way a tap on the button does, so the sheet that opens is the one the Comment button opens.
  *
+ * <p>With Clean up Reels' Always use clean mode on, the sidebar is never built, so a reel has no
+ * button object (#179). The reel's long-press handler keeps what the button's click hands the comment
+ * sheet, so {@link #rememberHandler} notes each handler as Facebook makes it, and a reel with no
+ * button gets its sheet from its handler through {@link #openSheetStub}, which the patch fills with
+ * the click's own calls.
+ *
  * <p>A double tap that can't open comments is still not a like while the switch is on, since the
  * point of the switch is that a double tap doesn't like. A long press that can't open comments goes
  * to Facebook, which holds or opens its menu as before. With the switches off, with Hushfacebook
@@ -43,17 +49,23 @@ public final class ReelGestures {
 
     /** Counted for each reel whose comments a gesture opened. */
     static final String OPENED = "comments opened";
-    /** Counted for each gesture on a reel that has no Comment button object yet. */
+    /** Counted for each reel with no Comment button object whose comments a gesture opened from its long-press handler. */
+    static final String OPENED_WITHOUT_BUTTON = "comments opened without the button";
+    /** Counted for each gesture on a reel that has no Comment button object yet, nor a handler keeping what the sheet needs. */
     static final String NO_BUTTON = "no comment button for the reel";
     /** Counted for each double tap or long press whose reel view the patch hasn't seen. */
     static final String NO_VIEW = "no view for the reel";
     /** Counted for each double tap like that the switch replaced. */
     static final String LIKE_REPLACED = "double tap like replaced";
 
-    /** The name Kotlin gives the reel the long-press handler captured. */
+    /** The names Kotlin gives what the long-press handler captured: the reel, and what the comment sheet needs. */
     static final String HANDLER_ITEM_FIELD = "$shortFormVideoUnit";
+    static final String HANDLER_SESSION_FIELD = "$fbUserSession";
+    static final String HANDLER_ENVIRONMENT_FIELD = "$environment";
+    static final String HANDLER_STORY_FIELD = "$videoGraphQLPhoton";
+    static final String HANDLER_CONFIG_FIELD = "$immersiveFeedPlayerConfig";
 
-    /** The Comment button objects kept, newest first. A reel on screen has one, so a few are plenty. */
+    /** The Comment button objects and handlers kept, newest first. A reel on screen has one of each, so a few are plenty. */
     private static final int KEEP = 24;
 
     /** How the Comment button is pressed. Replaced by tests; in a patched build the patch fills {@link #openStub}. */
@@ -63,20 +75,31 @@ public final class ReelGestures {
 
     static Opener opener = (view, button) -> openStub(view, button, false);
 
+    /**
+     * How a reel with no button object gets its comment sheet, from what its long-press handler keeps.
+     * Replaced by tests; in a patched build the patch fills {@link #openSheetStub}.
+     */
+    interface SheetOpener {
+        boolean open(Object view, Object session, Object item, Object environment, Object story, Object config);
+    }
+
+    static SheetOpener sheetOpener = ReelGestures::openSheetStub;
+
     private static final class Entry {
         final WeakReference<Object> item;
-        final WeakReference<Object> button;
+        final WeakReference<Object> owner;
 
-        Entry(Object item, Object button) {
+        Entry(Object item, Object owner) {
             this.item = new WeakReference<>(item);
-            this.button = new WeakReference<>(button);
+            this.owner = new WeakReference<>(owner);
         }
     }
 
     private static final List<Entry> ENTRIES = new ArrayList<>();
+    private static final List<Entry> HANDLERS = new ArrayList<>();
     private static WeakReference<Object> lastView = new WeakReference<>(null);
     private static final Set<String> LOGGED = new HashSet<>();
-    private static final ConcurrentHashMap<Class<?>, Field> ITEM_FIELDS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<Class<?>, Field>> NAMED_FIELDS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Class<?>, Field> VIEW_FIELDS = new ConcurrentHashMap<>();
 
     private ReelGestures() {
@@ -92,20 +115,47 @@ public final class ReelGestures {
     }
 
     /**
+     * Filled in by the patch: builds the comment sheet the way the Comment button's click does, from
+     * the view, the session, the reel, the viewer's environment, the reel's story holder and the
+     * viewer config a long-press handler keeps, and shows it. Only those may be passed. Returns true
+     * once filled in and a sheet was built.
+     */
+    public static boolean openSheetStub(Object view, Object session, Object item, Object environment, Object story, Object config) {
+        return false;
+    }
+
+    /**
      * Injection point, the end of the Comment button object's constructor: [button] is the new
      * object and [item] the reel it was made for.
      */
     public static void remember(@Nullable Object button, @Nullable Object item) {
         HookStatus.invoked(FAMILY);
         try {
-            if (button == null || item == null) return;
-            synchronized (ENTRIES) {
-                ENTRIES.removeIf(entry -> entry.button.get() == null || entry.item.get() == null);
-                ENTRIES.add(0, new Entry(item, button));
-                while (ENTRIES.size() > KEEP) ENTRIES.remove(ENTRIES.size() - 1);
-            }
+            keep(ENTRIES, button, item);
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "remember", failure);
+        }
+    }
+
+    /**
+     * Injection point, the end of a long-press handler's constructor: [handler] is the new handler and
+     * [item] the reel it captured.
+     */
+    public static void rememberHandler(@Nullable Object handler, @Nullable Object item) {
+        HookStatus.invoked(FAMILY);
+        try {
+            keep(HANDLERS, handler, item);
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "remember handler", failure);
+        }
+    }
+
+    private static void keep(List<Entry> entries, @Nullable Object owner, @Nullable Object item) {
+        if (owner == null || item == null) return;
+        synchronized (entries) {
+            entries.removeIf(entry -> entry.owner.get() == null || entry.item.get() == null);
+            entries.add(0, new Entry(item, owner));
+            while (entries.size() > KEEP) entries.remove(entries.size() - 1);
         }
     }
 
@@ -130,7 +180,7 @@ public final class ReelGestures {
             // Turn off double tap to like keeps the double tap from getting here at all; if it did,
             // it still wins.
             if (Settings.TURN_OFF_DOUBLE_TAP_LIKE.get()) return false;
-            open(item, lastView.get(), "double tap");
+            open(item, lastView.get(), null, "double tap");
             return true;
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "double tap", failure);
@@ -147,7 +197,7 @@ public final class ReelGestures {
         HookStatus.invoked(FAMILY);
         try {
             if (handler == null || !Utils.settingsReady() || !Settings.LONG_PRESS_OPENS_COMMENTS.get()) return false;
-            return open(read(ITEM_FIELDS, handler, null, HANDLER_ITEM_FIELD), viewOf(holder), "long press");
+            return open(named(handler, HANDLER_ITEM_FIELD), viewOf(holder), handler, "long press");
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "long press", failure);
             return false;
@@ -160,9 +210,19 @@ public final class ReelGestures {
         logOnce(LIKE_REPLACED + ": " + where);
     }
 
-    private static boolean open(@Nullable Object item, @Nullable Object view, String gesture) {
+    /**
+     * Presses [item]'s Comment button, or with no button builds its sheet from [handler] (the long
+     * press's own) or the newest handler made for it. True when comments opened.
+     */
+    private static boolean open(@Nullable Object item, @Nullable Object view, @Nullable Object handler, String gesture)
+            throws IllegalAccessException {
         Object button = buttonFor(item);
+        Object[] sheet = null;
         if (button == null) {
+            sheet = sheetParts(handler);
+            if (sheet == null) sheet = sheetParts(handlerFor(item));
+        }
+        if (button == null && sheet == null) {
             HookStatus.counted(FAMILY, NO_BUTTON);
             logOnce(gesture + ": " + NO_BUTTON);
             return false;
@@ -172,26 +232,57 @@ public final class ReelGestures {
             logOnce(gesture + ": " + NO_VIEW);
             return false;
         }
-        if (!opener.open(view, button)) {
-            HookStatus.threw(FAMILY, gesture, new IllegalStateException("the comment button can't be pressed"));
+        if (button != null ? !opener.open(view, button)
+                : !sheetOpener.open(view, sheet[0], sheet[1], sheet[2], sheet[3], sheet[4])) {
+            String what = button != null ? "the comment button can't be pressed" : "the comment sheet can't be built without the button";
+            HookStatus.threw(FAMILY, gesture, new IllegalStateException(what));
             return false;
         }
-        HookStatus.counted(FAMILY, OPENED);
-        logOnce(gesture + ": " + OPENED);
+        String opened = button != null ? OPENED : OPENED_WITHOUT_BUTTON;
+        HookStatus.counted(FAMILY, opened);
+        logOnce(gesture + ": " + opened);
         return true;
+    }
+
+    /** The session, the reel, the environment, the story holder and the config [handler] keeps, or null when it lacks one. */
+    @Nullable
+    private static Object[] sheetParts(@Nullable Object handler) throws IllegalAccessException {
+        if (handler == null) return null;
+        Object[] parts = {
+                named(handler, HANDLER_SESSION_FIELD),
+                named(handler, HANDLER_ITEM_FIELD),
+                named(handler, HANDLER_ENVIRONMENT_FIELD),
+                named(handler, HANDLER_STORY_FIELD),
+                named(handler, HANDLER_CONFIG_FIELD),
+        };
+        for (Object part : parts) {
+            if (part == null) return null;
+        }
+        return parts;
     }
 
     /** The newest Comment button object made for [item]: the same object first, an equal one next. */
     @Nullable
     static Object buttonFor(@Nullable Object item) {
+        return find(ENTRIES, item);
+    }
+
+    /** The newest long-press handler made for [item], found the same way. */
+    @Nullable
+    static Object handlerFor(@Nullable Object item) {
+        return find(HANDLERS, item);
+    }
+
+    @Nullable
+    private static Object find(List<Entry> entries, @Nullable Object item) {
         if (item == null) return null;
-        synchronized (ENTRIES) {
-            for (Entry entry : ENTRIES) {
-                if (entry.item.get() == item && entry.button.get() != null) return entry.button.get();
+        synchronized (entries) {
+            for (Entry entry : entries) {
+                if (entry.item.get() == item && entry.owner.get() != null) return entry.owner.get();
             }
-            for (Entry entry : ENTRIES) {
+            for (Entry entry : entries) {
                 Object kept = entry.item.get();
-                if (kept != null && kept.equals(item) && entry.button.get() != null) return entry.button.get();
+                if (kept != null && kept.equals(item) && entry.owner.get() != null) return entry.owner.get();
             }
         }
         return null;
@@ -200,6 +291,12 @@ public final class ReelGestures {
     @Nullable
     private static Object viewOf(@Nullable Object holder) throws IllegalAccessException {
         return holder == null ? null : read(VIEW_FIELDS, holder, View.class, null);
+    }
+
+    /** [owner]'s field named [name], read; null when it has none. */
+    @Nullable
+    private static Object named(Object owner, String name) throws IllegalAccessException {
+        return read(NAMED_FIELDS.computeIfAbsent(name, key -> new ConcurrentHashMap<>()), owner, null, name);
     }
 
     /**
@@ -234,16 +331,19 @@ public final class ReelGestures {
         if (first) Logger.printDebug(() -> "Reel gestures: " + message);
     }
 
-    /** For tests: forgets the buttons, the view, the logged lines and the cached reflection. */
+    /** For tests: forgets the buttons, the handlers, the view, the logged lines and the cached reflection. */
     static void reset() {
         synchronized (ENTRIES) {
             ENTRIES.clear();
+        }
+        synchronized (HANDLERS) {
+            HANDLERS.clear();
         }
         lastView = new WeakReference<>(null);
         synchronized (LOGGED) {
             LOGGED.clear();
         }
-        ITEM_FIELDS.clear();
+        NAMED_FIELDS.clear();
         VIEW_FIELDS.clear();
     }
 }

@@ -213,6 +213,31 @@ class ReelAnchorsFixtureTest {
         assertEquals("a declared build went unchecked: $checked", versions.toSet(), checked.keys)
     }
 
+    /**
+     * The Reels tab's audio line row (#200), found the way the patch finds it: the one `render` that
+     * picks the soundtrack model before it can return and answers null first, out of the renders
+     * holding the same name. The chip filter alone left the line there on 583.
+     */
+    @Test
+    fun `every declared build has one Reels tab audio line row, with a local for its hook`() {
+        val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }
+        assertTrue("the bundle declares no Facebook build", versions.isNotEmpty())
+        val checked = mutableMapOf<String, String>()
+        for (version in versions) {
+            for (bundle in Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") }) {
+                val name = bundle.name
+                val holders = FixtureDex.classesHolding(bundle, SOUNDTRACK_CHIP)
+                val renders = holders.flatMap { classDef -> classDef.methods.filter { it.name == RENDER && holdsString(it, SOUNDTRACK_CHIP) } }
+                assertTrue("$name: only ${renders.size} renders hold \"$SOUNDTRACK_CHIP\"", renders.size >= 2)
+                val rows = holders.flatMap { classDef -> classDef.methods.filter(::isAudioLineRender) }
+                assertEquals("$name: $rows", 1, rows.size)
+                assertTrue("$name: the row has no local for the hook", locals(rows.single()) >= 1)
+                checked[version] = rows.single().definingClass
+            }
+        }
+        assertEquals("a declared build went unchecked: $checked", versions.toSet(), checked.keys)
+    }
+
     @Test
     fun `the patch requires the chips the extension hides`() {
         val declutter = File(RepoFiles.root,
@@ -221,5 +246,9 @@ class ReelAnchorsFixtureTest {
             ?: throw AssertionError("ReelDeclutter.java has no HIDDEN_CHIPS array")
         val hidden = Regex(""""([A-Za-z]+)"""").findAll(array.groupValues[1]).map { it.groupValues[1] }.toList()
         assertEquals(HIDDEN_CHIPS, hidden)
+        // #200: the audio line the extension hides under its own switch is the one the builder must name.
+        val soundtrack = Regex("""SOUNDTRACK_CHIP\s*=\s*"([A-Za-z]+)"""").find(declutter.readText())
+            ?: throw AssertionError("ReelDeclutter.java has no SOUNDTRACK_CHIP")
+        assertEquals(SOUNDTRACK_CHIP, soundtrack.groupValues[1])
     }
 }

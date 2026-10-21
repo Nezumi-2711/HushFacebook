@@ -23,6 +23,9 @@
        screenshots each screenful, in dark and light, plus one dark pass per -Locales entry.
        The text of each page goes next to its screenshots, and index.html shows them all.
     7. Puts the switches, the night mode and the app language back, and removes the audit folder.
+    8. Writes summary.txt and walk-receipt.json (walk-receipt.ps1): the result, whether the whole
+       audit ran, the device, and the patch build identity the app reported. A release publishes
+       only with a receipt that passed in full for the bundle it uploads.
 
     The phone has to be unlocked and signed in. -WriteBaseline records which families ran, for
     the next run to be held to: run it once on a build you trust after Facebook's version changes.
@@ -81,6 +84,7 @@ $smokeReader = $smokeAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Read-SmokeReport' }, $true)
 . ([scriptblock]::Create($smokeReader.Extent.Text))
 . (Join-Path $PSScriptRoot 'device-install.ps1')
+. (Join-Path $PSScriptRoot 'walk-receipt.ps1')
 
 $Package = 'com.facebook.katana'
 # The launcher entry that's on, resolved from the phone by Get-AuditLauncher before any change.
@@ -766,6 +770,12 @@ Write-Step "Facebook $version on $Serial, launching $Entry, results in $OutDir"
 $problems = New-Object System.Collections.Generic.List[string]
 $summary = New-Object System.Collections.Generic.List[string]
 $summary.Add("Facebook $version on $Serial, $(Get-Date -Format 'yyyy-MM-dd HH:mm')")
+# What the walk receipt reports, filled in as the walk gets that far.
+$auditStarted = [DateTimeOffset]::UtcNow
+$walkBuild = ''
+$walkRan = 0
+$walkFamilies = 0
+$walkCrashes = 0
 
 try {
     # --- Every switch on ----------------------------------------------------------------------
@@ -911,7 +921,10 @@ try {
         $idle = @($allFamilies + @($result.Families | ForEach-Object { $_.Name }) | Sort-Object -Unique |
             Where-Object { $ran -notcontains $_ })
         $summary.Add("$($allFamilies.Count) hook families, $($ran.Count) ran on the walk")
+        $walkRan = $ran.Count
+        $walkFamilies = $allFamilies.Count
         $baseline = New-AuditBaseline -Report $text -Ran $ran -Idle $idle
+        $walkBuild = $baseline.patchBuild
         [IO.File]::WriteAllText((Join-Path $OutDir 'baseline-candidate.json'), ($baseline | ConvertTo-Json -Depth 6))
 
         if (Test-Path -LiteralPath $Expectations) {
@@ -932,6 +945,7 @@ try {
         }
         if ($crashes.Count -gt 0) { [IO.File]::WriteAllLines((Join-Path $OutDir 'crash-buffer.txt'), [string[]]$crashes) }
         $fatal = @($crashes | Where-Object { $_ -match "Process: $([regex]::Escape($Package))\b" })
+        $walkCrashes = $fatal.Count
         if ($fatal.Count -gt 0) { $problems.Add("Facebook crashed during the audit: $($fatal[0].Trim())") }
     }
 
@@ -997,5 +1011,12 @@ else {
     foreach ($problem in $problems) { $summary.Add("  $problem") }
 }
 [IO.File]::WriteAllLines((Join-Path $OutDir 'summary.txt'), [string[]]$summary)
+$fullAudit = -not ($SkipWalk -or $SkipPages -or $KeepSettings)
+$walkReceipt = New-WalkReceipt -Result $(if ($problems.Count -gt 0) { 'FAIL' } elseif ($fullAudit) { 'PASS' } else { 'PARTIAL' }) `
+    -Full $fullAudit -Serial $Serial -Device $deviceIdentity -Facebook $version -PatchBuild $walkBuild `
+    -InstalledApkSha256 $installedHash -Started $auditStarted -Finished ([DateTimeOffset]::UtcNow) `
+    -FamiliesRan $walkRan -Families $walkFamilies -Crashes $walkCrashes -Problems ([string[]]$problems)
+[IO.File]::WriteAllText((Join-Path $OutDir 'walk-receipt.json'), ($walkReceipt | ConvertTo-Json -Depth 4) + "`n")
 $summary | ForEach-Object { Write-Step $_ }
+Write-Step "walk receipt: $(Join-Path $OutDir 'walk-receipt.json')"
 if ($problems.Count -gt 0) { exit 1 }

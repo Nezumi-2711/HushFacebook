@@ -18,7 +18,9 @@
     through a copy, a wide move of a conflict, a long and a lone upper half tested against zero,
     an int and an object tested for equality in either order, a move-result the patch separated
     from its invoke or left behind when Morphe's inline compiler dropped a plain invoke of a
-    parameter past v15 (Hide tab badges in an 18-register writer), bad try ranges and handlers (a handler at a switch or array payload among
+    parameter past v15 (Hide tab badges in an 18-register writer), an extension's Object answer
+    returned uncast from a method declared to return a class (Comment sheet options in 0.16.0),
+    bad try ranges and handlers (a handler at a switch or array payload among
     them), a move-exception the method's entry reaches, the one feed guard doubled, moved or
     missing, the reels hook deleted from the pre-EOF injector or put after a branch, the showcase
     stub left unfilled, calling another class, or calling a class that isn't the only one
@@ -142,7 +144,7 @@ function Get-Findings {
     param($Result)
     $fails = @($Result.Output | Where-Object { $_ -like '`[diff`] FAIL*' })
     $categories = @($fails | ForEach-Object {
-        if ($_ -match '^\[diff\] FAIL: (register|branch|invoke|parameter|width|try|result|contract): ') { $Matches[1] } else { '?' }
+        if ($_ -match '^\[diff\] FAIL: (register|branch|invoke|parameter|width|try|result|type|contract): ') { $Matches[1] } else { '?' }
     })
     [pscustomobject]@{ Fails = $fails; Categories = $categories }
 }
@@ -920,6 +922,7 @@ try {
         'bad-tab-links-launch-hook-missing' = 'contract'
         'bad-tab-links-friends-hook-missing' = 'contract'
         'bad-tab-links-check-hook-missing' = 'contract'
+        'bad-uncast-return' = 'type'
         'bad-post-message-stub-not-filled' = 'contract'
         'bad-post-attached-stub-not-filled' = 'contract'
         'bad-post-actors-stub-not-filled' = 'contract'
@@ -1183,6 +1186,10 @@ try {
         # of 18 registers: the lone move-result is named, with the class and method it opens.
         'bad-dropped-invoke' = @(('*result: move-result at 0 does not follow an invoke or filled-new-array; it opens the ' +
             'method  in Lfixture/IconBadger;->write(Landroid/content/Context;I)V'))
+        # The positive control for 0.16.0's comment sheet crash: the hook's Object answer returned
+        # without its cast, named with the hook and the type the method declares.
+        'bad-uncast-return' = @(("*type: return-object at 7 returns v1, the Object $tabFilter->launchedTab(Ljava/lang/Object;)" +
+            "Ljava/lang/Object; answered, uncast, where the method returns $tabTag  in Lfixture/TabLinks;->launchTab(*"))
     }
     foreach ($case in $wrongPlace.GetEnumerator()) {
         $fails = @((Get-Findings $badResults[$case.Key]).Fails)

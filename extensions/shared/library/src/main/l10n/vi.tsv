@@ -123,6 +123,10 @@ Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook 
 Black cards	Thẻ màu đen
 # context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
 Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	Thẻ và menu dùng màu của chính trang thay cho màu gần đen giúp tách chúng ra. Nút và ô tìm kiếm vẫn giữ nền xám đậm để bạn còn nhìn thấy. Khởi động lại Facebook để thấy thay đổi.
+# context: switch title under Appearance, shown with the AMOLED black theme; it draws a thin gray line in the gap between posts in the feed
+Lines between posts	Đường kẻ giữa các bài viết
+# context: description of that switch; the black page is the AMOLED theme's pure black background
+A thin gray line between posts in the feed, so posts without photos don't run together on the black page.	Một đường kẻ xám mỏng giữa các bài viết trong bảng tin, để các bài không có ảnh không bị lẫn vào nhau trên nền đen.
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	Hiển thị chữ của Facebook bằng phông chữ của điện thoại, hoặc bằng tệp phông chữ bạn chọn bên dưới. Khởi động lại Facebook để thấy thay đổi.
 Font file	Tệp phông chữ
 Use your phone's font	Dùng phông chữ của điện thoại
@@ -465,6 +469,9 @@ A long press on Like doesn't open the reactions. A tap still likes.	Nhấn giữ
 Hide GIF and sticker buttons	Ẩn nút GIF và nhãn dán
 # context: summary of that switch; the comment box is where you type a comment
 The comment box loses its GIF and sticker buttons. Typing, photos and posting work as before.	Ô bình luận không còn nút GIF và nhãn dán. Nhập chữ, thêm ảnh và đăng vẫn hoạt động như trước.
+# context: switch title under Comments: hides the Add a comment field at the bottom of the full-screen video viewer
+Hide the video comment box	Ẩn ô bình luận của video
+The Add a comment box under a full-screen video goes away. Comment boxes on posts stay.	Ô bình luận bên dưới video toàn màn hình biến mất. Ô bình luận trên bài viết vẫn giữ nguyên.
 # context: switch title under Comments; a reply thread is the replies under a comment, which Facebook folds behind View replies
 Open every reply thread	Mở mọi chuỗi phản hồi
 # context: summary of that switch; View replies is the link Facebook shows under a comment that has replies
@@ -780,7 +787,7 @@ Turn off double tap to like	Tắt nhấn đúp để thích
 A double tap on a reel or video no longer likes it or shows a heart. A single tap and the Like button work as before.	Nhấn đúp vào reel hoặc video không còn thích hay hiện trái tim. Nhấn một lần và nút Thích vẫn hoạt động như trước.
 Keep the reel speed	Giữ tốc độ reel
 # context: summary of that switch
-A playback speed you pick in a reel's menu stays for the next reels until you pick another or Facebook restarts. Off, every reel starts at normal speed.	Tốc độ phát bạn chọn trong menu của reel được giữ cho các reel tiếp theo, đến khi bạn chọn tốc độ khác hoặc Facebook khởi động lại. Khi tắt, mọi reel bắt đầu ở tốc độ bình thường.
+A playback speed you pick in a reel's menu stays for the next reels, after a restart too, until you pick another. Off, every reel starts at normal speed.	Tốc độ phát bạn chọn trong menu của reel được giữ cho các reel tiếp theo, kể cả sau khi khởi động lại, đến khi bạn chọn tốc độ khác. Khi tắt, mọi reel bắt đầu ở tốc độ bình thường.
 Hold a reel for 2x	Nhấn giữ reel để phát 2x
 # context: summary of that switch; more button is the reel's own button with three dots
 Holding a reel plays it at double speed until you let go, in place of Facebook's long-press menu. The reel's more button still opens that menu.	Nhấn giữ reel sẽ phát với tốc độ gấp đôi cho đến khi bạn thả tay, thay cho menu nhấn giữ của Facebook. Nút ba chấm của reel vẫn mở menu đó.
@@ -1233,6 +1240,9 @@ Hides posts that share another post, with or without a caption. Original posts s
 Lock Facebook	Khóa Facebook
 Save crashes to Downloads	Lưu sự cố vào thư mục Download
 When Facebook crashes, the error goes in a text file in Download/Hushfacebook, so you can send it with a bug report even if Facebook won't open. Links and IDs are left out. The newest five are kept.	Khi Facebook gặp sự cố, lỗi được ghi vào tệp văn bản trong Download/Hushfacebook, để bạn gửi kèm báo lỗi kể cả khi Facebook không mở được. Liên kết và ID được loại bỏ. Chỉ giữ năm tệp mới nhất.
+# context: switch title in Privacy: Facebook quits fully a few seconds after you switch away from it
+Close Facebook when you leave it	Đóng Facebook khi bạn thoát
+A few seconds after you leave Facebook, it closes all the way and leaves your recent apps, so it isn't running in the background. It waits for uploads and saves to finish first. Notifications may come late, or not until you open Facebook again.	Vài giây sau khi bạn rời Facebook, ứng dụng sẽ đóng hẳn và biến khỏi danh sách ứng dụng gần đây, nên không chạy ngầm. Nó chờ các lượt tải lên và lưu xong trước. Thông báo có thể đến trễ hoặc chỉ đến khi bạn mở lại Facebook.
 # context: summary of the Lock Facebook switch; the time below is the Lock after row under it
 Facebook asks for your fingerprint, face or screen lock at startup and when you return after the time below. Your phone needs a screen lock.	Facebook yêu cầu vân tay, khuôn mặt hoặc khóa màn hình khi khởi động và khi bạn quay lại sau khoảng thời gian bên dưới. Điện thoại của bạn cần có khóa màn hình.
 # context: toast when Lock Facebook is turned on and the phone has no screen lock to ask for
@@ -1603,7 +1613,7 @@ Takes the row of profile pictures off the share sheet, the people Facebook sugge
 Hide who is typing in comments	Ẩn ai đang nhập trong bình luận
 Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.	Gỡ dòng cho biết ai đó đang nhập bình luận. Việc bạn đang nhập có công tắc riêng trong Quyền riêng tư.
 Hide the search pill on reels	Ẩn gợi ý tìm kiếm trên reel
-Hides the search suggestion under a reel's caption, the magnifier with a question to look up.	Ẩn gợi ý tìm kiếm bên dưới chú thích của reel, biểu tượng kính lúp kèm câu hỏi để tra cứu.
+Hides the search suggestion under a reel's caption, the magnifier with a question to look up, the one at the top of its comments and the search bar over reels you open from a profile.	Ẩn gợi ý tìm kiếm bên dưới chú thích của reel, biểu tượng kính lúp kèm câu hỏi để tra cứu, gợi ý ở đầu phần bình luận và thanh tìm kiếm phía trên các reel bạn mở từ một trang cá nhân.
 # context: switch title under Appearance; the button is Facebook's Messenger icon in the top bar of Home
 Hide the Messenger button	Ẩn nút Messenger
 # context: summary of that switch; the other top bar buttons move over to fill the space; Hushfacebook is the app's name
@@ -1753,3 +1763,11 @@ Hides posts from groups you haven't joined, like a friend's post in a public gro
 Hide For you in search	Ẩn Dành cho bạn trong tìm kiếm
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
 Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	Ẩn các tìm kiếm Dành cho bạn mà Facebook gợi ý khi bạn mở tìm kiếm. Các tìm kiếm gần đây và gợi ý khi bạn gõ vẫn giữ nguyên.
+# context: switch title under Search; on, what the user searches for isn't added to their Facebook search history
+Don't save search history	Không lưu lịch sử tìm kiếm
+# context: summary of that switch; searches already in the history are the user's own past searches, which stay until the user deletes them
+What you search for isn't added to your Facebook search history. Searches already there stay until you delete them.	Những gì bạn tìm kiếm sẽ không được thêm vào lịch sử tìm kiếm Facebook của bạn. Các tìm kiếm đã có sẵn vẫn giữ lại cho đến khi bạn xóa.
+# context: switch title under Reels and Watch; the audio line is the scrolling line at the bottom of a reel naming its sound, like "Name · Original audio" or a song title
+Hide the audio line on reels	Ẩn dòng âm thanh trên reel
+# context: summary of that switch; "Original audio" is Facebook's own label, so use the wording Facebook shows in this language
+Takes the line with the reel's sound, "Original audio" or a song, off the bottom of reels. Other info stays. A change shows from the next reel.	Bỏ dòng ghi âm thanh của reel, "Âm thanh gốc" hoặc một bài hát, ở dưới cùng reel. Thông tin khác vẫn giữ. Thay đổi hiện từ reel tiếp theo.

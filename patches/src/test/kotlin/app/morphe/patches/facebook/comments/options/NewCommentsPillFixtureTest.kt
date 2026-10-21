@@ -123,16 +123,23 @@ class NewCommentsPillFixtureTest {
                     it.name == found.method.name && it.returnType == found.method.returnType &&
                         it.parameterTypes.map(CharSequence::toString) == found.method.parameterTypes.map(CharSequence::toString)
                 }.code()
-                assertEquals("$name: two instructions added", before.size + 2, patched.size)
+                assertEquals("$name: three instructions added", before.size + 3, patched.size)
                 assertEquals("$name: the extension is asked as a range call", Opcode.INVOKE_STATIC_RANGE, patched[index].opcode)
                 assertEquals("$name: it asks $NEW_COMMENTS_PILL_DATA", NEW_COMMENTS_PILL_DATA, patched[index].called()?.toString())
                 assertEquals("$name: it hands over the data", listOf(register),
                     (patched[index] as RegisterRangeInstruction).let { (it.startRegister until it.startRegister + it.registerCount).toList() })
                 assertEquals("$name: its answer goes back", Opcode.MOVE_RESULT_OBJECT, patched[index + 1].opcode)
                 assertEquals("$name: into the register the return reads", register, (patched[index + 1] as OneRegisterInstruction).registerA)
-                assertEquals("$name: the return stays", Opcode.RETURN_OBJECT, patched[index + 2].opcode)
+                // The extension answers an Object. Returned as is from a builder declared to return
+                // the pill's own type, ART rejects the whole class and every comment sheet crashes
+                // (0.16.0, #203, #204), so the answer is cast back first.
+                assertEquals("$name: the answer is cast back", Opcode.CHECK_CAST, patched[index + 2].opcode)
+                assertEquals("$name: to the type the builder declares", found.method.returnType,
+                    (patched[index + 2] as ReferenceInstruction).reference.toString())
+                assertEquals("$name: in the register the return reads", register, (patched[index + 2] as OneRegisterInstruction).registerA)
+                assertEquals("$name: the return stays", Opcode.RETURN_OBJECT, patched[index + 3].opcode)
                 assertEquals("$name: the rest is Facebook's own",
-                    before.map { it.opcode }, patched.take(index).map { it.opcode } + patched.drop(index + 2).map { it.opcode })
+                    before.map { it.opcode }, patched.take(index).map { it.opcode } + patched.drop(index + 3).map { it.opcode })
                 checked += version
             }
         }

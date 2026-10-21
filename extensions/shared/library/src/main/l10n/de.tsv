@@ -123,6 +123,10 @@ Keeps Facebook dark no matter its own setting. Meant for tablets where Facebook 
 Black cards	Schwarze Karten
 # context: description of that switch; a card is a raised panel such as a post or the Menu's profile box, near black is the dark gray the theme gives it
 Cards and menus take the page's own color instead of the near black that sets them apart. Buttons and search fields keep a dark gray fill, so you can still see them. Restart Facebook to see the change.	Karten und Menüs bekommen die Farbe der Seite statt des fast schwarzen Tons, der sie abhebt. Schaltflächen und Suchfelder behalten eine dunkelgraue Füllung, damit du sie weiterhin siehst. Starte Facebook neu, um die Änderung zu sehen.
+# context: switch title under Appearance, shown with the AMOLED black theme; it draws a thin gray line in the gap between posts in the feed
+Lines between posts	Linien zwischen Beiträgen
+# context: description of that switch; the black page is the AMOLED theme's pure black background
+A thin gray line between posts in the feed, so posts without photos don't run together on the black page.	Eine dünne graue Linie zwischen den Beiträgen im Feed, damit Beiträge ohne Fotos auf der schwarzen Seite nicht ineinanderlaufen.
 Draws Facebook's text in your phone's font, or in a font file you choose below. Restart Facebook to see the change.	Zeigt Facebooks Text in der Schrift deines Telefons oder in einer Schriftdatei, die du unten wählst. Starte Facebook neu, um die Änderung zu sehen.
 Font file	Schriftdatei
 Use your phone's font	Schriftart des Handys verwenden
@@ -465,6 +469,9 @@ A long press on Like doesn't open the reactions. A tap still likes.	Langes Drüc
 Hide GIF and sticker buttons	GIF- und Sticker-Schaltflächen ausblenden
 # context: summary of that switch; the comment box is where you type a comment
 The comment box loses its GIF and sticker buttons. Typing, photos and posting work as before.	Das Kommentarfeld verliert seine GIF- und Sticker-Schaltflächen. Schreiben, Fotos und Posten funktionieren wie bisher.
+# context: switch title under Comments: hides the Add a comment field at the bottom of the full-screen video viewer
+Hide the video comment box	Kommentarfeld bei Videos ausblenden
+The Add a comment box under a full-screen video goes away. Comment boxes on posts stay.	Das Kommentarfeld unter einem Video im Vollbild verschwindet. Kommentarfelder bei Beiträgen bleiben.
 # context: switch title under Comments; a reply thread is the replies under a comment, which Facebook folds behind View replies
 Open every reply thread	Alle Antwort-Threads öffnen
 # context: summary of that switch; View replies is the link Facebook shows under a comment that has replies
@@ -780,7 +787,7 @@ Turn off double tap to like	Doppeltippen zum Liken ausschalten
 A double tap on a reel or video no longer likes it or shows a heart. A single tap and the Like button work as before.	Doppeltippen auf ein Reel oder Video markiert es nicht mehr mit „Gefällt mir“ und zeigt kein Herz. Einmal tippen und der „Gefällt mir“-Button funktionieren wie bisher.
 Keep the reel speed	Reel-Geschwindigkeit beibehalten
 # context: summary of that switch
-A playback speed you pick in a reel's menu stays for the next reels until you pick another or Facebook restarts. Off, every reel starts at normal speed.	Eine Wiedergabegeschwindigkeit, die du im Menü eines Reels wählst, bleibt für die nächsten Reels, bis du eine andere wählst oder Facebook neu startet. Aus startet jedes Reel mit normaler Geschwindigkeit.
+A playback speed you pick in a reel's menu stays for the next reels, after a restart too, until you pick another. Off, every reel starts at normal speed.	Eine Wiedergabegeschwindigkeit, die du im Menü eines Reels wählst, bleibt für die nächsten Reels, auch nach einem Neustart, bis du eine andere wählst. Aus startet jedes Reel mit normaler Geschwindigkeit.
 Hold a reel for 2x	Reel für 2x gedrückt halten
 # context: summary of that switch; more button is the reel's own button with three dots
 Holding a reel plays it at double speed until you let go, in place of Facebook's long-press menu. The reel's more button still opens that menu.	Wenn du ein Reel gedrückt hältst, läuft es mit doppelter Geschwindigkeit, bis du loslässt, statt Facebooks Menü für langes Drücken zu öffnen. Die Mehr-Schaltfläche des Reels öffnet das Menü weiterhin.
@@ -1233,6 +1240,9 @@ Hides posts that share another post, with or without a caption. Original posts s
 Lock Facebook	Facebook sperren
 Save crashes to Downloads	Abstürze in Downloads speichern
 When Facebook crashes, the error goes in a text file in Download/Hushfacebook, so you can send it with a bug report even if Facebook won't open. Links and IDs are left out. The newest five are kept.	Wenn Facebook abstürzt, landet der Fehler als Textdatei in Download/Hushfacebook, damit du ihn mit einem Fehlerbericht schicken kannst, auch wenn Facebook nicht mehr startet. Links und IDs werden weggelassen. Die neuesten fünf bleiben erhalten.
+# context: switch title in Privacy: Facebook quits fully a few seconds after you switch away from it
+Close Facebook when you leave it	Facebook beim Verlassen schließen
+A few seconds after you leave Facebook, it closes all the way and leaves your recent apps, so it isn't running in the background. It waits for uploads and saves to finish first. Notifications may come late, or not until you open Facebook again.	Ein paar Sekunden nachdem du Facebook verlässt, wird es ganz geschlossen und verschwindet aus den zuletzt verwendeten Apps, damit es nicht im Hintergrund läuft. Uploads und Speichervorgänge werden vorher abgeschlossen. Benachrichtigungen können verspätet kommen oder erst, wenn du Facebook wieder öffnest.
 # context: summary of the Lock Facebook switch; the time below is the Lock after row under it
 Facebook asks for your fingerprint, face or screen lock at startup and when you return after the time below. Your phone needs a screen lock.	Facebook fragt beim Start und nach der unten gewählten Zeit nach deinem Fingerabdruck, Gesicht oder deiner Bildschirmsperre. Dein Telefon braucht eine Bildschirmsperre.
 # context: toast when Lock Facebook is turned on and the phone has no screen lock to ask for
@@ -1603,7 +1613,7 @@ Takes the row of profile pictures off the share sheet, the people Facebook sugge
 Hide who is typing in comments	Wer gerade kommentiert, ausblenden
 Takes away the line that says someone is typing a comment. Your own typing is a separate switch under Privacy.	Entfernt die Zeile, die anzeigt, dass jemand gerade einen Kommentar schreibt. Dein eigenes Tippen hat einen eigenen Schalter unter Datenschutz.
 Hide the search pill on reels	Suchvorschlag bei Reels ausblenden
-Hides the search suggestion under a reel's caption, the magnifier with a question to look up.	Blendet den Suchvorschlag unter der Beschreibung eines Reels aus, die Lupe mit einer Frage zum Nachschlagen.
+Hides the search suggestion under a reel's caption, the magnifier with a question to look up, the one at the top of its comments and the search bar over reels you open from a profile.	Blendet den Suchvorschlag unter der Beschreibung eines Reels aus, die Lupe mit einer Frage zum Nachschlagen, den über seinen Kommentaren und die Suchleiste über Reels, die du von einem Profil aus öffnest.
 # context: switch title under Appearance; the button is Facebook's Messenger icon in the top bar of Home
 Hide the Messenger button	Messenger-Button ausblenden
 # context: summary of that switch; the other top bar buttons move over to fill the space; Hushfacebook is the app's name
@@ -1753,3 +1763,11 @@ Hides posts from groups you haven't joined, like a friend's post in a public gro
 Hide For you in search	Für dich in der Suche ausblenden
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
 Hides the For you searches Facebook suggests when you open search. Your recent searches and the suggestions as you type stay.	Blendet die Suchen unter „Für dich“ aus, die Facebook vorschlägt, wenn du die Suche öffnest. Deine letzten Suchen und die Vorschläge beim Tippen bleiben.
+# context: switch title under Search; on, what the user searches for isn't added to their Facebook search history
+Don't save search history	Suchverlauf nicht speichern
+# context: summary of that switch; searches already in the history are the user's own past searches, which stay until the user deletes them
+What you search for isn't added to your Facebook search history. Searches already there stay until you delete them.	Was du suchst, wird nicht in deinen Facebook-Suchverlauf aufgenommen. Suchen, die schon dort sind, bleiben, bis du sie löschst.
+# context: switch title under Reels and Watch; the audio line is the scrolling line at the bottom of a reel naming its sound, like "Name · Original audio" or a song title
+Hide the audio line on reels	Audiozeile bei Reels ausblenden
+# context: summary of that switch; "Original audio" is Facebook's own label, so use the wording Facebook shows in this language
+Takes the line with the reel's sound, "Original audio" or a song, off the bottom of reels. Other info stays. A change shows from the next reel.	Entfernt unten an Reels die Zeile mit dem Ton des Reels, „Originalton“ oder einen Song. Andere Infos bleiben. Eine Änderung gilt ab dem nächsten Reel.

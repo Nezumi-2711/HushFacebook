@@ -28,7 +28,11 @@ import app.morphe.extension.shared.settings.BaseSettings;
  *       builds the list of those it will draw. The patch hands that list here before each return,
  *       and {@link #filterChips} answers the chips to keep, or null to keep the list as it came.
  *       Each chip is a generated model that answers its GraphQL type with {@code getTypeName()},
- *       and only the types in {@link #HIDDEN_CHIPS} go. A type this doesn't know stays.
+ *       and only the types in {@link #HIDDEN_CHIPS} go. A type this doesn't know stays. The line
+ *       naming the reel's sound, "Original audio" or a song, is one of those chips, and it goes
+ *       under its own switch ({@link #SOUNDTRACK_CHIP}, #200). The footer draws nothing for a
+ *       list left empty. The Reels tab draws that line in a component of its own, which picks the
+ *       soundtrack out of the models itself, and {@link #hideAudioLine} is asked first thing there.
  *   <li>The Follow button beside a reel's author is built only when Facebook's Follow check
  *       answers yes, and {@link #hideFollowButton} is asked first thing in that check. The author
  *       row asks it on every surface, the Reels tab included. So do the author rows of sponsored
@@ -74,6 +78,13 @@ public final class ReelDeclutter {
             "XFBFBShortsExternalLinkAttribution",
     };
 
+    /**
+     * The GraphQL type of the line naming a reel's sound, "Original audio" or a song, which the audio
+     * line switch hides on its own (#200). The chips switch leaves it, and the patch holds the builder
+     * to it as it does to the hidden chips.
+     */
+    static final String SOUNDTRACK_CHIP = "XFBFBShortsSoundtrackTitle";
+
     /** The diagnostic counter routes. */
     static final String CHIPS_ROUTE = "Reel chips";
     static final String FOLLOW_ROUTE = "Reel Follow button";
@@ -82,6 +93,13 @@ public final class ReelDeclutter {
     /** Counted under its own name each time the search pill isn't built. */
     static final String SEARCH_ROUTE = "Reel search pill";
     static final String SEARCH_PILL = "search pill";
+    static final String COMMENT_SEARCH_PILL = "comment search pill";
+    /** The search bar over a reel opened from a profile, and its send button, each counted as it's handed in. */
+    static final String SEARCH_BAR = "search bar";
+
+    /** Counted under its own name each time the Reels tab's audio line isn't drawn. */
+    static final String AUDIO_ROUTE = "Reel audio line";
+    static final String AUDIO_LINE = "audio line";
 
     /** Counted under its own name each time a sidebar button's number is taken away. */
     static final String COUNTS_ROUTE = "Reel counts";
@@ -136,7 +154,10 @@ public final class ReelDeclutter {
             if (!(chips instanceof List)) return null;
             List<?> list = (List<?>) chips;
             FeedFilterCounters.sawList(CHIPS_ROUTE, list.size());
-            if (list.isEmpty() || !Utils.settingsReady() || !Settings.HIDE_REEL_CHIPS.get()) return null;
+            if (list.isEmpty() || !Utils.settingsReady()) return null;
+            boolean hideChips = Settings.HIDE_REEL_CHIPS.get();
+            boolean audioLine = Settings.HIDE_REEL_AUDIO_LINE.get();
+            if (!hideChips && !audioLine) return null;
 
             List<Object> kept = new ArrayList<>(list.size());
             for (Object chip : list) {
@@ -145,7 +166,7 @@ public final class ReelDeclutter {
                 String type = FeedFilter.typeName(chip);
                 // The report names every chip type a reel carried, which is how a new one is found.
                 FeedFilterCounters.sawKind(CHIPS_ROUTE, type == null ? UNREADABLE : type);
-                if (isHiddenChip(type)) {
+                if ((hideChips && isHiddenChip(type)) || (audioLine && SOUNDTRACK_CHIP.equals(type))) {
                     FeedFilterCounters.removed(CHIPS_ROUTE, 1, type);
                     logOnce("chip " + type, () -> "Reel chips: hid " + type);
                     continue;
@@ -241,6 +262,30 @@ public final class ReelDeclutter {
     }
 
     /**
+     * Injection point, first thing in the component that draws the audio line on the Reels tab
+     * (#200). That row picks the soundtrack out of the reel's attribution models on its own, so the
+     * chip filter never sees it. True makes it draw nothing, as it does for a reel with no sound
+     * line. Never throws: false draws it as before.
+     */
+    public static boolean hideAudioLine() {
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            FeedFilterCounters.sawList(AUDIO_ROUTE, 1);
+            FeedFilterCounters.sawKind(AUDIO_ROUTE, AUDIO_LINE);
+            boolean hide = Utils.settingsReady() && Settings.HIDE_REEL_AUDIO_LINE.get();
+            if (hide) {
+                FeedFilterCounters.removed(AUDIO_ROUTE, 1, AUDIO_LINE);
+                logOnce(AUDIO_LINE, () -> "Reel audio line: not drawn");
+            }
+            return hide;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, AUDIO_LINE, failure);
+            Logger.printException(() -> "Reel audio line: could not read its switch", failure);
+            return false;
+        }
+    }
+
+    /**
      * Injection point, first thing in the builder of the search pill under a reel's caption (#173).
      * True makes the builder answer with Facebook's own empty component, so no pill is drawn.
      * Never throws: false builds the pill as before.
@@ -260,6 +305,56 @@ public final class ReelDeclutter {
             HookStatus.threw(FamilyNames.REEL_DECLUTTER, SEARCH_PILL, failure);
             Logger.printException(() -> "Reel search pill: could not read its switch", failure);
             return false;
+        }
+    }
+
+    /**
+     * Injection point, right after the comment sheet's builder reads the search prompt it puts over
+     * a reel's comments (#197). Null while the search pill switch is on, which is the path Facebook
+     * takes for a sheet that has no prompt, so the row isn't built. Never throws: off, paused, before
+     * the settings are ready or on a failure the prompt comes back as it was handed in.
+     *
+     * @param prompt Facebook's SearchPromptParam, or null when the sheet has none.
+     */
+    public static Object commentSearchPrompt(Object prompt) {
+        if (prompt == null) return null;
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            FeedFilterCounters.sawList(SEARCH_ROUTE, 1);
+            FeedFilterCounters.sawKind(SEARCH_ROUTE, COMMENT_SEARCH_PILL);
+            if (!Utils.settingsReady() || !Settings.HIDE_REEL_SEARCH_PILL.get()) return prompt;
+            FeedFilterCounters.removed(SEARCH_ROUTE, 1, COMMENT_SEARCH_PILL);
+            logOnce(COMMENT_SEARCH_PILL, () -> "Reel search pill: none over the comments");
+            return null;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, COMMENT_SEARCH_PILL, failure);
+            Logger.printException(() -> "Reel search pill: could not read its switch for the comments", failure);
+            return prompt;
+        }
+    }
+
+    /**
+     * Injection point, in place of the call that puts the search bar, or the send button beside it,
+     * into the header over a reel opened from a profile (#201). Null while the search pill switch is
+     * on, which that call skips, as it does a part Facebook didn't build. Never throws: off, paused,
+     * before the settings are ready or on a failure the part comes back as it was handed in.
+     *
+     * @param part Facebook's component for the bar or the button, or null when it built none.
+     */
+    public static Object searchBarPart(Object part) {
+        if (part == null) return null;
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            FeedFilterCounters.sawList(SEARCH_ROUTE, 1);
+            FeedFilterCounters.sawKind(SEARCH_ROUTE, SEARCH_BAR);
+            if (!Utils.settingsReady() || !Settings.HIDE_REEL_SEARCH_PILL.get()) return part;
+            FeedFilterCounters.removed(SEARCH_ROUTE, 1, SEARCH_BAR);
+            logOnce(SEARCH_BAR, () -> "Reel search pill: no search bar over the reel");
+            return null;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, SEARCH_BAR, failure);
+            Logger.printException(() -> "Reel search pill: could not read its switch for the search bar", failure);
+            return part;
         }
     }
 

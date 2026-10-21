@@ -173,6 +173,16 @@ class KeepReelSpeedFixtureTest {
                 assertEquals("$name: places ${sheet.definingClass}->${sheet.name} reads a speed for each label", 1, meets.size)
                 val meet = meets.single()
                 val sheetClass = sheetHolders.single { it.type == sheet.definingClass }
+                // With no player found it checks normal speed, loaded where the getter's path goes on (#199).
+                val misses = gearMisses(sheet, owner.type)
+                assertEquals("$name: places ${sheet.definingClass}->${sheet.name} checks normal speed for a player it can't find",
+                    1, misses.size)
+                val miss = misses.single()
+                val speedGetter = owner.methods.singleOrNull {
+                    it.name == miss.getter.name && it.returnType == "F" && it.parameterTypes.isEmpty()
+                }
+                assertTrue("$name: ${owner.type} has no public ()F ${miss.getter.name}",
+                    speedGetter != null && AccessFlags.PUBLIC.isSet(speedGetter.accessFlags))
 
                 // HeroManager's setPlaybackSpeed loads its 0.25x floor once and keeps speeds over it.
                 val rangeHolders = FixtureDex.classesHolding(bundle, SPEED_RANGE_LOG).filterNot { it.type.startsWith(EXTENSION_CLASSES) }
@@ -242,10 +252,18 @@ class KeepReelSpeedFixtureTest {
                         (sheetCode[at + 1] as OneRegisterInstruction).registerA)
                 }
                 assertHook(0, "flag", GEAR_VALUES, meet.values, Opcode.MOVE_RESULT)
-                val walk = meet.index + 2
+                // The normal speed hook's two instructions come before the walk, and the walk's four before it, whichever is first.
+                val walk = meet.index + 2 + if (miss.index < meet.index) 2 else 0
                 assertHook(walk, "speeds", GEAR_SPEEDS, meet.speeds, Opcode.MOVE_RESULT_OBJECT)
                 assertHook(walk + 2, "labels", GEAR_LABELS, meet.labels, Opcode.MOVE_RESULT_OBJECT)
                 assertEquals("$name: the walk doesn't follow the hooks", Opcode.ARRAY_LENGTH, sheetCode[walk + 4].opcode)
+                // Its normal speed goes to the extension straight after it's loaded and comes back in the same
+                // register, ahead of the goto back to the getter's path.
+                val normalAt = miss.index + 2 + if (miss.index > meet.index) 4 else 0
+                assertEquals("$name: the sheet's normal speed", Opcode.CONST_HIGH16, sheetCode[normalAt].opcode)
+                assertHook(normalAt + 1, "normal speed", GEAR_SHEET_SPEED, miss.speed, Opcode.MOVE_RESULT)
+                assertTrue("$name: the sheet doesn't go back after the normal speed hook",
+                    sheetCode[normalAt + 3].opcode in setOf(Opcode.GOTO, Opcode.GOTO_16, Opcode.GOTO_32))
 
                 val stubs = context.mutableClassDefBy(REEL_SPEED)
                 val setStub = stubs.methods.single { it.name == SET_SPEED_STUB }.code()
@@ -260,6 +278,10 @@ class KeepReelSpeedFixtureTest {
                 assertEquals("$name: the params stub's call", "${owner.type}->${paramsGetter.single().name}()$VIDEO_PLAYER_PARAMS",
                     paramsStub[1].call.toString())
                 assertEquals("$name: the params stub's answer", Opcode.RETURN_OBJECT, paramsStub[3].opcode)
+                val speedStub = stubs.methods.single { it.name == SPEED_STUB }.code()
+                assertEquals("$name: the speed stub's cast", owner.type, ((speedStub[0] as ReferenceInstruction).reference as TypeReference).type)
+                assertEquals("$name: the speed stub's call", "${owner.type}->${miss.getter.name}()F", speedStub[1].call.toString())
+                assertEquals("$name: the speed stub's answer", Opcode.RETURN, speedStub[3].opcode)
                 for ((stub, field) in flagFields) {
                     val code = stubs.methods.single { it.name == stub }.code()
                     assertEquals("$name: the $stub stub's cast", VIDEO_PLAYER_PARAMS, ((code[0] as ReferenceInstruction).reference as TypeReference).type)

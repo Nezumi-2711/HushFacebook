@@ -114,6 +114,9 @@ val settingsPatch = bytecodePatch(
     // With Debug logging on, a module download's line says what Facebook's downloader did before
     // its screen closed (#168). See ModuleDownloadEvidencePatch.kt.
     dependsOn(moduleDownloadEvidencePatch)
+    // Google Play can't serve a re-signed build's game modules, so Facebook's own downloader fetches
+    // them, whatever was picked (#168). See ModuleDownloaderPatch.kt.
+    dependsOn(moduleDownloaderPatch)
     // A re-signed build's push service rejects Facebook and restarts itself in a loop unless its
     // signer read gets the original certificate, whatever was picked. See FbnsSignersPatch.kt.
     dependsOn(fbnsSignersPatch)

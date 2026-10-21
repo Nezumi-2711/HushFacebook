@@ -104,6 +104,7 @@ import app.morphe.extension.facebook.reels.ReelDeclutter;
 import app.morphe.extension.facebook.reels.ReelMidCardsForTests;
 import app.morphe.extension.facebook.reels.SeenStateSendForTests;
 import app.morphe.extension.facebook.search.MetaAiSearchForTests;
+import app.morphe.extension.facebook.search.SearchHistory;
 import app.morphe.extension.facebook.stories.StoryAdvance;
 import app.morphe.extension.facebook.stories.StorySeenForTests;
 import app.morphe.extension.facebook.stories.StoryUpload;
@@ -236,6 +237,10 @@ public class ColdStartHooksTest {
         assertTrue("Facebook's own yes has to stand", MediaDownload.offersSave(true));
         assertFalse(ReelDownload.showsButton());
         assertNull(ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsRemixAttribution"))));
+        assertFalse("a Reels tab audio line drawn before the context came off", ReelDeclutter.hideAudioLine());
+        Object searchBar = new Object();
+        assertSame("a reel's search bar built before the context came off", searchBar,
+                ReelDeclutter.searchBarPart(searchBar));
         assertFalse(ReelDeclutter.hideFollowButton());
         assertFalse(ReelDeclutter.hideFollowingButton());
         assertFalse(ReelDeclutter.skipHotComment());
@@ -383,6 +388,7 @@ public class ColdStartHooksTest {
         assertFalse("a results page built before the context lost its Meta AI prompts", MetaAiSearchForTests.dropsPrompts());
         assertFalse("a suggestion parsed before the context lost its Meta AI route",
                 MetaAiSearchForTests.stopsSuggestionRoute());
+        assertFalse("a search saved before the context was kept out of the history", SearchHistory.skipSave(false));
         // A push can start Facebook, so the notification hook can run this early.
         assertFalse("a trending video push before the context was blocked", NotificationKindsForTests.blocksTrendingVideo());
         assertFalse("a birthday push before the context was blocked", NotificationKindsForTests.blocksBirthday());
@@ -390,6 +396,7 @@ public class ColdStartHooksTest {
         assertFalse("a call push before the context was left to Messenger", MessengerHandoffForTests.dropsACallPush());
         assertFalse("a ring before the context was left to Messenger", MessengerHandoffForTests.dropsARing());
         assertFalse("a message before the context was left to Messenger", MessengerHandoffForTests.dropsAMessage());
+        assertFalse("a chat push before the context was left to Messenger", MessengerHandoffForTests.dropsAChatPush());
         assertTrue("a player start before the context was held",
                 TapToPlay.allowStart(new Object(), TapToPlayForTests.Trigger.BY_AUTOPLAY));
         assertTrue("an older player start before the context was held",

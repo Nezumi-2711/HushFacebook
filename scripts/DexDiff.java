@@ -82,8 +82,9 @@ import java.util.TreeSet;
  * inside an instruction ("target dex pc is not at instruction start"), an invoke whose registers
  * don't match what the callee takes, a parameter register read as the wrong kind (the static and
  * wide off-by-one), a register the body wrote at the wrong width (a narrow const left where a
- * const-wide was, which the AMOLED sweep did on 580), a move-result cut off from its invoke, and a
- * try range or handler off an instruction boundary. A contract file adds
+ * const-wide was, which the AMOLED sweep did on 580), a move-result cut off from its invoke, an
+ * extension's Object answer returned uncast from a method declared to return a class (Comment
+ * sheet options in 0.16.0), and a try range or handler off an instruction boundary. A contract file adds
  * rules about the whole APK: the feed filter's guard is called once, first thing, in the one
  * method doing the funnel's work (addNewEdgeToCollection, or the body 583's wrapper hands its edge
  * to), because two guards stacked on that method is what broke Froggo's builds; and each extension stub a patch fills in with one of Facebook's renamed accessors calls
@@ -871,6 +872,97 @@ public class DexDiff {
     }
 
     /**
+     * Each return-object in [m] that hands back, unchanged, what a call declared to return Object
+     * answered, while [m] is declared to return some other type: the declared type, and the
+     * finding. ART rejects the whole class for that ("returning 'Reference: java.lang.Object', but
+     * expected from declaration ..."), so every method in it dies with a VerifyError, which is how
+     * Comment sheet options crashed every comment sheet in 0.16.0 (#203, #204). The extension's
+     * hooks take and answer Object, so a hook whose answer is returned has to be cast back first.
+     * The walk goes back from the return along the one straight run into it and stops where
+     * another path joins, so a value only some paths bring is left alone. Whether the declared
+     * type is an interface, which ART lets any object through to, is only known once every class
+     * has been read, so the caller decides which of these stand.
+     */
+    private static List<String[]> objectReturns(Method m) {
+        List<String[]> out = new ArrayList<>();
+        MethodImplementation impl = m.getImplementation();
+        String declared = m.getReturnType();
+        if (impl == null || declared.charAt(0) != 'L' || declared.equals("Ljava/lang/Object;")) return out;
+        Layout layout = new Layout(impl);
+        Set<Integer> joins = joins(impl, layout);
+        for (int k = 0; k < layout.instructions.size(); k++) {
+            Instruction i = layout.instructions.get(k);
+            if (i.getOpcode() != Opcode.RETURN_OBJECT) continue;
+            int register = ((OneRegisterInstruction) i).getRegisterA();
+            int j = k;
+            while (j > 0 && !joins.contains(layout.addresses.get(j))
+                    && layout.instructions.get(j - 1).getOpcode().canContinue()) {
+                j--;
+                Instruction w = layout.instructions.get(j);
+                if (!writes(w, register)) continue;
+                if (w.getOpcode() == Opcode.MOVE_RESULT_OBJECT && j > 0
+                        && layout.instructions.get(j - 1) instanceof ReferenceInstruction) {
+                    Reference callee = ((ReferenceInstruction) layout.instructions.get(j - 1)).getReference();
+                    if (callee instanceof MethodReference
+                            && ((MethodReference) callee).getReturnType().equals("Ljava/lang/Object;")) {
+                        out.add(new String[]{declared, "type: return-object at " + layout.addresses.get(k)
+                                + " returns v" + register + ", the Object " + callee + " answered, uncast, where the method returns "
+                                + declared});
+                    }
+                }
+                break;
+            }
+        }
+        return out;
+    }
+
+    /** Whether [i] writes [register]: as its destination, the upper half of a wide one, or a cast. */
+    private static boolean writes(Instruction i, int register) {
+        Opcode opcode = i.getOpcode();
+        if (!(i instanceof OneRegisterInstruction)) return false;
+        if (opcode != Opcode.CHECK_CAST && !opcode.setsRegister()) return false;
+        int destination = ((OneRegisterInstruction) i).getRegisterA();
+        return destination == register || (opcode.setsWideRegister() && destination + 1 == register);
+    }
+
+    /** Every address a branch, a switch case or an exception handler lands on. */
+    private static Set<Integer> joins(MethodImplementation impl, Layout layout) {
+        Set<Integer> out = new HashSet<>();
+        for (int k = 0; k < layout.instructions.size(); k++) {
+            Instruction i = layout.instructions.get(k);
+            if (!(i instanceof OffsetInstruction) || i.getOpcode() == Opcode.FILL_ARRAY_DATA) continue;
+            int at = layout.addresses.get(k);
+            int target = at + ((OffsetInstruction) i).getCodeOffset();
+            if (i.getOpcode() == Opcode.PACKED_SWITCH || i.getOpcode() == Opcode.SPARSE_SWITCH) {
+                Instruction payload = layout.byAddress.get(target);
+                if (!(payload instanceof SwitchPayload)) continue;
+                for (SwitchElement element : ((SwitchPayload) payload).getSwitchElements()) out.add(at + element.getOffset());
+            } else {
+                out.add(target);
+            }
+        }
+        for (TryBlock<? extends ExceptionHandler> block : impl.getTryBlocks()) {
+            for (ExceptionHandler handler : block.getExceptionHandlers()) out.add(handler.getHandlerCodeAddress());
+        }
+        return out;
+    }
+
+    /**
+     * Whether ART lets any object through to [type]: an interface the APK defines, or one the
+     * desktop runtime knows (java.util.List and the like). A type neither knows, such as one of
+     * Android's own, counts as a class, so a hook returning into it casts first.
+     */
+    private static boolean takesAnyObject(String type, Set<String> interfaces) {
+        if (interfaces.contains(type)) return true;
+        if (!type.startsWith("Ljava/")) return false;
+        try {
+            return Class.forName(type.substring(1, type.length() - 1).replace('/', '.'), false, null).isInterface();
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
      * The structural findings for one method, each as "category: detail". The parameter check
      * reads a register only where no path from the entry has written it, where the value can
      * only be the argument the method was called with.
@@ -1287,16 +1379,22 @@ public class DexDiff {
                 hookCallers.put(contract.callee, new ArrayList<>());
             }
         }
+        // Each uncast Object return in a checked method, as its method, declared type and finding,
+        // and every interface the APK defines, which decides which of them stand.
+        List<String[]> uncast = new ArrayList<>();
+        Set<String> interfaces = new HashSet<>();
         MultiDexContainer<? extends DexFile> container =
                 DexFileFactory.loadDexContainer(apk, Opcodes.getDefault());
         for (String entry : container.getDexEntryNames()) {
             for (ClassDef cd : container.getEntry(entry).getDexFile().getClasses()) {
+                if (AccessFlags.INTERFACE.isSet(cd.getAccessFlags())) interfaces.add(cd.getType());
                 for (Method m : cd.getMethods()) {
                     String s = sig(cd, m);
                     List<String> left = wanted.contains(s) ? unchecked.get(s) : null;
                     if (left != null && left.remove(print(m, digest))) {
                         List<String> findings = structuralFindings(cd, m);
                         if (!findings.isEmpty()) out.computeIfAbsent(s, k -> new ArrayList<>()).addAll(findings);
+                        for (String[] found : objectReturns(m)) uncast.add(new String[]{s, found[0], found[1]});
                     }
                     String firstCallOn = firstCallTargets.get(s);
                     if (firstCallOn != null) firstCalls.put(s, firstCallBeforeReturn(m, firstCallOn));
@@ -1322,6 +1420,9 @@ public class DexDiff {
                     }
                 }
             }
+        }
+        for (String[] found : uncast) {
+            if (!takesAnyObject(found[1], interfaces)) out.computeIfAbsent(found[0], k -> new ArrayList<>()).add(found[2]);
         }
         List<String> contractFindings = new ArrayList<>();
         for (Contract contract : contracts) {

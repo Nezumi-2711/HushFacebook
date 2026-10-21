@@ -69,6 +69,7 @@ public class ReelDeclutterTest {
         Settings.HIDE_REEL_COUNTS.resetToDefault();
         Settings.HIDE_REEL_SAVE_BUTTON.resetToDefault();
         Settings.HIDE_REEL_SOUND_BUTTON.resetToDefault();
+        Settings.HIDE_REEL_AUDIO_LINE.resetToDefault();
         BaseSettings.DEBUG.resetToDefault();
         FeedFilterCounters.clear();
         HookStatus.clear();
@@ -146,6 +147,84 @@ public class ReelDeclutterTest {
         Settings.HIDE_REEL_CHIPS.save(false);
         assertNull(ReelDeclutter.filterChips(Arrays.asList(chip(REMIX), chip(STARS))));
         assertEquals(ReelDeclutter.CHIPS_ROUTE + ": 1 lists, 2 items, 0 removed", line(ReelDeclutter.CHIPS_ROUTE));
+    }
+
+    /**
+     * The audio line (#200), "Original audio" or a song: the chips switch leaves it, and its own
+     * switch takes it out alone, the other chips staying in the order they came. A reel with only
+     * the line gets an empty list, which the footer draws as nothing. Paused, it stays.
+     */
+    @Test
+    public void theAudioLineGoesOnlyWhileItsSwitchIsOn() {
+        assertFalse(Settings.HIDE_REEL_AUDIO_LINE.defaultValue);
+        assertEquals(SONG, ReelDeclutter.SOUNDTRACK_CHIP);
+        TypedFeedUnit remix = chip(REMIX);
+        TypedFeedUnit song = chip(SONG);
+        TypedFeedUnit location = chip(LOCATION);
+        assertNull("the chips switch took the audio line", ReelDeclutter.filterChips(Arrays.asList(song, location)));
+
+        Settings.HIDE_REEL_CHIPS.save(false);
+        Settings.HIDE_REEL_AUDIO_LINE.save(true);
+        assertArrayEquals("the audio line switch took another chip", new Object[]{remix, location},
+                ReelDeclutter.filterChips(Arrays.asList(remix, song, location)));
+        assertArrayEquals(new Object[0], ReelDeclutter.filterChips(Collections.singletonList(song)));
+        Settings.HIDE_REEL_CHIPS.save(true);
+        assertArrayEquals(new Object[]{location}, ReelDeclutter.filterChips(Arrays.asList(remix, song, location)));
+
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertNull("the audio line went while paused", ReelDeclutter.filterChips(Arrays.asList(song, location)));
+        PauseForTests.resume();
+        Settings.HIDE_REEL_AUDIO_LINE.save(false);
+        assertArrayEquals("turning the switch off didn't bring the audio line back", new Object[]{song, location},
+                ReelDeclutter.filterChips(Arrays.asList(remix, song, location)));
+    }
+
+    /**
+     * The Reels tab's own audio line row (#200) is drawn until the switch is on, then not, and it
+     * comes back paused, before the settings are ready and once the switch is off again. The chips
+     * switch alone doesn't touch it.
+     */
+    @Test
+    public void theReelsTabAudioLineIsDrawnUntilItsSwitchIsOn() {
+        assertFalse("the chips switch took the Reels tab audio line", ReelDeclutter.hideAudioLine());
+        Settings.HIDE_REEL_AUDIO_LINE.save(true);
+        assertTrue(ReelDeclutter.hideAudioLine());
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertFalse("the audio line went while paused", ReelDeclutter.hideAudioLine());
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertFalse("the audio line went before the settings were ready",
+                ReelDeclutter.hideAudioLine()));
+        Settings.HIDE_REEL_AUDIO_LINE.save(false);
+        assertFalse("turning the switch off didn't bring the audio line back", ReelDeclutter.hideAudioLine());
+        assertEquals(ReelDeclutter.AUDIO_ROUTE + ": 5 lists, 5 items, 1 removed. Last reason: " + ReelDeclutter.AUDIO_LINE
+                + ". Removed: " + ReelDeclutter.AUDIO_LINE + " 1. Kinds: " + ReelDeclutter.AUDIO_LINE + " 5",
+                line(ReelDeclutter.AUDIO_ROUTE));
+    }
+
+    /** A Reels tab audio line switch that can't be read draws the line, and the report names the hook. */
+    @Test
+    public void aReelsTabAudioLineSwitchThatCantBeReadDrawsTheLine() {
+        SettingReadsForTests.breakReads(Settings.HIDE_REEL_AUDIO_LINE);
+        try {
+            assertFalse(ReelDeclutter.hideAudioLine());
+        } finally {
+            SettingReadsForTests.mend(Settings.HIDE_REEL_AUDIO_LINE);
+        }
+        assertTrue(HookStatus.missing(FamilyNames.REEL_DECLUTTER).toString(), HookStatus.missing(FamilyNames.REEL_DECLUTTER)
+                .contains("a working '" + ReelDeclutter.AUDIO_LINE + "' hook (it threw " + NullPointerException.class.getName() + ")"));
+    }
+
+    /** An audio line switch that can't be read keeps Facebook's list, and the report names the hook. */
+    @Test
+    public void anAudioLineSwitchThatCantBeReadKeepsFacebooksList() {
+        SettingReadsForTests.breakReads(Settings.HIDE_REEL_AUDIO_LINE);
+        try {
+            assertNull(ReelDeclutter.filterChips(Arrays.asList(chip(REMIX), chip(SONG))));
+        } finally {
+            SettingReadsForTests.mend(Settings.HIDE_REEL_AUDIO_LINE);
+        }
+        assertTrue(HookStatus.missing(FamilyNames.REEL_DECLUTTER).toString(), HookStatus.missing(FamilyNames.REEL_DECLUTTER)
+                .contains("a working 'reel chips' hook (it threw " + NullPointerException.class.getName() + ")"));
     }
 
     /** A list that throws while it's read is kept, and the report names the hook that threw. */
@@ -254,6 +333,70 @@ public class ReelDeclutterTest {
         assertEquals(ReelDeclutter.SEARCH_ROUTE + ": 2 lists, 2 items, 1 removed. Last reason: " + ReelDeclutter.SEARCH_PILL
                 + ". Removed: " + ReelDeclutter.SEARCH_PILL + " 1. Kinds: " + ReelDeclutter.SEARCH_PILL + " 2",
                 line(ReelDeclutter.SEARCH_ROUTE));
+    }
+
+    /**
+     * The same switch takes the prompt away from over a reel's comments (#197): handed back while
+     * off, null while on, and a sheet with no prompt stays without one and isn't counted.
+     */
+    @Test
+    public void theCommentSearchPromptGoesWithTheSearchPillSwitch() {
+        Object prompt = new Object();
+        assertSame(prompt, ReelDeclutter.commentSearchPrompt(prompt));
+        Settings.HIDE_REEL_SEARCH_PILL.save(true);
+        try {
+            assertNull(ReelDeclutter.commentSearchPrompt(prompt));
+            assertNull(ReelDeclutter.commentSearchPrompt(null));
+        } finally {
+            Settings.HIDE_REEL_SEARCH_PILL.resetToDefault();
+        }
+        assertSame("the prompt didn't come back once the switch was off", prompt,
+                ReelDeclutter.commentSearchPrompt(prompt));
+        assertEquals(ReelDeclutter.SEARCH_ROUTE + ": 3 lists, 3 items, 1 removed. Last reason: "
+                        + ReelDeclutter.COMMENT_SEARCH_PILL + ". Removed: " + ReelDeclutter.COMMENT_SEARCH_PILL
+                        + " 1. Kinds: " + ReelDeclutter.COMMENT_SEARCH_PILL + " 3",
+                line(ReelDeclutter.SEARCH_ROUTE));
+    }
+
+    /**
+     * And the search bar over a reel opened from a profile, with its send button (#201): each part
+     * comes back while off, paused and before the settings are ready, null while on, and a part
+     * Facebook didn't build stays missing and isn't counted.
+     */
+    @Test
+    public void theSearchBarGoesWithTheSearchPillSwitch() {
+        Object bar = new Object();
+        Object send = new Object();
+        assertSame(bar, ReelDeclutter.searchBarPart(bar));
+        Settings.HIDE_REEL_SEARCH_PILL.save(true);
+        assertNull(ReelDeclutter.searchBarPart(bar));
+        assertNull(ReelDeclutter.searchBarPart(send));
+        assertNull(ReelDeclutter.searchBarPart(null));
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertSame("the search bar went while paused", bar, ReelDeclutter.searchBarPart(bar));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertSame("the send button went before the settings were ready",
+                send, ReelDeclutter.searchBarPart(send)));
+        Settings.HIDE_REEL_SEARCH_PILL.save(false);
+        assertSame("the search bar didn't come back once the switch was off", bar, ReelDeclutter.searchBarPart(bar));
+        assertEquals(ReelDeclutter.SEARCH_ROUTE + ": 6 lists, 6 items, 2 removed. Last reason: "
+                        + ReelDeclutter.SEARCH_BAR + ". Removed: " + ReelDeclutter.SEARCH_BAR
+                        + " 2. Kinds: " + ReelDeclutter.SEARCH_BAR + " 6",
+                line(ReelDeclutter.SEARCH_ROUTE));
+    }
+
+    /** A search pill switch that can't be read keeps the search bar, and the report names the hook. */
+    @Test
+    public void aSearchBarSwitchThatCantBeReadKeepsTheBar() {
+        Object bar = new Object();
+        SettingReadsForTests.breakReads(Settings.HIDE_REEL_SEARCH_PILL);
+        try {
+            assertSame(bar, ReelDeclutter.searchBarPart(bar));
+        } finally {
+            SettingReadsForTests.mend(Settings.HIDE_REEL_SEARCH_PILL);
+        }
+        assertTrue(HookStatus.missing(FamilyNames.REEL_DECLUTTER).toString(), HookStatus.missing(FamilyNames.REEL_DECLUTTER)
+                .contains("a working '" + ReelDeclutter.SEARCH_BAR + "' hook (it threw " + NullPointerException.class.getName() + ")"));
     }
 
     /**

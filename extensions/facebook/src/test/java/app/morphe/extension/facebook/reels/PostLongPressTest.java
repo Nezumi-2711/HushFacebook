@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.Gravity;
@@ -50,7 +51,10 @@ import app.morphe.extension.shared.settings.PauseForTests;
  * clicks the second button of its footer and cancels the rest of the gesture, the photo's own long
  * press included; the text, a profile picture, a grid tile, a carousel, a full-size page and a post
  * with no footer are left to Facebook, as is everything with the switch off or Hushfacebook paused.
- * The rows copy the S22's Home feed on 583.
+ * The rows copy the S22's Home feed on 583 as its real view tree has it (dumpsys, not uiautomator):
+ * the photo and the text are plain hosts, the text's host hangs past the margins of its box, and
+ * the footer is one clickable bar holding its buttons. The comment sheet a hold opens keeps its
+ * keyboard down; every other sheet keeps Facebook's.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30, qualifiers = "w1080dp-h2400dp-mdpi")
@@ -69,6 +73,7 @@ public class PostLongPressTest {
     private View text;
     private View name;
     private View photo;
+    private FrameLayout footer;
     private View comment;
     private View addFriend;
 
@@ -111,21 +116,31 @@ public class PostLongPressTest {
         place(header, name, 170, 35, 807, 84);
         place(header, button("header more"), 830, 0, 954, 118);
         place(header, button("header close"), 962, 0, 1080, 118);
+        // The text copies itself on a long press. Its host is as wide as the row but hangs past the
+        // margins of its box, so only 1012 px of it shows.
+        FrameLayout textBox = new FrameLayout(activity);
+        place(post, textBox, 34, 181, 1046, 304);
         text = button("text");
         text.setLongClickable(true);
-        place(post, text, 34, 181, 1046, 304);
+        place(textBox, text, -34, -10, 1046, 113);
         // On the S22 the photo has a tap and a long press of its own, and the long press shows nothing.
-        photo = new ImageView(activity);
+        // Litho draws it as a plain host, not an ImageView.
+        photo = new FrameLayout(activity);
         photo.setOnClickListener(v -> facebook.add("photo tap"));
         photo.setOnLongClickListener(v -> facebook.add("photo long"));
         place(post, photo, 0, 304, 1080, 688);
-        FrameLayout footer = new FrameLayout(activity);
-        place(post, footer, 0, 688, 1080, 812);
-        place(footer, button("like"), 34, 0, 162, 124);
+        footer = new FrameLayout(activity);
+        place(post, footer, 34, 688, 1046, 812);
+        FrameLayout bar = new FrameLayout(activity);
+        bar.setClickable(true);
+        place(footer, bar, -34, 0, 1046, 124);
+        View like = button("like");
+        like.setLongClickable(true);
+        place(bar, like, 0, 0, 162, 124);
         comment = button("comment");
-        place(footer, comment, 162, 0, 324, 124);
-        place(footer, button("share"), 324, 0, 448, 124);
-        place(footer, button("react"), 989, 0, 1046, 124);
+        place(bar, comment, 162, 0, 324, 124);
+        place(bar, button("share"), 324, 0, 448, 124);
+        place(bar, button("react"), 989, 0, 1046, 124);
         RecyclerView carousel = new RecyclerView(activity, false);
         place(post, carousel, 0, 812, 1080, 1000);
         addFriend = button("add friend");
@@ -218,6 +233,29 @@ public class PostLongPressTest {
     }
 
     @Test
+    public void theSheetAHoldOpensKeepsTheKeyboardDownOnceAndOnlyRightAfterTheClick() {
+        assertTrue("with no hold the sheet keeps Facebook's keyboard", PostLongPress.keyboardOnFirstLoad(true));
+        send(event(MotionEvent.ACTION_DOWN, middleOf(photo)));
+        holdLongEnough();
+        send(event(MotionEvent.ACTION_UP, middleOf(photo)));
+        assertEquals(List.of("comment"), clicked);
+        assertFalse("a sheet that never asked stays without one", PostLongPress.keyboardOnFirstLoad(false));
+        assertFalse("the hold's sheet opens to read", PostLongPress.keyboardOnFirstLoad(true));
+        assertTrue("the next sheet is Facebook's again", PostLongPress.keyboardOnFirstLoad(true));
+        assertTrue(statusLine(), statusLine().contains(PostLongPress.KEYBOARD_DOWN + " 1"));
+
+        // A sheet made long after the click isn't the one the hold opened.
+        send(event(MotionEvent.ACTION_DOWN, middleOf(photo)));
+        holdLongEnough();
+        send(event(MotionEvent.ACTION_UP, middleOf(photo)));
+        assertEquals(2, clicked.size());
+        waitFor(2100L);
+        assertTrue("a late sheet keeps the keyboard", PostLongPress.keyboardOnFirstLoad(true));
+        assertTrue("and the wait is spent", PostLongPress.keyboardOnFirstLoad(true));
+        assertTrue(statusLine(), statusLine().contains(PostLongPress.KEYBOARD_DOWN + " 1"));
+    }
+
+    @Test
     public void theNameLineOpensCommentsButTheTextAndProfilePictureKeepFacebooksLongPress() {
         assertSame(row, PostLongPress.rowAt(root, middleOf(name)[0], middleOf(name)[1]));
         assertNull("text", PostLongPress.rowAt(root, middleOf(text)[0], middleOf(text)[1]));
@@ -270,6 +308,72 @@ public class PostLongPressTest {
         send(event(MotionEvent.ACTION_DOWN, at));
         holdLongEnough();
         assertTrue(clicked.isEmpty());
+        assertEquals("the lift is Facebook's", MotionEvent.ACTION_UP, send(event(MotionEvent.ACTION_UP, at)).getActionMasked());
+        assertTrue(statusLine(), statusLine().contains(PostLongPress.NO_BUTTON + " 1"));
+    }
+
+    /**
+     * Litho mounts only what's on screen, so a post running past the bottom of the feed has no
+     * footer yet: the feed is scrolled up by what's under, and the button is clicked once it shows.
+     */
+    @Test
+    public void aPostRunningPastTheFeedIsScrolledUpToItsFooter() {
+        List<Integer> scrolls = new ArrayList<>();
+        RecyclerView feed = new RecyclerView(activity, true) {
+            @Override
+            public void scrollBy(int x, int y) {
+                super.scrollBy(x, y);
+                scrolls.add(y);
+                // Litho mounts the footer on a later frame.
+                this.post(() -> footer.setVisibility(View.VISIBLE));
+            }
+        };
+        root.removeAllViews();
+        place(root, feed, 0, 100, 1080, 2100);
+        FrameLayout tall = post(feed, 1500);
+        footer.setVisibility(View.INVISIBLE);
+        layOut();
+        int[] at = middleOf(name);
+        assertSame(tall, PostLongPress.rowAt(root, at[0], at[1]));
+        send(event(MotionEvent.ACTION_DOWN, at));
+        holdLongEnough();
+        waitFor(200);
+        assertEquals("the 500 px under the feed", List.of(500), scrolls);
+        assertEquals(List.of("comment"), clicked);
+        assertEquals("the lift went on as a cancel", MotionEvent.ACTION_CANCEL,
+                send(event(MotionEvent.ACTION_UP, at)).getActionMasked());
+        String status = statusLine();
+        assertTrue(status, status.contains(PostLongPress.SCROLLED + " 1"));
+        assertTrue(status, status.contains(PostLongPress.OPENED + " 1"));
+        assertFalse(status, status.contains(PostLongPress.NO_BUTTON));
+    }
+
+    /** At the end of the feed there's nothing to scroll, so a post whose footer isn't mounted is left alone. */
+    @Test
+    public void aPostAtTheEndOfTheFeedIsNotScrolled() {
+        List<Integer> scrolls = new ArrayList<>();
+        RecyclerView feed = new RecyclerView(activity, true) {
+            @Override
+            public boolean canScrollVertically(int direction) {
+                return direction < 0;
+            }
+
+            @Override
+            public void scrollBy(int x, int y) {
+                scrolls.add(y);
+            }
+        };
+        root.removeAllViews();
+        place(root, feed, 0, 100, 1080, 2100);
+        post(feed, 1500);
+        footer.setVisibility(View.INVISIBLE);
+        layOut();
+        int[] at = middleOf(name);
+        send(event(MotionEvent.ACTION_DOWN, at));
+        holdLongEnough();
+        waitFor(200);
+        assertTrue(scrolls.toString(), scrolls.isEmpty());
+        assertTrue(clicked.toString(), clicked.isEmpty());
         assertEquals("the lift is Facebook's", MotionEvent.ACTION_UP, send(event(MotionEvent.ACTION_UP, at)).getActionMasked());
         assertTrue(statusLine(), statusLine().contains(PostLongPress.NO_BUTTON + " 1"));
     }
@@ -356,6 +460,7 @@ public class PostLongPressTest {
         place(post, tile, 0, 304, 540, 688);
         layOut();
         assertNull("grid tile", PostLongPress.rowAt(root, middleOf(tile)[0], middleOf(tile)[1]));
+        assertEquals(PostLongPress.NARROW_LONG_PRESS, PostLongPress.passedOver);
         send(event(MotionEvent.ACTION_DOWN, middleOf(tile)));
         holdLongEnough();
         assertTrue(clicked.toString(), clicked.isEmpty());
@@ -369,8 +474,99 @@ public class PostLongPressTest {
         place(wrapper, wide, 0, 0, 1080, 384);
         layOut();
         assertNull("inside another long press", PostLongPress.rowAt(root, middleOf(wide)[0], middleOf(wide)[1]));
+        assertEquals(PostLongPress.OWN_LONG_PRESS, PostLongPress.passedOver);
         wrapper.setLongClickable(false);
         assertSame("the same picture on its own is the photo", row, PostLongPress.rowAt(root, middleOf(wide)[0], middleOf(wide)[1]));
+    }
+
+    /** Stands in for Litho's ComponentHost, which lists the text drawn in it. */
+    public static final class LithoHost extends FrameLayout {
+        final List<Object> drawn = new ArrayList<>();
+
+        public LithoHost(Context context) {
+            super(context);
+        }
+
+        public List<Object> getTextContent() {
+            return drawn;
+        }
+    }
+
+    /**
+     * A shared post draws the post it shares in a box inside the side margins, so its photo shows
+     * no wider than the text does. On the S22 that photo's host was 1080 px wide and showed 1012 px.
+     * A Litho host drawing no text is the photo there; one drawing text, or holding a host that
+     * does, is text wherever it sits, a text post on a colored background included; a narrow one
+     * is still a tile.
+     */
+    @Test
+    public void aSharedPostsPhotoInsideItsBoxOpensCommentsAndTextStillCopies() {
+        ViewGroup post = (ViewGroup) photo.getParent();
+        post.removeView(photo);
+        FrameLayout box = new FrameLayout(activity);
+        place(post, box, 34, 304, 1046, 688);
+        LithoHost inset = new LithoHost(activity);
+        inset.setOnLongClickListener(v -> facebook.add("photo long"));
+        place(box, inset, -34, 0, 1046, 384);
+        layOut();
+        int[] at = middleOf(box);
+        assertSame("the shared post's photo", row, PostLongPress.rowAt(root, at[0], at[1]));
+        deliver(event(MotionEvent.ACTION_DOWN, at));
+        holdLongEnough();
+        assertEquals(List.of("comment"), clicked);
+        deliver(event(MotionEvent.ACTION_UP, at));
+        assertTrue("the photo ran nothing: " + facebook, facebook.isEmpty());
+
+        inset.drawn.add("text");
+        assertNull("a host drawing text", PostLongPress.rowAt(root, at[0], at[1]));
+        assertEquals(PostLongPress.ON_TEXT, PostLongPress.passedOver);
+        inset.drawn.clear();
+        LithoHost line = new LithoHost(activity);
+        line.drawn.add("text");
+        place(inset, line, 34, 0, 1046, 100);
+        layOut();
+        assertNull("a host holding one that draws text", PostLongPress.rowAt(root, at[0], at[1]));
+        assertEquals(PostLongPress.ON_TEXT, PostLongPress.passedOver);
+
+        box.removeView(inset);
+        LithoHost tile = new LithoHost(activity);
+        tile.setLongClickable(true);
+        place(box, tile, 0, 0, 506, 384);
+        layOut();
+        assertNull("a tile in the box", PostLongPress.rowAt(root, middleOf(tile)[0], middleOf(tile)[1]));
+        assertEquals(PostLongPress.NARROW_LONG_PRESS, PostLongPress.passedOver);
+
+        post.removeView(box);
+        LithoHost colored = new LithoHost(activity);
+        colored.setLongClickable(true);
+        colored.drawn.add("text");
+        place(post, colored, 0, 304, 1080, 688);
+        layOut();
+        assertNull("a text post on a colored background", PostLongPress.rowAt(root, middleOf(colored)[0], middleOf(colored)[1]));
+        assertEquals(PostLongPress.ON_TEXT, PostLongPress.passedOver);
+    }
+
+    /**
+     * On the S22 an empty frame as big as the feed is drawn over it. The window's touches go past a
+     * view that takes none, so a hold there is still the post's; a frame that takes touches keeps them.
+     */
+    @Test
+    public void anEmptyFrameDrawnOverTheFeedIsPassedOverLikeTheWindowDoes() {
+        FrameLayout cover = new FrameLayout(activity);
+        place(root, cover, 0, 100, 1080, 1953);
+        layOut();
+        int[] at = middleOf(name);
+        assertSame("the name line's row under the frame", row, PostLongPress.rowAt(root, at[0], at[1]));
+        assertSame("the photo under the frame", photo, PostLongPress.hit(root, middleOf(photo)[0], middleOf(photo)[1]));
+        send(event(MotionEvent.ACTION_DOWN, at));
+        holdLongEnough();
+        assertEquals(List.of("comment"), clicked);
+        assertEquals("the lift went on as a cancel", MotionEvent.ACTION_CANCEL,
+                send(event(MotionEvent.ACTION_UP, at)).getActionMasked());
+
+        cover.setClickable(true);
+        assertNull("a frame that takes touches", PostLongPress.rowAt(root, at[0], at[1]));
+        assertEquals(PostLongPress.NO_LIST, PostLongPress.passedOver);
     }
 
     /** A window that lost focus before the time was up, to a call or a task switch, opens nothing. */
@@ -403,7 +599,7 @@ public class PostLongPressTest {
         assertTrue(clicked.toString(), clicked.isEmpty());
         String status = statusLine();
         assertTrue(status, status.contains(PostLongPress.TIMED + " 4"));
-        assertTrue(status, status.contains(PostLongPress.OWN_LONG_PRESS + " 1"));
+        assertTrue("the text: " + status, status.contains(PostLongPress.NARROW_LONG_PRESS + " 1"));
         assertTrue("a sideways carousel: " + status, status.contains(PostLongPress.STILL_LIST + " 1"));
         assertTrue(status, status.contains(PostLongPress.ON_FOOTER + " 1"));
         assertTrue(status, status.contains(PostLongPress.LOST_FOCUS + " 1"));

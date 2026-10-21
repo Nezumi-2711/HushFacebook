@@ -108,6 +108,7 @@ val hideMenuPromotionsPatch = bytecodePatch(
         )
         mutableClassDefBy(folder.definingClass).findMutableMethodOf(folder).passBookmarksThroughShortcuts(listRead)
         askAboutBloksPanel()
+        askAboutBloksMenuPage()
         enableStatus("menuPromotions")
     }
 }

@@ -57,6 +57,10 @@ public final class ModuleDownloadEvidence {
     private static String failed;
     private static long failedAt;
 
+    /** Whether, and when, Facebook last wanted Google Play for a module and got its own downloader instead. */
+    private static boolean playWasSkipped;
+    private static long playSkippedAt;
+
     private ModuleDownloadEvidence() {}
 
     private static boolean on() {
@@ -88,6 +92,19 @@ public final class ModuleDownloadEvidence {
             }
         } catch (Throwable ignored) {
             // A task that can't be read is left out rather than holding the screen up.
+        }
+    }
+
+    /** Called by {@link ModuleDownloads} when Facebook wanted Google Play for a module. Never throws. */
+    static void playSkipped() {
+        try {
+            if (!on()) return;
+            synchronized (STEPS) {
+                playWasSkipped = true;
+                playSkippedAt = SystemClock.elapsedRealtime();
+            }
+        } catch (Throwable ignored) {
+            // Left out rather than holding the download up.
         }
     }
 
@@ -145,15 +162,17 @@ public final class ModuleDownloadEvidence {
     }
 
     /**
-     * What to add to the download screen's line for [modules], as it closes at [now]: the steps
-     * from the last {@link #WINDOW} that name one of them (every recent step when the screen named
-     * none), then the task that failed in that time. Empty when nothing was kept. Both are cleared,
-     * so the next screen's line starts fresh, and a task that failed after its own screen had
-     * already closed never turns up on another one's line much later.
+     * What to add to the download screen's line for [modules], as it closes at [now]: whether
+     * Google Play was skipped in the last {@link #WINDOW}, the steps from that time that name one
+     * of the modules (every recent step when the screen named none), then the task that failed in
+     * that time. Empty when nothing was kept. All are cleared, so the next screen's line starts
+     * fresh, and a task that failed after its own screen had already closed never turns up on
+     * another one's line much later.
      */
     static String forScreen(List<String> modules, long now) {
         List<String> steps = new ArrayList<>();
         String task;
+        boolean skipped;
         synchronized (STEPS) {
             for (Step step : STEPS) {
                 if (now - step.at > WINDOW) continue;
@@ -162,8 +181,11 @@ public final class ModuleDownloadEvidence {
             STEPS.clear();
             task = failed != null && now - failedAt <= WINDOW ? failed : null;
             failed = null;
+            skipped = playWasSkipped && now - playSkippedAt <= WINDOW;
+            playWasSkipped = false;
         }
         StringBuilder out = new StringBuilder();
+        if (skipped) out.append(", Google Play skipped");
         if (!steps.isEmpty()) out.append(", steps: ").append(String.join(" then ", steps));
         if (task != null) out.append(", task: ").append(task);
         return out.toString();
@@ -185,6 +207,7 @@ public final class ModuleDownloadEvidence {
         synchronized (STEPS) {
             STEPS.clear();
             failed = null;
+            playWasSkipped = false;
         }
     }
 }
