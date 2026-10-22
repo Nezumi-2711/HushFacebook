@@ -35,6 +35,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -198,6 +199,10 @@ public class DexDiff {
      *       once, anywhere in its body, and no other host method calls it. For a hook that has to
      *       read what the method made first, so it can't come first, and follows no one call.
      * </ul>
+     * For start-call, next-call, sole-call and once-call, a method that loads some of the strings
+     * also holds the ones a constructor it calls loads, since a build can move a string into the
+     * class the method builds (Facebook 584 builds the seen-state mutation's input, field name and
+     * all, in the input class's constructor).
      */
     /** The kind a first-call rule that names its class by GraphQL type is read into. */
     private static final String TYPED_FIRST_CALL = "first-call-typed";
@@ -1352,6 +1357,10 @@ public class DexDiff {
         List<Contract> pickRules = new ArrayList<>();
         Map<Contract, List<Holder>> holders = new LinkedHashMap<>();
         Set<String> pickStrings = new HashSet<>();
+        // What each host constructor loads of those strings, and the methods holding part of a rule's
+        // strings that wait on the constructors they call for the rest.
+        Map<String, Set<String>> builtWith = new HashMap<>();
+        List<Partial> partial = new ArrayList<>();
         // And every method outside the bundle's own code that calls such a rule's method, to say
         // where a hook went when it isn't in the method its rule picks, or went there as well.
         Map<String, List<String>> hookCallers = new HashMap<>();
@@ -1403,7 +1412,7 @@ public class DexDiff {
                     if (leaving != null) firstCalls.put(s, firstCallOutside(m, leaving));
                     if (!typeNamedClasses.isEmpty()) recordTypeNamed(cd, m, typeNamedClasses);
                     if (!pickRules.isEmpty() && !cd.getType().startsWith(OWN)) {
-                        recordHolders(s, m, pickRules, pickStrings, holders);
+                        recordHolders(s, m, pickRules, pickStrings, holders, builtWith, partial);
                     }
                     if ((callSites.isEmpty() && noCallSites.isEmpty() && hookCallers.isEmpty())
                             || m.getImplementation() == null) continue;
@@ -1424,6 +1433,7 @@ public class DexDiff {
         for (String[] found : uncast) {
             if (!takesAnyObject(found[1], interfaces)) out.computeIfAbsent(found[0], k -> new ArrayList<>()).add(found[2]);
         }
+        resolvePartial(partial, builtWith, holders);
         List<String> contractFindings = new ArrayList<>();
         for (Contract contract : contracts) {
             if (contract.picks()) {
@@ -1568,21 +1578,72 @@ public class DexDiff {
         }
     }
 
-    /** Adds [m] to each rule whose strings it loads, every one of them. */
+    /**
+     * A method holding part of a rule's strings, already in the rule's holders where the scan met it
+     * so they stay in dex order, and waiting on the constructors it calls for the rest.
+     */
+    private static final class Partial {
+        final Contract rule;
+        final Holder holder;
+        final Set<String> held;
+        final List<String> builds;
+
+        Partial(Contract rule, Holder holder, Set<String> held, List<String> builds) {
+            this.rule = rule;
+            this.holder = holder;
+            this.held = held;
+            this.builds = builds;
+        }
+    }
+
+    /**
+     * Adds [m] to each rule whose strings it loads, every one of them. A method loading only part of
+     * them and calling a constructor is added too, and goes to [partial] with the constructors it
+     * calls, which [resolvePartial] reads once every constructor's strings are in [builtWith]. Each
+     * constructor's strings go there as it's read.
+     */
     private static void recordHolders(String s, Method m, List<Contract> rules, Set<String> wanted,
-            Map<Contract, List<Holder>> holders) {
+            Map<Contract, List<Holder>> holders, Map<String, Set<String>> builtWith, List<Partial> partial) {
         if (m.getImplementation() == null) return;
         Set<String> held = null;
+        List<String> builds = null;
         for (Instruction i : m.getImplementation().getInstructions()) {
             if (!(i instanceof ReferenceInstruction)) continue;
             Reference r = ((ReferenceInstruction) i).getReference();
+            if (r instanceof MethodReference && ((MethodReference) r).getName().equals("<init>")) {
+                if (builds == null) builds = new ArrayList<>();
+                builds.add(r.toString());
+                continue;
+            }
             if (!(r instanceof StringReference) || !wanted.contains(((StringReference) r).getString())) continue;
             if (held == null) held = new HashSet<>();
             held.add(((StringReference) r).getString());
         }
         if (held == null) return;
+        if (m.getName().equals("<init>")) builtWith.computeIfAbsent(s, k -> new HashSet<>()).addAll(held);
         for (Contract rule : rules) {
-            if (held.containsAll(rule.strings)) holders.get(rule).add(new Holder(s, rule.hasShape(m), m));
+            boolean all = held.containsAll(rule.strings);
+            if (!all && (builds == null || Collections.disjoint(held, rule.strings))) continue;
+            Holder holder = new Holder(s, rule.hasShape(m), m);
+            holders.get(rule).add(holder);
+            if (!all) partial.add(new Partial(rule, holder, held, builds));
+        }
+    }
+
+    /**
+     * Keeps each method in [partial] among its rule's [holders] only when what it loads and what
+     * the constructors it calls load ([builtWith]) together hold every one of the rule's strings.
+     * Facebook 584 moved the seen-state mutation's input field into its input class's constructor.
+     */
+    private static void resolvePartial(List<Partial> partial, Map<String, Set<String>> builtWith,
+            Map<Contract, List<Holder>> holders) {
+        for (Partial p : partial) {
+            Set<String> held = new HashSet<>(p.held);
+            for (String built : p.builds) {
+                Set<String> with = builtWith.get(built);
+                if (with != null) held.addAll(with);
+            }
+            if (!held.containsAll(p.rule.strings)) holders.get(p.rule).remove(p.holder);
         }
     }
 

@@ -37,16 +37,14 @@ class HideFeedsHeaderFixtureTest {
     /** Each declared build's container type, the controller's type, and the controller's register, by ABI. */
     private val expected = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to Triple("LX/22t;", "LX/ju0;", 5),
-            "armeabi-v7a" to Triple("LX/22t;", "LX/XUm;", 5),
+            "arm64-v8a" to Triple("LX/1yY;", "LX/XbL;", 5),
         ),
     )
 
     /** Each declared build's container controller and the runnable it posts with whether the filters show, by ABI. */
     private val room = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to ("LX/bnx;" to "LX/bzn;"),
-            "armeabi-v7a" to ("LX/Y1y;" to "LX/YJP;"),
+            "arm64-v8a" to ("LX/YHp;" to "LX/YV0;"),
         ),
     )
 

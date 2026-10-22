@@ -242,9 +242,10 @@ internal fun BytecodePatchContext.addSlowerSpeeds(toast: Method) {
 
 /**
  * The gear menu's speed sheet (#95). Its builder, the one method of a class holding
- * "PlayerControlsPlaybackSpeedBottomSheet" that makes [gearPick]'s class, hands the extension its
- * last parameter first thing, the flag for reading each speed from its float, and takes the answer
- * back in the same register, ahead of the copy the pick gets. Where its paths have met and it's about to walk the
+ * "PlayerControlsPlaybackSpeedBottomSheet" that makes [gearPick]'s class, hands the extension the
+ * flag for reading each speed from its float as soon as it has it (its last parameter, first thing,
+ * up to 583; right after the MobileConfig read that answers it on 584), and takes the answer back
+ * in the same register, ahead of the copy the pick gets. Where its paths have met and it's about to walk the
  * labels, it hands over the speeds and then the labels, each through the range form, and takes
  * each back in its own register. That hook goes in under the walk's label, so a branch landing
  * there runs it too. Refuses before anything changes.
@@ -265,7 +266,7 @@ internal fun BytecodePatchContext.addSlowerGearSpeeds(gearPick: Method) {
         """,
     )
     method.addInstructions(
-        0,
+        meet.valuesAt,
         """
             invoke-static/range { v${meet.values} .. v${meet.values} }, $GEAR_VALUES
             move-result v${meet.values}

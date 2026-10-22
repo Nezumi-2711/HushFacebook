@@ -137,6 +137,37 @@ public class PreSearchSectionsTest {
     }
 
     @Test
+    public void fiveEightyFourHandsTheNodeAloneAndANullNodeIsTheEmptyRow() {
+        Tree node = forYou();
+        assertSame("off draws the node", node, PreSearchSections.node(node));
+        Settings.HIDE_SEARCH_FOR_YOU.save(true);
+        assertNull(PreSearchSections.node(forYou()));
+        Tree other = new Tree(PreSearchSections.FOR_YOU_NODE, true, "RECENT_SEARCHES");
+        assertSame(other, PreSearchSections.node(other));
+        Tree unit = new Tree("SearchNullStateUnit", true, PreSearchSections.FOR_YOU_MODULE);
+        assertSame(unit, PreSearchSections.node(unit));
+        assertNull(PreSearchSections.node(null));
+        String line = statusLine();
+        assertTrue(line, line.contains(PreSearchSections.HIDDEN + " 1"));
+        // The log names the node and its module names, and no module it wasn't handed.
+        String log = log();
+        assertTrue(log, log.contains("node=SearchNullStateUnit rendered_modules=" + PreSearchSections.FOR_YOU_MODULE));
+        assertFalse(log, log.contains("module=none"));
+        assertFalse(log, log.contains("node=unreadable"));
+    }
+
+    @Test
+    public void pausedOrBeforeTheSettingsAreReadyDrawsTheNode() {
+        Settings.HIDE_SEARCH_FOR_YOU.save(true);
+        Tree node = forYou();
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertSame(node, PreSearchSections.node(node));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertSame(node, PreSearchSections.node(node)));
+        assertNull(PreSearchSections.node(node));
+    }
+
+    @Test
     public void pausedOrBeforeTheSettingsAreReadyDrawsForYou() {
         Settings.HIDE_SEARCH_FOR_YOU.save(true);
         Object module = new Tree("NativeTemplateView", true, null);

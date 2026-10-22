@@ -201,7 +201,8 @@ final class FeedPages {
                                 + "just its word. The buttons stay where they are. A change shows on the posts drawn after it.")));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_REACTIONS,
                         L10n.t("Hides the stacked reaction icons and the reactions count under posts. The space stays, "
-                                + "so a tap where they were still opens the list of reactions.")));
+                                + "so a tap where they were still opens the list of reactions. To take the number off the Like "
+                                + "button too, turn on Hide counts on posts.")));
             }
             if (build.contains(PatchFamily.SEEN_POSTS)) {
                 seenPosts(feed, context);

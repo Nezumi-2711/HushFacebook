@@ -68,6 +68,13 @@ class CommentSheetOptionsFixtureTest {
 
     private fun Instruction.reference() = (this as? ReferenceInstruction)?.reference?.toString()
 
+    /**
+     * An opcode with a goto at any width. Added instructions can push a goto past its reach, and the
+     * patcher then widens it (584's reply list build has gotos either side of the flag's write).
+     */
+    private fun List<Instruction>.opcodes() =
+        map { if (it.opcode == Opcode.GOTO_16 || it.opcode == Opcode.GOTO_32) Opcode.GOTO else it.opcode }
+
     private fun holders(bundle: File, string: String) =
         FixtureDex.classesHolding(bundle, string).filterNot { it.type.startsWith(EXTENSION_CLASSES) }
 
@@ -292,8 +299,8 @@ class CommentSheetOptionsFixtureTest {
         val patched = method.implementation!!.instructions.toList()
         val field = "${flag.definingClass}->${flag.name}:${flag.type}"
         assertEquals("$where gains two instructions", original.size + 2, patched.size)
-        assertEquals("$where: Facebook's code before the write stays", original.take(write).map { it.opcode },
-            patched.take(write).map { it.opcode })
+        assertEquals("$where: Facebook's code before the write stays", original.take(write).opcodes(),
+            patched.take(write).opcodes())
         assertEquals("$where: the extension is asked with a range call", Opcode.INVOKE_STATIC_RANGE, patched[write].opcode)
         assertEquals("$where: the extension is asked", LOAD_WHOLE_REPLY_THREADS, patched[write].reference())
         val range = patched[write] as RegisterRangeInstruction
@@ -304,8 +311,8 @@ class CommentSheetOptionsFixtureTest {
         assertEquals("$where: then Facebook writes the flag", field, patched[write + 2].reference())
         assertEquals("$where: from the same registers", listOf(put.registerA, put.registerB),
             (patched[write + 2] as TwoRegisterInstruction).let { listOf(it.registerA, it.registerB) })
-        assertEquals("$where: Facebook's code after the write stays", original.drop(write).map { it.opcode },
-            patched.drop(write + 2).map { it.opcode })
+        assertEquals("$where: Facebook's code after the write stays", original.drop(write).opcodes(),
+            patched.drop(write + 2).opcodes())
         assertEquals("$where: the code before the hook runs into it", listOf(write), ControlFlow.of(method).normal[write - 1])
     }
 

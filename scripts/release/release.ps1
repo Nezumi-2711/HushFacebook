@@ -32,7 +32,10 @@
                the bundle in it to the rebuild stage's note by its hash, and -Walk to that bundle:
                the walk-receipt.json scripts/device-audit.ps1 left after walking an APK patched
                from it, which has to be a full PASS with no crash, on a release phone or an
-               emulator, naming the patch build identity this bundle carries. Then
+               emulator, naming the patch build identity this bundle carries, and -Verifier to it
+               as well: the verifier-receipt.json scripts/verify-injected-registers.ps1 -Serial
+               -ReceiptPath left for an APK patched from it, whose device verifier raised exactly
+               the messages Meta's build raises, and a refusal names the ones that differ. Then
                notes from the whole CHANGELOG section with -Checked as What was checked, a
                lightweight tag, and the GitHub release with that checked copy, each file downloaded
                back and compared. -Checked must say "applied ... to Facebook <version>" with
@@ -51,7 +54,7 @@
     scripts/release/release.ps1 -Stage preflight -Version 0.9.0
     scripts/release/release.ps1 -Stage bundle -Version 0.9.0
     scripts/release/release.ps1 -Stage rebuild -Version 0.9.0
-    scripts/release/release.ps1 -Stage publish -Version 0.9.0 -Checked checked.txt -Walk <audit folder>/walk-receipt.json
+    scripts/release/release.ps1 -Stage publish -Version 0.9.0 -Checked checked.txt -Walk <audit folder>/walk-receipt.json -Verifier verifier-receipt.json
     scripts/release/release.ps1 -Stage index -Version 0.9.0 -ReadmeSummary readme.txt -BundleSummary bundle.txt
 #>
 [CmdletBinding()]
@@ -65,6 +68,8 @@ param(
     [string]$Checked,
     # publish: the walk-receipt.json of the whole-app walk on an APK patched from the staged bundle.
     [string]$Walk,
+    # publish: the verifier-receipt.json of the device register check on an APK patched from it.
+    [string]$Verifier,
     # index: files holding the README's line about the release and Manager's text for the bundle.
     [string]$ReadmeSummary,
     [string]$BundleSummary,
@@ -395,6 +400,7 @@ try {
             $head = Assert-PushedHead
             Assert-File $Checked '-Checked, the file holding the What was checked paragraph,'
             Assert-File $Walk '-Walk, the walk-receipt.json the whole-app walk of this bundle left,'
+            Assert-File $Verifier '-Verifier, the verifier-receipt.json the device register check of this bundle left,'
             foreach ($name in $assetNames + 'SHA256SUMS.txt') {
                 if (-not (Test-Path -LiteralPath (Join-Path $assets $name) -PathType Leaf)) { throw "No $name in $assets. Run -Stage bundle first." }
             }
@@ -449,12 +455,22 @@ try {
                 }
                 # Nothing goes out that hasn't been walked: the whole app, on an APK patched from
                 # this very bundle, with the app's own word for which bundle that was.
-                $walked = Test-WalkReceipt -Path $Walk -PatchBuild (Get-BundlePatchBuild -BundlePath (Join-Path $publishing $builtNames[0]))
+                $bundleBuild = Get-BundlePatchBuild -BundlePath (Join-Path $publishing $builtNames[0])
+                $walked = Test-WalkReceipt -Path $Walk -PatchBuild $bundleBuild
                 if (-not $walked.Valid) {
                     throw ("The whole-app walk doesn't back the staged $($builtNames[0]), so nothing was tagged: $($walked.Reason). " +
                         'Patch an APK from this bundle, run scripts/device-audit.ps1 on a release phone or an emulator, and pass its walk-receipt.json as -Walk.')
                 }
                 Step "walked on $($walked.Receipt.device): $($walked.Receipt.familiesRan) of $($walked.Receipt.families) hook families ran, no crash"
+                # Nor anything the Android verifier rejects. A method that fails it assembles and
+                # applies without a word and breaks whichever screen reaches its class first.
+                $verified = Test-VerifierReceipt -Path $Verifier -PatchBuild $bundleBuild
+                if (-not $verified.Valid) {
+                    throw ("The device register check doesn't back the staged $($builtNames[0]), so nothing was tagged: $($verified.Reason). " +
+                        'Run scripts/verify-injected-registers.ps1 -PatchedApk <an APK patched from this bundle> -Serial <phone> ' +
+                        '-ReceiptPath verifier-receipt.json under a lease, and pass that receipt as -Verifier.')
+                }
+                Step "verified on $($verified.Receipt.device): the patched build's verifier raised $($verified.Receipt.patchedMessages) message(s), as Meta's does"
 
                 $notes = Join-Path $assets 'notes.md'
                 Invoke-ReleaseText 'The release notes' @('github-notes', '--version', $Version, '--checked', $Checked, '--out', $notes)

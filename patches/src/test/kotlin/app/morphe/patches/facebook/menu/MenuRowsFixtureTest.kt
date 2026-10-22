@@ -16,6 +16,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -23,11 +24,12 @@ import org.junit.Test
 /**
  * The Help and Settings rows' anchors on every Facebook build the bundle declares (#153): the
  * native group section builds one Settings and privacy row list and one Help and support row list,
- * on one class, from builders sharing one row item the extension can read. Then the hook: right
- * after each call keeps its list, a list that's there goes through its own extension entry and back
- * through ImmutableList.copyOf into the same register, a missing one skips to the section's own next
- * instruction, and the rest of the section is untouched. Reads the fixture bundles from
- * HUSHFACEBOOK_FIXTURE_DIR and skips without it.
+ * on one class, from builders sharing one row item the extension can read (on 584, which inlined
+ * both, it reads and writes each kept list once and builds that row item itself). Then the hook:
+ * right after each call keeps its list (on 584 each read and write of a kept list), a list that's
+ * there goes through its own extension entry and back through ImmutableList.copyOf into the same
+ * register, a missing one skips to the section's own next instruction, and the rest of the section
+ * is untouched. Reads the fixture bundles from HUSHFACEBOOK_FIXTURE_DIR and skips without it.
  */
 class MenuRowsFixtureTest {
     private fun Method.code(): List<Instruction> = implementation!!.instructions.toList()
@@ -49,41 +51,61 @@ class MenuRowsFixtureTest {
                 assertEquals("$name: native Menu group sections", 1, natives.size)
                 val (section, native) = natives.single()
 
-                val owner = rowListBuilds(native).single().definingClass
-                val builders = FixtureDex.classes(bundle, setOf(owner)).getValue(owner)
-                val classes = FixtureDex.classes(bundle, builders.methods.flatMap(::constructedTypes).toSet() + owner)
+                // 584 calls no build: the section keeps both lists itself, and builds their rows.
+                val builds = rowListBuilds(native)
+                val owners = builds.map { it.definingClass }.toSet()
+                val builders = FixtureDex.classes(bundle, owners)
+                val made = builders.values.flatMap { it.methods.flatMap(::constructedTypes) }.toSet() + constructedTypes(native)
+                val classes = FixtureDex.classes(bundle, made + owners)
                 val hooks = rowListHooks(native) { classes[it] }
                 assertEquals("$name: Settings and privacy's list, then Help and support's",
                     listOf(SETTINGS_ROWS_KEPT, HELP_ROWS_KEPT), hooks.map { it.hook })
+                assertEquals("$name: builds the hooks follow, or kept lists when there are none",
+                    builds.isEmpty(), hooks.all { it.kept != null })
 
                 val original = native.code()
                 val context = PatchContexts.of(listOf(section))
                 val mutable = context.mutableClassDefBy(section.type).methods.single { isNativeSectionChildren(it) }
                 mutable.passRowListsThrough(hooks)
                 val patched = mutable.code()
-                assertEquals("$name: five instructions added for each list", original.size + 10, patched.size)
+                // Where the section has its copy of each list: the move-result after the build's call,
+                // or on 584 the one read of the kept list and the one write of a list just built.
+                val keeps = hooks.flatMap { hook ->
+                    val sites = hook.kept?.let { kept ->
+                        patched.indices.filter { at ->
+                            ((patched[at] as? ReferenceInstruction)?.reference as? FieldReference)?.toString() == kept.toString()
+                        }.also { sites ->
+                            assertEquals("$name: ${hook.call} read once and written once", 2, sites.size)
+                            assertEquals("$name: ${hook.call} read and written", setOf(Opcode.IGET_OBJECT, Opcode.IPUT_OBJECT),
+                                sites.map { patched[it].opcode }.toSet())
+                        }
+                    } ?: listOf(patched.indices.single { patched[it].call() == hook.call } + 1)
+                    sites.map { it to hook }
+                }
+                assertEquals("$name: five instructions added for each copy", original.size + 5 * keeps.size, patched.size)
 
                 var unchanged = patched.toMutableList()
-                for (hook in hooks) {
-                    val at = patched.indices.single { patched[it].call() == hook.call }
-                    val kept = patched[at + 1]
-                    assertEquals("$name: ${hook.hook}'s list is kept as the call answers", Opcode.MOVE_RESULT_OBJECT, kept.opcode)
+                for ((at, hook) in keeps) {
+                    val kept = patched[at]
+                    if (hook.kept == null) {
+                        assertEquals("$name: ${hook.hook}'s list is kept as the call answers", Opcode.MOVE_RESULT_OBJECT, kept.opcode)
+                    }
                     val register = (kept as OneRegisterInstruction).registerA
-                    val check = patched[at + 2]
+                    val check = patched[at + 1]
                     assertEquals("$name: a missing list is left alone", Opcode.IF_EQZ, check.opcode)
                     assertEquals("$name: the check reads the list", register, (check as OneRegisterInstruction).registerA)
-                    assertEquals("$name: and skips to the section's own next instruction", at + 7,
+                    assertEquals("$name: and skips to the section's own next instruction", at + 6,
                         (check as BuilderOffsetInstruction).target.location.index)
-                    val extension = patched[at + 3]
+                    val extension = patched[at + 2]
                     assertEquals("$name: the extension", hook.hook, extension.call())
                     assertEquals("$name: is handed the list", register, (extension as RegisterRangeInstruction).startRegister)
-                    assertEquals("$name: its answer", register, (patched[at + 4] as OneRegisterInstruction).registerA)
-                    val copy = patched[at + 5]
+                    assertEquals("$name: its answer", register, (patched[at + 3] as OneRegisterInstruction).registerA)
+                    val copy = patched[at + 4]
                     assertEquals("$name: goes back into an ImmutableList", LIST_COPY_OF, copy.call())
                     assertEquals("$name: from the same register", register, (copy as RegisterRangeInstruction).startRegister)
-                    assertEquals("$name: into the list's register", register, (patched[at + 6] as OneRegisterInstruction).registerA)
-                    unchanged = unchanged.filterNot { it === check || it === extension || it === patched[at + 4] ||
-                        it === copy || it === patched[at + 6] }.toMutableList()
+                    assertEquals("$name: into the list's register", register, (patched[at + 5] as OneRegisterInstruction).registerA)
+                    unchanged = unchanged.filterNot { it === check || it === extension || it === patched[at + 3] ||
+                        it === copy || it === patched[at + 5] }.toMutableList()
                 }
                 assertEquals("$name: the rest of the section is untouched", original.map { it.opcode }, unchanged.map { it.opcode })
                 checked += version

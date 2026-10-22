@@ -6,11 +6,13 @@ package app.morphe.patches.facebook.media.reelspeed
 
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
+import app.morphe.patches.facebook.shared.readsMobileConfig
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
@@ -163,10 +165,11 @@ internal fun callsFloatMax(method: Method, resolve: (MethodReference) -> Method?
 
 /**
  * Where the gear menu's speed sheet builder walks its labels: [index] is the array-length of
- * [labels], the walk reads each speed from [speeds], and [values] is the last parameter, the flag
- * for reading speeds from floats.
+ * [labels], the walk reads each speed from [speeds], and [values] holds the flag for reading speeds
+ * from floats from [valuesAt] on: the method's start when the flag is its last parameter (583 and
+ * earlier), the instruction after the MobileConfig read that answers it on 584.
  */
-internal class GearMeet(val index: Int, val labels: Int, val speeds: Int, val values: Int)
+internal class GearMeet(val index: Int, val labels: Int, val speeds: Int, val values: Int, val valuesAt: Int)
 
 /**
  * Whether [method] is the gear menu's speed sheet builder: it answers nothing, takes a boolean
@@ -181,20 +184,27 @@ internal fun isGearSheet(method: Method, pick: String): Boolean {
 
 /**
  * Where [method] walks its labels and reads each one's speed: an array-length of the labels, then
- * within a few instructions an aget-object from them, an if-eqz on the last parameter and an aget
- * of the speed. The last parameter is one register wide, a boolean, so it's the method's last.
- * None when anything in [method] writes that register, since the flag is forced at its start.
+ * within a few instructions an aget-object from them, an if-eqz on the flag and an aget of the
+ * speed. Up to 583 the flag is the last parameter, one register wide, so the method's last, and
+ * nothing in [method] writes it. 584 reads it from MobileConfig instead: its one write is the
+ * move-result of a boolean config read, before the walk. Anything else isn't the flag.
  */
 internal fun gearMeets(method: Method): List<GearMeet> {
     val implementation = method.implementation ?: return emptyList()
     val code = implementation.instructions.toList()
-    val values = implementation.registerCount - 1
-    val rewritten = code.any {
-        val written = (it as? OneRegisterInstruction)?.registerA
-        it.opcode.setsRegister() && written != null &&
-            (written == values || it.opcode.setsWideRegister() && written + 1 == values)
+    val last = implementation.registerCount - 1
+    fun writes(instruction: Instruction, register: Int): Boolean {
+        val written = (instruction as? OneRegisterInstruction)?.registerA
+        return instruction.opcode.setsRegister() && written != null &&
+            (written == register || instruction.opcode.setsWideRegister() && written + 1 == register)
     }
-    if (rewritten) return emptyList()
+    /** Where the flag in [register] holds from, or null when it isn't the flag. */
+    fun flagFrom(register: Int): Int? {
+        val written = code.indices.filter { writes(code[it], register) }
+        if (written.isEmpty()) return 0.takeIf { register == last && method.parameters().lastOrNull() == "Z" }
+        val answer = written.singleOrNull()?.takeIf { it > 0 && code[it].opcode == Opcode.MOVE_RESULT } ?: return null
+        return (answer + 1).takeIf { readsMobileConfig(code[answer - 1], "Z") }
+    }
     return code.withIndex().mapNotNull { (index, instruction) ->
         if (instruction.opcode != Opcode.ARRAY_LENGTH) return@mapNotNull null
         val labels = (instruction as TwoRegisterInstruction).registerB
@@ -203,9 +213,10 @@ internal fun gearMeets(method: Method): List<GearMeet> {
         if (label < 0) return@mapNotNull null
         val check = ahead.getOrNull(label + 1)
         val speed = ahead.getOrNull(label + 2)
-        if (check?.opcode != Opcode.IF_EQZ || (check as OneRegisterInstruction).registerA != values) return@mapNotNull null
-        if (speed?.opcode != Opcode.AGET) return@mapNotNull null
-        GearMeet(index, labels, (speed as ThreeRegisterInstruction).registerB, values)
+        if (check?.opcode != Opcode.IF_EQZ || speed?.opcode != Opcode.AGET) return@mapNotNull null
+        val values = (check as OneRegisterInstruction).registerA
+        val valuesAt = flagFrom(values)?.takeIf { it <= index } ?: return@mapNotNull null
+        GearMeet(index, labels, (speed as ThreeRegisterInstruction).registerB, values, valuesAt)
     }
 }
 

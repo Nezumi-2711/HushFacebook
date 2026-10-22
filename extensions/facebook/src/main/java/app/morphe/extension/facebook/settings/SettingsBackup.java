@@ -233,6 +233,7 @@ public final class SettingsBackup {
             Settings.TURN_OFF_HDR_BRIGHTNESS,
             Settings.PREFER_SDR_RENDITIONS,
             Settings.SKIP_SILENT_PARTS,
+            Settings.KEEP_FEED_VIDEOS_MUTED,
             Settings.KEEP_PROGRESS_BAR,
             Settings.KEEP_PROGRESS_BAR_TIME,
             Settings.TAP_TO_SEEK,

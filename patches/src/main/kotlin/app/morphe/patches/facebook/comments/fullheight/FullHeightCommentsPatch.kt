@@ -19,21 +19,27 @@ import app.morphe.patches.facebook.feed.methodsHolding
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.facebookExtensionPatch
+import app.morphe.patches.facebook.misc.extension.freeLocalsAt
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.facebook.misc.extension.requireStatusMethod
+import app.morphe.patches.facebook.misc.extension.requireThisIntact
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
+import app.morphe.util.ControlFlow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private const val PATCH = "Open comments at full height"
 
@@ -107,6 +113,9 @@ internal const val WATCH_HEADER = "$FULL_HEIGHT_COMMENTS->watchHeader(Landroid/v
  * to [SIMPLE_POPOVER] in its `onConfigurationChanged`, and [UFI_POPOVER]'s override of it reads
  * the share from its one float field. First thing in that override, the extension is handed the
  * share, and a yes answers that the sheet fills the screen, the way Facebook draws a post's comments.
+ * 584 has no override: Redex folded it into [SIMPLE_POPOVER]'s own final `A0D`, which answers yes
+ * for any other popover and casts itself to [UFI_POPOVER] for the sheet's checks. There the hook
+ * goes right after that one cast, the share read off the cast fragment into a free local.
  *
  * A full-screen reel sheet still shows the reel in the sheet's header, a LithoView above the
  * comment list, so the list starts a third of the way down. The header either holds the video or,
@@ -146,8 +155,8 @@ val fullHeightCommentsPatch = bytecodePatch(
         )
         val popover = classDefByOrNull(SIMPLE_POPOVER) ?: refuse("$SIMPLE_POPOVER isn't in this build")
         val ufiPopover = classDefByOrNull(UFI_POPOVER) ?: refuse("$UFI_POPOVER isn't in this build")
-        val fills = fillsScreenOverride(popover, ufiPopover)
-        val share = shareField(fills)
+        val fills = fillsScreenSite(popover, ufiPopover)
+        val share = shareField(fills.method)
         val views = commentViewsSetup(holders(SET_COMMENT_VIEWS))
         val header = headerId(views)
         val feedbackParams = classDefByOrNull(FEEDBACK_PARAMS) ?: refuse("$FEEDBACK_PARAMS isn't in this build")
@@ -159,7 +168,8 @@ val fullHeightCommentsPatch = bytecodePatch(
             mutableClassDefBy(launcher.definingClass).methods.single { it.descriptor() == launcher.descriptor() }
                 .skipSplitScreen()
         }
-        mutableClassDefBy(UFI_POPOVER).methods.single { it.descriptor() == fills.descriptor() }.fillScreen(share)
+        mutableClassDefBy(fills.method.definingClass).methods.single { it.descriptor() == fills.method.descriptor() }
+            .fillScreen(fills, share)
         mutableClassDefBy(views.definingClass).methods.single { it.descriptor() == views.descriptor() }
             .watchHeader(header, feedbackParamsRegister(views), watchAndComment)
         enableStatus("fullHeightComments")
@@ -250,11 +260,20 @@ internal fun MutableMethod.raiseSheet(register: Int) {
 }
 
 /**
- * [ufiPopover]'s override of [popover]'s "fill the screen?" question: the one no-argument boolean
- * method of [popover] that its `onConfigurationChanged` calls, overridden in [ufiPopover] with a
- * local register for the hook.
+ * Where the comment sheet answers the "fill the screen?" question: instruction [index] of [method],
+ * with the sheet's fragment in [fragment] and [answer] a local the hook may write there.
  */
-internal fun fillsScreenOverride(popover: ClassDef, ufiPopover: ClassDef): Method {
+internal data class FillsScreenSite(val method: Method, val index: Int, val fragment: Int, val answer: Int)
+
+/**
+ * Where [ufiPopover] answers [popover]'s "fill the screen?" question, the one no-argument boolean
+ * method of [popover] that its `onConfigurationChanged` calls. Through 583 that's the first
+ * instruction of [ufiPopover]'s override, the fragment in `this`. Without an override (584) it's
+ * the instruction right after [popover]'s own body tests `this` with one instance-of
+ * [UFI_POPOVER], skips the rest on false and casts it, an instruction nothing else jumps to.
+ * Either way the fragment's register and a free local both have to fit the hook's `iget`.
+ */
+internal fun fillsScreenSite(popover: ClassDef, ufiPopover: ClassDef): FillsScreenSite {
     val changed = popover.methods.singleOrNull {
         it.name == "onConfigurationChanged" && it.parameterTypes.map(CharSequence::toString) == listOf("Landroid/content/res/Configuration;")
     } ?: refuse("$SIMPLE_POPOVER has no onConfigurationChanged(Configuration)")
@@ -265,9 +284,47 @@ internal fun fillsScreenOverride(popover: ClassDef, ufiPopover: ClassDef): Metho
         ?: refuse("expected one no-argument boolean call in $SIMPLE_POPOVER's onConfigurationChanged, found ${asked.size}")
     val override = ufiPopover.methods.singleOrNull {
         it.name == question.name && it.parameterTypes.isEmpty() && it.returnType == "Z" && it.implementation != null
-    } ?: refuse("$UFI_POPOVER doesn't override ${question.name}()Z")
-    if (override.localRegisterCount() < 1) refuse("${override.descriptor()} has no local register for the hook")
-    return override
+    }
+    val site = if (override != null) {
+        if (override.localRegisterCount() < 1) refuse("${override.descriptor()} has no local register for the hook")
+        FillsScreenSite(override, 0, override.localRegisterCount(), 0)
+    } else {
+        val folded = popover.methods.singleOrNull {
+            it.name == question.name && it.parameterTypes.isEmpty() && it.returnType == "Z" && it.implementation != null
+        } ?: refuse("$UFI_POPOVER doesn't override ${question.name}()Z, and $SIMPLE_POPOVER has no body for it")
+        foldedSite(folded)
+    }
+    if (site.fragment > 15 || site.answer > 15) {
+        refuse("${site.method.descriptor()} keeps the fragment in v${site.fragment}, past what the hook's iget can name")
+    }
+    return site
+}
+
+/**
+ * The instruction after [method]'s one `instance-of vX, this, UFI` / `if-eqz vX` / `check-cast
+ * this, UFI`, where `this` holds the comment sheet's fragment, as its [FillsScreenSite].
+ */
+private fun foldedSite(method: Method): FillsScreenSite {
+    val code = method.implementation!!.instructions.toList()
+    val self = method.localRegisterCount()
+    fun names(instruction: Instruction, opcode: Opcode) = instruction.opcode == opcode &&
+        ((instruction as ReferenceInstruction).reference as? TypeReference)?.type == UFI_POPOVER
+    val casts = (0 until code.size - 3).filter { at ->
+        val test = code[at]
+        val skip = code[at + 1]
+        val cast = code[at + 2]
+        names(test, Opcode.INSTANCE_OF) && (test as TwoRegisterInstruction).registerB == self &&
+            skip.opcode == Opcode.IF_EQZ && (skip as OneRegisterInstruction).registerA == test.registerA &&
+            names(cast, Opcode.CHECK_CAST) && (cast as OneRegisterInstruction).registerA == self
+    }
+    val at = casts.singleOrNull()
+        ?: refuse("expected ${method.descriptor()} to test and cast this to $UFI_POPOVER once, found ${casts.size}")
+    val index = at + 3
+    val flow = ControlFlow.of(method)
+    val jumps = flow.instructions.indices.filter { it != at + 2 && (index in flow.normal[it] || index in flow.exceptional[it]) }
+    if (jumps.isNotEmpty()) refuse("${method.descriptor()} jumps to the instruction after its cast from ${jumps.joinToString()}")
+    method.requireThisIntact(PATCH, listOf(at))
+    return FillsScreenSite(method, index, self, method.freeLocalsAt(PATCH, index, 1).single())
 }
 
 /** The one float field of [UFI_POPOVER] that [fills] reads: the share of the screen's height. */
@@ -280,20 +337,21 @@ internal fun shareField(fills: Method): FieldReference {
 }
 
 /**
- * First thing in the sheet's "fill the screen?" answer: hand the extension the share from [share]
- * and answer yes when it says so.
+ * Where [site] says the sheet's "fill the screen?" answer starts: hand the extension the share from
+ * [share], read off the fragment, and answer yes when it says so.
  */
-internal fun MutableMethod.fillScreen(share: FieldReference) {
+internal fun MutableMethod.fillScreen(site: FillsScreenSite, share: FieldReference) {
+    val answer = site.answer
     addInstructionsWithLabels(
-        0,
+        site.index,
         """
-            iget v0, p0, $share
-            invoke-static { v0 }, $FILLS_SCREEN
-            move-result v0
-            if-eqz v0, :facebook
-            return v0
+            iget v$answer, v${site.fragment}, $share
+            invoke-static { v$answer }, $FILLS_SCREEN
+            move-result v$answer
+            if-eqz v$answer, :facebook
+            return v$answer
         """,
-        ExternalLabel("facebook", getInstruction(0)),
+        ExternalLabel("facebook", getInstruction(site.index)),
     )
 }
 

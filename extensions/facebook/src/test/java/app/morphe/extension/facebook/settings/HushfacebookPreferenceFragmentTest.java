@@ -354,13 +354,13 @@ public class HushfacebookPreferenceFragmentTest {
 
     /**
      * A version is a value set into a sentence, so both rows that show one isolate it: in a
-     * right-to-left sentence "583.0.0.39.55" then keeps the order it was written in.
+     * right-to-left sentence "584.0.0.51.56" then keeps the order it was written in.
      */
     @Test
     public void theVersionRowsIsolateTheVersions() {
         android.content.Context context = RuntimeEnvironment.getApplication();
         org.robolectric.Shadows.shadowOf(context.getPackageManager())
-                .getInternalMutablePackageInfo(context.getPackageName()).versionName = "583.0.0.39.55";
+                .getInternalMutablePackageInfo(context.getPackageName()).versionName = "584.0.0.51.56";
         String facebook = app.morphe.extension.shared.Utils.getAppVersionName();
         assertTrue("no Facebook version to look for", facebook != null && !facebook.isEmpty());
 

@@ -33,8 +33,10 @@ import org.junit.Test
  * module tree off it. That class is the section Facebook logs "rendered_modules" for and compares
  * entries by "unique_id" in, and the module goes on to be drawn as a tree. The patch adds one call
  * after the module is kept, handing over both, keeps its answer as the module cast back to the
- * reader's type, and changes nothing else. Reads the fixture bundles from HUSHFACEBOOK_FIXTURE_DIR
- * and skips without it.
+ * reader's type, and changes nothing else. Where the node is tested for null before its accessor
+ * reads the module (584), the call comes right after the node is kept, hands over the node alone and
+ * keeps its answer as the node. Reads the fixture bundles from HUSHFACEBOOK_FIXTURE_DIR and skips
+ * without it.
  */
 class PreSearchSectionsFixtureTest {
     private fun Method.code(): List<Instruction> = implementation!!.instructions.toList()
@@ -72,16 +74,28 @@ class PreSearchSectionsFixtureTest {
                 assertEquals("$name: places reading an entry's module", 1, sites.size)
                 val site = sites.single()
                 val code = site.method.code()
-                // The module is tested for null and then drawn as a tree.
-                assertEquals("$name: the module's null test",
-                    listOf(Opcode.IF_EQZ, site.module),
+                // What the hook replaces is tested for null right after it's kept.
+                assertEquals("$name: the null test of what the hook replaces",
+                    listOf(Opcode.IF_EQZ, site.kept),
                     listOf(code[site.read + 1].opcode, (code[site.read + 1] as OneRegisterInstruction).registerA))
-                val drawn = code.subList(site.read + 2, minOf(code.size, site.read + 6)).firstOrNull {
+                // 584 then reads the module off the node and tests it for null too.
+                val moduleKept = if (site.byNode) site.read + 3 else site.read
+                if (site.byNode) {
+                    val accessor = code[site.read + 2] as FiveRegisterInstruction
+                    assertEquals("$name: the module is read off the node",
+                        listOf(Opcode.INVOKE_VIRTUAL, site.node, site.type),
+                        listOf(accessor.opcode, accessor.registerC, accessor.call()?.definingClass))
+                    assertEquals("$name: the module's null test",
+                        listOf(Opcode.IF_EQZ, site.module),
+                        listOf(code[site.read + 4].opcode, (code[site.read + 4] as OneRegisterInstruction).registerA))
+                }
+                // The module is then drawn as a tree.
+                val drawn = code.subList(moduleKept + 2, minOf(code.size, moduleKept + 6)).firstOrNull {
                     it.opcode == Opcode.INVOKE_STATIC && (it as FiveRegisterInstruction).registerC == site.module
                 }
                 assertEquals("$name: the module isn't read as a tree to draw",
                     "Lcom/facebook/graphservice/tree/TreeJNI;", drawn?.call()?.returnType)
-                assertTrue("$name: a jump lands on the module's null test", site.read + 1 !in branchTargets(code))
+                assertTrue("$name: a jump lands on the null test", site.read + 1 !in branchTargets(code))
 
                 context.hookPreSearchSections()
                 val patched = context.mutableClassDefBy(section.type).methods
@@ -93,35 +107,44 @@ class PreSearchSectionsFixtureTest {
                 // The added code can move a switch payload, which gains or loses an alignment nop.
                 assertEquals("$name: three instructions added", code.opcodes().size + 3, patched.opcodes().size)
                 val hand = patched[site.read + 1] as FiveRegisterInstruction
-                assertEquals("$name: the extension handed node and module",
-                    listOf(Opcode.INVOKE_STATIC, PRE_SEARCH_ENTRY, 2, site.node, site.module),
-                    listOf(hand.opcode, hand.call().toString(), hand.registerCount, hand.registerC, hand.registerD))
+                if (site.byNode) {
+                    assertEquals("$name: the extension handed the node",
+                        listOf(Opcode.INVOKE_STATIC, PRE_SEARCH_NODE, 1, site.node),
+                        listOf(hand.opcode, hand.call().toString(), hand.registerCount, hand.registerC))
+                } else {
+                    assertEquals("$name: the extension handed node and module",
+                        listOf(Opcode.INVOKE_STATIC, PRE_SEARCH_ENTRY, 2, site.node, site.module),
+                        listOf(hand.opcode, hand.call().toString(), hand.registerCount, hand.registerC, hand.registerD))
+                }
                 val kept = patched[site.read + 2] as OneRegisterInstruction
-                assertEquals("$name: the extension's answer is the module",
-                    listOf(Opcode.MOVE_RESULT_OBJECT, site.module), listOf(kept.opcode, kept.registerA))
+                assertEquals("$name: the extension's answer is kept where the read's was",
+                    listOf(Opcode.MOVE_RESULT_OBJECT, site.kept), listOf(kept.opcode, kept.registerA))
                 val cast = patched[site.read + 3]
-                assertEquals("$name: the answer is cast back to the reader's type",
-                    listOf(Opcode.CHECK_CAST, site.module, site.moduleType),
+                assertEquals("$name: the answer is cast back to the read's type",
+                    listOf(Opcode.CHECK_CAST, site.kept, site.type),
                     listOf(cast.opcode, (cast as OneRegisterInstruction).registerA,
                         ((cast as ReferenceInstruction).reference as TypeReference).type))
-                assertEquals("$name: the reader's type is what it returns",
-                    code[site.read - 1].call()?.returnType, site.moduleType)
+                assertEquals("$name: the read's type is what it returns",
+                    code[site.read - 1].call()?.returnType, site.type)
                 assertEquals("$name: the rest is Facebook's", code.opcodes(),
                     patched.filterIndexed { index, _ -> index !in site.read + 1..site.read + 3 }.opcodes())
                 checked += version
             }
         }
         assertEquals("a declared build has no fixture", versions, checked)
-        assertEquals("an ABI went unchecked", setOf("arm64-v8a", "armeabi-v7a"), abis)
+        assertEquals("an ABI went unchecked", Fixtures.declaredAbis(), abis)
     }
 
     @Test
-    fun `the extension has the hook`() {
-        val type = PRE_SEARCH_ENTRY.substringBefore("->")
-        val hook = ExtensionDex.classDef(type).methods.singleOrNull { it.name == "entry" }
-        assertNotNull("the extension has no PreSearchSections.entry", hook)
-        assertEquals("entry's shape", PRE_SEARCH_ENTRY,
-            "${hook!!.definingClass}->${hook.name}(${hook.parameterTypes.joinToString("")})${hook.returnType}")
-        assertTrue("entry isn't static", AccessFlags.STATIC.isSet(hook.accessFlags))
+    fun `the extension has the hooks`() {
+        for (descriptor in listOf(PRE_SEARCH_ENTRY, PRE_SEARCH_NODE)) {
+            val type = descriptor.substringBefore("->")
+            val name = descriptor.substringAfter("->").substringBefore("(")
+            val hook = ExtensionDex.classDef(type).methods.singleOrNull { it.name == name }
+            assertNotNull("the extension has no PreSearchSections.$name", hook)
+            assertEquals("$name's shape", descriptor,
+                "${hook!!.definingClass}->${hook.name}(${hook.parameterTypes.joinToString("")})${hook.returnType}")
+            assertTrue("$name isn't static", AccessFlags.STATIC.isSet(hook.accessFlags))
+        }
     }
 }

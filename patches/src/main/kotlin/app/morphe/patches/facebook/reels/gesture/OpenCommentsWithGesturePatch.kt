@@ -111,6 +111,8 @@ internal class GestureAnchors(
     val keyboard: FieldReference,
     /** How the click builds and shows the comment sheet, for a reel with no button object. */
     val sheet: SheetCalls,
+    /** The story holder's constructor taking the reel and an Integer, for a handler that keeps no holder. */
+    val holderInit: Method,
 )
 
 /**
@@ -273,6 +275,7 @@ internal fun BytecodePatchContext.findGestureAnchors(): GestureAnchors {
     constructor.requireThisIntact(GESTURE_PATCH, returns)
     constructor.requireParameterIntact(GESTURE_PATCH, itemParameter, returns)
     val sheet = sheetCalls(click, itemType)
+    val holderInit = holderInit(classDefByOrNull(sheet.holder) ?: refuse("this build has no ${sheet.holder}"), itemType)
 
     val components = classDefByStrings(GESTURE_REACTION, StringComparisonType.EQUALS).filter(::isGestureReactionComponent)
     val component = components.singleOrNull()
@@ -329,7 +332,21 @@ internal fun BytecodePatchContext.findGestureAnchors(): GestureAnchors {
         ?: refuse("expected $FEEDBACK_PARAMS to have one constructor besides the Parcel one, found ${builds.size}")
     keyboardStore(params, keyboard)
         ?: refuse("expected $FEEDBACK_PARAMS's constructor to store ${keyboard.name} once, from a register nothing reads after the store")
-    return GestureAnchors(button, click, constructor, itemParameter, doubleTapLike, heart, handlers, dispatch, params, keyboard, sheet)
+    return GestureAnchors(button, click, constructor, itemParameter, doubleTapLike, heart, handlers, dispatch, params, keyboard, sheet, holderInit)
+}
+
+/**
+ * [holder]'s one public constructor taking the reel ([itemType]) and an Integer, which leaves the story
+ * unset so the holder derives it from the reel when asked. The video controls' long-press handler, the
+ * only one Clean mode makes, keeps no holder, so the sheet helper makes one with it.
+ */
+internal fun holderInit(holder: ClassDef, itemType: String): Method {
+    if (!AccessFlags.PUBLIC.isSet(holder.accessFlags)) refuse("the story holder ${holder.type} isn't public, so the extension can't make one")
+    val inits = holder.methods.filter {
+        it.name == "<init>" && AccessFlags.PUBLIC.isSet(it.accessFlags) && it.parameterTypes.map(CharSequence::toString) == listOf(itemType, INTEGER)
+    }
+    return inits.singleOrNull()
+        ?: refuse("expected the story holder ${holder.type} to have one public constructor taking the reel ($itemType) and an Integer, found ${inits.size}")
 }
 
 internal fun BytecodePatchContext.applyGestureAnchors(anchors: GestureAnchors) {
@@ -382,7 +399,7 @@ internal fun BytecodePatchContext.applyGestureAnchors(anchors: GestureAnchors) {
     val itemType = anchors.constructor.parameterTypes[anchors.itemParameter].toString()
     val helperTypes = listOf(VIEW, FB_USER_SESSION, itemType, sheet.environment, sheet.holder, sheet.config)
     val helper = "$REEL_GESTURES->$SHEET_HELPER(${helperTypes.joinToString("")})Z"
-    mutableClassDefBy(REEL_GESTURES).methods.add(sheetHelper(sheet, helperTypes))
+    mutableClassDefBy(REEL_GESTURES).methods.add(sheetHelper(sheet, helperTypes, anchors.holderInit))
     sheetStub.addInstructions(
         0,
         helperTypes.withIndex().joinToString("\n") { (index, type) -> "check-cast p$index, $type" } +
@@ -486,12 +503,15 @@ private fun sheetArguments(sheet: SheetCalls): String = (6..18).joinToString("\n
 /**
  * The extension's helper taking [types] (the view, the session, the reel, the environment, the
  * story holder and the config): it builds the comment sheet with the values the click passes, shows
- * it, and answers whether there was one. v0 to v18 are the builder's arguments.
+ * it, and answers whether there was one. v0 to v18 are the builder's arguments. With no story holder
+ * it makes one from the reel with [holderInit], as Facebook does for a reel it has no story for yet;
+ * v6 is free until the arguments fill it.
  */
-private fun sheetHelper(sheet: SheetCalls, types: List<String>): MutableMethod {
+private fun sheetHelper(sheet: SheetCalls, types: List<String>, holderInit: Method): MutableMethod {
     val build = sheet.build
     val surface = sheet.surface
     val story = sheet.story
+    val holder = "${sheet.holder}-><init>(${holderInit.parameterTypes.joinToString("")})V"
     return ImmutableMethod(
         REEL_GESTURES,
         SHEET_HELPER,
@@ -514,6 +534,11 @@ private fun sheetHelper(sheet: SheetCalls, types: List<String>): MutableMethod {
                 ${sheet.surfaceInvoke} { v4 .. v4 }, ${surface.key()}
                 move-result-object v4
                 move-object/from16 v5, p4
+                if-nez v5, :holder
+                new-instance v5, ${sheet.holder}
+                const/4 v6, 0x0
+                invoke-direct { v5, v3, v6 }, $holder
+                :holder
                 ${sheet.storyInvoke} { v5 .. v5 }, ${story.key()}
                 move-result-object v5
                 invoke-static { v3, v5 }, ${sheet.merge.key()}

@@ -52,7 +52,7 @@ class ReelSaveButtonFixtureTest {
                 val name = bundle.name
                 val builders = FixtureDex.classesHolding(bundle, SIDEBAR)
                     .filterNot { it.type.startsWith(EXTENSION_PACKAGE) }.distinctBy { it.type }
-                    .flatMap { classDef -> classDef.methods.filter(::isSidebarBuilder).map { classDef to it } }
+                    .flatMap { classDef -> classDef.methods.filter { isSidebarBuilder(it, classDef.methods) }.map { classDef to it } }
                 assertEquals("$name: sidebar builders", 1, builders.size)
                 val (builderClass, builder) = builders.single()
 
@@ -95,8 +95,8 @@ class ReelSaveButtonFixtureTest {
             }
         }
         assertEquals("a declared build has no fixture", versions, checked)
-        // Redex names the builder's class separately per ABI, so both builds have to resolve.
-        assertEquals("an ABI went unchecked", setOf("arm64-v8a", "armeabi-v7a"), abis)
+        // Redex names the builder's class separately per ABI, so every declared build has to resolve.
+        assertEquals("an ABI went unchecked", Fixtures.declaredAbis(), abis)
     }
 
     @Test

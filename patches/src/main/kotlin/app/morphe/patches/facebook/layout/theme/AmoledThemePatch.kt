@@ -315,6 +315,8 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
         val rewrittenAtNight = mutableSetOf<String>()
         val references = mutableMapOf<String, String>()
 
+        // Patcher 2.0 decodes only the files a patch asks for: an undecoded file does not exist yet.
+        decode(DEFAULT_COLORS, NIGHT_COLORS)
         listOf(DEFAULT_COLORS, NIGHT_COLORS)
             .filter { get(it, false).exists() }
             .forEach { path ->
@@ -763,12 +765,12 @@ internal fun BytecodePatchContext.hookStatusBarColour(darkCheck: String, target:
     statusBarPainter().hookBarColour("Status bar colour", window = 0, colour = 1, darkCheck, target)
 
 /**
- * The same for the [navigationBarPainter], whose window and colour are its second and third
- * parameters. [target] is AmoledTheme.navigationBar here, MaterialYouTheme.navigationBar when
+ * The same for the [navigationBarPainter], whose window is its second parameter and colour its last
+ * parameter. [target] is AmoledTheme.navigationBar here, MaterialYouTheme.navigationBar when
  * Material You is in the build without AMOLED.
  */
 internal fun BytecodePatchContext.hookNavigationBarColour(darkCheck: String, target: String = NAVIGATION_BAR) =
-    navigationBarPainter().hookBarColour("Navigation bar colour", window = 1, colour = 2, darkCheck, target)
+    navigationBarPainter().let { it.hookBarColour("Navigation bar colour", window = 1, colour = navigationBarColourIndex(it), darkCheck, target) }
 
 /**
  * Puts the bar hook first in this painter: the colour in parameter [colour] goes through [target]
@@ -839,19 +841,16 @@ internal fun BytecodePatchContext.systemBarColourMethods(): (Method) -> Boolean 
  * `Integer` from a Context, the token and a palette.
  */
 internal fun BytecodePatchContext.hookFdsColorsResolvers(target: String) {
-    val colors = mutableClassDefBy(FDS_COLORS)
-    val source = colors.methods.singleOrNull { method ->
-        AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "Ljava/lang/Integer;" &&
-            method.parameterTypes.size == 3 && method.parameterTypes[0].toString() == "Landroid/content/Context;"
-    } ?: error("FDSColors has no single Integer colour source taking a Context, a token and a palette")
-    val tokenType = source.parameterTypes[1].toString()
+    val type = fdsColors()
+    val colors = mutableClassDefBy(type)
+    val tokenType = fdsColourSource(colors)!!.parameterTypes[1].toString()
 
     val resolvers = colors.methods.filter { method ->
         !AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "I" &&
             method.parameterTypes.any { it.toString() == tokenType } &&
             method.implementation?.instructions?.any { instruction ->
                 val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
-                reference != null && reference.definingClass == FDS_COLORS && reference.returnType == "Ljava/lang/Integer;"
+                reference != null && reference.definingClass == type && reference.returnType == "Ljava/lang/Integer;"
             } == true
     }
     check(resolvers.isNotEmpty()) { "No FDSColors resolver asks the Integer colour source" }

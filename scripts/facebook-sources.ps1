@@ -497,9 +497,12 @@ function Test-SourceLedger {
         $problems.Add("provenance.json is missing, so the ledger can't be held to what Hushfacebook ships.")
     }
     $declaredBuilds = @()
+    $declaredCodes = 0
     if ($adoptedEntries.Count -gt 0) {
         try {
-            $declaredBuilds = @((Get-PatchTarget -PatchList ([System.IO.File]::ReadAllText($catalogPath) | ConvertFrom-Json)).PackageVersions)
+            $declared = Get-PatchTarget -PatchList ([System.IO.File]::ReadAllText($catalogPath) | ConvertFrom-Json)
+            $declaredBuilds = @($declared.PackageVersions)
+            $declaredCodes = @($declared.PackageVersionCodes.Values | ForEach-Object { $_ } | Where-Object { $_ }).Count
         } catch {
             $problems.Add("The declared Facebook builds could not be read from patches-list.json: $($_.Exception.Message)")
         }
@@ -535,9 +538,12 @@ function Test-SourceLedger {
         }
         $provedNames = @($builds | ForEach-Object { (ConvertTo-SourceFixtureBuild $_).Name } | Sort-Object -Unique)
         $unproved = @($declaredBuilds | Where-Object { $provedNames -notcontains $_ })
-        if ($builds.Count -lt 2 -or $unproved.Count -gt 0) {
+        # Two fixtures, unless the catalog pins exactly one build: 584 shipped for arm64-v8a alone,
+        # since no armeabi-v7a build of it was out, and one declared build can only be proved once.
+        $needed = if ($declaredCodes -eq 1) { 1 } else { 2 }
+        if ($builds.Count -lt $needed -or $unproved.Count -gt 0) {
             $missing = if ($unproved.Count -gt 0) { $unproved -join ', ' } else { 'a second fixture' }
-            $problems.Add("$label lacks two-fixture evidence: it names $(@($builds).Count) build(s) and is missing $missing.")
+            $problems.Add("$label lacks fixture evidence: it names $(@($builds).Count) build(s) and is missing $missing.")
         }
     }
     foreach ($rule in $rules) {

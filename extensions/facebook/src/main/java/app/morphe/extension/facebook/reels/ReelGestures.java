@@ -37,7 +37,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * button object (#179). The reel's long-press handler keeps what the button's click hands the comment
  * sheet, so {@link #rememberHandler} notes each handler as Facebook makes it, and a reel with no
  * button gets its sheet from its handler through {@link #openSheetStub}, which the patch fills with
- * the click's own calls.
+ * the click's own calls. The handler the video controls make never keeps the reel's story holder (the
+ * overlay's does, and Clean mode has no overlay), so the holder may be null and the patch's helper
+ * then makes one from the reel, the way Facebook does for a reel it has no story for yet.
  *
  * <p>A double tap that can't open comments is still not a like while the switch is on, since the
  * point of the switch is that a double tap doesn't like. A long press that can't open comments goes
@@ -64,6 +66,14 @@ public final class ReelGestures {
     static final String HANDLER_ENVIRONMENT_FIELD = "$environment";
     static final String HANDLER_STORY_FIELD = "$videoGraphQLPhoton";
     static final String HANDLER_CONFIG_FIELD = "$immersiveFeedPlayerConfig";
+
+    /** What the comment sheet takes from a handler, in the order the sheet opener takes it. */
+    private static final String[] SHEET_FIELDS = {
+            HANDLER_SESSION_FIELD, HANDLER_ITEM_FIELD, HANDLER_ENVIRONMENT_FIELD, HANDLER_STORY_FIELD, HANDLER_CONFIG_FIELD,
+    };
+
+    /** Where the story holder sits in {@link #SHEET_FIELDS}: the one part the sheet can do without. */
+    private static final int STORY_PART = 3;
 
     /** The Comment button objects and handlers kept, newest first. A reel on screen has one of each, so a few are plenty. */
     private static final int KEEP = 24;
@@ -117,8 +127,9 @@ public final class ReelGestures {
     /**
      * Filled in by the patch: builds the comment sheet the way the Comment button's click does, from
      * the view, the session, the reel, the viewer's environment, the reel's story holder and the
-     * viewer config a long-press handler keeps, and shows it. Only those may be passed. Returns true
-     * once filled in and a sheet was built.
+     * viewer config a long-press handler keeps, and shows it. Only those may be passed, and only the
+     * story holder may be null: the patch's helper then makes one from the reel. Returns true once
+     * filled in and a sheet was built.
      */
     public static boolean openSheetStub(Object view, Object session, Object item, Object environment, Object story, Object config) {
         return false;
@@ -224,7 +235,7 @@ public final class ReelGestures {
         }
         if (button == null && sheet == null) {
             HookStatus.counted(FAMILY, NO_BUTTON);
-            logOnce(gesture + ": " + NO_BUTTON);
+            logOnce(gesture + ": " + NO_BUTTON + lacking(handler != null ? handler : handlerFor(item)));
             return false;
         }
         if (!(view instanceof View)) {
@@ -244,21 +255,29 @@ public final class ReelGestures {
         return true;
     }
 
-    /** The session, the reel, the environment, the story holder and the config [handler] keeps, or null when it lacks one. */
+    /**
+     * The session, the reel, the environment, the story holder and the config [handler] keeps, or null
+     * when it lacks one of them other than the story holder.
+     */
     @Nullable
     private static Object[] sheetParts(@Nullable Object handler) throws IllegalAccessException {
         if (handler == null) return null;
-        Object[] parts = {
-                named(handler, HANDLER_SESSION_FIELD),
-                named(handler, HANDLER_ITEM_FIELD),
-                named(handler, HANDLER_ENVIRONMENT_FIELD),
-                named(handler, HANDLER_STORY_FIELD),
-                named(handler, HANDLER_CONFIG_FIELD),
-        };
-        for (Object part : parts) {
-            if (part == null) return null;
+        Object[] parts = new Object[SHEET_FIELDS.length];
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = named(handler, SHEET_FIELDS[i]);
+            if (parts[i] == null && i != STORY_PART) return null;
         }
         return parts;
+    }
+
+    /** For the log: [handler]'s class and what it lacks of what the sheet needs, or that no handler was kept. */
+    private static String lacking(@Nullable Object handler) throws IllegalAccessException {
+        if (handler == null) return " (no long-press handler kept for the reel)";
+        List<String> lacks = new ArrayList<>();
+        for (String name : SHEET_FIELDS) {
+            if (named(handler, name) == null) lacks.add(name);
+        }
+        return " (" + handler.getClass().getName() + " lacks " + String.join(", ", lacks) + ")";
     }
 
     /** The newest Comment button object made for [item]: the same object first, an equal one next. */

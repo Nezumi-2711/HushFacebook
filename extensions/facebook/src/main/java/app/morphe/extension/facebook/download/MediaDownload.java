@@ -188,6 +188,9 @@ public final class MediaDownload {
             }
             if (manifest != null) return beginDash(context, "the story video", manifest, urls, details);
 
+            // A story with no video of its own may still be one: a shared video's story is a still
+            // card, and its video sits somewhere else in the card (#207). Debug logging shows where.
+            if (RenditionPicker.bestVideo(metaOnly(urls), DownloadQuality.BEST) == null) StoryCardShape.log(host, media);
             return begin(context, urls, true, details);
         } catch (Throwable t) {
             // Throwable and not Exception. A renamed field surfaces as NoSuchFieldError, and a

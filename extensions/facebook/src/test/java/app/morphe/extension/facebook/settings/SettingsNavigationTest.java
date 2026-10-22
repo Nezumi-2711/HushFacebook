@@ -1498,9 +1498,9 @@ public class SettingsNavigationTest {
         // Playback: Tap to play and Only the first reel waits, Resume long videos, Remember what you watch and
         // its Recently watched list, Frame step, Default playback quality and its Playback quality, Reels quality
         // and Stories quality lists, Picture-in-picture and Only from a reel's More menu, Picture-in-picture
-        // button, Turn off HDR brightness, Play SDR versions of HDR videos, Skip silent parts, Keep the progress
-        // bar, Show a reel's time and Tap the bar to seek.
-        assertEquals(19, list().getCount());
+        // button, Turn off HDR brightness, Play SDR versions of HDR videos, Skip silent parts, Keep feed videos
+        // muted, Keep the progress bar, Show a reel's time and Tap the bar to seek.
+        assertEquals(20, list().getCount());
         page.navigation.back();
         findSearch(dialog.getView()).setText("other apps");
         recreate();

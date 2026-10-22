@@ -8,7 +8,6 @@ import app.morphe.Fixtures
 import app.morphe.RepoFiles
 import app.morphe.patches.facebook.layout.theme.tokenAttributes as patchTokenAttributes
 import app.morphe.patches.shared.compat.AppCompatibilities
-import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.DexFileFactory
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.Opcodes
@@ -111,7 +110,29 @@ class MaterialYouTokenFixtureTest {
          * pill bar below reads the same array in its constructor, under a name Redex leaves alone
          * on both ABIs, where the Litho component and the array's holder are renamed per build.
          */
-        val LIKES_LINE_ATTRIBUTE = mapOf("583.0.0.39.55" to 0x7f040fd6)
+        val LIKES_LINE_ATTRIBUTE = mapOf("584.0.0.51.56" to 0x7f040fcf)
+        /**
+         * The seven tokens 584 dropped from 583's 324 (all of them named in MaterialYouTheme's
+         * tables or the AMOLED roles at some point), so a listed name missing from a build's enum is
+         * fine for these and an error for any other.
+         */
+        val REMOVED_TOKENS = setOf(
+            "FADED_POPOVER_BACKGROUND", "IMAGE_MASK_DARK", "IMAGE_MASK_LIGHT", "NAV_BAR_ICON", "NAV_BAR_TEXT",
+            "ROOMS_APP_ICON", "TRANSPARENT",
+        )
+
+        /**
+         * The FDS_DARK tokens whose listed colour only 583's "darker" style (a child of the dark one
+         * that set 47 of the tokens, such as ACCENT #1D85FC) ever gave. 584 has no such style: the dark
+         * style's one child sets none of the tokens, so these colours are no longer in the app and
+         * the entries are harmless leftovers for 583. A token listed with several colours may likewise
+         * have lost the darker style's one, so without a darker style the dark style's own colour only
+         * has to be among the listed ones.
+         */
+        val DARKER_ONLY_LISTED = setOf(
+            "ACCENT", "ATTACHMENT_FOOTER_BACKGROUND", "CARD_BORDER", "DISABLED_BUTTON_BACKGROUND",
+            "PRIMARY_BUTTON_TEXT", "SECONDARY_BUTTON_BACKGROUND", "TEXT_INPUT_BAR_BACKGROUND",
+        )
         const val PILLS_BLING_BAR = "Lcom/facebook/feedback/reactions/ui/PillsBlingBarView;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V"
 
         /**
@@ -147,40 +168,24 @@ class MaterialYouTokenFixtureTest {
             "Lcom/mapbox/mapboxsdk/utils/ColorUtils;->getPrimaryDarkColor(Landroid/content/Context;)I@13",
         )
         val UNRESOLVED = mapOf(
-            "583.0.0.39.55" to mapOf(
+            "584.0.0.51.56" to mapOf(
+                // The same 15 reads as 583's arm64, renamed: 584 keeps every shape and moves one offset.
                 "arm64-v8a" to MAPBOX + setOf(
-                    "LX/9Sj;->A0Q(Ljava/lang/Integer;)V@16",
-                    "LX/CTX;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
-                    "LX/PBh;->F3q(LX/Qqc;)V@155",
-                    "LX/PBh;->F3q(LX/Qqc;)V@169",
-                    "LX/PBh;->F3q(LX/Qqc;)V@54",
-                    "LX/PBh;->F3q(LX/Qqc;)V@67",
-                    "LX/PBh;->F3q(LX/Qqc;)V@79",
-                    "LX/PBh;->F3q(LX/Qqc;)V@82",
-                    "LX/PEA;->DFh(LX/6Ei;I)V@169",
-                    "LX/PEA;->DFh(LX/6Ei;I)V@226",
-                    "LX/PEA;->DFh(LX/6Ei;I)V@32",
-                    "LX/PoM;->A04(LX/PoM;LX/Pur;)V@9",
-                    "LX/Pq0;-><init>(Landroid/content/Context;)V@122",
-                    "LX/Pq0;->A0f()V@35",
-                    "LX/nJl;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
-                ),
-                "armeabi-v7a" to MAPBOX + setOf(
-                    "LX/9Tq;->A0Q(Ljava/lang/Integer;)V@16",
-                    "LX/CVG;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
-                    "LX/ipx;->F3d(LX/krO;)V@155",
-                    "LX/ipx;->F3d(LX/krO;)V@169",
-                    "LX/ipx;->F3d(LX/krO;)V@54",
-                    "LX/ipx;->F3d(LX/krO;)V@67",
-                    "LX/ipx;->F3d(LX/krO;)V@79",
-                    "LX/ipx;->F3d(LX/krO;)V@82",
-                    "LX/irr;->DFS(LX/6F1;I)V@171",
-                    "LX/irr;->DFS(LX/6F1;I)V@228",
-                    "LX/irr;->DFS(LX/6F1;I)V@33",
-                    "LX/jcv;->A04(LX/jcv;LX/jzT;)V@11",
-                    "LX/jsb;-><init>(Landroid/content/Context;)V@112",
-                    "LX/jsb;->A0f()V@36",
-                    "LX/nZb;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
+                    "LX/AcB;->A0R(Ljava/lang/Integer;)V@16",
+                    "LX/DIN;->A02(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/Integer;@88",
+                    "LX/G9d;->A00(Landroid/content/Context;Lcom/facebook/react/bridge/ReadableMap;)Landroid/graphics/drawable/Drawable;@20",
+                    "LX/Pb9;->F6s(LX/RQz;)V@155",
+                    "LX/Pb9;->F6s(LX/RQz;)V@169",
+                    "LX/Pb9;->F6s(LX/RQz;)V@54",
+                    "LX/Pb9;->F6s(LX/RQz;)V@67",
+                    "LX/Pb9;->F6s(LX/RQz;)V@79",
+                    "LX/Pb9;->F6s(LX/RQz;)V@82",
+                    "LX/Pce;->DHd(LX/enp;I)V@169",
+                    "LX/Pce;->DHd(LX/enp;I)V@226",
+                    "LX/Pce;->DHd(LX/enp;I)V@32",
+                    "LX/QTH;->A04(LX/QTH;LX/QgX;)V@9",
+                    "LX/Qab;-><init>(Landroid/content/Context;)V@116",
+                    "LX/Qab;->A0e()V@35",
                 ),
             ),
         )
@@ -233,17 +238,18 @@ class MaterialYouTokenFixtureTest {
         val styles = fdsStyles(apk, attributes.values.toSet())
 
         // The light theme sets every token and has no parent; dark is its child that sets them all
-        // again, and darker is dark's child.
+        // again, and darker is dark's child. 584 has no darker style that sets tokens: dark's one
+        // child (7f2004cd) sets none of the 317, so [darker] is null there.
         val light = styles.values.single { it.parent == 0 && it.sets > 300 }
         val dark = styles.values.single { it.parent == light.id && it.sets > 300 }
-        val darker = styles.values.single { it.parent == dark.id }
-        val lightSide = styles.values.filter { it.id != dark.id && it.id != darker.id }
+        val darker = styles.values.singleOrNull { it.parent == dark.id }
+        val lightSide = styles.values.filter { it.id != dark.id && it.id != darker?.id }
 
         for ((name, colours) in listed) {
-            val attribute = attributes[name] ?: error("$build: no FDS token $name")
-            val darkColours = setOfNotNull(dark.values[attribute], darker.values[attribute])
+            val attribute = attributes[name] ?: if (name in REMOVED_TOKENS) continue else error("$build: no FDS token $name")
+            val darkColours = setOfNotNull(dark.values[attribute], darker?.values?.get(attribute))
             assertTrue("$build: $name is listed with ${hex(colours)}, dark gives ${hex(darkColours)}",
-                darkColours.containsAll(colours))
+                darkColours.containsAll(colours) || (darker == null && (name in DARKER_ONLY_LISTED || darkColours.all { it in colours })))
             for (style in lightSide) {
                 val lightColour = style.values[attribute] ?: continue
                 assertTrue("$build: style ${Integer.toHexString(style.id)} gives $name the listed ${hex(setOf(lightColour))}",
@@ -353,7 +359,7 @@ class MaterialYouTokenFixtureTest {
                     val light = styles.values.single { it.parent == 0 && it.sets > 300 }
                     val darkStyle = styles.values.single { it.parent == light.id && it.sets > 300 }
                     for ((name, colours) in shared) {
-                        val attribute = attributes[name] ?: error("${fixture.name}: no FDS token $name")
+                        val attribute = attributes[name] ?: if (name in REMOVED_TOKENS) continue else error("${fixture.name}: no FDS token $name")
                         for (colour in colours) {
                             assertEquals("${fixture.name}: $name in the light style", colour, light.values[attribute])
                             assertEquals("${fixture.name}: $name in the dark style", colour, darkStyle.values[attribute])
@@ -392,18 +398,18 @@ class MaterialYouTokenFixtureTest {
                     val styles = fdsStyles(apk, attributes.values.toSet())
                     val light = styles.values.single { it.parent == 0 && it.sets > 300 }
                     val darkStyle = styles.values.single { it.parent == light.id && it.sets > 300 }
-                    val darker = styles.values.single { it.parent == darkStyle.id }
+                    val darker = styles.values.singleOrNull { it.parent == darkStyle.id }
                     val built = sortedMapOf<String, Int>()
                     for (name in dark.keys) {
-                        val attribute = attributes[name] ?: error("${fixture.name}: no FDS token $name")
+                        val attribute = attributes[name] ?: if (name in REMOVED_TOKENS) continue else error("${fixture.name}: no FDS token $name")
                         val colour = light.values[attribute] ?: continue
-                        val darkColours = setOfNotNull(darkStyle.values[attribute], darker.values[attribute])
+                        val darkColours = setOfNotNull(darkStyle.values[attribute], darker?.values?.get(attribute))
                         if (colour !in darkColours && lightThemed(colour)) built[name] = colour
                     }
                     val table = built.entries.joinToString(";") { (name, colour) ->
                         name + "=" + if (colour ushr 24 == 0xFF) "%06X".format(colour and 0xFFFFFF) else "%08X".format(colour)
                     }
-                    assertEquals("${fixture.name}: FDS_LIGHT should be \"$table\"", built.mapValues { setOf(it.value) }, listed.toSortedMap())
+                    assertEquals("${fixture.name}: FDS_LIGHT should be \"$table\"", built.mapValues { setOf(it.value) }, listed.filterKeys { it !in REMOVED_TOKENS }.toSortedMap())
                 }
                 builds++
             }
@@ -489,12 +495,12 @@ class MaterialYouTokenFixtureTest {
                     val styles = fdsStyles(apk, attributes.values.toSet())
                     val light = styles.values.single { it.parent == 0 && it.sets > 300 }
                     val dark = styles.values.single { it.parent == light.id && it.sets > 300 }
-                    val darker = styles.values.single { it.parent == dark.id }
+                    val darker = styles.values.singleOrNull { it.parent == dark.id }
 
                     val raisedTokens = mutableSetOf<String>()
                     for (name in backgrounds) {
                         val attribute = attributes[name] ?: continue
-                        for (style in listOf(dark, darker)) {
+                        for (style in listOfNotNull(dark, darker)) {
                             val colour = style.values[attribute] ?: continue
                             val channels = listOf(colour shr 16 and 0xFF, colour shr 8 and 0xFF, colour and 0xFF)
                             if (colour ushr 24 != 0xFF || channels.max() - channels.min() > 8 || channels.max() >= 0x80) continue
@@ -578,11 +584,18 @@ class MaterialYouTokenFixtureTest {
                     val styles = fdsStyles(apk, attributes.values.toSet())
                     val light = styles.values.single { it.parent == 0 && it.sets > 300 }
                     val dark = styles.values.single { it.parent == light.id && it.sets > 300 }
-                    val darker = styles.values.single { it.parent == dark.id }
+                    val darker = styles.values.singleOrNull { it.parent == dark.id }
                     for (name in fds) {
-                        val attribute = attributes[name] ?: error("${fixture.name}: no FDS token $name")
-                        val colours = setOfNotNull(dark.values[attribute], darker.values[attribute])
-                        assertEquals("${fixture.name}: $name's dark colours", matrix.getValue(name), colours)
+                        val attribute = attributes[name] ?: if (name in REMOVED_TOKENS) continue else error("${fixture.name}: no FDS token $name")
+                        val colours = setOfNotNull(dark.values[attribute], darker?.values?.get(attribute))
+                        // 584 has no darker style, so a colour only that one gave (PRIMARY_TEXT's white) is
+                        // gone and the matrix is allowed to cover more than the styles give.
+                        if (darker == null) {
+                            assertTrue("${fixture.name}: $name's dark colours ${hex(colours)} aren't in the matrix",
+                                colours.isNotEmpty() && matrix.getValue(name).containsAll(colours))
+                        } else {
+                            assertEquals("${fixture.name}: $name's dark colours", matrix.getValue(name), colours)
+                        }
                     }
                     val names = migColourNames(apk)
                     assertTrue("${fixture.name}: Mig's enums have no ${mig - names}", names.containsAll(mig))
@@ -832,10 +845,7 @@ class MaterialYouTokenFixtureTest {
         for (name in container.dexEntryNames) {
             for (classDef in container.getEntry(name)!!.dexFile.classes) classes.putIfAbsent(classDef.type, classDef)
         }
-        val source = classes.getValue(FDS_COLORS).methods.single { method ->
-            AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "Ljava/lang/Integer;" &&
-                method.parameterTypes.size == 3 && method.parameterTypes[0].toString() == "Landroid/content/Context;"
-        }
+        val source = classes.values.mapNotNull { fdsColourSource(it) }.single()
         val tokenType = source.parameterTypes[1].toString()
         return classes.getValue(tokenType).methods.single { it.name == "<clinit>" } to tokenType
     }

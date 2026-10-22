@@ -9,6 +9,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
@@ -16,6 +17,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -526,6 +528,101 @@ class CleanUpReelsShapesTest {
         assertEquals("off runs Facebook's query", 4, run.target(2))
         assertEquals(Opcode.RETURN_VOID, body[3].opcode)
         assertEquals(Opcode.SGET_OBJECT, body[4].opcode)
+    }
+
+    private val lambdaType = "Lfixture/Lambda;"
+
+    /** A static of the merged lambda that takes the lambda and its key and answers an Object. */
+    private fun handOn(name: String, smali: String): Method = MutableMethod(
+        ImmutableMethod(
+            lambdaType, name, listOf(ImmutableMethodParameter(lambdaType, null, null), ImmutableMethodParameter("I", null, null)),
+            "Ljava/lang/Object;", AccessFlags.PUBLIC.value or AccessFlags.STATIC.value, null, null,
+            ImmutableMethodImplementation(3, emptyList(), null, null),
+        ),
+    ).apply { addInstructionsWithLabels(0, smali) }
+
+    /**
+     * A merged lambda shaped like 584's: `invoke()` and its first hand-on switch have no case for
+     * the Follow flags' keys (0x29 and 0x2a), so each falls through two defaults before the last
+     * switch names its method.
+     */
+    private fun lambda(): ClassDef {
+        val invoke = MutableMethod(
+            ImmutableMethod(
+                lambdaType, "invoke", emptyList(), "Ljava/lang/Object;", AccessFlags.PUBLIC.value, null, null,
+                ImmutableMethodImplementation(2, emptyList(), null, null),
+            ),
+        ).apply {
+            addInstructionsWithLabels(
+                0,
+                """
+                    iget v0, p0, $lambdaType->key:I
+                    packed-switch v0, :cases
+                    invoke-static { p0, v0 }, $lambdaType->A1D(${lambdaType}I)Ljava/lang/Object;
+                    move-result-object v0
+                    return-object v0
+                    :one
+                    invoke-static { p0 }, $lambdaType->A01($lambdaType)Ljava/lang/Object;
+                    move-result-object v0
+                    return-object v0
+                    :cases
+                    .packed-switch 0x1
+                        :one
+                    .end packed-switch
+                """,
+            )
+        }
+        val first = handOn(
+            "A1D",
+            """
+                sparse-switch p1, :cases
+                invoke-static { p0, p1 }, $lambdaType->A1B(${lambdaType}I)Ljava/lang/Object;
+                move-result-object v0
+                return-object v0
+                :five
+                invoke-static { p0 }, $lambdaType->A05($lambdaType)Ljava/lang/Object;
+                move-result-object v0
+                return-object v0
+                :cases
+                .sparse-switch
+                    0x5 -> :five
+                .end sparse-switch
+            """,
+        )
+        val second = handOn(
+            "A1B",
+            """
+                packed-switch p1, :cases
+                const/4 v0, 0x0
+                return-object v0
+                :following
+                invoke-static { p0 }, $lambdaType->A0A($lambdaType)Ljava/lang/Object;
+                move-result-object v0
+                return-object v0
+                :shorts
+                invoke-static { p0 }, $lambdaType->A0h($lambdaType)Ljava/lang/Object;
+                move-result-object v0
+                return-object v0
+                :cases
+                .packed-switch 0x29
+                    :following
+                    :shorts
+                .end packed-switch
+            """,
+        )
+        return ImmutableClassDef(
+            lambdaType, AccessFlags.PUBLIC.value, "Ljava/lang/Object;", null, null, null, emptyList(), listOf(invoke, first, second),
+        )
+    }
+
+    @Test
+    fun `a lambda key with no case is followed through each switch's default`() {
+        val lambda = lambda()
+        assertEquals("A0A", lambdaCase(lambda, 0x29)?.name)
+        assertEquals("A0h", lambdaCase(lambda, 0x2a)?.name)
+        assertEquals("a case of invoke() itself", "A01", lambdaCase(lambda, 1)?.name)
+        assertEquals("a case of the first hand-on", "A05", lambdaCase(lambda, 5)?.name)
+        assertNull("a key the last switch has no case for", lambdaCase(lambda, 0x30))
     }
 
     private val loopFlag = com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference(

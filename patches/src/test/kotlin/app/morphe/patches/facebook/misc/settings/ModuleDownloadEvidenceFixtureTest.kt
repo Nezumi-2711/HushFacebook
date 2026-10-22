@@ -15,7 +15,6 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
-import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -76,7 +75,7 @@ class ModuleDownloadEvidenceFixtureTest {
                 // The failure path reads the task's exception just before the site, from the callback's own parameter.
                 val read = failure.method.code()[failure.index - 2]
                 assertEquals("$name: the task's exception is read", "Ljava/lang/Exception;", ((read as ReferenceInstruction).reference as MethodReference).returnType)
-                assertEquals("$name: on the task", failure.register, (read as FiveRegisterInstruction).registerC)
+                assertEquals("$name: on the task", failure.register, read.firstRegister())
                 val parameter = failure.method.implementation!!.registerCount - 1
                 assertEquals("$name: the task is the callback's parameter", parameter, failure.register)
 

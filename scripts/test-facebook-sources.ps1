@@ -7,7 +7,7 @@
     docs/sources.md can't link a source the ledger doesn't know or call a behavior-only source
     portable. Then each rule is broken once on a copy, and each has to be refused by name: an
     adopted source missing its pinned commit, compatible licence, NOTICE entry, provenance rule or
-    two-fixture evidence, an unlicensed or contaminated source that isn't behavior-only, a
+    fixture evidence (every declared build, two once two are declared), an unlicensed or contaminated source that isn't behavior-only, a
     provenance rule crediting a source the ledger doesn't allow, an index with no listing record.
     The census is held to its 14 days on both sides of the line.
 
@@ -171,12 +171,14 @@ function Test-Broken {
     & $Break $copy
     $savedNotice = [IO.File]::ReadAllText((Join-Path $rulesRoot 'NOTICE'))
     $savedProvenance = [IO.File]::ReadAllText((Join-Path $rulesRoot 'provenance.json'))
+    $savedCatalog = [IO.File]::ReadAllText((Join-Path $rulesRoot 'patches-list.json'))
     try {
         if ($BreakRoot) { & $BreakRoot }
         $result = Test-SourceLedger -Ledger $copy -Root $rulesRoot -Today $today
     } finally {
         [IO.File]::WriteAllText((Join-Path $rulesRoot 'NOTICE'), $savedNotice)
         [IO.File]::WriteAllText((Join-Path $rulesRoot 'provenance.json'), $savedProvenance)
+        [IO.File]::WriteAllText((Join-Path $rulesRoot 'patches-list.json'), $savedCatalog)
     }
     Assert-True (-not $result.Valid) "$Message The ledger was accepted."
     Assert-True (@($result.Problems | Where-Object { $_ -like $Pattern }).Count -gt 0) `
@@ -200,8 +202,17 @@ Test-Broken { param($c) } '*is not in NOTICE*' 'An adopted source missing from N
 }
 Test-Broken { param($c) (Get-Entry $c $adoptedId).adopted.commit = ('f' * 40) } '*has no provenance rule*' `
     'An adopted source whose commit no provenance rule names'
-Test-Broken { param($c) $e = Get-Entry $c $adoptedId; $e.adopted.fixtures.builds = @($e.adopted.fixtures.builds[0]) } '*lacks two-fixture evidence*' `
-    'An adopted source proved on one fixture'
+Test-Broken { param($c) (Get-Entry $c $adoptedId).adopted.fixtures.builds = @('1.0.0 (1)', '1.0.1 (2)') } '*lacks fixture evidence*' `
+    'An adopted source proved on two builds the catalog doesn''t declare'
+# A catalog that pins a second build needs a second fixture, whatever the ledger proved before.
+Test-Broken { param($c) $e = Get-Entry $c $adoptedId; $e.adopted.fixtures.builds = @($e.adopted.fixtures.builds[0]) } '*lacks fixture evidence*a second fixture*' `
+    'An adopted source proved on one fixture of a two-build declaration' {
+    $path = Join-Path $rulesRoot 'patches-list.json'
+    $text = [IO.File]::ReadAllText($path)
+    $pinned = [regex]::Replace($text, '("ARM64_V8A": \d+)', '$1, "ARMEABI_V7A": 900000002')
+    if ($pinned -eq $text) { throw 'The catalog pins no arm64-v8a build to add a second build beside.' }
+    [IO.File]::WriteAllText($path, $pinned)
+}
 Test-Broken { param($c) (Get-Entry $c $adoptedId).adopted.fixtures.receipt = 'https://example.com/receipt.json' } '*names no release receipt*' `
     'An adopted source with no release receipt'
 

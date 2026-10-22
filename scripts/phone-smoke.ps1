@@ -235,7 +235,9 @@ foreach ($uri in $Visit) {
 }
 
 Write-Host '[smoke] saving the diagnostic report'
-Invoke-Adb shell am start -W -n $Entry --ez app.morphe.extension.facebook.OPEN_SETTINGS true `
+# Clear to the launcher: with the walk's last page on top, Android would drop an intent that
+# matches the task's root and differs only by extras.
+Invoke-Adb shell am start -W --activity-clear-top -n $Entry --ez app.morphe.extension.facebook.OPEN_SETTINGS true `
     --es app.morphe.extension.facebook.SHOW_SETTING action_export_diagnostic_report | Out-Null
 Start-Sleep -Seconds $SettleSeconds
 Invoke-TapLabel $ExportLabel

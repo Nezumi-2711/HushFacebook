@@ -226,7 +226,7 @@ private fun BytecodePatchContext.hideFollowButtons() {
 }
 
 /**
- * The same two buttons on 583, where the Following button's config is two flag reads in a merged
+ * The same two buttons from 583 on, where the Following button's config is two flag reads in a merged
  * lambda rather than one getter: each read answers true when the switch is on, and the author row,
  * the one method holding [AUTHOR_COMPONENT], asks the Follow check as before.
  */

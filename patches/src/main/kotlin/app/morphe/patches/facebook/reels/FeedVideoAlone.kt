@@ -22,6 +22,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -74,6 +75,10 @@ import com.android.tools.smali.dexlib2.iface.reference.StringReference
  *   (LX/9hA;->A00, a static method holding "pagination_component" that answers a full-page item),
  *   which it adds when a data source flag says so (LX/5KL;->A1b()Z, compared with a register set to
  *   1) and otherwise goes on to its normal list.
+ * - 584 (2026-10-22) moved the builder (LX/8cW;->A2R(LX/1ts;)LX/2nH;, params LX/8NH;) and put a
+ *   check for a similar-videos ad between the null check and the read of whether more are coming
+ *   (LX/8Ms;->A0P:Z, before LX/8cW;->A0F), so the read is the first one every way on from the check
+ *   comes to rather than where it jumps.
  *
  * The Warion step tells the extension a feed video is opening, the reels viewer's entry tells it
  * where the video opens from, and the fragment tells it when a Warion viewer opens and closes.
@@ -155,11 +160,15 @@ internal fun originRead(method: Method): OriginRead? {
 /** Where the reels list's builder reads whether more are coming: the index right after, and the registers of that answer and of the params. */
 internal data class LoadingPageRead(val index: Int, val more: Int, val params: Int)
 
+/** How far past a null check on the params the read of whether more are coming may sit. */
+private const val MAX_REACH = 48
+
 /**
- * Where [method] reads whether more reels are coming: the boolean field read a null check on the
- * first [paramsType] it loads from a field jumps to, followed by its own check. Null unless there's
- * exactly one, every way into it still holds the params from that load, nothing jumps past it to
- * its check, and both registers are small enough for a four-bit call.
+ * Where [method] reads whether more reels are coming: the boolean field read, followed by its own
+ * check, that every way on from where a null check on the first [paramsType] it loads from a field
+ * jumps to comes to first (583 reads it right there, 584 works out an ad flag first). Null unless
+ * there's exactly one, every way into it still holds the params from that load, nothing jumps past
+ * it to its check, and both registers are small enough for a four-bit call.
  */
 internal fun loadingPageRead(method: Method, paramsType: String): LoadingPageRead? {
     val code = method.implementation?.instructions?.toList() ?: return null
@@ -174,17 +183,44 @@ internal fun loadingPageRead(method: Method, paramsType: String): LoadingPageRea
         .filter { code[it].opcode == Opcode.IF_EQZ && (code[it] as OneRegisterInstruction).registerA == params }
         .flatMap { check -> flow.normal[check].filter { it != check + 1 } }
         .distinct()
-        .filter { at ->
-            val gate = code.getOrNull(at + 1)
-            code[at].opcode == Opcode.IGET_BOOLEAN && gate?.opcode == Opcode.IF_EQZ &&
-                (gate as OneRegisterInstruction).registerA == (code[at] as TwoRegisterInstruction).registerA
-        }
+        .mapNotNull { firstBooleanTest(code, flow, it) }
+        .distinct()
     val read = reads.singleOrNull() ?: return null
     val more = (code[read] as TwoRegisterInstruction).registerA
     if (more > 15 || more == params) return null
     if (method.writersReaching(read, params) != listOf(load)) return null
     val into = code.indices.filter { read + 1 in flow.normal[it] || read + 1 in flow.exceptional[it] }
     return if (into == listOf(read)) LoadingPageRead(read + 1, more, params) else null
+}
+
+/** Whether [at] reads a boolean field that the next instruction tests for zero. */
+private fun isBooleanTest(code: List<Instruction>, at: Int): Boolean {
+    val gate = code.getOrNull(at + 1)
+    return code[at].opcode == Opcode.IGET_BOOLEAN && gate?.opcode == Opcode.IF_EQZ &&
+        (gate as OneRegisterInstruction).registerA == (code[at] as TwoRegisterInstruction).registerA
+}
+
+/**
+ * The boolean test ([isBooleanTest]) every way on from [from] comes to first, going forward only.
+ * Null when a way turns back, ends, runs [MAX_REACH] instructions past [from], or the ways come to
+ * different tests.
+ */
+private fun firstBooleanTest(code: List<Instruction>, flow: ControlFlow, from: Int): Int? {
+    val seen = mutableSetOf<Int>()
+    val tests = mutableSetOf<Int>()
+    val ways = ArrayDeque(listOf(from))
+    while (ways.isNotEmpty()) {
+        val at = ways.removeFirst()
+        if (!seen.add(at)) continue
+        if (isBooleanTest(code, at)) {
+            tests += at
+            continue
+        }
+        val next = flow.normal[at]
+        if (at - from >= MAX_REACH || next.isEmpty() || next.any { it <= at }) return null
+        ways += next
+    }
+    return tests.singleOrNull()
 }
 
 /**

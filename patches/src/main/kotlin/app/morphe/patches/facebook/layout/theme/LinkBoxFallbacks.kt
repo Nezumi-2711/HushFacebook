@@ -64,7 +64,7 @@ private fun jumpTarget(instructions: List<Instruction>, index: Int): Int? {
  */
 internal fun linkBoxFallbacks(method: Method): List<Int> {
     val code = method.implementation?.instructions?.toList() ?: return emptyList()
-    val literal = code.indexOfFirst { (it as? WideLiteralInstruction)?.wideLiteral == LINK_BOX_COLOUR_CONFIG }
+    val literal = code.indexOfFirst { (it as? WideLiteralInstruction)?.wideLiteral in LINK_BOX_COLOUR_CONFIGS }
     if (literal < 0) return emptyList()
     val parse = code.indices.singleOrNull { code[it].referenceText() == PARSE_LINK_BOX } ?: return emptyList()
     if (code.getOrNull(parse + 1)?.opcode != Opcode.MOVE_RESULT) return emptyList()

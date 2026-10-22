@@ -7,7 +7,6 @@ package app.morphe.patches.facebook.layout.theme
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
-import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
@@ -135,11 +134,7 @@ internal var integerReadAttributeIds: Set<Int> = emptySet()
 
 /** The token enum FDSColors resolves, and its constants. */
 private fun BytecodePatchContext.fdsTokens(): Pair<ClassDef, TokenConstants> {
-    val source = classDefBy(FDS_COLORS).methods.singleOrNull { method ->
-        AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "Ljava/lang/Integer;" &&
-            method.parameterTypes.size == 3 && method.parameterTypes[0].toString() == "Landroid/content/Context;"
-    } ?: error("FDSColors has no single Integer colour source taking a Context, a token and a palette")
-    val tokenType = source.parameterTypes[1].toString()
+    val tokenType = fdsColourSource(classDefBy(fdsColors()))!!.parameterTypes[1].toString()
     val tokenClass = classDefBy(tokenType)
     return tokenClass to tokenConstants(tokenClass.methods.single { it.name == "<clinit>" }, tokenType)
 }

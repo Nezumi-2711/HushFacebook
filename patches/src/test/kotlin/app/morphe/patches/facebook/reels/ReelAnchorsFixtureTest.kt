@@ -141,7 +141,7 @@ class ReelAnchorsFixtureTest {
                 assertNull("$name: ${follow.problem}", follow.problem)
                 val getter = follow.getter
                 if (getter == null) {
-                    // 583: two flag reads in a merged lambda, each a static case with a local for its hook.
+                    // 583 and 584: two flag reads in a merged lambda, each a static case with a local for its hook.
                     assertEquals("$name: ${follow.flags}", 2, follow.flags.size)
                     val lambda = FixtureDex.classes(bundle, setOf(follow.flags.first().definingClass)).values.single()
                     for (flag in follow.flags) {
@@ -193,7 +193,7 @@ class ReelAnchorsFixtureTest {
                 val follow = followButtonGetter(dumper, classesOf(bundle))
                 val getter = follow.getter
                 val author = if (getter == null) {
-                    // 583 reads the Following button's config through flags, so the row is found by its own literal.
+                    // 583 and 584 read the Following button's config through flags, so the row is found by its own literal.
                     assertTrue("$name: the dump names no Following getter or flags", follow.flags.isNotEmpty())
                     FixtureDex.classesHolding(bundle, AUTHOR_COMPONENT).flatMap { methodsHolding(it, AUTHOR_COMPONENT) }.single()
                 } else {

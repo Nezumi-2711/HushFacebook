@@ -132,9 +132,11 @@ class GroupJoinStateFixtureTest {
                 val answer = joinStateFlagAnswer(method)
                 assertNotNull("$name: the flag isn't set from a boolean answer", answer)
                 val code = method.code()
-                // Positive control: the answer is MobileConfig's, and the name goes to a setter with it.
+                // Positive control: the answer is MobileConfig's (asked of the interface, or of its
+                // static helper since 584), and the name goes to a setter with it.
                 val asked = code[answer!! - 1]
-                assertEquals("$name: answer asked of an interface", Opcode.INVOKE_INTERFACE, asked.opcode)
+                assertTrue("$name: answer asked with ${asked.opcode}",
+                    asked.opcode == Opcode.INVOKE_INTERFACE || asked.opcode == Opcode.INVOKE_STATIC)
                 assertTrue("$name: ${asked.called()} isn't MobileConfig",
                     asked.called()!!.definingClass.endsWith("/MobileConfigUnsafeContext;"))
                 val register = (code[answer] as OneRegisterInstruction).registerA

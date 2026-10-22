@@ -278,10 +278,10 @@ public class L10nTest {
 
     @Test
     public void anIsolatedValueIsWrappedInFirstStrongIsolates() {
-        String isolated = L10n.isolate("583.0.0.39.55");
+        String isolated = L10n.isolate("584.0.0.51.56");
         assertEquals((char) 0x2068, isolated.charAt(0));
         assertEquals((char) 0x2069, isolated.charAt(isolated.length() - 1));
-        assertEquals("583.0.0.39.55", isolated.substring(1, isolated.length() - 1));
+        assertEquals("584.0.0.51.56", isolated.substring(1, isolated.length() - 1));
         assertEquals("", L10n.isolate(""));
         assertEquals("", L10n.isolate(null));
     }

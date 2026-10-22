@@ -10,6 +10,8 @@ import app.morphe.PatchContexts
 import app.morphe.patches.facebook.feed.FixtureDex
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.feed.holdsString
+import app.morphe.patches.facebook.feed.namesString
+import app.morphe.patches.facebook.feed.resolveStatic
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
@@ -53,7 +55,14 @@ class PictureInPictureLaunchStepFixtureTest {
                 val step = steps.single()
                 val registers = step.implementation!!.registerCount
                 assertTrue("$name: the step's context and intent sit past v15", registers - 3 <= 15)
-                val builders = FixtureDex.classesHolding(bundle, underAPage).flatMap { holder -> holder.methods.filter { holdsString(it, underAPage) } }
+                // 584 asks a string table for the extra, so the table's callers that start the step count too.
+                val underAPageHolders = FixtureDex.classesHolding(bundle, underAPage)
+                val tables = underAPageHolders.associateBy { it.type }
+                val resolve: (MethodReference) -> Method? = { call -> tables[call.definingClass]?.let { resolveStatic(it, call) } }
+                val builders = underAPageHolders.flatMap { holder -> holder.methods.filter { holdsString(it, underAPage) } } +
+                    FixtureDex.methodsWhere(bundle, { dex -> dex.methodSection.any { it.definingClass in tables } }) {
+                        it.implementation != null && it.calls(step) && !holdsString(it, underAPage) && namesString(it, underAPage, resolve)
+                    }
                 assertTrue("$name: no method building the main screen under a page calls the step; those building it: " +
                     builders.joinToString { "${it.definingClass}->${it.name}" },
                     builders.any { it.calls(step) })

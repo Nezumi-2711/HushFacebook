@@ -1041,6 +1041,10 @@ When Facebook also sends an HDR video in SDR at the same size, play that version
 Skip silent parts	Lewati bagian yang hening
 # context: summary of that switch; how-tos are tutorial videos
 Videos, reels and stories jump past the quiet stretches in their sound, so talks and how-tos get to the point sooner.	Video, reel, dan cerita melompati bagian yang hening dalam suaranya, jadi ceramah dan tutorial lebih cepat sampai ke intinya.
+# context: switch title under Playback; feed videos stay silent until the user turns their sound on
+Keep feed videos muted	Tetap bisukan video di Kabar Beranda
+# context: summary of that switch; the speaker is the sound button on a video, volume up is the phone's key
+Videos in your feed start with the sound off every time you open Facebook, and only you turn it on. Tap a video's speaker or press volume up to hear it.	Video di Kabar Beranda selalu mulai tanpa suara setiap kali kamu membuka Facebook, dan hanya kamu yang menyalakannya. Ketuk ikon speaker video atau tekan tombol volume naik untuk mendengarnya.
 # context: switch title under Playback; keeps a video's progress bar (the line showing how far it has played) on screen
 Keep the progress bar	Pertahankan bilah progres
 # context: summary of that switch; a reel is a short vertical video
@@ -1645,7 +1649,7 @@ Takes the speaker button off the bottom of the side of reels. A change shows fro
 # context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
 Hide the reaction preview on posts	Sembunyikan pratinjau reaksi di postingan
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
-Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions.	Menyembunyikan ikon reaksi yang bertumpuk dan jumlah reaksi di bawah postingan. Ruangnya tetap ada, jadi mengetuk di tempat semula tetap membuka daftar reaksi.
+Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions. To take the number off the Like button too, turn on Hide counts on posts.	Menyembunyikan ikon reaksi yang bertumpuk dan jumlah reaksi di bawah postingan. Ruangnya tetap ada, jadi mengetuk di tempat semula tetap membuka daftar reaksi. Untuk menghapus juga angka di tombol Suka, aktifkan Sembunyikan angka di postingan.
 # context: switch title under Comments; the reaction preview is the stack of reaction icons in the corner of a comment
 Hide the reaction preview on comments	Sembunyikan pratinjau reaksi di komentar
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions

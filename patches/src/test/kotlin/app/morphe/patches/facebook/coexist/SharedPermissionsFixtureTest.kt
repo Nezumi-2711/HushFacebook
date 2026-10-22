@@ -601,9 +601,10 @@ class SharedPermissionsFixtureTest {
         /**
          * Loads of Facebook's package that only build RemoteViews, per build. 582 had 14 notification
          * template sites (2026-10-14). 583 builds all but one from the running package itself, and
-         * the check after the patch still finds none left spelled out (2026-10-16).
+         * the check after the patch still finds none left spelled out (2026-10-16). 584 spells all
+         * 14 out again (2026-10-22).
          */
-        val REMOTE_VIEWS_LOADS = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 1)
+        val REMOTE_VIEWS_LOADS = mapOf(AppCompatibilities.FACEBOOK_TARGET_VERSION to 14)
 
         /**
          * Loads of Facebook's package that only name this app to Android or look up its resources,
@@ -659,10 +660,9 @@ class SharedPermissionsFixtureTest {
          */
         val STOCK_OWNERS = mapOf(
             AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-                "arm64-v8a" to listOf("LX/Qcl;->A00@544:", "LX/QlX;->A00@42:", "LX/RHb;->A00@20:", "LX/QuB;->openForumShareLink\$${FORUM_LINK}@62:"),
-                "armeabi-v7a" to listOf("LX/QCb;->A00@544:", "LX/QKd;->A00@42:", "LX/QlD;->A00@20:", "LX/QTH;->openForumShareLink\$${FORUM_LINK}@61:"),
+                "arm64-v8a" to listOf("LX/dWG;->A00@569:", "LX/RQF;->A00@40:", "LX/Gf1;->A00@22:", "LX/RTe;->openForumShareLink\$${FORUM_LINK}@60:"),
             ).mapValues { (_, sites) ->
-                sites + "Lcom/facebook/messaging/threadsettings2/activity/ThreadSettingsActivity;->onActivityCreate@49:"
+                sites + "Lcom/facebook/messaging/threadsettings2/activity/ThreadSettingsActivity;->onActivityCreate@51:"
             },
         )
 

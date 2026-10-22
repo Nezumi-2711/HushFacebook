@@ -91,7 +91,7 @@ internal fun BytecodePatchContext.hideReelSaveButton() {
     val builders = mutableListOf<Pair<String, Method>>()
     classDefForEach { classDef ->
         if (classDef.type.startsWith(EXTENSION_PACKAGE)) return@classDefForEach
-        classDef.methods.filter(::isSidebarBuilder).forEach { builders += classDef.type to it }
+        classDef.methods.filter { isSidebarBuilder(it, classDef.methods) }.forEach { builders += classDef.type to it }
     }
     val (owner, found) = builders.singleOrNull()
         ?: throw PatchException("$PATCH: expected one reel sidebar builder, found ${builders.size}")

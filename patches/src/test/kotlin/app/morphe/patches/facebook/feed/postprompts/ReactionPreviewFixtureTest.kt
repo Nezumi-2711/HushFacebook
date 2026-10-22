@@ -187,7 +187,7 @@ class ReactionPreviewFixtureTest {
             }
         }
         assertEquals("a declared build has no fixture", versions, checked)
-        assertEquals("an ABI went unchecked", setOf("arm64-v8a", "armeabi-v7a"), abis)
+        assertEquals("an ABI went unchecked", Fixtures.declaredAbis(), abis)
     }
 
     @Test

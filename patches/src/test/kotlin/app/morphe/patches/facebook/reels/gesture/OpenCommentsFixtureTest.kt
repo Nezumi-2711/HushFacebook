@@ -92,6 +92,7 @@ class OpenCommentsFixtureTest {
         val owners: List<ClassDef>,
         val activity: ClassDef,
         val feedbackParams: ClassDef,
+        val holder: ClassDef,
     )
 
     /** The classes the patch reads in [bundle], each the only one of its kind. */
@@ -127,7 +128,9 @@ class OpenCommentsFixtureTest {
         val activity = FixtureDex.classes(bundle, setOf(FRAGMENT_ACTIVITY)).getValue(FRAGMENT_ACTIVITY)
         assertEquals("$name: FbFragmentActivity's touch dispatches", 1, touchDispatches(activity).size)
         val feedbackParams = FixtureDex.classes(bundle, setOf(FEEDBACK_PARAMS)).getValue(FEEDBACK_PARAMS)
-        return Found(helper, doubleTapLike, component, view, heart, button, click, handlers, attachmentClass, owners, activity, feedbackParams)
+        val holderType = sheetCalls(click, doubleTapLike.parameterTypes[0].toString()).holder
+        val holder = FixtureDex.classes(bundle, setOf(holderType)).getValue(holderType)
+        return Found(helper, doubleTapLike, component, view, heart, button, click, handlers, attachmentClass, owners, activity, feedbackParams, holder)
     }
 
     @Test
@@ -184,6 +187,15 @@ class OpenCommentsFixtureTest {
                         init.parameterTypes.count { it.toString() == itemType })
                     assertTrue("$name: ${handler.type}'s constructor needs 1 to 14 locals", init.localRegisterCount() in 1..14)
                 }
+                // The controls' handler keeps no story holder, so the helper makes one: the holder has one
+                // public (reel, Integer) constructor, and its story getter derives a story from the reel.
+                val holderInit = holderInit(found.holder, itemType)
+                assertEquals("$name: the holder's constructor", listOf(itemType, INTEGER), holderInit.parameterTypes.map(CharSequence::toString))
+                val getter = found.holder.methods.single { key(it) == key(sheet.story) }
+                assertTrue("$name: the holder's story getter derives no story from the reel", getter.code().any { call ->
+                    call.opcode in setOf(Opcode.INVOKE_STATIC, Opcode.INVOKE_STATIC_RANGE) &&
+                        call.call?.let { it.parameterTypes.firstOrNull()?.toString() == itemType && it.returnType == GRAPHQL_STORY } == true
+                })
 
                 // The keyboard flag toString labels is a final boolean of the sheet's parameters, and it is
                 // the one the sheet's first-load keyboard step reads.
@@ -221,7 +233,7 @@ class OpenCommentsFixtureTest {
             for (bundle in bundles) {
                 val name = bundle.name
                 val found = read(bundle)
-                val classes = (listOf(found.helper, found.component, found.view, found.attachmentClass, found.button, found.activity, found.feedbackParams) +
+                val classes = (listOf(found.helper, found.component, found.view, found.attachmentClass, found.button, found.activity, found.feedbackParams, found.holder) +
                     found.owners + found.handlers).distinctBy { it.type } +
                     ExtensionDex.classDef(SETTINGS_STATUS) + ExtensionDex.classDef(REEL_GESTURES)
                 val context = PatchContexts.of(classes)
@@ -321,6 +333,15 @@ class OpenCommentsFixtureTest {
                 }
                 assertEquals("$name: the helper's log names", sheet.names,
                     helperCode.mapNotNull { ((it as? ReferenceInstruction)?.reference as? StringReference)?.string })
+                // With no story holder, the helper makes one from the reel right before asking it for the story.
+                val storyAt = helperCode.indexOfFirst { it.call?.let(::key) == key(sheet.story) }
+                assertEquals("$name: the holder made before the story is asked for",
+                    listOf(Opcode.IF_NEZ, Opcode.NEW_INSTANCE, Opcode.CONST_4, Opcode.INVOKE_DIRECT),
+                    helperCode.subList(storyAt - 4, storyAt).map { it.opcode })
+                assertEquals("$name: the holder made", sheet.holder, (helperCode[storyAt - 3] as ReferenceInstruction).reference.toString())
+                assertEquals("$name: the holder's constructor called", key(anchors.holderInit), helperCode[storyAt - 1].call?.let(::key))
+                assertEquals("$name: the reel and a null Integer handed to it", listOf(5, 3, 6),
+                    (helperCode[storyAt - 1] as FiveRegisterInstruction).let { listOf(it.registerC, it.registerD, it.registerE) })
                 val sheetStub = context.mutableClassDefBy(REEL_GESTURES).methods.single { it.name == SHEET_STUB }.code()
                 val handOff = sheetStub.single { it.call?.name == SHEET_HELPER } as RegisterRangeInstruction
                 assertEquals("$name: the stub hands the helper its six objects", 6, handOff.registerCount)

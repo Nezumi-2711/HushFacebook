@@ -20,6 +20,7 @@ import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.facebook.misc.extension.requireLocals
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
+import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.cloneMutableAndPreserveParameters
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
@@ -77,14 +78,15 @@ val cleanUpChatListPatch = bytecodePatch(
         }
         val openers = classDefByStrings(META_AI_ICON_CLICKED, StringComparisonType.EQUALS)
             .filter(::opensMetaAiFromSearchRow).map { it.type }.toSet()
+        // 583's 64-bit tap asks a string table for its entry, so the taps are found by naming it; 584's
+        // search row hands its button to an outlined helper, read through the same lookup.
+        val resolve: (MethodReference) -> Method? = { call -> classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) } }
         val buttons = classDefByStrings(SEARCH_BAR_TAG, StringComparisonType.EQUALS)
-            .flatMap { owner -> owner.methods.mapNotNull { metaAiButtonSite(it, openers) } }
+            .flatMap { owner -> owner.methods.mapNotNull { metaAiButtonSite(it, openers, resolve) } }
         val button = buttons.singleOrNull() ?: throw PatchException(
             "$CHAT_LIST_PATCH: expected one search row that tags \"$SEARCH_BAR_TAG\" and builds a Meta AI button " +
                 "reporting \"$META_AI_ICON_CLICKED\", found ${buttons.size}",
         )
-        // 583's 64-bit tap asks a string table for its entry, so the taps are found by naming it.
-        val resolve: (MethodReference) -> Method? = { call -> classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) } }
         val pickers = methodsNaming(PEOPLE_PICKER_ENTRY, ::callsMetaAiLauncher).map { it.definingClass }.distinct()
             .mapNotNull { type -> classDefByOrNull(type)?.let { opener -> pickerRowOf(opener, resolve)?.let { row -> type to row } } }
         val (pickerOpener, pickerRow) = pickers.singleOrNull() ?: throw PatchException(
@@ -172,9 +174,27 @@ internal fun MutableMethod.leaveNotesRowEmptyWhileHidden(exit: Int) {
  * Right after the search row builds its Meta AI button, the button goes through the extension,
  * which hands back null while the switch is on; the row's own null check then leaves the button
  * out. The cast gives the register back its type for whatever reads it next.
+ *
+ * Where the build is outlined (584), the button's builder goes through the extension right before
+ * the call to the helper, into the site's free local, and a null skips the call, so the button is
+ * neither built nor added. The builder's own register is left as it was. Any jump to the call runs
+ * the check too.
  */
 internal fun MutableMethod.dropMetaAiButtonWhileHidden(site: MetaAiButtonSite) {
     val register = site.register
+    if (site.helper != null) {
+        val answer = site.answer ?: throw PatchException("$CHAT_LIST_PATCH: no free local before the outlined button build")
+        addInstructionsAtControlFlowLabel(
+            site.result,
+            """
+                invoke-static/range { v$register .. v$register }, $META_AI_BUTTON_HOOK
+                move-result-object v$answer
+                if-eqz v$answer, :built
+            """,
+            ExternalLabel("built", getInstruction(site.result + 1)),
+        )
+        return
+    }
     addInstructions(
         site.result + 1,
         """

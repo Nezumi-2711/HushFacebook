@@ -73,7 +73,8 @@ class ColourResolverFixtureTest {
      * wrapper, the view resolver's class and the class of the resolver the view resolver asks.
      */
     private fun routeOneClasses(bundle: File): Map<String, ClassDef> {
-        val named = FixtureDex.classes(bundle, setOf(DARK_COLOR_SCHEME, FDS_COLORS, FDS_COLOR_SCHEME))
+        val named = FixtureDex.classes(bundle, setOf(DARK_COLOR_SCHEME, FDS_COLOR_SCHEME)) +
+            fdsColorsOf(bundle).let { mapOf(it.type to it) }
         val view = viewResolver(named.getValue(FDS_COLOR_SCHEME))
         val viewClass = FixtureDex.classes(bundle, setOf(view.definingClass))
         val asked = intCalls(viewClass.getValue(view.definingClass).methods.single { it.descriptor() == view.toString() }).single()
@@ -250,10 +251,7 @@ class ColourResolverFixtureTest {
                 forgetMatches()
                 val name = bundle.name
                 val painters = FixtureDex.methodsWhere(bundle, { dex -> dex.methodSection.any { it.toString() == setNavigationBarColor } }) {
-                    AccessFlags.STATIC.isSet(it.accessFlags) && it.returnType == "V" &&
-                        it.parameterTypes.map(CharSequence::toString) ==
-                        listOf("Landroid/app/Activity;", "Landroid/view/Window;", "I") &&
-                        it.calls(setNavigationBarColor)
+                    it.isNavigationPainter()
                 }
                 assertEquals("$name: SystemNavigationBarUtil painters, ${painters.map { it.descriptor() }}", 1, painters.size)
                 val painted = painters.single().implementation!!.instructions.toList()
@@ -294,16 +292,6 @@ class ColourResolverFixtureTest {
         assertEquals("a declared build has no fixture", versions, checked)
     }
 
-    /** The one static (Activity, Window, int) method of [bundle] that calls setNavigationBarColor: the navigation bar's painter. */
-    private fun navigationPainterOf(bundle: File): Method {
-        val setNavigationBarColor = "Landroid/view/Window;->setNavigationBarColor(I)V"
-        return FixtureDex.methodsWhere(bundle, { dex -> dex.methodSection.any { it.toString() == setNavigationBarColor } }) {
-            AccessFlags.STATIC.isSet(it.accessFlags) && it.returnType == "V" &&
-                it.parameterTypes.map(CharSequence::toString) == listOf("Landroid/app/Activity;", "Landroid/view/Window;", "I") &&
-                it.calls(setNavigationBarColor)
-        }.single()
-    }
-
     /**
      * The navigation bar's painter takes the bar hook on each declared build, on its window and its
      * colour: AMOLED's, Material You's, and Material You's in place of AMOLED's when both are in.
@@ -329,7 +317,7 @@ class ColourResolverFixtureTest {
                     }
                     val hooked = context.mutableClassDefBy(painter.definingClass).methods.single { it.descriptor() == painter.descriptor() }
                     assertStatusBarHook(name, hooked, darkCheck, painter.implementation!!.instructions.toList(),
-                        if (you) NAVIGATION_BAR_YOU else NAVIGATION_BAR, 1, 2, setOf(NAVIGATION_BAR, NAVIGATION_BAR_YOU))
+                        if (you) NAVIGATION_BAR_YOU else NAVIGATION_BAR, 1, painter.parameterTypes.size - 1, setOf(NAVIGATION_BAR, NAVIGATION_BAR_YOU))
                 }
                 checked += version
             }
@@ -404,4 +392,26 @@ class ColourResolverFixtureTest {
         }
         assertEquals("a declared build has no fixture", versions, checked)
     }
+}
+
+/** The one static (Activity, Window, int) method of [bundle] that calls setNavigationBarColor: the navigation bar's painter. */
+internal fun navigationPainterOf(bundle: File): Method {
+    val setNavigationBarColor = "Landroid/view/Window;->setNavigationBarColor(I)V"
+    return FixtureDex.methodsWhere(bundle, { dex -> dex.methodSection.any { it.toString() == setNavigationBarColor } }) {
+        it.isNavigationPainter()
+    }.single()
+}
+
+/**
+ * A static (Activity, Window, int) method that calls setNavigationBarColor. 584 (LX/2LF;->A00)
+ * also takes its own class as the third parameter, so it is (Activity, Window, LX/2LF, int).
+ */
+private fun Method.isNavigationPainter(): Boolean {
+    val parameters = parameterTypes.map(CharSequence::toString)
+    return AccessFlags.STATIC.isSet(accessFlags) && returnType == "V" &&
+        parameters.size in 3..4 && parameters[0] == "Landroid/app/Activity;" && parameters[1] == "Landroid/view/Window;" &&
+        parameters.last() == "I" && (parameters.size == 3 || parameters[2] == definingClass) &&
+        implementation?.instructions?.any {
+            (it as? ReferenceInstruction)?.reference?.toString() == "Landroid/view/Window;->setNavigationBarColor(I)V"
+        } == true
 }

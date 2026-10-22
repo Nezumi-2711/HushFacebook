@@ -158,6 +158,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean keepFeedVideosMuted() {
+        return false;
+    }
+
     public static boolean keepProgressBar() {
         return false;
     }

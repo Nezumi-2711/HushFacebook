@@ -116,9 +116,9 @@ val hidePostsByWordsPatch = bytecodePatch(
 
 /**
  * GraphQLStory's one accessor of its message, held to the kept model class it answers and to
- * Facebook's own reading of it in toString. If toString stops calling it "message.text" or stops
- * reading the `text` field of it, the words may have moved, and a rule that guesses could hide the
- * wrong posts, so the patch stops.
+ * Facebook's own reading of it in toString, through a static reader or inline (584). If toString
+ * stops calling it "message.text" or stops reading the `text` field of it, the words may have
+ * moved, and a rule that guesses could hide the wrong posts, so the patch stops.
  */
 private fun BytecodePatchContext.messageAccessor(story: ClassDef): Method {
     val accessors = messageAccessors(story)
@@ -139,7 +139,7 @@ private fun BytecodePatchContext.messageAccessor(story: ClassDef): Method {
     val readers = messageTextReaders(toString, accessor).mapNotNull { call ->
         classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) }
     }
-    if (readers.none(::readsTextField)) {
+    if (readers.none(::readsTextField) && !readsMessageTextInline(toString, accessor)) {
         throw PatchException(
             "$PATCH: GraphQLStory.toString() no longer reads \"$MESSAGE_TEXT_LABEL\" as the $TEXT_FIELD of " +
                 "${accessor.name}()",

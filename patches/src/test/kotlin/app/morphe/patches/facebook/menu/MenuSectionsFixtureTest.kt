@@ -47,10 +47,11 @@ class MenuSectionsFixtureTest {
      * where this id was read (stock 582 on an emulator, 2026-10-10: 0x7f140452). 583 packs it the same
      * way, so its id is 582's moved by the shift between the two builds' tables (5 here, found from
      * the locale packs both ship, which stay plain FRSC), and the sections that draw the header load
-     * it. The unpacked 583 table is the check still owed.
+     * it. The unpacked 583 table is the check still owed. 584's header component (`LX/Lmm;`) loads
+     * the same five ids as 583's (`LX/S3S;`) in the same order, each 9 higher, so its label is 0x7f140460.
      */
     private val headerLabel = mapOf(
-        "583.0.0.39.55" to 0x7f140457,
+        "584.0.0.51.56" to 0x7f140460,
     )
 
     private val testKeys = listOf(UPGRADES_TEST_KEY, ALSO_FROM_META_TEST_KEY)

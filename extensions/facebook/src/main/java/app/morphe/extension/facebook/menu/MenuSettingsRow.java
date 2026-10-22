@@ -29,8 +29,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
 /**
  * The Hushfacebook row at the end of the Settings and privacy group in Facebook's Menu.
  *
- * <p>The group's rows come from one list builder, and every list it hands back passes through
- * {@link #withRow}, which adds this row once, after Facebook's own. The row is one of Facebook's
+ * <p>The group's rows come from one list, built by a builder of its own or, on 584, by the group's
+ * section itself, and every such list passes through {@link #withRow} before the group uses it,
+ * which adds this row once, after Facebook's own. The row is one of Facebook's
  * own row items, made by a factory the patch adds to the item class ({@value #FACTORY}), with the
  * first row's icon, the title "Hushfacebook settings" in the phone's language, no address to open
  * and the id {@link #ROW_ID}. The row is known by that id, never by its title. A tap on a row asks
@@ -104,7 +105,7 @@ public final class MenuSettingsRow {
     }
 
     /**
-     * Injection point, on each list the Settings and privacy group's builder hands back. Answers
+     * Injection point, on each list the Settings and privacy group's rows are built into. Answers
      * the list with the Hushfacebook row after Facebook's rows, the Saved row before it when that's
      * wanted, or the list as it was when a row of ours is already there, the list is empty or
      * anything fails. Never null and never throws.

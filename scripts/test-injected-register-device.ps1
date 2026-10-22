@@ -449,6 +449,73 @@ try {
         [System.IO.File]::Delete($wiringCopy)
     }
 
+    # The verifier receipt names the bundle by the identity in the patched APK's own dex: the one
+    # string getPatchesBuildIdentity returns, in whichever classes*.dex it sits. One outside a dex,
+    # or cut short, isn't the APK's, and two different ones can't be told apart.
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $identityCase = Join-Path ([System.IO.Path]::GetTempPath()) ("hushfacebook-identity-" + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $identityCase | Out-Null
+    $one = 'sha256=' + ('a' * 64) + '; source=clean:' + ('b' * 40) + '; tree=' + ('c' * 40) + '; inputs=' + ('d' * 64)
+    $other = 'sha256=' + ('e' * 64) + '; source=unknown; inputs=' + ('f' * 64)
+    try {
+        function New-IdentityApk([string]$Name, [System.Collections.IDictionary]$Entries) {
+            $path = Join-Path $identityCase $Name
+            $archive = [System.IO.Compression.ZipFile]::Open($path, [System.IO.Compression.ZipArchiveMode]::Create)
+            try {
+                foreach ($entryName in $Entries.Keys) {
+                    $stream = $archive.CreateEntry($entryName).Open()
+                    try {
+                        # A dex string among other bytes: its length, its bytes and a zero.
+                        $bytes = [byte[]](@(0x64, 0x65, 0x78, 0x0a, 0x00, 0xf6, 0x01) +
+                            [System.Text.Encoding]::ASCII.GetBytes($Entries[$entryName]) + @(0x00, 0xff, 0x10))
+                        $stream.Write($bytes, 0, $bytes.Length)
+                    } finally { $stream.Dispose() }
+                }
+            } finally { $archive.Dispose() }
+            return $path
+        }
+        $carries = New-IdentityApk 'carries.apk' ([ordered]@{ 'classes.dex' = 'nothing here'; 'classes7.dex' = "x$one"; 'resources.arsc' = $other })
+        Assert-True ((Get-ApkPatchBuild -Apk $carries) -ceq $one) "The identity wasn't read out of classes7.dex: $(Get-ApkPatchBuild -Apk $carries)"
+        $twice = New-IdentityApk 'twice.apk' ([ordered]@{ 'classes.dex' = $one; 'classes2.dex' = $one })
+        Assert-True ((Get-ApkPatchBuild -Apk $twice) -ceq $one) 'The same identity in two dex files read as two.'
+        $none = New-IdentityApk 'none.apk' ([ordered]@{ 'classes.dex' = 'sha256=' + ('a' * 63) + '; source=unknown; inputs=' + ('d' * 64)
+            'lib/classes.dex' = $one; 'assets/identity.txt' = $one })
+        Assert-True ($null -eq (Get-ApkPatchBuild -Apk $none)) 'An identity outside the APK''s own dex, or a cut one, was read as its own.'
+        $two = New-IdentityApk 'two.apk' ([ordered]@{ 'classes.dex' = $one; 'classes2.dex' = $other })
+        $named = $null
+        try { Get-ApkPatchBuild -Apk $two | Out-Null } catch { $named = $_.Exception.Message }
+        Assert-True ($named -like '*2 patch build identities*') "An APK with two bundles' identities was read as one of them: $named"
+    } finally {
+        Remove-Item -LiteralPath $identityCase -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    # The receipt is a PASS only when both halves passed and no message differs, and it keeps each
+    # differing message word for word, through JSON and back.
+    $same = [pscustomobject]@{ Valid = $true; CleanTotal = 2; PatchedTotal = 2; Deltas = @() }
+    $passing = New-VerifierReceipt -Serial 'TESTPHONE01' -Device 'SM-S908U1' -Facebook '584.0.0.51.56' -PatchBuild $one `
+        -PatchedApkSha256 ('0' * 64) -StaticPassed $true -Comparison $same -Finished '2026-10-22T05:00:00Z'
+    $passingRead = $passing | ConvertTo-Json -Depth 5 | ConvertFrom-Json
+    Assert-True ($passingRead.result -ceq 'PASS' -and $passingRead.static -ceq 'PASS' -and $passingRead.emulator -eq $false -and
+        $passingRead.patchBuild -ceq $one -and $passingRead.cleanMessages -eq 2 -and $passingRead.patchedMessages -eq 2 -and
+        $passingRead.deltas -is [array] -and $passingRead.deltas.Count -eq 0 -and $passing.finished -ceq '2026-10-22T05:00:00Z') `
+        "A clean run's receipt didn't read back as a PASS: $($passing | ConvertTo-Json -Depth 5 -Compress)"
+    $crash = 'Verification error in X.BZ3 X.BZ1.A0G'
+    $extra = [pscustomobject]@{ Valid = $false; CleanTotal = 0; PatchedTotal = 1
+        Deltas = @([pscustomobject]@{ Kind = 'extra'; Message = $crash; Clean = 0; Patched = 1; Difference = 1 }) }
+    $failing = New-VerifierReceipt -Serial 'emulator-5554' -Device 'sdk_gphone64_x86_64' -PatchBuild $one -StaticPassed $true -Comparison $extra
+    $failingRead = $failing | ConvertTo-Json -Depth 5 | ConvertFrom-Json
+    Assert-True ($failingRead.result -ceq 'FAIL' -and $failingRead.emulator -eq $true -and $failingRead.deltas -is [array] -and
+        $failingRead.deltas.Count -eq 1 -and $failingRead.deltas[0].kind -ceq 'extra' -and $failingRead.deltas[0].message -ceq $crash -and
+        $failingRead.deltas[0].clean -eq 0 -and $failingRead.deltas[0].patched -eq 1) `
+        "A run with an extra verifier message wasn't written as a FAIL naming it: $($failing | ConvertTo-Json -Depth 5 -Compress)"
+    $staticFailed = New-VerifierReceipt -Serial 'TESTPHONE01' -Device 'SM-S908U1' -PatchBuild $one -StaticPassed $false -Comparison $same
+    Assert-True ($staticFailed.result -ceq 'FAIL' -and $staticFailed.static -ceq 'FAIL') 'A run whose static half failed was written as a PASS.'
+    # A comparison that calls the tallies different without listing a difference isn't a PASS either.
+    $unlisted = [pscustomobject]@{ Valid = $false; CleanTotal = 0; PatchedTotal = 0; Deltas = @() }
+    Assert-True ((New-VerifierReceipt -Serial 'TESTPHONE01' -Device 'SM-S908U1' -PatchBuild $one -StaticPassed $true `
+        -Comparison $unlisted).result -ceq 'FAIL') 'A comparison that failed with no difference listed was written as a PASS.'
+
 } finally {
     [System.IO.File]::Delete($fixture)
 }

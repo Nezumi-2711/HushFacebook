@@ -95,6 +95,7 @@ import app.morphe.extension.facebook.comments.MetaAiSummaries;
 import app.morphe.extension.facebook.composer.TagSuggestionsForTests;
 import app.morphe.extension.facebook.media.HdrBrightnessForTests;
 import app.morphe.extension.facebook.media.PictureInPictureForTests;
+import app.morphe.extension.facebook.media.FeedSound;
 import app.morphe.extension.facebook.media.FrameStepForTests;
 import app.morphe.extension.facebook.media.ProgressBar;
 import app.morphe.extension.facebook.media.QualityChoiceForTests;
@@ -864,6 +865,9 @@ public class PausedHooksTest {
                 HdrBrightnessForTests::answersTheScreenAsShowingNoHdr, HdrBrightnessForTests::dropsTheHdrRendition));
         // A sink's sound starts with its silent parts skipped.
         probes.put(PatchFamily.SKIP_SILENCE, Collections.singletonList(() -> SkipSilence.skipSilence(false)));
+        // A new session starts muted, and a sound-on that isn't the user's keeps the feed muted.
+        probes.put(PatchFamily.KEEP_FEED_VIDEOS_MUTED, Arrays.asList(() -> !FeedSound.sessionSound(true),
+                () -> !FeedSound.soundChange(null, true, false)));
         // A reel's bar is kept full size, a full-screen video sets no fade timer, a press off the
         // bar's thumb is held as a tap to seek, the next reel's bar starts over, and a bar still in
         // Facebook's thin look takes the kept look.

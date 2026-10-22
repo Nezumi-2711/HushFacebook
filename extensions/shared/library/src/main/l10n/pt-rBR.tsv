@@ -933,6 +933,10 @@ When Facebook also sends an HDR video in SDR at the same size, play that version
 Skip silent parts	Pular partes em silêncio
 # context: summary of that switch; how-tos are tutorial videos
 Videos, reels and stories jump past the quiet stretches in their sound, so talks and how-tos get to the point sooner.	Vídeos, Reels e Stories pulam os trechos em silêncio do áudio, então palestras e tutoriais chegam mais rápido ao ponto.
+# context: switch title under Playback; feed videos stay silent until the user turns their sound on
+Keep feed videos muted	Manter vídeos do feed sem som
+# context: summary of that switch; the speaker is the sound button on a video, volume up is the phone's key
+Videos in your feed start with the sound off every time you open Facebook, and only you turn it on. Tap a video's speaker or press volume up to hear it.	Os vídeos do seu feed começam sem som toda vez que você abre o Facebook, e só você liga o som. Toque no alto-falante de um vídeo ou aperte o botão de aumentar o volume para ouvir.
 # context: switch title under Playback; keeps a video's progress bar (the line showing how far it has played) on screen
 Keep the progress bar	Manter a barra de progresso
 # context: summary of that switch; a reel is a short vertical video
@@ -1537,7 +1541,7 @@ Takes the speaker button off the bottom of the side of reels. A change shows fro
 # context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
 Hide the reaction preview on posts	Ocultar a prévia de reações nas publicações
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
-Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions.	Oculta os ícones de reação empilhados e a contagem de reações abaixo das publicações. O espaço continua lá, então tocar onde eles estavam ainda abre a lista de reações.
+Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions. To take the number off the Like button too, turn on Hide counts on posts.	Oculta os ícones de reação empilhados e a contagem de reações abaixo das publicações. O espaço continua lá, então tocar onde eles estavam ainda abre a lista de reações. Para tirar também o número do botão Curtir, ative Ocultar os números nas publicações.
 # context: switch title under Comments; the reaction preview is the stack of reaction icons in the corner of a comment
 Hide the reaction preview on comments	Ocultar a prévia de reações nos comentários
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions

@@ -1037,6 +1037,10 @@ When Facebook also sends an HDR video in SDR at the same size, play that version
 Skip silent parts	跳过无声片段
 # context: summary of that switch; how-tos are tutorial videos
 Videos, reels and stories jump past the quiet stretches in their sound, so talks and how-tos get to the point sooner.	视频、Reels 和快拍会跳过声音中的安静片段，让讲话和教程更快进入正题。
+# context: switch title under Playback; feed videos stay silent until the user turns their sound on
+Keep feed videos muted	动态视频保持静音
+# context: summary of that switch; the speaker is the sound button on a video, volume up is the phone's key
+Videos in your feed start with the sound off every time you open Facebook, and only you turn it on. Tap a video's speaker or press volume up to hear it.	每次打开 Facebook 时，动态中的视频都会静音播放，只有你自己能打开声音。点按视频的扬声器图标或按音量加键即可收听。
 # context: switch title under Playback; keeps a video's progress bar (the line showing how far it has played) on screen
 Keep the progress bar	保持进度条显示
 # context: summary of that switch; a reel is a short vertical video
@@ -1640,7 +1644,7 @@ Takes the speaker button off the bottom of the side of reels. A change shows fro
 # context: switch title under News feed; the reaction preview is the stack of reaction icons and the line with the number of reactions under a post
 Hide the reaction preview on posts	隐藏帖子上的回应预览
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
-Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions.	隐藏帖子下方叠放的回应图标和回应数量。空间仍保留，因此点按它们原来所在的位置仍会打开回应列表。
+Hides the stacked reaction icons and the reactions count under posts. The space stays, so a tap where they were still opens the list of reactions. To take the number off the Like button too, turn on Hide counts on posts.	隐藏帖子下方叠放的回应图标和回应数量。空间仍保留，因此点按它们原来所在的位置仍会打开回应列表。如果也要去掉“赞”按钮上的数字，请打开“隐藏帖子上的数字”。
 # context: switch title under Comments; the reaction preview is the stack of reaction icons in the corner of a comment
 Hide the reaction preview on comments	隐藏评论上的回应预览
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions

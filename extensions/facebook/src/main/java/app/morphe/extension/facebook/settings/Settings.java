@@ -916,6 +916,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_skip_silent_parts", FALSE);
 
     /**
+     * Feed videos start muted in every new session, and only a tap or the volume up key turns their
+     * sound on ({@link app.morphe.extension.facebook.media.FeedSound}). Starts off. Off or paused,
+     * Facebook sets the feed's sound as before. A restart starts the new session that mutes it.
+     */
+    public static final BooleanSetting KEEP_FEED_VIDEOS_MUTED =
+            new BooleanSetting("hushfacebook_keep_feed_videos_muted", FALSE, true);
+
+    /**
      * A reel's progress bar stays full size, thumb and all, and a full-screen video's controls stay
      * until a tap hides them ({@link app.morphe.extension.facebook.media.ProgressBar}). Off by
      * default. Off or paused, Facebook shrinks the bar and fades the controls as before.

@@ -9,6 +9,7 @@ import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
+import app.morphe.patches.facebook.ads.affiliate.writesRegister
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.misc.appicons.logoDressSite
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
@@ -26,6 +27,8 @@ import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -53,9 +56,14 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
  *   (the S22's account, 2026-10-17): NavigationBar (a kept class) makes every button from a spec
  *   (arm64 and armv7 LX/28u;) in its one instance method that takes a spec and calls setId, setTag
  *   and setOnLongClickListener (A0B). It makes the button's glyph first (LX/2BK;, the one
- *   new-instance there built with just a Context), then reads the spec's one String field, its
- *   name: "messenger" for the Messenger button. The hook goes right after the glyph is made, with
- *   the glyph and that name, so it runs before the glyph's first count.
+ *   new-instance there built with just a Context), then reads the spec's name, the String field it
+ *   hands the button's click listener (LX/2Cd;) with the bar and the spec: "messenger" for the
+ *   Messenger button. The hook goes right after the glyph is made, with the glyph and that name, so
+ *   it runs before the glyph's first count. 584 (2026-10-22, spec LX/3GO;, method A0A, listener
+ *   LX/3Gp;) inlines the content description helper (583's static NavigationBar->A06) into the same
+ *   method, so a second String field of the spec is read there too, the label (A0E); it goes to
+ *   setContentDescription and never to a constructor, so the name is still the one field handed
+ *   to the listener (A0F on both).
  * - That glyph class is shared by every button of the newer bar. Its count setters are the
  *   `(I)V` and `(FbUserSession, I, Z)V` methods of the one interface it implements that declares
  *   both (arm64 LX/DQv;, F32 and F33, the same interface the Messenger button class implements).
@@ -165,10 +173,36 @@ internal class SpecButtonSite(
 private fun FieldReference.smali() = "$definingClass->$name:$type"
 
 /**
+ * Whether the String read into a register at [read] of [code] is handed to a constructor taking the
+ * bar and [spec], as the button's click listener is: the first instructions after the read, up to
+ * a branch, a way out or another write to the register, call such an `<init>` with the register.
+ */
+private fun handsToListener(code: List<Instruction>, read: Int, spec: String): Boolean {
+    val register = (code[read] as OneRegisterInstruction).registerA
+    for (instruction in code.subList(read + 1, code.size)) {
+        val init = instruction.reference() as? MethodReference
+        if ((instruction.opcode == Opcode.INVOKE_DIRECT || instruction.opcode == Opcode.INVOKE_DIRECT_RANGE) &&
+            init?.name == "<init>" && init.parameterTypes.map(CharSequence::toString).containsAll(listOf(NAVIGATION_BAR, spec))
+        ) {
+            val handed = when (instruction) {
+                is RegisterRangeInstruction -> instruction.startRegister until instruction.startRegister + instruction.registerCount
+                is FiveRegisterInstruction ->
+                    listOf(instruction.registerC, instruction.registerD, instruction.registerE, instruction.registerF, instruction.registerG)
+                        .take(instruction.registerCount)
+                else -> emptyList()
+            }
+            if (register in handed) return true
+        }
+        if (instruction is OffsetInstruction || !instruction.opcode.canContinue() || writesRegister(instruction, register)) return false
+    }
+    return false
+}
+
+/**
  * The newer bar's spec-to-button method in [bar]: its one instance method that takes one spec and
  * calls setId, setTag and setOnLongClickListener. In it, the one object made with just a Context is
- * the glyph, and the one String field read off the spec is its name. Refuses unless each is found
- * exactly once.
+ * the glyph, and the one String field read off the spec and handed to the click listener
+ * ([handsToListener]) is its name. Refuses unless each is found exactly once.
  */
 internal fun specButtonSite(bar: ClassDef): SpecButtonSite {
     val makers = bar.methods.filter { method ->
@@ -190,12 +224,14 @@ internal fun specButtonSite(bar: ClassDef): SpecButtonSite {
     val at = made.singleOrNull() ?: refuse("expected one object made with just a Context in $where, found ${made.size}")
     // The spec is the last register: p1 of an instance method with one object parameter.
     val specRegister = method.implementation!!.registerCount - 1
-    val names = code.filter { instruction ->
+    val names = code.indices.filter { index ->
+        val instruction = code[index]
         val field = instruction.reference() as? FieldReference
         instruction.opcode == Opcode.IGET_OBJECT && field != null && field.definingClass == spec && field.type == STRING &&
-            (instruction as TwoRegisterInstruction).registerB == specRegister
-    }.map { it.reference() as FieldReference }.distinctBy { it.smali() }
-    val name = names.singleOrNull() ?: refuse("expected one String field of $spec read in $where, found ${names.map { it.smali() }}")
+            (instruction as TwoRegisterInstruction).registerB == specRegister && handsToListener(code, index, spec)
+    }.map { code[it].reference() as FieldReference }.distinctBy { it.smali() }
+    val name = names.singleOrNull()
+        ?: refuse("expected one String field of $spec read in $where and handed to its click listener, found ${names.map { it.smali() }}")
     return SpecButtonSite(method, (code[at - 1].reference() as TypeReference).type, at, (code[at] as FiveRegisterInstruction).registerC, name)
 }
 

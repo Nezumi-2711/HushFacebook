@@ -28,7 +28,8 @@ import app.morphe.extension.shared.settings.BaseSettings;
  *
  * <p>Facebook draws each row from a server-built entry. The patch hands over each entry's node and
  * the module tree read off it as the row is drawn, and draws the module this answers, an empty row
- * for null. The For you section, the searches Facebook suggests with a Refresh button, is one entry
+ * for null. Facebook 584 tests the node for null before it reads the module, so there the patch hands
+ * over the node alone, and a null node is drawn as the same empty row. The For you section, the searches Facebook suggests with a Refresh button, is one entry
  * whose node is a {@link #FOR_YOU_NODE} and whose {@code rendered_modules} string, which Facebook
  * hands its own performance logger, names {@link #FOR_YOU_MODULE} (583 on the S22, 2026-10-20).
  * Recent searches don't come through here. No account checked so far was served People you may know
@@ -40,7 +41,8 @@ import app.morphe.extension.shared.settings.BaseSettings;
  * or search text gets out. Each distinct line is logged once, up to {@link #MAX_SHAPES}, and after
  * that no entry is read for the log.
  *
- * <p>Off, paused, before the settings are ready, or when anything here fails, the module is Facebook's own.
+ * <p>Off, paused, before the settings are ready, or when anything here fails, the module or node is
+ * Facebook's own.
  */
 public final class PreSearchSections {
     static final int MAX_SHAPES = 32;
@@ -80,19 +82,36 @@ public final class PreSearchSections {
      */
     @Nullable
     public static Object entry(@Nullable Object node, @Nullable Object module) {
-        log(node, module);
+        log(node, module, true);
+        return hides(node, module != null) ? null : module;
+    }
+
+    /**
+     * Injection point in 584's item case, right after an entry's node is read and before Facebook
+     * tests it for null and reads its module. Logs the node with Debug logging on, then answers the
+     * node to draw. Never throws.
+     *
+     * @param node the entry's node, null when Facebook draws an empty row.
+     * @return the node to draw, null for Facebook's empty row.
+     */
+    @Nullable
+    public static Object node(@Nullable Object node) {
+        if (node != null) log(node, null, false);
+        return hides(node, node != null) ? null : node;
+    }
+
+    /** Whether a row that would be drawn from the node is For you and goes. Counts it when it does. */
+    private static boolean hides(@Nullable Object node, boolean drawn) {
         try {
             HookStatus.invoked(FAMILY);
-            if (module == null || !Utils.settingsReady() || !Settings.HIDE_SEARCH_FOR_YOU.get() || !forYou(node)) {
-                return module;
-            }
+            if (!drawn || !Utils.settingsReady() || !Settings.HIDE_SEARCH_FOR_YOU.get() || !forYou(node)) return false;
             HookStatus.bound(FAMILY, HOOK);
             HookStatus.counted(FAMILY, HIDDEN);
             Logger.printDebug(() -> "Search screen: drew For you as an empty row");
-            return null;
+            return true;
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, HOOK, failure);
-            return module;
+            return false;
         }
     }
 
@@ -107,14 +126,15 @@ public final class PreSearchSections {
         return false;
     }
 
-    private static void log(@Nullable Object node, @Nullable Object module) {
+    /** Logs the node, and the module unless {@code moduleRead} is false (584 hands over the node alone). */
+    private static void log(@Nullable Object node, @Nullable Object module, boolean moduleRead) {
         if (!enabled() || full) return;
         try {
             String nodeType = FeedFilter.typeName(node);
             // A node whose type can't be read may be released, and its strings aren't asked.
             String modules = nodeType == null ? "unread" : modules(node);
-            record("node=" + name(nodeType) + " module=" + (module == null ? "none" : name(FeedFilter.typeName(module)))
-                    + " rendered_modules=" + modules);
+            String moduleName = !moduleRead ? "" : " module=" + (module == null ? "none" : name(FeedFilter.typeName(module)));
+            record("node=" + name(nodeType) + moduleName + " rendered_modules=" + modules);
         } catch (Throwable unreadable) {
             record("unreadable entry");
         }

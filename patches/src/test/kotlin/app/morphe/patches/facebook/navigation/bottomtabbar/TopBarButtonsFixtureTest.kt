@@ -34,8 +34,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The top bar's three hides (#181) on every Facebook build the bundle declares (arm64 and armv7,
- * whose Redex names differ): the bar's builder holding setupMessengerGlyphView, the Messenger button
+ * The top bar's three hides (#181) on every Facebook build the bundle declares (every ABI with a
+ * fixture, whose Redex names differ): the bar's builder holding setupMessengerGlyphView, the Messenger button
  * class it makes and adds, that class's two count setters, and the logo site. The newer bar some
  * accounts get instead: NavigationBar's spec-to-button method, its glyph and that glyph's count
  * setters. Then the hooks go in on the real classes, which also assembles their smali. Reads the
@@ -136,8 +136,8 @@ class TopBarButtonsFixtureTest {
                 checked += "$name"
             }
         }
-        assertTrue("a declared build has no fixture", checked.size >= versions.size)
-        assertTrue("both ABIs should be checked, got $checked", checked.size >= 2)
+        // 584 has an arm64 bundle only so far, so a declared build needs one fixture, not one per ABI.
+        assertTrue("a declared build has no fixture, got $checked", versions.all { v -> checked.any { "-$v-" in it } })
     }
 
     /** The newer bar, its button glyph class and the interfaces the glyph implements, out of [bundle]. */
@@ -216,7 +216,7 @@ class TopBarButtonsFixtureTest {
                 checked += name
             }
         }
-        assertTrue("both ABIs should be checked, got $checked", checked.size >= 2)
+        assertTrue("a declared build has no fixture, got $checked", versions.all { v -> checked.any { "-$v-" in it } })
     }
 
     private fun countMethod(context: BytecodePatchContext, type: String, count: CountMethod) =

@@ -49,16 +49,14 @@ class SuggestedStoriesFixtureTest {
      */
     private val expectedType = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to ("CF9" to "LX/2FS;"),
-            "armeabi-v7a" to ("CEr" to "LX/2FS;"),
+            "arm64-v8a" to ("CFi" to "LX/2Cd;"),
         ),
     )
 
     /** The query builders that set skip_srtt_item_list, per build and then by ABI (issue #21). */
     private val expectedSkips = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to setOf("LX/1tt;->A03", "LX/1tt;->A07"),
-            "armeabi-v7a" to setOf("LX/1tt;->A03", "LX/1tt;->A07"),
+            "arm64-v8a" to setOf("LX/1rk;->A03", "LX/1rk;->A07"),
         ),
     )
 

@@ -163,6 +163,7 @@ final class SwitchLabels {
         if (setting == Settings.TURN_OFF_HDR_BRIGHTNESS) return L10n.t("Turn off HDR brightness");
         if (setting == Settings.PREFER_SDR_RENDITIONS) return L10n.t("Play SDR versions of HDR videos");
         if (setting == Settings.SKIP_SILENT_PARTS) return L10n.t("Skip silent parts");
+        if (setting == Settings.KEEP_FEED_VIDEOS_MUTED) return L10n.t("Keep feed videos muted");
         if (setting == Settings.KEEP_PROGRESS_BAR) return L10n.t("Keep the progress bar");
         if (setting == Settings.KEEP_PROGRESS_BAR_TIME) return L10n.t("Show a reel's time");
         if (setting == Settings.TAP_TO_SEEK) return L10n.t("Tap the bar to seek");

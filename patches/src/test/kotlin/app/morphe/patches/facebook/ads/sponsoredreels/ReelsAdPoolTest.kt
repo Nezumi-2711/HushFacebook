@@ -37,12 +37,12 @@ class ReelsAdPoolTest {
 
     /**
      * The pool class and its two vends in each declared build, then by the bundle's ABI. On 583 the
-     * two builds share the vends' names but not the pool's.
+     * two builds shared the vends' names but not the pool's. 584 keeps the pool's name and moves
+     * both vends one letter on.
      */
     private val expected = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to ("LX/6JM;" to listOf("A0S", "A0U")),
-            "armeabi-v7a" to ("LX/6Js;" to listOf("A0S", "A0U")),
+            "arm64-v8a" to ("LX/5pp;" to listOf("A0T", "A0V")),
         ),
     )
 

@@ -19,6 +19,7 @@ import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -41,6 +42,12 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
  * lists TRENDING_QUERY_SUGGESTION there. The extension logs, with Debug logging on, each entry's type
  * names and module names, never its id or text, and answers the module to draw: null, Facebook's
  * empty row, while Hide For you in search is on and the entry is For you.
+ *
+ * 584 (2026-10-22) reads it the other way round. The item case of LX/CEc;->A2S reads the node
+ * (LX/7L1;->A00 to LX/7L2), tests it for null, then reads the module with the node's own no-argument
+ * accessor (LX/7L2;->A00 to LX/7L3), tests that, and only then turns it into a tree (LX/A86;->A0M).
+ * Both null tests jump to the same empty row, so there the extension is handed the node alone, right
+ * after it's read, and its answer is the node: null draws that empty row.
  */
 
 /** The name the pre-search section gives itself. */
@@ -52,13 +59,28 @@ internal const val PRE_SEARCH_LIST = "null_state_results_paginating"
 internal const val PRE_SEARCH_ENTRY =
     "$EXTENSION_PACKAGE/search/PreSearchSections;->entry(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
 
+internal const val PRE_SEARCH_NODE =
+    "$EXTENSION_PACKAGE/search/PreSearchSections;->node(Ljava/lang/Object;)Ljava/lang/Object;"
+
 private const val PAGINABLE_LIST_READER = "getCachedPaginableTreeList"
 
 /**
- * Where an entry is drawn: [read] is the `move-result-object` keeping the [module] tree read off the
- * [node], whose reader answers a [moduleType].
+ * Where an entry is drawn. Read by a static reader (583), [read] is the `move-result-object` keeping
+ * the [module] tree read off the [node], and the hook replaces the module. Read [byNode] (584), [read]
+ * keeps the node, which Facebook tests for null before its accessor answers the [module], and the
+ * hook replaces the node. [type] is what the replaced register holds: the reader's answer or the node.
  */
-internal data class PreSearchSite(val method: Method, val read: Int, val node: Int, val module: Int, val moduleType: String)
+internal data class PreSearchSite(
+    val method: Method,
+    val read: Int,
+    val node: Int,
+    val module: Int,
+    val type: String,
+    val byNode: Boolean = false,
+) {
+    /** The register the hook's answer goes back into. */
+    val kept get() = if (byNode) node else module
+}
 
 /**
  * The entry class of the pre-search list: the `const-class` loaded right before the
@@ -96,8 +118,10 @@ internal fun BytecodePatchContext.preSearchSections(): List<ClassDef> =
 
 /**
  * Each place in [section]'s own (non-static) methods that reads an [entry]'s node with a no-argument
- * call, tests it for null, hands it first to a static (tree, Class, int, int) reader and keeps that
- * reader's answer: the module tree the entry is drawn from.
+ * call, tests it for null, and then either hands it first to a static (tree, Class, int, int) reader
+ * and keeps that reader's answer, the module tree the entry is drawn from, or (584) asks the node's
+ * own no-argument accessor for the module and tests that for null too, jumping where the node's test
+ * does.
  */
 internal fun preSearchSites(section: ClassDef, entry: String): List<PreSearchSite> =
     section.methods.filterNot { AccessFlags.STATIC.isSet(it.accessFlags) }.flatMap { method ->
@@ -117,6 +141,7 @@ private fun siteAt(method: Method, code: List<Instruction>, index: Int, entry: S
     if (code.getOrNull(index + 2)?.opcode != Opcode.IF_EQZ || (code[index + 2] as OneRegisterInstruction).registerA != node) {
         return null
     }
+    nodeSiteAt(method, code, index, nodeRead.returnType, node)?.let { return it }
     val reader = (index + 3 until minOf(code.size, index + 9)).firstOrNull { at ->
         val instruction = code[at]
         val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference
@@ -134,11 +159,32 @@ private fun siteAt(method: Method, code: List<Instruction>, index: Int, entry: S
     return PreSearchSite(method, reader + 1, node, module, moduleType)
 }
 
+/** 584's shape after the node's null test at [index] + 2: the node's accessor, its answer kept and tested. */
+private fun nodeSiteAt(method: Method, code: List<Instruction>, index: Int, nodeType: String, node: Int): PreSearchSite? {
+    val call = code.getOrNull(index + 3)?.takeIf { it.opcode == Opcode.INVOKE_VIRTUAL } as? FiveRegisterInstruction ?: return null
+    val ref = (call as ReferenceInstruction).reference as? MethodReference ?: return null
+    if (call.registerCount != 1 || call.registerC != node ||
+        ref.definingClass != nodeType || ref.parameterTypes.isNotEmpty() || !ref.returnType.startsWith("L")
+    ) {
+        return null
+    }
+    if (code.getOrNull(index + 4)?.opcode != Opcode.MOVE_RESULT_OBJECT) return null
+    val module = (code[index + 4] as OneRegisterInstruction).registerA
+    if (code.getOrNull(index + 5)?.opcode != Opcode.IF_EQZ || (code[index + 5] as OneRegisterInstruction).registerA != module) {
+        return null
+    }
+    val addresses = code.runningFold(0) { address, it -> address + it.codeUnits }
+    fun target(at: Int) = addresses[at] + (code[at] as OffsetInstruction).codeOffset
+    if (target(index + 2) != target(index + 5)) return null
+    return PreSearchSite(method, index + 1, node, module, nodeType, byNode = true)
+}
+
 /**
  * Right after the module tree is kept, hand the node and the module to the extension and keep its
  * answer as the module, cast back to the reader's type, so Facebook's own null test draws the empty
- * row for a null. Refuses unless the section, its entry class and one site are found, and nothing
- * jumps past the call.
+ * row for a null. Where the node is tested first (584), hand over the node right after it's kept and
+ * keep the answer as the node instead. Refuses unless the section, its entry class and one site are
+ * found, and nothing jumps past the call.
  */
 internal fun BytecodePatchContext.hookPreSearchSections() {
     val entry = preSearchEntryType() ?: throw PatchException("no single entry class for \"$PRE_SEARCH_LIST\"")
@@ -151,16 +197,18 @@ internal fun BytecodePatchContext.hookPreSearchSections() {
     if (site.node > 15 || site.module > 15) {
         throw PatchException("${section.type}->${site.method.name} keeps an entry past v15")
     }
-    // A label on the module's null test stays there, so a jump to it would skip the call.
+    // A label on the null test stays there, so a jump to it would skip the call.
     if (site.read + 1 in branchTargets(site.method.implementation!!.instructions.toList())) {
-        throw PatchException("${section.type}->${site.method.name} jumps to the module's null test")
+        throw PatchException("${section.type}->${site.method.name} jumps to the null test of what it keeps")
     }
+    val hand = if (site.byNode) "invoke-static { v${site.node} }, $PRE_SEARCH_NODE"
+    else "invoke-static { v${site.node}, v${site.module} }, $PRE_SEARCH_ENTRY"
     mutableClassDefBy(section.type).findMutableMethodOf(site.method).addInstructions(
         site.read + 1,
         """
-            invoke-static { v${site.node}, v${site.module} }, $PRE_SEARCH_ENTRY
-            move-result-object v${site.module}
-            check-cast v${site.module}, ${site.moduleType}
+            $hand
+            move-result-object v${site.kept}
+            check-cast v${site.kept}, ${site.type}
         """,
     )
 }

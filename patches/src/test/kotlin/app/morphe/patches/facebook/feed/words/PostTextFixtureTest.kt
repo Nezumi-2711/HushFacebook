@@ -69,18 +69,24 @@ class PostTextFixtureTest {
 
                 val toString = storyToString(story) ?: throw AssertionError("${bundle.name}: GraphQLStory has no toString()")
                 val readers = messageTextReaders(toString, message)
-                assertEquals("${bundle.name}: the readers toString hands the message to", 1, readers.size)
                 val helpers = staticStringReaders(toString)
                 val owners = FixtureDex.classes(bundle, helpers.map { it.definingClass }.toSet())
                 fun resolved(call: MethodReference) = owners[call.definingClass]?.let { resolveStatic(it, call) }
                     ?: throw AssertionError("${bundle.name}: $call is not a static method in the APK")
-                assertTrue("${bundle.name}: toString doesn't read the $TEXT_FIELD of the message",
-                    readsTextField(resolved(readers.single())))
+                // Up to 583 toString hands the message to one static reader; 584 reads it inline.
+                if (readers.isEmpty()) {
+                    assertTrue("${bundle.name}: toString doesn't read the $TEXT_FIELD of the message",
+                        readsMessageTextInline(toString, message))
+                } else {
+                    assertEquals("${bundle.name}: the readers toString hands the message to", 1, readers.size)
+                    assertTrue("${bundle.name}: toString doesn't read the $TEXT_FIELD of the message",
+                        readsTextField(resolved(readers.single())))
+                }
 
                 // The controls: toString's other string helpers (the id, the cache id, an actor's
                 // name) read other fields, and no other TextWithEntities accessor of the story is the
                 // one toString calls "message.text".
-                val others = helpers.filter { it != readers.single() }
+                val others = helpers.filter { it !in readers }
                 assertTrue("${bundle.name}: toString has no other string helper to hold this against", others.size >= 2)
                 for (other in others) {
                     assertFalse("${bundle.name}: $other reads $TEXT_FIELD too", readsTextField(resolved(other)))
@@ -91,7 +97,7 @@ class PostTextFixtureTest {
                 assertTrue("${bundle.name}: no other accessor of TextWithEntities to hold this against", siblings.size >= 3)
                 for (sibling in siblings) {
                     assertTrue("${bundle.name}: toString calls ${sibling.name}() message text too",
-                        messageTextReaders(toString, sibling).isEmpty())
+                        messageTextReaders(toString, sibling).isEmpty() && !readsMessageTextInline(toString, sibling))
                 }
 
                 val attached = attachedStoryAccessors(story)

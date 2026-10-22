@@ -200,7 +200,7 @@ final class VideoPages {
                 || build.contains(PatchFamily.FRAME_STEP)
                 || build.contains(PatchFamily.PLAYBACK_QUALITY) || build.contains(PatchFamily.PICTURE_IN_PICTURE)
                 || build.contains(PatchFamily.HDR_BRIGHTNESS) || build.contains(PatchFamily.SKIP_SILENCE)
-                || build.contains(PatchFamily.PROGRESS_BAR)) {
+                || build.contains(PatchFamily.KEEP_FEED_VIDEOS_MUTED) || build.contains(PatchFamily.PROGRESS_BAR)) {
             PreferenceCategory playback = category(screen, L10n.t("Playback"));
             if (build.contains(PatchFamily.TAP_TO_PLAY)) {
                 playback.addPreference(toggle(context, Settings.TAP_TO_PLAY,
@@ -261,6 +261,12 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.SKIP_SILENT_PARTS,
                         L10n.t("Videos, reels and stories jump past the quiet stretches in their sound, so talks and "
                                 + "how-tos get to the point sooner.")));
+            }
+            if (build.contains(PatchFamily.KEEP_FEED_VIDEOS_MUTED)) {
+                // Asked as each session starts and each time something turns the sound on, so a restart shows it.
+                playback.addPreference(toggle(context, Settings.KEEP_FEED_VIDEOS_MUTED,
+                        L10n.t("Videos in your feed start with the sound off every time you open Facebook, and only you "
+                                + "turn it on. Tap a video's speaker or press volume up to hear it.")));
             }
             if (build.contains(PatchFamily.PROGRESS_BAR)) {
                 playback.addPreference(toggle(context, Settings.KEEP_PROGRESS_BAR,

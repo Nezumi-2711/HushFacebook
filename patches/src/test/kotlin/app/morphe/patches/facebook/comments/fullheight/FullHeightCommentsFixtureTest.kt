@@ -12,6 +12,7 @@ import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.shared.compat.AppCompatibilities
 import app.morphe.util.ControlFlow
+import app.morphe.util.RegisterLiveness
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
@@ -34,8 +35,9 @@ import java.io.File
  * code moves. Five split-screen launchers are found, three by the factory Intent they build and
  * two by the reason they log, each a boolean method with a local register; each asks the
  * extension first, a yes answers false, and a no lands on Facebook's first instruction. The comment
- * sheet's "fill the screen?" override reads one float of its own, and the hook hands it to the
- * extension first, returning a yes and landing a no on Facebook's first instruction. The comments
+ * sheet's "fill the screen?" answer reads one float of the sheet's fragment, and the hook hands it
+ * to the extension first (in the override through 583, right after the popover's cast to the
+ * sheet's fragment on 584), returning a yes and landing a no on Facebook's next instruction. The comments
  * helper's view setup is found by its trace, its first findViewById on the sheet's views loads the
  * header's id, the sheet's parameters print one boolean after their watch-and-comment label, and the
  * hook hands the views, that id and that boolean (false without parameters) to the extension first
@@ -128,33 +130,48 @@ class FullHeightCommentsFixtureTest {
 
     private fun fillsScreen(bundle: File) {
         val classes = FixtureDex.classes(bundle, setOf(SIMPLE_POPOVER, UFI_POPOVER))
-        val fills = fillsScreenOverride(classes.getValue(SIMPLE_POPOVER), classes.getValue(UFI_POPOVER))
-        val where = "${bundle.name}: ${fills.descriptor()}"
-        val share = shareField(fills)
+        val site = fillsScreenSite(classes.getValue(SIMPLE_POPOVER), classes.getValue(UFI_POPOVER))
+        val where = "${bundle.name}: ${site.method.descriptor()}"
+        val share = shareField(site.method)
         assertEquals("$where reads the share of its own", UFI_POPOVER, share.definingClass)
         assertEquals("$where: the share is a float", "F", share.type)
+        val at = site.index
+        val owner = site.method.definingClass
+        if (owner == SIMPLE_POPOVER) {
+            // 584: the override is folded into the popover's own answer, and the hook follows the
+            // one cast of this to the comment sheet's fragment.
+            val cast = site.method.implementation!!.instructions.toList()[at - 1]
+            assertEquals("$where: the hook follows the cast", Opcode.CHECK_CAST, cast.opcode)
+            assertEquals("$where: the cast is to the comment sheet's fragment", UFI_POPOVER, cast.reference())
+            assertEquals("$where: of this", site.fragment, (cast as OneRegisterInstruction).registerA)
+        } else {
+            assertEquals("$where: an override of the comment sheet's fragment", UFI_POPOVER, owner)
+            assertEquals("$where: asks first", 0, at)
+        }
 
-        val context = PatchContexts.of(listOf(classes.getValue(UFI_POPOVER)))
-        val method = context.mutableClassDefBy(UFI_POPOVER).methods.single { it.descriptor() == fills.descriptor() }
+        val context = PatchContexts.of(listOf(classes.getValue(owner)))
+        val method = context.mutableClassDefBy(owner).methods.single { it.descriptor() == site.method.descriptor() }
         val original = method.implementation!!.instructions.toList()
-        method.fillScreen(share)
+        method.fillScreen(site, share)
         val patched = method.implementation!!.instructions.toList()
         assertEquals("$where gains five instructions", original.size + 5, patched.size)
-        assertEquals("$where: the share is read first", Opcode.IGET, patched[0].opcode)
-        assertEquals("$where: the share is read first", share.toString(), patched[0].reference())
-        val register = (patched[0] as TwoRegisterInstruction).registerA
+        assertEquals("$where: the share is read first", Opcode.IGET, patched[at].opcode)
+        assertEquals("$where: the share is read first", share.toString(), patched[at].reference())
+        val register = (patched[at] as TwoRegisterInstruction).registerA
         assertTrue("$where: the hook writes v$register, which isn't a local", register < method.localRegisterCount())
-        assertEquals("$where: from this fragment", method.implementation!!.registerCount - 1, (patched[0] as TwoRegisterInstruction).registerB)
-        assertEquals("$where: the extension is asked", Opcode.INVOKE_STATIC, patched[1].opcode)
-        assertEquals("$where: the extension is asked", FILLS_SCREEN, patched[1].reference())
-        val call = patched[1] as FiveRegisterInstruction
+        assertTrue("$where: the hook writes v$register, which is still read", register !in RegisterLiveness.of(site.method).liveInto(at))
+        assertEquals("$where: from this fragment", method.implementation!!.registerCount - 1, (patched[at] as TwoRegisterInstruction).registerB)
+        assertEquals("$where: the extension is asked", Opcode.INVOKE_STATIC, patched[at + 1].opcode)
+        assertEquals("$where: the extension is asked", FILLS_SCREEN, patched[at + 1].reference())
+        val call = patched[at + 1] as FiveRegisterInstruction
         assertEquals("$where: with the share", listOf(1, register), listOf(call.registerCount, call.registerC))
-        assertEquals("$where: its answer is kept", register, (patched[2] as OneRegisterInstruction).registerA)
-        assertEquals("$where: a no goes on to Facebook", Opcode.IF_EQZ, patched[3].opcode)
-        assertEquals("$where: a yes is the answer", Opcode.RETURN, patched[4].opcode)
-        assertEquals("$where: a yes is the answer", register, (patched[4] as OneRegisterInstruction).registerA)
-        assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(5).map { it.opcode })
-        assertEquals("$where: a no lands on Facebook's first instruction", setOf(4, 5), ControlFlow.of(method).normal[3].toSet())
+        assertEquals("$where: its answer is kept", register, (patched[at + 2] as OneRegisterInstruction).registerA)
+        assertEquals("$where: a no goes on to Facebook", Opcode.IF_EQZ, patched[at + 3].opcode)
+        assertEquals("$where: a yes is the answer", Opcode.RETURN, patched[at + 4].opcode)
+        assertEquals("$where: a yes is the answer", register, (patched[at + 4] as OneRegisterInstruction).registerA)
+        assertEquals("$where: Facebook's code stays", original.map { it.opcode },
+            patched.filterIndexed { index, _ -> index !in at until at + 5 }.map { it.opcode })
+        assertEquals("$where: a no lands on Facebook's next instruction", setOf(at + 4, at + 5), ControlFlow.of(method).normal[at + 3].toSet())
     }
 
     private fun commentViews(bundle: File) {

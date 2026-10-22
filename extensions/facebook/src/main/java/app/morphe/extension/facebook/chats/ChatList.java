@@ -99,7 +99,8 @@ public final class ChatList {
     }
 
     /**
-     * Injection point, right after the search row at the top of Chats builds its Meta AI button.
+     * Injection point, right after the search row at the top of Chats builds its Meta AI button,
+     * itself or through a helper it hands the button's builder to (584).
      * The button Facebook built, or null while the Meta AI switch is on, which the row already
      * takes as no button and leaves the search box alone. Never throws.
      */

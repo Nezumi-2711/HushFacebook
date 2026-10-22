@@ -6,6 +6,7 @@ package app.morphe.patches.facebook.chats
 
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.tableStringAt
+import app.morphe.patches.facebook.misc.extension.freeLocalsAt
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -131,8 +132,19 @@ internal fun opensMetaAiFromSearchRow(owner: ClassDef): Boolean = owner.methods.
 /**
  * Where the search row's builder gets its Meta AI button: the `move-result-object` at [result] in
  * [method] puts the built button in [register], as the builder's own return type [type].
+ *
+ * On 584 Redex outlined the build, the null check and the add into one static [helper]
+ * (`LX/19e;->A1D` on arm64). Then [result] is the row's call to it, [register] holds the button's
+ * builder it's handed, and [answer] is a local free across that call for the hook's answer.
  */
-internal class MetaAiButtonSite(val method: Method, val result: Int, val register: Int, val type: String)
+internal class MetaAiButtonSite(
+    val method: Method,
+    val result: Int,
+    val register: Int,
+    val type: String,
+    val helper: Method? = null,
+    val answer: Int? = null,
+)
 
 /** What the search row's button build takes: nothing, or on 583's 32-bit build the row's CallerContext. */
 private val BUILD_PARAMETERS = listOf(emptyList<String>(), listOf(CALLER_CONTEXT))
@@ -141,10 +153,15 @@ private val BUILD_PARAMETERS = listOf(emptyList<String>(), listOf(CALLER_CONTEXT
  * The Meta AI button site of [method] when it's the search row's builder: it tags its search box
  * [SEARCH_BAR_TAG] and creates one tap action of the [openers] types. The first build after that,
  * a call taking nothing (or a CallerContext) and answering the builder's own return type, puts the button in a
- * register that is checked for null and then added to the row's children. Null for any other
- * method.
+ * register that is checked for null and then added to the row's children. On 584 that first build
+ * is a call to the static helper [outlinedBuild] finds through [resolve], handed the button's
+ * builder. Null for any other method.
  */
-internal fun metaAiButtonSite(method: Method, openers: Set<String>): MetaAiButtonSite? {
+internal fun metaAiButtonSite(
+    method: Method,
+    openers: Set<String>,
+    resolve: (MethodReference) -> Method? = { null },
+): MetaAiButtonSite? {
     if (!holdsString(method, SEARCH_BAR_TAG)) return null
     val code = method.implementation?.instructions?.toList() ?: return null
     val created = code.indices.filter { at ->
@@ -154,8 +171,14 @@ internal fun metaAiButtonSite(method: Method, openers: Set<String>): MetaAiButto
     val build = (created.single() + 1 until code.size).firstOrNull { at ->
         val call = (code[at] as? ReferenceInstruction)?.reference as? MethodReference
         code[at].opcode == Opcode.INVOKE_VIRTUAL && call != null && call.returnType == method.returnType &&
-            call.parameterTypes.map { it.toString() } in BUILD_PARAMETERS
+            call.parameterTypes.map { it.toString() } in BUILD_PARAMETERS ||
+            outlinedBuild(code[at], method.returnType, resolve) != null
     } ?: return null
+    outlinedBuild(code[build], method.returnType, resolve)?.let { helper ->
+        val builder = (code[build] as FiveRegisterInstruction).registerD
+        val answer = method.freeLocalsAt(CHAT_LIST_PATCH, build, 1, listOf(build + 1), highest = 255).single()
+        return MetaAiButtonSite(method, build, builder, method.returnType, helper, answer)
+    }
     val result = code.getOrNull(build + 1)
     if (result?.opcode != Opcode.MOVE_RESULT_OBJECT) return null
     val register = (result as OneRegisterInstruction).registerA
@@ -166,6 +189,46 @@ internal fun metaAiButtonSite(method: Method, openers: Set<String>): MetaAiButto
     if (add !is FiveRegisterInstruction || adds?.name != "add" || !adds.definingClass.startsWith("Ljava/util/") ||
         add.registerCount != 2 || add.registerD != register) return null
     return MetaAiButtonSite(method, build + 1, register, method.returnType)
+}
+
+/**
+ * The static helper [instruction] calls, found through [resolve], when it's 584's outlined button
+ * build: a void over a CallerContext, a builder and a `java.util` collection whose whole body
+ * builds the builder's [returnType] with that CallerContext, checks it for null and adds it to the
+ * collection. Null for any other instruction.
+ */
+private fun outlinedBuild(instruction: Instruction, returnType: String, resolve: (MethodReference) -> Method?): Method? {
+    if (instruction.opcode != Opcode.INVOKE_STATIC) return null
+    val call = (instruction as ReferenceInstruction).reference as? MethodReference ?: return null
+    val types = call.parameterTypes.map { it.toString() }
+    if (call.returnType != "V" || types.size != 3 || types[0] != CALLER_CONTEXT || !types[2].startsWith("Ljava/util/")) {
+        return null
+    }
+    val helper = resolve(call) ?: return null
+    val body = helper.implementation?.instructions?.toList() ?: return null
+    if (body.size != 5) return null
+    // A static method's three parameters are its last three registers.
+    val context = helper.implementation!!.registerCount - 3
+    val build = body[0]
+    val builds = (build as? ReferenceInstruction)?.reference as? MethodReference
+    if (build.opcode != Opcode.INVOKE_VIRTUAL || builds == null || builds.returnType != returnType ||
+        builds.parameterTypes.map { it.toString() } != listOf(CALLER_CONTEXT) ||
+        (build as FiveRegisterInstruction).registerCount != 2 || build.registerC != context + 1 || build.registerD != context
+    ) return null
+    val result = body[1]
+    if (result.opcode != Opcode.MOVE_RESULT_OBJECT) return null
+    val button = (result as OneRegisterInstruction).registerA
+    val check = body[2]
+    val add = body[3]
+    val adds = (add as? ReferenceInstruction)?.reference as? MethodReference
+    if (check.opcode != Opcode.IF_EQZ || (check as OneRegisterInstruction).registerA != button ||
+        (check as OffsetInstruction).codeOffset != check.codeUnits + add.codeUnits
+    ) return null
+    if (add !is FiveRegisterInstruction || add.opcode != Opcode.INVOKE_VIRTUAL || adds?.name != "add" ||
+        !adds.definingClass.startsWith("Ljava/util/") || add.registerCount != 2 || add.registerC != context + 2 ||
+        add.registerD != button
+    ) return null
+    return helper.takeIf { body[4].opcode == Opcode.RETURN_VOID }
 }
 
 /** What the Chats search screen's Meta AI tap names as where the chat was opened from. */

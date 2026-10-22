@@ -7,7 +7,7 @@ if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
     'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
-    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard')
+    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -52,7 +52,10 @@ function Invoke-FakeAdb {
     $global:LASTEXITCODE = 0
     if ($script:disconnected) { throw 'Mock disconnect' }
     if ($command -like '* pull */applied.json *') {
-        [IO.File]::WriteAllText([string]$args[-1], $(if ($script:wrongSnapshot) { '{"wrong":true}' } else { '{}' }))
+        $snapshot = if ($script:wrongSnapshot) { '{"wrong":true}' }
+            elseif ($null -ne $script:deviceSwitches) { New-TestBackup $script:deviceSwitches }
+            else { '{}' }
+        [IO.File]::WriteAllText([string]$args[-1], $snapshot)
     }
     if ($command -like '*cat */page.json*') { return $script:pageAck }
     if ($command -like '*cat */import.txt*') { return 'applied 4' }
@@ -80,6 +83,9 @@ function Invoke-FakeAdb {
         $script:actualNight = $Matches[1]
     } elseif ($command -like '*cmd uimode night') { return "Night mode: $script:actualNight" }
     return 'OK'
+}
+function New-TestBackup([Collections.IDictionary]$Switches) {
+    return ([ordered]@{ format = 'hushfacebook-settings'; schema = 1; settings = $Switches } | ConvertTo-Json -Compress)
 }
 function Write-TestLease([string]$Owner = $testToken, [double]$Minutes = 25) {
     $body = [ordered]@{ schemaVersion = 1; serial = $Serial; project = 'Hushfacebook'; chatIdentity = 'audit-tests'
@@ -117,6 +123,18 @@ try {
     $held = [IO.File]::Open($leasePath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     try { Assert-Throws { Invoke-Adb shell input tap 10 10 } 'A locked lease permitted input.' }
     finally { $held.Dispose() }
+    # Another session waiting for the phone can be reading the lease at the moment a call checks it.
+    $script:briefReader = [IO.File]::Open($leasePath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    $script:adbCalls.Clear()
+    $briefReadStopped = $false
+    try {
+        & {
+            function Start-Sleep { if ($script:briefReader) { $script:briefReader.Dispose(); $script:briefReader = $null } }
+            Invoke-Adb shell cmd uimode night | Out-Null
+        }
+    } catch { $briefReadStopped = $true }
+    finally { if ($script:briefReader) { $script:briefReader.Dispose() } }
+    Assert-That (-not $briefReadStopped -and $script:adbCalls.Count -eq 1) 'A lease another process read for a moment stopped the audit.'
 
     foreach ($unsafe in @('tap:Like', 'tap:Follow', 'tap:Add friend', 'tap:Send', 'tap:Alice', 'fb://friends', 'fb://messaging_thread', 'fb://feed; input tap 1 1')) {
         $Visit = @($unsafe)
@@ -371,7 +389,46 @@ try {
     Assert-That ($script:actualLocale -ceq '') 'KeepSettings failed to restore an originally empty locale.'
     Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '* rm -rf *' }).Count) 'KeepSettings deleted retained recovery data.'
 
-    $version = '583.0.0.39.55'
+    # A backup an older build wrote, restored on a build with a switch it never knew.
+    $KeepSettings = $false
+    $script:refuseSettings = $false
+    $script:dropOnImport = $null
+    $script:deviceSwitches = [ordered]@{ hide_ads = $true; hide_reels = $true; added_later = $true }
+    function Send-Profile([string]$Json) {
+        $imported = $Json | ConvertFrom-Json -AsHashtable
+        if ($imported.format -ceq 'hushfacebook-audit') {
+            foreach ($key in @($script:deviceSwitches.Keys)) { $script:deviceSwitches[$key] = $false }
+        } else {
+            foreach ($key in $imported.settings.Keys) {
+                if ($key -cne $script:dropOnImport) { $script:deviceSwitches[$key] = $imported.settings[$key] }
+            }
+        }
+        return 'applied 3'
+    }
+    $olderBackup = New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false })
+    [IO.File]::WriteAllText((Join-Path $OutDir 'before.json'), $olderBackup)
+    $problems.Clear()
+    $script:adbCalls.Clear()
+    Assert-That (Restore-AuditState) "An older build's backup could not be restored: $($problems -join '; ')"
+    Assert-That ($script:deviceSwitches.hide_ads -and -not $script:deviceSwitches.hide_reels) "An older build's backup was not put back."
+    Assert-That (-not $script:deviceSwitches.added_later) 'A switch the backup never knew kept its audit value.'
+    Assert-That (@($script:adbCalls | Where-Object { $_ -like '* rm -rf *' }).Count -eq 1) "A restored older backup wasn't cleaned up."
+    $script:deviceSwitches = [ordered]@{ hide_ads = $true; hide_reels = $true; added_later = $true }
+    $script:dropOnImport = 'hide_ads'
+    $problems.Clear()
+    $script:adbCalls.Clear()
+    Assert-That (-not (Restore-AuditState)) "An older build's backup that didn't fully apply passed."
+    Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '* rm -rf *' }).Count) "A failed older-backup restore deleted device recovery data."
+    $script:dropOnImport = $null
+    $script:deviceSwitches = $null
+    $defaultsShape = New-TestBackup ([ordered]@{ hide_ads = $false; hide_reels = $false; added_later = $false })
+    Assert-That (-not (Test-AuditSettingsRestored $olderBackup (New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false; added_later = $true })) $defaultsShape)) 'A new switch away from its default passed.'
+    Assert-That (-not (Test-AuditSettingsRestored $olderBackup (New-TestBackup ([ordered]@{ hide_ads = $true; added_later = $false })) $defaultsShape)) 'A switch missing after the restore passed.'
+    Assert-That (-not (Test-AuditSettingsRestored $olderBackup (New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false; unknown = $false })) $defaultsShape)) 'A switch the defaults never listed passed.'
+    Assert-That (-not (Test-AuditSettingsRestored '{}' '{}' $defaultsShape)) 'A snapshot without settings passed.'
+    Assert-That (Test-AuditSettingsRestored $olderBackup (New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false; added_later = $false })) $defaultsShape) 'A correct older-backup restore failed.'
+
+    $version = '584.0.0.51.56'
     $installedHash = 'a' * 64
     $installedAbi = 'arm64-v8a'
     $sdk = 36
@@ -483,6 +540,8 @@ try {
     $SkipPages = $false
     Assert-That (Publish-AuditBaseline $candidate) 'Successful full audit did not promote its baseline.'
     Assert-That ((Get-Content -Raw $Expectations | ConvertFrom-Json).schema -eq 2) 'Promoted baseline was not schema 2.'
+    # The baselines are committed as LF. ConvertTo-Json writes CRLF on Windows.
+    Assert-That (-not [IO.File]::ReadAllText($Expectations).Contains("`r")) 'The promoted baseline has CR line endings.'
 
     function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
     function Get-SettingsPages { return 'News feed' }
@@ -528,6 +587,8 @@ try {
         Assert-That (@($starts | Where-Object { $_ -notlike "* -n $Package/$launcher*" }).Count -eq 0) "A launch or extra missed the active launcher $launcher."
         Assert-That (@($starts | Where-Object { $_ -like '*OPEN_SETTINGS true*' -and $_ -like "* -n $Package/$launcher *" }).Count -ge 1) "OPEN_SETTINGS did not go to $launcher."
         Assert-That (@($starts | Where-Object { $_ -like '*AUDIT_REPORT true*' -and $_ -like "* -n $Package/$launcher *" }).Count -ge 1) "AUDIT_REPORT did not go to $launcher."
+        # Without it, an intent matching the task's root is dropped whenever another screen sits on top.
+        Assert-That (@($starts | Where-Object { ($_ -like '*AUDIT_REPORT true*' -or $_ -like '*OPEN_SETTINGS true*') -and $_ -notlike '*--activity-clear-top*' }).Count -eq 0) "A report or settings request to $launcher could be dropped under another screen."
         Assert-That (-not @($script:adbCalls | Where-Object { $_ -match 'pm (enable|disable)|setEnabledSetting|cmd package (enable|disable)' }).Count) 'The audit changed a component state.'
     }
     $Entry = $null

@@ -152,6 +152,15 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/StoryCardShape.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 583 (#207): with Debug logging on, logs a value-free outline of a story card's trees and its media fields' kinds when a story save finds no video, so a report shows where a shared video's address sits."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/DownloadQuality.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/FileNameTemplate.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/OpenInAnotherApp.java",
@@ -832,6 +841,16 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/media/FeedSound.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/media/feedsound/KeepFeedVideosMutedPatch.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: Keep feed videos muted, a Reddit request, from Facebook 583. Facebook's feed sound state is the one class with a kept-name startNewSession method, which hands a flag to a setter of its own taking a reason enum and a flag. The same class has one setter taking that reason, a String and a flag, which first reads the sound flag both setters store and compares it with the one it's asked for. The patch asks the extension for the session setter's flag before anything reads it, and for the reasoned setter's flag right after its read, each answer going back in the flag's own register. While the switch is on a new session starts muted, and a sound-on whose reason name doesn't start with BY_USER, and that doesn't come through onKeyUp or the kept-name maybeUnmuteOnDeviceVolumeIncrease, keeps the flag the state holds."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/stories/StoryUpload.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/stories/upload/UploadStoriesInHdPatch.kt"
       ],
@@ -902,13 +921,38 @@
     {
       "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/ads/GameAds.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/ads/GameBridge.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/games/BlockInstantGamesAdsPatch.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/games/GameAdAnchors.kt"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: Block Instant Games ads, an idea De-Vanced also has, written here from Facebook 577, 580 and 581. The game bridge's postMessage(String, String), kept by name for the WebView, holds the five ad message types; the hook goes first in it and, for an ad message with the switch on, rejects the game's promise through the bridge's own (String, String, String) reject method, the one calling the call that holds \"Unexpected exception while constructing JSONObject to be dispatched to Javascript: rejectPromise\", with the SDK's code for an ad it can't serve. De-Vanced drops the message instead."
+      "changes": "Written for Hushfacebook: Block Instant Games ads, an idea De-Vanced also has, written here from Facebook 577, 580 and 581. The game bridge's postMessage(String, String), kept by name for the WebView, holds the five ad message types; the hook goes first in it and, for an ad message with the switch on, rejects the game's promise through the bridge's own (String, String, String) reject method, the one calling the call that holds \"Unexpected exception while constructing JSONObject to be dispatched to Javascript: rejectPromise\", with the SDK's code for an ad it can't serve. De-Vanced drops the message instead. Games opened from Facebook 583's main screen run from a downloaded module that registers a QuicksilverAndroid bridge of its own, so the game WebView's base class wraps that bridge as it's added, and the wrapper answers its ad messages with no ad, or as watched for a rewarded one."
+    },
+    {
+      "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/ads/AudienceNetwork.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/ads/audiencenetwork/AudienceNetworkAnchors.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook, for the ported Disable Audience Network: keeping its components off in Facebook 583 after an install and at every start. The manifest gives each disabled component the default-state=false meta-data Facebook's component manager checks before it turns manifest-disabled components back on, the startup task that enables the ipc components in a state the server picks passes its calls through the extension, and the extension sets any component an earlier install left on back to disabled."
+    },
+    {
+      "paths": ["extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/CloseWhenLeft.java"],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: Close Facebook when you leave it. Three seconds after the last Facebook screen stops, it stops Facebook's own started services, takes its tasks out of the recent apps and ends its processes, and it waits while a Facebook process is in use, a Hushfacebook save is running or another app's screen sits on a Facebook task. The screen turning off with Facebook in front isn't a leave."
+    },
+    {
+      "paths": ["extensions/facebook/src/main/java/app/morphe/extension/facebook/theme/FeedGaps.java"],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the gray line between feed posts on the AMOLED theme. A hook first in Litho's ComponentHost.dispatchDraw paints the strip Facebook leaves under each row of android:id/list a step above the black page, behind a switch that starts off. The hook itself sits in AmoledThemePatch.kt under that file's rule."
     },
     {
       "paths": [

@@ -41,8 +41,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  *
  * <p>A share of one still has to pass the sheet fragment's "fill the screen?" check, which can say
  * no from the screen's size against a server value and then draws a centered box 80% of the screen
- * tall. The patch hands {@link #fillsScreen} the share first thing in that check, and while the
- * switch is on a share of one fills the screen.
+ * tall. The patch hands {@link #fillsScreen} the share where that check starts (on 584, right after
+ * the check makes sure the sheet is the comment one), and while the switch is on a share of one
+ * fills the screen.
  *
  * <p>A full-screen sheet on a reel still shows the reel above the comments, in the sheet's header,
  * so the list starts a third of the way down. Either the header holds the video, or, on the Reels
@@ -126,7 +127,7 @@ public final class FullHeightComments {
     }
 
     /**
-     * The hook, first thing in the comment sheet's "fill the screen?" check, handed the share of the
+     * The hook, where the comment sheet's "fill the screen?" check starts, handed the share of the
      * screen's height the sheet opens to. True, while Open comments at full height is on and the
      * share is one or more, answers that the sheet fills the screen; false lets Facebook's check
      * decide.

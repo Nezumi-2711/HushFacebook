@@ -123,16 +123,16 @@ class HoldReelFor2xFixtureTest {
                 assertTrue("$name: the release flag is asked outside the release listeners",
                     others.none { m -> m.code().any { it.call?.toString() == "$config->$release()Z" } })
 
-                // Up to 582 a handler calls the edge check, the one method of its shape. 583 has none: it
-                // inlined the check into one case of a merged lambda the handler makes (LX/CnX;->invoke).
+                // Up to 582 a handler calls the edge check, the one method of its shape. 583 and 584 have
+                // none: they inline the check into one case of a merged lambda the handler makes
+                // (583's LX/CnX;->invoke).
                 val edgeCalls = handlers.flatMap { h -> h.methods.flatMap { edgeChecksCalled(it, config) } }.distinctBy { it.toString() }
                 val shaped = FixtureDex.methodsWhere(bundle, dexFilter = { dex -> dex.typeSection.any { it == config } }) {
                     isEdgeCheckShape(it.parameterTypes.map(CharSequence::toString), it.returnType, config)
                 }
                 val edgeCheck: EdgeCheck
                 val edgeClass: ClassDef
-                if (version == "583.0.0.39.55") {
-                    assertEquals("$name: edge checks the handlers call", 0, edgeCalls.size)
+                if (edgeCalls.isEmpty()) {
                     assertEquals("$name: methods of the edge check's shape", 0, shaped.size)
                     val made = FixtureDex.classes(bundle, handlers.flatMap { h -> h.methods.flatMap(::typesMade) }.toSet()).values
                     val inlined = made.flatMap { c -> c.methods.mapNotNull { inlinedEdgeCheck(it, config) } }

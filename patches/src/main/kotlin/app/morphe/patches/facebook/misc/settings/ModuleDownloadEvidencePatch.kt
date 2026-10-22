@@ -20,6 +20,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
@@ -45,6 +46,13 @@ private fun Instruction.called(): MethodReference? = (this as? ReferenceInstruct
 
 private fun Instruction.string(): String? = ((this as? ReferenceInstruction)?.reference as? StringReference)?.string
 
+/** The first register a call reads, written as a range or not: 584 calls some of these by range. */
+internal fun Instruction.firstRegister(): Int? = when (this) {
+    is RegisterRangeInstruction -> startRegister
+    is FiveRegisterInstruction -> registerC
+    else -> null
+}
+
 /**
  * The step runner's read of each step, when [method] is the runner: it asks its own iterator for a
  * step, writes [NO_STEPS] when there's none, and otherwise takes the next step from that iterator
@@ -58,9 +66,9 @@ internal fun moduleStepSite(method: Method): ModuleEvidenceSite? {
     fun Int.iteratorCall(name: String) =
         code[this].called()?.let { it.definingClass == "Ljava/util/Iterator;" && it.name == name } == true
     val asked = (0 until written).firstOrNull { it.iteratorCall("hasNext") } ?: return null
-    val steps = (code[asked] as FiveRegisterInstruction).registerC
+    val steps = code[asked].firstRegister() ?: return null
     val next = (written until code.size).firstOrNull { it.iteratorCall("next") } ?: return null
-    if ((code[next] as FiveRegisterInstruction).registerC != steps) return null
+    if (code[next].firstRegister() != steps) return null
     val result = code.getOrNull(next + 1) ?: return null
     val cast = code.getOrNull(next + 2) ?: return null
     if (result.opcode != Opcode.MOVE_RESULT_OBJECT || cast.opcode != Opcode.CHECK_CAST) return null
@@ -82,7 +90,7 @@ internal fun moduleFailureSite(method: Method): ModuleEvidenceSite? {
     if (written < 0) return null
     val read = (1 until written - 1).lastOrNull { at ->
         val called = code[at].called()
-        code[at - 1].opcode == Opcode.RETURN_VOID && code[at].opcode == Opcode.INVOKE_VIRTUAL &&
+        code[at - 1].opcode == Opcode.RETURN_VOID && code[at].opcode in setOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE) &&
             called?.returnType == "Ljava/lang/Exception;" && called.parameterTypes.isEmpty() &&
             code[at + 1].opcode == Opcode.MOVE_RESULT_OBJECT
     } ?: return null
@@ -90,7 +98,7 @@ internal fun moduleFailureSite(method: Method): ModuleEvidenceSite? {
         code[at].opcode == Opcode.CHECK_CAST && ((code[at] as ReferenceInstruction).reference as TypeReference).type == MODULE_DOWNLOAD_SCREEN
     }
     if (!screens) return null
-    val task = (code[read] as FiveRegisterInstruction).registerC
+    val task = code[read].firstRegister() ?: return null
     if ((code[read + 1] as OneRegisterInstruction).registerA == task) return null
     return ModuleEvidenceSite(method, read + 2, task, MODULE_FAILED)
 }

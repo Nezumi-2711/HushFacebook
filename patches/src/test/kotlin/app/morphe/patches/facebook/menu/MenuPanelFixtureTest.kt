@@ -32,8 +32,14 @@ import org.junit.Test
  * bundles from HUSHFACEBOOK_FIXTURE_DIR and skips without it.
  */
 class MenuPanelFixtureTest {
-    /** The MobileConfig flag the panel asks, read from 583's arm64 and armv7 dex. */
-    private val bloksPanelFlag = 0x10101a200581627L
+    /** The MobileConfig flag the panel asks per build, read from 583's arm64 and armv7 dex and 584's arm64. */
+    private val bloksPanelFlags = mapOf(
+        "584.0.0.51.56" to 0x10101a20058164cL,
+    )
+
+    /** The flag [bundle]'s build asks, by the version in its name. */
+    private fun bloksPanelFlag(bundle: String): Long =
+        bloksPanelFlags.entries.single { bundle.contains("-${it.key}-") }.value
 
     private fun Method.code(): List<Instruction> = implementation!!.instructions.toList()
 
@@ -60,8 +66,8 @@ class MenuPanelFixtureTest {
             // Positive control: the answer is the one for the panel's flag, by its id.
             val flag = code.subList(maxOf(0, answer!! - 4), answer).filterIsInstance<WideLiteralInstruction>()
                 .map { it.wideLiteral }
-            assertTrue("$name: the answer at $answer isn't for flag ${bloksPanelFlag.toString(16)}, saw $flag",
-                bloksPanelFlag in flag)
+            assertTrue("$name: the answer at $answer isn't for flag ${bloksPanelFlag(name).toString(16)}, saw $flag",
+                bloksPanelFlag(name) in flag)
             val register = (code[answer] as OneRegisterInstruction).registerA
 
             context.askAboutBloksPanel()
@@ -109,8 +115,8 @@ class MenuPanelFixtureTest {
             // Positive control: the page asks the panel's flag, by its id.
             val flag = code.subList(maxOf(0, answer!! - 4), answer).filterIsInstance<WideLiteralInstruction>()
                 .map { it.wideLiteral }
-            assertTrue("$name: the answer at $answer isn't for flag ${bloksPanelFlag.toString(16)}, saw $flag",
-                bloksPanelFlag in flag)
+            assertTrue("$name: the answer at $answer isn't for flag ${bloksPanelFlag(name).toString(16)}, saw $flag",
+                bloksPanelFlag(name) in flag)
             val register = (code[answer] as OneRegisterInstruction).registerA
 
             context.askAboutBloksMenuPage()

@@ -25,6 +25,7 @@ import app.morphe.util.findMutableMethodOf
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 internal const val HIDE_SECTION = "$EXTENSION_PACKAGE/menu/MenuSections;->hideSection(Ljava/lang/Object;)Z"
@@ -50,7 +51,8 @@ internal const val LIST_COPY_OF = "$IMMUTABLE_LIST->copyOf(Ljava/util/Collection
  *
  * The Help and support and Settings and privacy rows come to the native section from two builders.
  * Right after each call the list goes through the extension, which leaves out the rows picked in
- * Menu tiles to hide, and back into an ImmutableList. See MenuRowAnchors.kt.
+ * Menu tiles to hide, and back into an ImmutableList. 584 inlined both builders into the section,
+ * so there the hooks go right after it reads or writes each kept list. See MenuRowAnchors.kt.
  *
  * Accounts whose Menu slides in from the side can get the server-drawn Bloks Menu there, which none
  * of the hooks above reach (#184). The server's answer to which Menu goes in the panel goes to the
@@ -182,8 +184,11 @@ internal fun MutableMethod.passListThrough(at: Int, register: Int, hook: String)
     )
 }
 
-/** A row list build the native section calls, by its signature, and the extension hook its list goes through. */
-internal data class RowListHook(val call: String, val hook: String)
+/**
+ * A row list build the native section calls, by its signature, and the extension hook its list goes
+ * through. On 584, where the section keeps the list itself, [call] names the field [kept] instead.
+ */
+internal data class RowListHook(val call: String, val hook: String, val kept: FieldReference? = null)
 
 private fun signature(call: MethodReference) =
     "${call.definingClass}->${call.name}(${call.parameterTypes.joinToString("")})${call.returnType}"
@@ -191,11 +196,27 @@ private fun signature(call: MethodReference) =
 /**
  * The native section's two row list builds, Settings and privacy's then Help and support's, each
  * with its hook, once both are found once on one class and share the one row item MenuRows can
- * read. [classDef] finds a class of the app by type.
+ * read. 584 calls no build: its two kept lists ([keptRowLists]) take the hooks, once the section
+ * builds the one row item MenuRows can read. [classDef] finds a class of the app by type.
  */
 internal fun rowListHooks(native: Method, classDef: (String) -> ClassDef?): List<RowListHook> {
-    val settings = rowListBuilds(native).singleOrNull() ?: throw PatchException(
-        "$PATCH: expected ${native.definingClass}->${native.name} to build one Settings and privacy row list",
+    val builds = rowListBuilds(native)
+    if (builds.isEmpty()) {
+        val kept = keptRowLists(native) ?: throw PatchException(
+            "$PATCH: expected ${native.definingClass}->${native.name} to build one Settings and privacy row list " +
+                "or keep it beside the Help and support one, found neither",
+        )
+        val items = constructedTypes(native).filter { type -> classDef(type)?.let(::isReadableRowItem) == true }
+        if (items.size != 1) {
+            throw PatchException("$PATCH: ${native.definingClass}->${native.name} builds ${items.size} readable row items, not one")
+        }
+        return listOf(
+            RowListHook(reference(kept.settings), SETTINGS_ROWS_KEPT, kept.settings),
+            RowListHook(reference(kept.help), HELP_ROWS_KEPT, kept.help),
+        )
+    }
+    val settings = builds.singleOrNull() ?: throw PatchException(
+        "$PATCH: expected ${native.definingClass}->${native.name} to build one Settings and privacy row list, found ${builds.size}",
     )
     val helps = native.implementation!!.instructions
         .mapNotNull { (it as? ReferenceInstruction)?.reference as? MethodReference }
@@ -221,17 +242,28 @@ internal fun rowListHooks(native: Method, classDef: (String) -> ClassDef?): List
 private fun BytecodePatchContext.rowListHooks(native: Method) = rowListHooks(native) { classDefByOrNull(it) }
 
 /**
- * Each of [hooks]' lists, right after the section keeps it, goes through its hook. The reads are
- * found on this method as it is now, after the group hook moved its code down, and hooked from the
- * last up so the earlier ones stay where they were found.
+ * Each of [hooks]' lists, right after the section keeps it, goes through its hook: after the build's
+ * call, or on 584 after the one read of the kept list and the one write of a list just built, so the
+ * kept list stays Facebook's own. The reads are found on this method as it is now, after the group
+ * hook moved its code down, and hooked from the last up so the earlier ones stay where they were found.
  */
 internal fun MutableMethod.passRowListsThrough(hooks: List<RowListHook>) {
-    hooks.map { hook ->
+    hooks.flatMap { hook ->
+        val kept = hook.kept
+        if (kept != null) {
+            val reads = keptListReads(this, kept) ?: throw PatchException(
+                "$PATCH: $definingClass->$name has another way into the code after it reads or writes ${hook.call}",
+            )
+            if (reads.size != 2) {
+                throw PatchException("$PATCH: expected $definingClass->$name to read ${hook.call} once and write it once, found ${reads.size}")
+            }
+            return@flatMap reads.map { it to hook.hook }
+        }
         val reads = rowListReads(this) { signature(it) == hook.call }
             ?: throw PatchException("$PATCH: $definingClass->$name doesn't keep the list ${hook.call} hands back")
         val read = reads.singleOrNull()
             ?: throw PatchException("$PATCH: expected $definingClass->$name to call ${hook.call} once, found ${reads.size}")
-        read to hook.hook
+        listOf(read to hook.hook)
     }.sortedByDescending { it.first.index }.forEach { (read, hook) -> passListThrough(read.index, read.register, hook) }
 }
 

@@ -37,10 +37,16 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
  * prefetch job (BloksBookmarksMenuPrefetchAppJob) asks the same flag. A later static read of the flag
  * in the same method only names a perf marker.
  *
+ * 584 (2026-10-22) asks flag 0x10101a20058164c instead, in arm64 `LX/1ym;->A02`, through a static
+ * helper on MobileConfigUnsafeContext that takes the context as an Object and casts it itself
+ * (`A0b(Object, J)Z`, the one the factory below now uses too). The rest is 583's: a yes reads
+ * `LX/4Ms;`'s singleton, a no builds `LX/1yv;` from the session.
+ *
  * The method is found by its trace name and the panel key it loads, and the answer by its shape: the
- * one `move-result` of an interface call on MobileConfigUnsafeContext taking a long and answering a
- * boolean, tested at once by an `if-eqz`, whose fall-through soon reads a singleton (a static field
- * typed as its own class) and whose branch soon builds something from the user session.
+ * one `move-result` of a MobileConfigUnsafeContext call asking a boolean by a long (an interface
+ * call taking the long, or 584's static helper taking the context and the long), tested at once by
+ * an `if-eqz`, whose fall-through soon reads a singleton (a static field typed as its own class) and
+ * whose branch soon builds something from the user session.
  *
  * The native Menu `LX/23f;` puts in the panel is fragment type 20, and its kept factory,
  * BookmarksFragmentFactory.createFragment, asks the same flag again through a static helper (arm64
@@ -81,10 +87,14 @@ internal fun mobileConfigAnswers(code: List<Instruction>): List<Int> = code.indi
 private fun isMobileConfigAnswer(code: List<Instruction>, index: Int): Boolean {
     if (index < 1 || code[index].opcode != Opcode.MOVE_RESULT) return false
     val asked = code[index - 1]
-    if (asked.opcode != Opcode.INVOKE_INTERFACE && asked.opcode != Opcode.INVOKE_INTERFACE_RANGE) return false
+    val parameters = when (asked.opcode) {
+        Opcode.INVOKE_INTERFACE, Opcode.INVOKE_INTERFACE_RANGE -> listOf("J")
+        Opcode.INVOKE_STATIC, Opcode.INVOKE_STATIC_RANGE -> listOf("Ljava/lang/Object;", "J")
+        else -> return false
+    }
     val call = (asked as ReferenceInstruction).reference as? MethodReference ?: return false
     return call.definingClass.endsWith(MOBILE_CONFIG) && call.returnType == "Z" &&
-        call.parameterTypes.map(CharSequence::toString) == listOf("J")
+        call.parameterTypes.map(CharSequence::toString) == parameters
 }
 
 private fun isBloksPanelAnswer(code: List<Instruction>, index: Int): Boolean {

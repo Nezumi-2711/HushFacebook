@@ -39,7 +39,10 @@ import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
  *   and wrapped (LX/8SK;->A00, LX/2Zf;->A05), then shows it with a static taking a Context and the
  *   sheet (VtZ.A01) unless split screen takes it. The patch adds a helper to the extension making the
  *   same calls with the values the click passes, which the extension uses for a reel with no button,
- *   keeping each handler per reel from the end of its constructor.
+ *   keeping each handler per reel from the end of its constructor. Clean mode has no overlay, and the
+ *   controls' handler (LX/7w1;->A1C makes it) always keeps a null story holder, so the helper then
+ *   makes one with the holder's (reel, Integer) constructor, whose story getter derives the story from
+ *   the reel when it has none, as Facebook's own holders for a reel without a story do.
  *
  * - A feed post has no double-tap or long-press handler in either build (every double-tap site is a
  *   reel, story, tab bar or Meta AI one), so its long press is timed by the extension from the first
@@ -94,6 +97,7 @@ internal const val CONFIG_FIELD = "\$immersiveFeedPlayerConfig"
 
 internal const val CONTEXT = "Landroid/content/Context;"
 internal const val STRING = "Ljava/lang/String;"
+internal const val INTEGER = "Ljava/lang/Integer;"
 internal const val FB_USER_SESSION = "Lcom/facebook/auth/usersession/FbUserSession;"
 internal const val GRAPHQL_STORY = "Lcom/facebook/graphql/model/GraphQLStory;"
 internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment;"

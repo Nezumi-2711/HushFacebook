@@ -77,6 +77,20 @@ public class ReelGesturesTest {
         }
     }
 
+    /** Facebook's long-press handler as the video controls make it, Clean mode's only one: no story holder. */
+    @SuppressWarnings("unused")
+    private static final class ControlsHandler {
+        final Object $shortFormVideoUnit;
+        final Object $fbUserSession = new Object();
+        final Object $environment = new Object();
+        final Object $videoGraphQLPhoton = null;
+        final Object $immersiveFeedPlayerConfig = new Object();
+
+        ControlsHandler(Object reel) {
+            this.$shortFormVideoUnit = reel;
+        }
+    }
+
     /** What the sheet opener was handed. */
     private static final class Built {
         final View view;
@@ -332,6 +346,23 @@ public class ReelGesturesTest {
         assertSame(handler.$videoGraphQLPhoton, sheet.parts[3]);
         assertSame(handler.$immersiveFeedPlayerConfig, sheet.parts[4]);
         assertTrue(statusLine(), statusLine().contains(ReelGestures.OPENED_WITHOUT_BUTTON + " 1"));
+    }
+
+    @Test
+    public void theControlsHandlerWithNoStoryHolderStillBuildsTheSheet() {
+        Object reel = new Object();
+        ControlsHandler handler = new ControlsHandler(reel);
+        ReelGestures.rememberHandler(handler, reel);
+        assertTrue(ReelGestures.longPress(handler, new Holder(view)));
+        assertTrue(ReelGestures.doubleTap(reel));
+        assertEquals(2, built.size());
+        Built sheet = built.get(0);
+        assertSame(handler.$fbUserSession, sheet.parts[0]);
+        assertSame(reel, sheet.parts[1]);
+        assertSame(handler.$environment, sheet.parts[2]);
+        assertNull("the patch's helper makes the holder from the reel", sheet.parts[3]);
+        assertSame(handler.$immersiveFeedPlayerConfig, sheet.parts[4]);
+        assertTrue(statusLine(), statusLine().contains(ReelGestures.OPENED_WITHOUT_BUTTON + " 2"));
     }
 
     @Test
