@@ -11,7 +11,7 @@ public final class PreSearchSectionsForTests {
 
     /** Whether the For you entry is drawn as Facebook's empty row. */
     public static boolean drawsForYouEmpty() {
-        PreSearchSectionsTest.Tree node = new PreSearchSectionsTest.Tree(PreSearchSections.FOR_YOU_NODE, true,
+        PreSearchSectionsTest.Tree node = new PreSearchSectionsTest.Tree(PreSearchSections.NULL_STATE_NODE, true,
                 PreSearchSections.FOR_YOU_MODULE);
         return PreSearchSections.entry(node, new Object()) == null;
     }

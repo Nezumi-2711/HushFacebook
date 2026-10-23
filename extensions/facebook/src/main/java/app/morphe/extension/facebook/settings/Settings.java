@@ -1197,6 +1197,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_search_for_you", FALSE);
 
     /**
+     * People you may know on the search screen before anything is typed (#80), found by the module
+     * name Facebook gives its entry, the same way as For you. Recent searches, the search box and the
+     * suggestions while typing stay. Part of Hide suggested and promoted posts, off until picked.
+     */
+    public static final BooleanSetting HIDE_SEARCH_PEOPLE_YOU_MAY_KNOW =
+            new BooleanSetting("hushfacebook_hide_search_people_you_may_know", FALSE);
+
+    /**
      * Push notifications Facebook types TOP_TRENDING_VIDEO or PERSONALIZED_REELS: trending videos
      * and reels it picked for you. Off by default, like every notification switch: each one drops a
      * whole kind of notification, so it's yours to turn on.

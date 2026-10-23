@@ -41,7 +41,9 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
  * says what it holds: on the S22 (583, 2026-10-20) the For you section is the one entry whose node
  * lists TRENDING_QUERY_SUGGESTION there. The extension logs, with Debug logging on, each entry's type
  * names and module names, never its id or text, and answers the module to draw: null, Facebook's
- * empty row, while Hide For you in search is on and the entry is For you.
+ * empty row, while Hide For you in search is on and the entry is For you, or Hide "People you may
+ * know" in search is on and its node lists PEOPLE_YOU_MAY_KNOW (a reporter's Debug log, 583,
+ * 2026-10-22).
  *
  * 584 (2026-10-22) reads it the other way round. The item case of LX/CEc;->A2S reads the node
  * (LX/7L1;->A00 to LX/7L2), tests it for null, then reads the module with the node's own no-argument

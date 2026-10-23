@@ -221,6 +221,9 @@ final class AppPages {
                 search.addPreference(toggle(context, Settings.HIDE_SEARCH_FOR_YOU,
                         L10n.t("Hides the For you searches Facebook suggests when you open search. Your recent searches "
                                 + "and the suggestions as you type stay.")));
+                search.addPreference(toggle(context, Settings.HIDE_SEARCH_PEOPLE_YOU_MAY_KNOW,
+                        L10n.t("Hides the People you may know row Facebook shows when you open search. Your recent "
+                                + "searches and the suggestions as you type stay.")));
             }
             if (build.contains(PatchFamily.SEARCH_HISTORY)) {
                 search.addPreference(toggle(context, Settings.DONT_SAVE_SEARCH_HISTORY,
