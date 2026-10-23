@@ -518,6 +518,78 @@ class MaterialYouTokenFixtureTest {
         assertEquals("one fixture for each declared build", declaredBuilds(), builds)
     }
 
+    /** AmoledTheme's LIGHT_BACKGROUND_TOKENS, the fills only light mode's Light background color moves. */
+    private fun amoledLightBackgrounds(): Set<String> {
+        val start = amoled.indexOf("LIGHT_BACKGROUND_TOKENS =")
+        check(start >= 0) { "AmoledTheme declares no LIGHT_BACKGROUND_TOKENS" }
+        return Regex(""""([A-Z_]+)"""").findAll(amoled.substring(start, amoled.indexOf(")));", start))).map { it.groupValues[1] }.toSet()
+    }
+
+    private val lightBackground = File(RepoFiles.root,
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/theme/AmoledLightBackground.java").readText()
+
+    /**
+     * Issue #214: in light mode the Light background color moves each background AMOLED names that
+     * holds a light grey (an opaque grey with every channel LIGHT_MIN_CHANNEL or more). No dark or
+     * darker style gives one of those tokens such a grey, so the Video tab, dark in light mode, keeps
+     * its colours. The light style gives a card white, every fill LIGHT_BACKGROUND_TOKENS adds a light
+     * grey, a grey button the grey AmoledLightBackground holds text to, and a comment's bubble and the
+     * composer's bar a grey no darker than that button.
+     */
+    @Test
+    fun `every light grey AMOLED moves in light mode is no dark style's in each declared build`() {
+        val lightOnly = amoledLightBackgrounds()
+        val backgrounds = amoledBackgrounds() + lightOnly
+        assertTrue("LIGHT_BACKGROUND_TOKENS lists nothing", lightOnly.isNotEmpty())
+        val floor = amoledChannel("LIGHT_MIN_CHANNEL")
+        val textSurface = Regex("""static final int TEXT_SURFACE_GREY = 0x([0-9A-F]+);""").find(lightBackground)
+            ?.groupValues?.get(1)?.toLong(16)?.toInt() ?: error("AmoledLightBackground declares no TEXT_SURFACE_GREY")
+        fun lightGrey(colour: Int): Boolean {
+            val channels = listOf(colour shr 16 and 0xFF, colour shr 8 and 0xFF, colour and 0xFF)
+            return colour ushr 24 == 0xFF && channels.min() >= floor && channels.max() - channels.min() <= 8
+        }
+        var builds = 0
+        for (target in AppCompatibilities.facebook().single().targets) {
+            val version = checkNotNull(target.version)
+            for (fixture in Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") }) {
+                withBaseApk(fixture) { apk ->
+                    val attributes = tokenAttributes(apk)
+                    val styles = fdsStyles(apk, attributes.values.toSet())
+                    val light = styles.values.single { it.parent == 0 && it.sets > 300 }
+                    val dark = styles.values.single { it.parent == light.id && it.sets > 300 }
+                    val darker = styles.values.singleOrNull { it.parent == dark.id }
+                    fun lightColour(name: String) =
+                        light.values[attributes[name] ?: error("${fixture.name}: no FDS token $name")]
+
+                    for (name in backgrounds) {
+                        val attribute = attributes[name] ?: continue
+                        for (style in listOfNotNull(dark, darker)) {
+                            val colour = style.values[attribute] ?: continue
+                            assertTrue("${fixture.name}: $name is ${hex(setOf(colour))} in style ${Integer.toHexString(style.id)}, " +
+                                "a light grey the Light background color would move", !lightGrey(colour))
+                        }
+                    }
+                    assertEquals("${fixture.name}: a card", -1, lightColour("CARD_BACKGROUND"))
+                    for (name in lightOnly) {
+                        val colour = lightColour(name)
+                        assertTrue("${fixture.name}: $name is ${colour?.let { hex(setOf(it)) }} in light mode, no light grey",
+                            colour != null && lightGrey(colour))
+                    }
+                    for (name in listOf("SECONDARY_BUTTON_BACKGROUND", "SECONDARY_BUTTON_BACKGROUND_OPAQUE")) {
+                        assertEquals("${fixture.name}: $name", textSurface, lightColour(name))
+                    }
+                    for (name in listOf("COMMENT_BACKGROUND", "TEXT_INPUT_BAR_BACKGROUND")) {
+                        val colour = checkNotNull(lightColour(name)) { "${fixture.name}: no light $name" }
+                        assertTrue("${fixture.name}: $name ${hex(setOf(colour))} is darker than a grey button",
+                            (0..16 step 8).all { (colour shr it and 0xFF) >= (textSurface shr it and 0xFF) })
+                    }
+                }
+                builds++
+            }
+        }
+        assertEquals("one fixture for each declared build", declaredBuilds(), builds)
+    }
+
     /** AmoledTheme's TEXT_TOKENS: FDS's names, then Mig's, as its comments mark them. */
     private fun amoledTextRoles(): Pair<Set<String>, Set<String>> {
         val start = amoled.indexOf("TEXT_TOKENS =")

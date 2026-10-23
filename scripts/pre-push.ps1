@@ -659,6 +659,34 @@ try {
             'in a clean worktree of the commit instead.')
     }
 
+    # The fixture apply at the end of the gate runs the desktop CLI, and a bundle built for one
+    # morphe-patcher major dies there on the other: the 0.17.0 push got 17 minutes in with a 1.18.1
+    # jar on the 2.0 pin. So the jar is held to each pushed commit's pin before anything runs. A
+    # commit with no pin has nothing to compare, and its build fails on its own. Without a fixture
+    # folder that apply never runs, so neither does this, and each commit's jar is looked up the way
+    # the apply will: a clean worktree of the commit has no build/morphe-tools of its own.
+    if ($appliesFixtures -and $env:HUSHFACEBOOK_FIXTURE_DIR) {
+        foreach ($pinCommit in $gateCommits) {
+            if (Test-InPlace $pinCommit) {
+                $earlyJar = Resolve-DesktopCli -Root $Root
+                $pinFile = Join-Path $Root 'gradle/libs.versions.toml'
+                $pinText = if (Test-Path -LiteralPath $pinFile -PathType Leaf) { Get-Content -LiteralPath $pinFile -Raw } else { '' }
+                $pinFrom = 'gradle/libs.versions.toml'
+            } else {
+                $earlyJar = Resolve-DesktopCli
+                $pinText = ''
+                if ($earlyJar -and @(Invoke-HookGit @('-C', $Root, 'ls-tree', '--name-only', $pinCommit, '--', 'gradle/libs.versions.toml')).Count -gt 0) {
+                    $pinText = @(Invoke-HookGit @('-C', $Root, 'show', "${pinCommit}:gradle/libs.versions.toml")) -join "`n"
+                }
+                $pinFrom = "gradle/libs.versions.toml at $($pinCommit.Substring(0, 8))"
+            }
+            $pin = [regex]::Match([string]$pinText, '(?m)^\s*morphe-patcher\s*=\s*"([^"]+)"')
+            if (-not $earlyJar -or -not $pin.Success) { continue }
+            $jarPatcher = Assert-DesktopPatcherVersion -Jar $earlyJar -Expected $pin.Groups[1].Value -ExpectedFrom $pinFrom
+            Write-Step "the desktop CLI bundles morphe-patcher $jarPatcher, as $pinFrom pins $($pin.Groups[1].Value)"
+        }
+    }
+
     # Script, notice, failure message. The contract tests run for every script change and for the
     # other files above; the two injected-register suites and the resource table check's run only
     # when their own files moved, and the source ledger's when the ledger or a file its rules read

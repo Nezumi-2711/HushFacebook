@@ -37,8 +37,11 @@ final class MarketplaceResponseDiagnostics {
     // 2026-10-20 search capture stopped early and said incomplete. Once the seller and price
     // children had names, Home filled 96 shapes too, and so did the search pages between them.
     static final int MAX_SHAPES = 192;
-    static final int MAX_VISITS = 2048;
-    private static final int MAX_LEVEL = 14;
+    // 584's search pages of 27 and 48 listings (emulator, 2026-10-23) carry ad story trees that
+    // nest past level 14 under node.story, so both pages said incomplete. Depth stays under the
+    // parser's MAX_PARSE_DEPTH, and each limit names itself in the summary.
+    static final int MAX_VISITS = 8192;
+    static final int MAX_LEVEL = 32;
     private static final String PREFIX = "Marketplace shape: ";
     // The last three are a listing's own page, from Facebook 583's code: the listing route times
     // MarketplacePDPSurfaceQuery (react_native_routes.json), and the other two are in its dex.
@@ -234,8 +237,9 @@ final class MarketplaceResponseDiagnostics {
 
         private void inspect(String text, MarketplaceSearchAds.Value value, String path, int level, int[] visits) {
             if (--visits[0] < 0 || level > MAX_LEVEL) {
-                missing("shape traversal budget");
-                record(query, "shape traversal budget");
+                String reason = visits[0] < 0 ? "shape traversal budget" : "shape depth budget";
+                missing(reason);
+                record(query, reason);
                 return;
             }
             if (value.kind == '{') {

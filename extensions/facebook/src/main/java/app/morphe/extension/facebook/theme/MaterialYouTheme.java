@@ -30,7 +30,6 @@ import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1055,22 +1054,9 @@ public final class MaterialYouTheme {
         return p == null ? 0xFF000000 | rgb : p.sameLightness(TonePalette.NEUTRAL, 0xFF000000 | rgb);
     }
 
-    /** A token table: six hex digits are an opaque colour, eight a colour with its alpha first. */
+    /** A token table, as {@link FdsTokens#parse} reads it. */
     static Map<String, int[]> parseTokens(String table) {
-        Map<String, int[]> tokens = new HashMap<>();
-        for (String entry : table.split(";")) {
-            int equals = entry.indexOf('=');
-            String[] hex = entry.substring(equals + 1).split(",");
-            int[] values = new int[hex.length];
-            for (int i = 0; i < hex.length; i++) {
-                int rgb = Integer.parseUnsignedInt(hex[i], 16);
-                values[i] = hex[i].length() == 8 ? rgb : 0xFF000000 | rgb;
-            }
-            if (tokens.put(entry.substring(0, equals), values) != null) {
-                throw new IllegalStateException("token listed twice: " + entry);
-            }
-        }
-        return tokens;
+        return FdsTokens.parse(table);
     }
 
     private static int[] parseSurfaces(String list) {

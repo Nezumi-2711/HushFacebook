@@ -6,6 +6,7 @@ package app.morphe.extension.facebook.feed;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
@@ -243,6 +244,42 @@ public class PostPromptsTest {
         assertTrue("the comment switch didn't hide a comment's faces", PostPrompts.hideReactionPreview(true));
     }
 
+    /**
+     * The count beside a post's faces (#158) answers to the post switch: off it's Facebook's text,
+     * on it's null and counted, and a text Facebook left empty, or none, comes back as it was.
+     */
+    @Test
+    public void theReactionCountIsShownUntilThePostSwitchIsOn() {
+        assertEquals("a count went with the switch off", "56", PostPrompts.reactionCount("56"));
+
+        Settings.HIDE_POST_REACTIONS.save(true);
+        assertNull("a count stayed with the switch on", PostPrompts.reactionCount("56"));
+        assertNull("the summary line stayed with the switch on", PostPrompts.reactionCount("Sam and 55 others"));
+        assertTrue("the status line doesn't count the hidden counts",
+                statusLine().contains(PostPrompts.COUNT_HIDDEN + " 2"));
+        assertEquals("an empty text was counted or changed", "", PostPrompts.reactionCount(""));
+        assertEquals("no text at all was changed", null, PostPrompts.reactionCount(null));
+        assertTrue("an empty text was counted", statusLine().contains(PostPrompts.COUNT_HIDDEN + " 2"));
+
+        Settings.HIDE_COMMENT_REACTIONS.save(true);
+        Settings.HIDE_POST_REACTIONS.save(false);
+        assertEquals("the comment switch hid a post's count", "56", PostPrompts.reactionCount("56"));
+    }
+
+    @Test
+    public void pausedOrBeforeTheSettingsAreReadyTheReactionCountIsShown() {
+        Settings.HIDE_POST_REACTIONS.save(true);
+        for (HushfacebookPause.Reason reason : new HushfacebookPause.Reason[] {
+                HushfacebookPause.Reason.SWITCH, HushfacebookPause.Reason.CRASH_LOOP}) {
+            PauseForTests.pause(reason);
+            assertEquals("a Hushfacebook paused by " + reason + " hid the count", "56", PostPrompts.reactionCount("56"));
+            PauseForTests.resume();
+        }
+        SettingsContextRule.withoutContext(() ->
+                assertEquals("before the settings were ready, the count went", "56", PostPrompts.reactionCount("56")));
+        assertNull("resumed, the count didn't go again", PostPrompts.reactionCount("56"));
+    }
+
     /** The reactions switch answers for nothing else, and the counts switch doesn't answer for it. */
     @Test
     public void theReactionSwitchSharesNoAnswer() {
@@ -254,6 +291,7 @@ public class PostPromptsTest {
         Settings.HIDE_POST_REACTIONS.save(false);
         Settings.HIDE_POST_COUNTS.save(true);
         assertFalse("the counts switch hid the preview", PostPrompts.hideReactionPreview());
+        assertEquals("the counts switch hid the count beside the faces", "56", PostPrompts.reactionCount("56"));
     }
 
     /** The patch hands Facebook's answer over as an int, since a boolean method may return one. */

@@ -587,6 +587,44 @@ function Test-AuditSettingsRestored([string]$Original, [string]$Restored, [strin
     return $true
 }
 
+function Resolve-AuditStateBefore($Current) {
+    <# The locale and theme the audit puts back at the end, given what the device shows now. #>
+    # A previous unfinished run owns its original snapshot. Do not overwrite it with audit settings.
+    $previousState = ((Invoke-Adb shell "cat $AuditDir/state-before.json 2>/dev/null; true") -join "`n").Trim()
+    $previousBackup = ((Invoke-Adb shell "ls $AuditDir/before.json 2>/dev/null; true") -join '').Trim()
+    if ($previousState) {
+        $savedState = $previousState | ConvertFrom-Json
+        if (($savedState.schema -isnot [int] -and $savedState.schema -isnot [long]) -or $savedState.schema -ne 1 -or
+                $savedState.serial -isnot [string] -or $savedState.device -isnot [string] -or $savedState.package -isnot [string] -or
+                $savedState.night -isnot [string] -or $savedState.serial -cne $Serial -or $savedState.device -cne $deviceIdentity -or
+                $savedState.package -cne $Package -or $savedState.night -cnotmatch '\A(yes|no|auto|custom)\z' -or
+                ($sdk -ge 33 -and $savedState.locales -isnot [string]) -or
+                ($null -ne $savedState.locales -and -not (Test-AuditLocaleList $savedState.locales))) {
+            throw 'Invalid recovery snapshot. Existing device backups were left untouched.'
+        }
+        return $savedState
+    }
+    if (-not $previousBackup) { return $Current }
+    # A before.json with no snapshot beside it was left by an older audit build or the settings
+    # tool, and twice on 2026-10-22 it stopped a walk until the snapshot was written by hand. Its
+    # switches still come back at the end, as for a run that never finished, and the locale and
+    # theme the device shows now stand in for the ones nothing recorded. A good restore clears the
+    # folder, so a dated copy comes off the phone first, and the audit goes no further without it.
+    $copy = Join-Path $OutDir ('orphaned-audit-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    New-Item -ItemType Directory -Path $copy -Force | Out-Null
+    Invoke-Adb pull $AuditDir $copy | Out-Null
+    $copied = Join-Path (Join-Path $copy ($AuditDir -split '/')[-1]) 'before.json'
+    $copiedText = if (Test-Path -LiteralPath $copied -PathType Leaf) { [IO.File]::ReadAllText($copied).Trim() } else { '' }
+    $readable = $false
+    if ($copiedText) { try { $null = $copiedText | ConvertFrom-Json; $readable = $true } catch { $readable = $false } }
+    if (-not $readable) {
+        throw "An older audit backup has no locale/theme snapshot, and its folder didn't copy to $copy whole. It was left untouched."
+    }
+    Write-Step ('an older audit backup had no locale/theme snapshot. Its switches come back at the end, the ' +
+        "current locale and theme stand in, and a copy of its folder is in $copy")
+    return $Current
+}
+
 function Restore-AuditState {
     $restored = $true
     # Each part must run even if another fails. Keep both backups until all parts are verified.
@@ -781,23 +819,7 @@ $sdk = [int](((Invoke-Adb shell getprop ro.build.version.sdk) -join '').Trim())
 if ($Locales.Count -gt 0 -and $sdk -lt 33) { throw 'App-locale passes require Android 13 or newer.' }
 $stateBefore = [ordered]@{ schema = 1; serial = $Serial; device = $deviceIdentity; package = $Package
     night = Get-AuditNightMode; locales = $(if ($sdk -ge 33) { Get-AuditLocales } else { $null }) }
-# A previous unfinished run owns its original snapshot. Do not overwrite it with audit settings.
-$previousState = ((Invoke-Adb shell "cat $AuditDir/state-before.json 2>/dev/null; true") -join "`n").Trim()
-$previousBackup = ((Invoke-Adb shell "ls $AuditDir/before.json 2>/dev/null; true") -join '').Trim()
-if ($previousState) {
-    $savedState = $previousState | ConvertFrom-Json
-    if (($savedState.schema -isnot [int] -and $savedState.schema -isnot [long]) -or $savedState.schema -ne 1 -or
-            $savedState.serial -isnot [string] -or $savedState.device -isnot [string] -or $savedState.package -isnot [string] -or
-            $savedState.night -isnot [string] -or $savedState.serial -cne $Serial -or $savedState.device -cne $deviceIdentity -or
-            $savedState.package -cne $Package -or $savedState.night -cnotmatch '\A(yes|no|auto|custom)\z' -or
-            ($sdk -ge 33 -and $savedState.locales -isnot [string]) -or
-            ($null -ne $savedState.locales -and -not (Test-AuditLocaleList $savedState.locales))) {
-        throw 'Invalid recovery snapshot. Existing device backups were left untouched.'
-    }
-    $stateBefore = $savedState
-} elseif ($previousBackup) {
-    throw 'An older audit backup has no locale/theme snapshot. Restore it before starting another audit; it was left untouched.'
-}
+$stateBefore = Resolve-AuditStateBefore $stateBefore
 $statePath = Join-Path $OutDir 'state-before.json'
 [IO.File]::WriteAllText($statePath, ($stateBefore | ConvertTo-Json))
 

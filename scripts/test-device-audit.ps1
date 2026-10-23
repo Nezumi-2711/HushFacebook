@@ -7,7 +7,7 @@ if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
     'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
-    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored')
+    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'Resolve-AuditStateBefore')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -58,6 +58,15 @@ function Invoke-FakeAdb {
         [IO.File]::WriteAllText([string]$args[-1], $snapshot)
     }
     if ($command -like '*cat */page.json*') { return $script:pageAck }
+    if ($command -like '*cat */state-before.json*') { return $script:deviceState }
+    if ($command -like '*ls */before.json*') { return $script:deviceBackupListing }
+    # The audit folder pulled into an existing folder lands under its own name, as adb does it.
+    if ($command -like '* pull */hushfacebook-audit *' -and $script:orphanBackup -and -not $script:failFolderPull) {
+        $pulled = Join-Path ([string]$args[-1]) 'hushfacebook-audit'
+        New-Item -ItemType Directory -Path $pulled -Force | Out-Null
+        [IO.File]::WriteAllText((Join-Path $pulled 'before.json'), $script:orphanBackup)
+    }
+    if ($command -like '* pull */before.json *' -and $script:orphanBackup) { [IO.File]::WriteAllText([string]$args[-1], $script:orphanBackup) }
     if ($command -like '*cat */import.txt*') { return 'applied 4' }
     if ($command -like '*dumpsys activity activities') { return $script:foreground }
     if ($command -like '*dumpsys activity top') { return $script:topDump }
@@ -427,6 +436,51 @@ try {
     Assert-That (-not (Test-AuditSettingsRestored $olderBackup (New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false; unknown = $false })) $defaultsShape)) 'A switch the defaults never listed passed.'
     Assert-That (-not (Test-AuditSettingsRestored '{}' '{}' $defaultsShape)) 'A snapshot without settings passed.'
     Assert-That (Test-AuditSettingsRestored $olderBackup (New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false; added_later = $false })) $defaultsShape) 'A correct older-backup restore failed.'
+
+    # A before.json with no locale/theme snapshot beside it, as an older audit build or the settings
+    # tool leaves one, is adopted: a dated copy of the folder first, the current locale and theme,
+    # and its switches back at the end.
+    $deviceIdentity = 'Audit_AVD'
+    $sdk = 36
+    $current = [ordered]@{ schema = 1; serial = $Serial; device = $deviceIdentity; package = $Package; night = 'no'; locales = 'en-US' }
+    $script:deviceState = $null
+    $script:deviceBackupListing = $null
+    $script:adbCalls.Clear()
+    Assert-That ((Resolve-AuditStateBefore $current).night -ceq 'no' -and -not @($script:adbCalls | Where-Object { $_ -like '* pull *' }).Count) `
+        'An empty audit folder did not start from the current locale and theme.'
+    $script:deviceBackupListing = "$AuditDir/before.json"
+    $script:orphanBackup = New-TestBackup ([ordered]@{ hide_ads = $true; hide_reels = $false })
+    $script:failFolderPull = $true
+    $script:adbCalls.Clear()
+    Assert-Throws { Resolve-AuditStateBefore $current } 'An orphaned backup was adopted though its folder did not copy.'
+    Assert-That (-not @($script:adbCalls | Where-Object { $_ -like '* rm *' -or $_ -like '* push *' }).Count) 'A failed copy of an orphaned backup changed the device.'
+    $script:failFolderPull = $false
+    $orphanText = $script:orphanBackup
+    $script:orphanBackup = ' '
+    Assert-Throws { Resolve-AuditStateBefore $current } 'An orphaned backup was adopted though its copy came off the phone empty.'
+    $script:orphanBackup = $orphanText
+    Get-ChildItem -LiteralPath $OutDir -Directory -Filter 'orphaned-audit-*' | Remove-Item -Recurse -Force
+    $adoptLog = @(& { $script:adopted = Resolve-AuditStateBefore $current } 6>&1 | ForEach-Object { [string]$_ })
+    Assert-That ($script:adopted.night -ceq 'no' -and $script:adopted.locales -ceq 'en-US') 'An adopted orphan did not start from the current locale and theme.'
+    $copies = @(Get-ChildItem -LiteralPath $OutDir -Directory -Filter 'orphaned-audit-*')
+    Assert-That ($copies.Count -eq 1 -and [IO.File]::ReadAllText((Join-Path $copies[0].FullName 'hushfacebook-audit/before.json')) -ceq $script:orphanBackup) `
+        'An adopted orphan left no copy of its folder.'
+    Assert-That (@($adoptLog | Where-Object { $_ -like '*older audit backup had no locale/theme snapshot*' }).Count -eq 1) 'Adopting an orphaned backup was not logged.'
+    Remove-Item -LiteralPath (Join-Path $OutDir 'before.json') -Force -ErrorAction SilentlyContinue
+    $script:deviceSwitches = [ordered]@{ hide_ads = $false; hide_reels = $true }
+    $stateBefore = $script:adopted
+    $problems.Clear()
+    Assert-That (Restore-AuditState) "An adopted orphan's switches could not be restored: $($problems -join '; ')"
+    Assert-That ($script:deviceSwitches.hide_ads -and -not $script:deviceSwitches.hide_reels -and
+        $script:actualNight -ceq 'no' -and $script:actualLocale -ceq 'en-US') "An adopted orphan's switches, locale or theme did not come back."
+    # A snapshot left beside it is still the one that wins.
+    $script:deviceState = ([ordered]@{ schema = 1; serial = $Serial; device = $deviceIdentity; package = $Package; night = 'yes'; locales = 'de-DE' } | ConvertTo-Json)
+    Assert-That ((Resolve-AuditStateBefore $current).night -ceq 'yes') "An unfinished run's own snapshot lost to the current locale and theme."
+    $script:deviceState = $null
+    $script:deviceBackupListing = $null
+    $script:orphanBackup = $null
+    $script:deviceSwitches = $null
+    Get-ChildItem -LiteralPath $OutDir -Directory -Filter 'orphaned-audit-*' | Remove-Item -Recurse -Force
 
     $version = '584.0.0.51.56'
     $installedHash = 'a' * 64

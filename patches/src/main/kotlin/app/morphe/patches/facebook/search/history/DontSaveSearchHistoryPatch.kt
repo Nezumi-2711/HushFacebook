@@ -6,6 +6,8 @@ package app.morphe.patches.facebook.search.history
 
 import app.morphe.patcher.StringComparisonType
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
@@ -15,13 +17,20 @@ import app.morphe.patches.facebook.feed.methodsHolding
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.facebookExtensionPatch
+import app.morphe.patches.facebook.misc.extension.patchLog
 import app.morphe.patches.facebook.misc.extension.requireStatusMethod
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
+import app.morphe.util.ControlFlow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 
 private const val PATCH = "Don't save search history"
 
@@ -32,18 +41,32 @@ private const val STRING = "Ljava/lang/String;"
 
 internal const val SEARCH_HISTORY = "$EXTENSION_PACKAGE/search/SearchHistory;"
 internal const val SKIP_SAVE = "$SEARCH_HISTORY->skipSave(Z)Z"
+internal const val KEEP_RECENT = "$SEARCH_HISTORY->keepRecent(Ljava/util/Map;Ljava/lang/Object;Ljava/lang/Object;)V"
+
+private const val MAP = "Ljava/util/Map;"
+private const val MAP_PUT = "$MAP->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
+
+/** How far before the put the load of its map may sit. */
+internal const val MAP_LOAD_REACH = 4
 
 /**
  * Don't save search history (#196).
  *
- * A search goes into your history through one method, the one holding [ADD_RECENT_SEARCH] (583
- * arm64 `LX/8mp;->A03(GraphSearchQuery, 7uR, 8mr, String, String, String, Z, Z)String`). It answers
+ * A search goes into your history through one method, the one holding [ADD_RECENT_SEARCH] (584
+ * arm64 `LX/9Ng;->A03(GraphSearchQuery, 7cK, 9Ni, String, String, String, Z, Z)String`). It answers
  * with a String and takes two booleans last, and the first of them is Facebook's own "don't save
  * this one": on the new path it skips the mutation and answers null, and on the older path, which
  * also keeps the search in the app's local list, it skips that list's logging and then the mutation
  * the same way. The search bar's typeahead and the keyword search both call it, and some of their
  * callers already pass true. First thing in it, the extension is handed that boolean and its answer
  * goes back into the same register, so with the switch on every search is one Facebook doesn't save.
+ *
+ * The older path puts the search at the top of the Recent list first, a map field of the same
+ * class that the search screen reads until Facebook restarts, and it does that whatever the boolean
+ * says (S22, 583, 2026-10-20: a kept-out search led Recent until a force-stop). That one put goes
+ * to the extension instead, with the same registers, which leaves the list as it was while the
+ * switch is on. A build without that put still gets the history kept clean, and the patch log says
+ * Recent may show a search until a restart.
  *
  * In the default selection with its switch off, so nothing changes until it's turned on.
  */
@@ -66,8 +89,19 @@ val dontSaveSearchHistoryPatch = bytecodePatch(
             .filterNot { it.type.startsWith(EXTENSION_CLASSES) }
         val save = recentSearchSave(holders)
         val skip = skipRegister(save)
+        val recentPut = recentListPut(save)
 
-        mutableClassDefBy(save.definingClass).methods.single { it.descriptor() == save.descriptor() }.askFirst(skip)
+        val method = mutableClassDefBy(save.definingClass).methods.single { it.descriptor() == save.descriptor() }
+        // The put first: asking first moves every later instruction down two.
+        if (recentPut != null) {
+            method.keepRecentAt(recentPut)
+        } else {
+            patchLog.warning(
+                "$PATCH: ${save.descriptor()} has no one put of the Recent list in a map of its own class, so a " +
+                    "search can still show in Recent until Facebook restarts. Your history is still kept clean.",
+            )
+        }
+        method.askFirst(skip)
         enableStatus("searchHistory")
     }
 }
@@ -115,6 +149,61 @@ internal fun skipRegister(save: Method): Int {
     }
     if (written) refuse("${save.descriptor()} writes v$register, so a test there may not see what the caller passed")
     return register
+}
+
+/**
+ * Where [save] puts the Recent list into its own class's map: the one `Map.put` whose map register
+ * was last loaded, at most [MAP_LOAD_REACH] instructions before, from a Map field of [save]'s class,
+ * with no jump or handler landing in between, and whose answer nothing reads. Null unless there's
+ * exactly one.
+ */
+internal fun recentListPut(save: Method): Int? {
+    val instructions = save.implementation?.instructions?.toList() ?: return null
+    val flow = ControlFlow.of(save)
+    val landings = instructions.indices.flatMap { from -> flow.normal[from].filter { it != from + 1 } + flow.exceptional[from] }.toSet()
+    val puts = instructions.indices.filter { index ->
+        val put = instructions[index]
+        if (put.opcode != Opcode.INVOKE_INTERFACE && put.opcode != Opcode.INVOKE_INTERFACE_RANGE) return@filter false
+        if ((put as ReferenceInstruction).reference.toString() != MAP_PUT) return@filter false
+        if (instructions.getOrNull(index + 1)?.opcode == Opcode.MOVE_RESULT_OBJECT) return@filter false
+        val map = callRegisters(put).first()
+        val load = (index - 1 downTo maxOf(0, index - MAP_LOAD_REACH)).firstOrNull { before ->
+            val instruction = instructions[before]
+            val target = (instruction as? OneRegisterInstruction)?.registerA
+            instruction.opcode.setsRegister() && target != null &&
+                (target == map || (instruction.opcode.setsWideRegister() && target + 1 == map))
+        } ?: return@filter false
+        // Code reaching the put by a jump past the load may hold another map in that register.
+        if ((load + 1..index).any { it in landings }) return@filter false
+        val field = (instructions[load] as? ReferenceInstruction)?.reference as? FieldReference
+        instructions[load].opcode == Opcode.IGET_OBJECT && field != null &&
+            field.definingClass == save.definingClass && field.type == MAP
+    }
+    return puts.singleOrNull()
+}
+
+/** The registers a call hands over, in order, for both call forms. */
+internal fun callRegisters(call: Instruction): List<Int> = when (call) {
+    is RegisterRangeInstruction -> (call.startRegister until call.startRegister + call.registerCount).toList()
+    is FiveRegisterInstruction ->
+        listOf(call.registerC, call.registerD, call.registerE, call.registerF, call.registerG).take(call.registerCount)
+    else -> emptyList()
+}
+
+/**
+ * The Recent list's put at [index] goes to the extension instead, with the same three registers
+ * in the same call form, since only a range call reaches past v15.
+ */
+internal fun MutableMethod.keepRecentAt(index: Int) {
+    val put = getInstruction(index)
+    val registers = callRegisters(put)
+    if (registers.size != 3) refuse("the Recent list's put hands ${registers.size} registers, not 3")
+    val call = if (put is RegisterRangeInstruction) {
+        "invoke-static/range { v${registers.first()} .. v${registers.last()} }"
+    } else {
+        "invoke-static { ${registers.joinToString { "v$it" }} }"
+    }
+    replaceInstruction(index, "$call, $KEEP_RECENT")
 }
 
 /**

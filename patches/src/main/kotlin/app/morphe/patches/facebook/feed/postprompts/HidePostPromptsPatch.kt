@@ -60,7 +60,8 @@ internal const val STORY_MODEL = "Lcom/facebook/graphql/model/GraphQLStory;"
  *
  * The third switch, also off by default, takes the numbers off a post's Like, Comment and Share
  * buttons by having their one text builder give its zero answer (PostCounts.kt, #180). The fourth,
- * also off, leaves the reaction faces and the reactions count under a post undrawn (ReactionPreview.kt, #158).
+ * also off, leaves the reaction faces and the reactions count under a post undrawn, and blanks the
+ * count text beside the faces (ReactionPreview.kt, #158).
  */
 @Suppress("unused")
 val hidePostPromptsPatch = bytecodePatch(
@@ -79,6 +80,7 @@ val hidePostPromptsPatch = bytecodePatch(
         hidePromptChecks()
         hidePostCounts()
         hideReactionPreview()
+        hideReactionCount()
         enableStatus("postPrompts")
     }
 }

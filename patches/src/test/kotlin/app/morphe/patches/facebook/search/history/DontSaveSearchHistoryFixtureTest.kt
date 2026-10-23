@@ -29,7 +29,9 @@ import java.io.File
  * the way the method's own code reads it, Facebook tests it with if-nez, and the first such test
  * jumps straight to the method's answer, skipping the mutation: it really is Facebook's own "don't
  * save this one". The hook hands that register to the extension as a range call first thing and
- * keeps the answer in it, and nothing of Facebook's code moves.
+ * keeps the answer in it. After that test, the one put of the Recent list into a map of the
+ * method's own class goes to the extension with the same registers, and the rest of Facebook's
+ * code stays as it was.
  * Reads the fixture bundles from HUSHFACEBOOK_FIXTURE_DIR and skips without it.
  */
 class DontSaveSearchHistoryFixtureTest {
@@ -76,13 +78,24 @@ class DontSaveSearchHistoryFixtureTest {
         }
         assertTrue("$where: the mutation is named after that first test", named > first)
 
+        // The Recent list's put comes after that first test, on the path that keeps the local list.
+        val put = recentListPut(save)
+        assertTrue("$where puts the Recent list into a map of its own class once", put != null)
+        assertTrue("$where: the put comes after the first test", put!! > first)
+
         val owner = FixtureDex.classes(bundle, setOf(save.definingClass)).values.single()
         val context = PatchContexts.of(listOf(owner))
         val method = context.mutableClassDefBy(owner.type).methods.single { it.descriptor() == save.descriptor() }
         val original = method.implementation!!.instructions.toList()
+        method.keepRecentAt(put)
         method.askFirst(register)
         val patched = method.implementation!!.instructions.toList()
         assertEquals("$where gains two instructions", original.size + 2, patched.size)
+        val kept = patched[put + 2]
+        assertEquals("$where: the put goes to the extension", KEEP_RECENT, (kept as ReferenceInstruction).reference.toString())
+        assertEquals("$where: in the put's own call form",
+            if (original[put] is RegisterRangeInstruction) Opcode.INVOKE_STATIC_RANGE else Opcode.INVOKE_STATIC, kept.opcode)
+        assertEquals("$where: with the put's own registers", callRegisters(original[put]), callRegisters(kept))
         assertEquals("$where: the extension is asked first", Opcode.INVOKE_STATIC_RANGE, patched[0].opcode)
         assertEquals("$where: the extension is asked first", SKIP_SAVE, (patched[0] as ReferenceInstruction).reference.toString())
         val call = patched[0] as RegisterRangeInstruction
@@ -90,7 +103,9 @@ class DontSaveSearchHistoryFixtureTest {
         assertEquals("$where: and nothing else", 1, call.registerCount)
         assertEquals("$where: its answer is kept", Opcode.MOVE_RESULT, patched[1].opcode)
         assertEquals("$where: in the same register", register, (patched[1] as OneRegisterInstruction).registerA)
-        assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(2).map { it.opcode })
+        assertEquals("$where: the rest of Facebook's code stays",
+            original.filterIndexed { index, _ -> index != put }.map { it.opcode },
+            patched.drop(2).filterIndexed { index, _ -> index != put }.map { it.opcode })
     }
 
     @Test

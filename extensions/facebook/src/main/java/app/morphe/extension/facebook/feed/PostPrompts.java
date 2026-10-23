@@ -145,6 +145,11 @@ public final class PostPrompts {
 
     private static volatile boolean commentReactionsLogged;
 
+    /** Counted under the patch's name each time the count beside a post's reaction faces is left out. */
+    static final String COUNT_HIDDEN = "Reaction count kept out";
+
+    private static volatile boolean countLogged;
+
     /**
      * The hook, at the start of the draw method behind the bling bar's reaction icons and count
      * line under a post. True makes the draw method return before it paints anything, so the space
@@ -187,6 +192,32 @@ public final class PostPrompts {
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, comment ? "comment reaction preview" : "reaction preview", failure);
             return false;
+        }
+    }
+
+    /**
+     * The hook, just before the reaction summary beside a post's buttons is built, handed its text:
+     * the count next to the faces in Facebook's inline layout ("56"), or "Name and 55 others" in the
+     * other one. With the post switch on it answers null, the text Facebook itself builds the
+     * summary with when it has none, so nothing is drawn there, while the description TalkBack reads
+     * and the tap on the row stay (#158). Otherwise, and for a text Facebook already left empty,
+     * Facebook's own text comes back.
+     */
+    public static String reactionCount(String text) {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, "reaction count");
+            if (text == null || text.isEmpty()) return text;
+            if (!Utils.settingsReady() || !Settings.HIDE_POST_REACTIONS.get()) return text;
+            HookStatus.counted(FAMILY, COUNT_HIDDEN);
+            if (!countLogged) {
+                countLogged = true;
+                Logger.printDebug(() -> "Post prompts: a post's reaction count was left out");
+            }
+            return null;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "reaction count", failure);
+            return text;
         }
     }
 }

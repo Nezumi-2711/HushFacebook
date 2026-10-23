@@ -38,7 +38,8 @@ import app.morphe.extension.shared.settings.PauseForTests;
  * Marking watched buckets on the phone (#61): a bucket watched to its newest story is published as
  * watched when its batch of views is held back, and again each time Facebook builds it with the
  * same newest story, until a new one arrives, a few times a window at most. A peek, a story short of the newest, the switch off
- * or a pause marks nothing, and the switch saved off forgets what was kept.
+ * or a pause marks nothing, and the switch saved off forgets what was kept. Each card watched is
+ * kept too, so a bucket watched partway opens past those cards after a restart (#218).
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -75,6 +76,7 @@ public class StorySeenMarkingTest {
     @Before
     public void start() {
         RuntimeEnvironment.getApplication().getSharedPreferences(SeenBuckets.FILE, Context.MODE_PRIVATE).edit().clear().commit();
+        RuntimeEnvironment.getApplication().getSharedPreferences(SeenBuckets.CARDS_FILE, Context.MODE_PRIVATE).edit().clear().commit();
         StorySeen.useForTests(stories);
         Settings.VIEW_STORIES_ANONYMOUSLY.save(true);
     }
@@ -256,6 +258,62 @@ public class StorySeenMarkingTest {
     }
 
     @Test
+    public void aBucketWatchedPartwayOpensPastTheCardsWatchedHereAfterARestart() {
+        // #218: Facebook's start check passes over each card the hook says was watched here.
+        Bucket friend = new Bucket("b1", "s1", "s2", "s3");
+        StorySeen.viewed(friend, "s1", helper, false);
+        StorySeen.viewed(friend, "s2", helper, false);
+        heldBack();
+        idle();
+        assertTrue("watched partway isn't watched to the end", published.isEmpty());
+
+        // Facebook started again: the cards are read back from their own file.
+        StorySeen.useForTests(stories);
+        assertTrue(StorySeen.watchedHere("s1"));
+        assertTrue(StorySeen.watchedHere("s2"));
+        assertFalse(StorySeen.watchedHere("s3"));
+        assertFalse(StorySeen.watchedHere(null));
+        assertTrue(statusLine(), statusLine().contains(StorySeen.PASSED_OVER));
+
+        // A card that arrives later opens the bucket at it, once the rest were all watched.
+        StorySeen.viewed(friend, "s3", helper, false);
+        assertTrue(StorySeen.watchedHere("s3"));
+        assertFalse(StorySeen.watchedHere("s4"));
+    }
+
+    @Test
+    public void aPeekTheSwitchOffOrAPauseLeavesFacebooksOwnStart() {
+        Bucket friend = new Bucket("b1", "s1", "s2", "s3");
+        StorySeen.viewed(friend, "s1", helper, true);
+        assertFalse("a peek counted", StorySeen.watchedHere("s1"));
+
+        Settings.VIEW_STORIES_ANONYMOUSLY.save(false);
+        StorySeen.viewed(friend, "s2", helper, false);
+        Settings.VIEW_STORIES_ANONYMOUSLY.save(true);
+        assertFalse("a view Facebook heard about was kept", StorySeen.watchedHere("s2"));
+
+        StorySeen.viewed(friend, "s3", helper, false);
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertFalse(StorySeen.watchedHere("s3"));
+        Settings.VIEW_STORIES_ANONYMOUSLY.save(false);
+        PauseForTests.resume();
+        assertFalse(StorySeen.watchedHere("s3"));
+        Settings.VIEW_STORIES_ANONYMOUSLY.save(true);
+        assertTrue("a pause or the switch flipped back forgot the card", StorySeen.watchedHere("s3"));
+    }
+
+    @Test
+    public void theSwitchSavedOffForgetsTheCardsToo() {
+        StorySeen.viewed(new Bucket("b1", "s1", "s2"), "s1", helper, false);
+        Settings.VIEW_STORIES_ANONYMOUSLY.save(false);
+        built(new Bucket("b1", "s1", "s2"));
+        Settings.VIEW_STORIES_ANONYMOUSLY.save(true);
+        assertFalse(StorySeen.watchedHere("s1"));
+        assertTrue(RuntimeEnvironment.getApplication().getSharedPreferences(SeenBuckets.CARDS_FILE, Context.MODE_PRIVATE)
+                .getAll().isEmpty());
+    }
+
+    @Test
     public void aFailureInFacebooksClassesSendsTheViewsAndIsReported() {
         StorySeen.useForTests(new StorySeen.Stories() {
             @Override public String bucketId(Object bucket) { throw new IllegalStateException("renamed"); }
@@ -268,6 +326,22 @@ public class StorySeenMarkingTest {
         StorySeen.bucketMade(new Bucket("b1", "s1"));
         idle();
         assertTrue("the views stopped going out", heldBack());
+        assertTrue(statusLine(), statusLine().contains("threw"));
+    }
+
+    @Test
+    public void aFailureInTheStartCheckLeavesFacebooksOwnStartAndIsReported() {
+        StorySeen.viewed(new Bucket("b1", "s1", "s2"), "s1", helper, false);
+        assertTrue(StorySeen.watchedHere("s1"));
+        HookStatus.clear();
+        StorySeen.useForTests(new StorySeen.Stories() {
+            @Override public String bucketId(Object bucket) { return "b1"; }
+            @Override public List<?> cards(Object bucket) { return Arrays.asList("s1", "s2"); }
+            @Override public String storyId(Object card) { throw new IllegalStateException("renamed"); }
+            @Override public boolean hasUnwatched(Object bucket) { return true; }
+            @Override public void publishWatched(Object bucket, String bucketId) { }
+        });
+        assertFalse("Facebook's own start was overruled", StorySeen.watchedHere("s1"));
         assertTrue(statusLine(), statusLine().contains("threw"));
     }
 }

@@ -7,6 +7,7 @@ package app.morphe.extension.facebook.search;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
@@ -16,6 +17,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
 import app.morphe.extension.facebook.settings.Settings;
@@ -27,7 +32,8 @@ import app.morphe.extension.shared.settings.PauseForTests;
 /**
  * Don't save search history (#196): with its switch on, every search Facebook would save is
  * answered as one it doesn't, and counted. A search Facebook already keeps out stays out and isn't
- * counted. Off, paused, or before the settings are ready, Facebook's own answer comes back.
+ * counted. Off, paused, or before the settings are ready, Facebook's own answer comes back. The
+ * same goes for the Recent list: on, a search doesn't go to its top; otherwise Facebook's put runs.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -84,6 +90,44 @@ public class SearchHistoryTest {
             assertFalse("before the settings were ready, a search was kept out", SearchHistory.skipSave(false));
             assertTrue(SearchHistory.skipSave(true));
         });
+    }
+
+    @Test
+    public void onTheRecentListStaysAsItWas() {
+        Settings.DONT_SAVE_SEARCH_HISTORY.save(true);
+        Map<Object, Object> recent = new HashMap<>();
+        recent.put("filter", "before");
+        SearchHistory.keepRecent(recent, "filter", "with the search on top");
+        assertEquals("before", recent.get("filter"));
+        assertTrue(String.valueOf(statusLine()).contains(SearchHistory.KEPT_OFF_RECENT + " 1"));
+    }
+
+    @Test
+    public void offTheRecentListTakesTheSearch() {
+        Map<Object, Object> recent = new HashMap<>();
+        recent.put("filter", "before");
+        SearchHistory.keepRecent(recent, "filter", "with the search on top");
+        assertEquals("with the search on top", recent.get("filter"));
+        assertFalse(String.valueOf(statusLine()).contains(SearchHistory.KEPT_OFF_RECENT));
+    }
+
+    @Test
+    public void pausedOrBeforeTheSettingsAreReadyTheRecentListTakesTheSearch() {
+        Settings.DONT_SAVE_SEARCH_HISTORY.save(true);
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        Map<Object, Object> paused = new HashMap<>();
+        SearchHistory.keepRecent(paused, "filter", "list");
+        assertEquals("paused", "list", paused.get("filter"));
+        PauseForTests.resume();
+        Map<Object, Object> early = new HashMap<>();
+        SettingsContextRule.withoutContext(() -> SearchHistory.keepRecent(early, "filter", "list"));
+        assertEquals("before the settings were ready", "list", early.get("filter"));
+    }
+
+    @Test
+    public void aMapThatRefusesThePutStillRefusesIt() {
+        Map<Object, Object> refuses = Collections.unmodifiableMap(new HashMap<>());
+        assertThrows(UnsupportedOperationException.class, () -> SearchHistory.keepRecent(refuses, "filter", "list"));
     }
 
     @Test

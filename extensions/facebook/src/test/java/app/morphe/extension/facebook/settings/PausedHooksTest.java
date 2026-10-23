@@ -97,6 +97,7 @@ import app.morphe.extension.facebook.media.HdrBrightnessForTests;
 import app.morphe.extension.facebook.media.PictureInPictureForTests;
 import app.morphe.extension.facebook.media.FeedSound;
 import app.morphe.extension.facebook.media.FrameStepForTests;
+import app.morphe.extension.facebook.media.PinchZoomForTests;
 import app.morphe.extension.facebook.media.ProgressBar;
 import app.morphe.extension.facebook.media.QualityChoiceForTests;
 import app.morphe.extension.facebook.media.SkipSilence;
@@ -142,6 +143,7 @@ import app.morphe.extension.facebook.reels.FeedVideoAloneForTests;
 import app.morphe.extension.facebook.reels.ReelCleanMode;
 import app.morphe.extension.facebook.reels.ReelDeclutter;
 import app.morphe.extension.facebook.reels.ReelLoopForTests;
+import app.morphe.extension.facebook.reels.NewestReelsForTests;
 import app.morphe.extension.facebook.reels.ReelMidCardsForTests;
 import app.morphe.extension.facebook.reels.ReelPrompts;
 import app.morphe.extension.facebook.reels.SeenStateSendForTests;
@@ -448,7 +450,9 @@ public class PausedHooksTest {
                 PostPrompts::hidePostCounts,
                 // The reaction preview is left undrawn only while the patch runs.
                 PostPrompts::hideReactionPreview,
-                () -> PostPrompts.hideReactionPreview(true)));
+                () -> PostPrompts.hideReactionPreview(true),
+                // So is the count beside a post's faces.
+                () -> PostPrompts.reactionCount("56") == null));
         // A post the store remembers is dropped by the feed guard while the switch is on.
         probes.put(PatchFamily.SEEN_POSTS, Collections.singletonList(SeenPostsForTests::hidesARememberedPost));
         // The pill socket's yes for Meta AI's questions is answered as a no, so it draws no row for
@@ -486,6 +490,7 @@ public class PausedHooksTest {
                 StorySeenForTests::sendsOnlyTheMarked,
                 StorySeenForTests::pointsTheButton));
         // A Story video's upload asks for high quality.
+        probes.put(PatchFamily.PINCH_TO_ZOOM, Collections.singletonList(PinchZoomForTests::zoomsAPhoto));
         probes.put(PatchFamily.STORY_UPLOAD_HD, Collections.singletonList(() -> "high".equals(StoryUpload.quality("standard"))));
         probes.put(PatchFamily.SPONSORED_REELS, Arrays.asList(
                 () -> {
@@ -531,6 +536,8 @@ public class PausedHooksTest {
                 () -> ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsSoundtrackTitle"))) != null,
                 // So does the Reels tab's own audio line row.
                 ReelDeclutter::hideAudioLine,
+                // A stalled video's slow connection message.
+                ReelDeclutter::hideSlowConnectionMessage,
                 ReelDeclutter::hideFollowButton,
                 ReelDeclutter::hideFollowingButton,
                 ReelDeclutter::skipHotComment,
@@ -570,6 +577,8 @@ public class PausedHooksTest {
         probes.put(PatchFamily.REEL_PROMPTS, Collections.singletonList(() -> !ReelPrompts.keep(true)));
         // The Reels batcher's send of the reels you watched never reaches its executor.
         probes.put(PatchFamily.REEL_WATCH_HISTORY, Collections.singletonList(SeenStateSendForTests::heldBack));
+        // A Reels rerank that put an older reel first hands the newer one the first slot.
+        probes.put(PatchFamily.NEWEST_REELS_FIRST, Collections.singletonList(NewestReelsForTests::putsTheNewestFirst));
         // A double tap on a reel finds no handler and no heart, the reel like helper finds no key and
         // sends no like from a double tap, and a feed attachment leaves its double tap unhandled.
         probes.put(PatchFamily.DOUBLE_TAP_LIKE, Arrays.asList(
@@ -749,7 +758,8 @@ public class PausedHooksTest {
                 () -> MetaAiSummaries.holds(MetaAiSummaries.POST_SUMMARY)));
         // The comment box's check answers no for its GIF and sticker buttons, a long press on Like
         // returns before the reaction picker opens, a comment starts with its replies open, an open
-        // thread's replies page on as they're scrolled, and the
+        // thread's replies page on as they're scrolled, a View more replies row takes a tap anywhere
+        // on it, and the
         // check under a post's comments answers no for Related groups. A comment linking to a shop,
         // and one holding a phrase from the hide list, are left out of the comment section.
         probes.put(PatchFamily.COMMENT_SHEET_OPTIONS, Arrays.asList(
@@ -758,6 +768,7 @@ public class PausedHooksTest {
                 CommentSheetOptions::skipReactionPicker,
                 () -> CommentSheetOptions.openReplyThreads(false),
                 () -> CommentSheetOptions.loadWholeReplyThreads(false),
+                () -> !CommentSheetOptions.viewMoreRepliesTextOnly(true),
                 () -> CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS),
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("https://s.shopee.vn/9zKs")),
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("Big SPOILER inside")),
@@ -833,8 +844,12 @@ public class PausedHooksTest {
                 MetaAiSearchForTests::hidesAnswer,
                 MetaAiSearchForTests::dropsPrompts,
                 MetaAiSearchForTests::stopsSuggestionRoute));
-        // A search Facebook would add to your history is kept out.
-        probes.put(PatchFamily.SEARCH_HISTORY, Collections.singletonList(() -> SearchHistory.skipSave(false)));
+        // A search Facebook would add to your history is kept out, and off the Recent list.
+        probes.put(PatchFamily.SEARCH_HISTORY, Arrays.asList(() -> SearchHistory.skipSave(false), () -> {
+            Map<Object, Object> recent = new LinkedHashMap<>();
+            SearchHistory.keepRecent(recent, "filter", "list");
+            return recent.isEmpty();
+        }));
         // XAnalytics' upload and uploader resume are skipped, and the Papaya job finishes unrun.
         probes.put(PatchFamily.ANALYTICS_UPLOADS, Arrays.asList(
                 AnalyticsUploads::holdXAnalyticsUpload,

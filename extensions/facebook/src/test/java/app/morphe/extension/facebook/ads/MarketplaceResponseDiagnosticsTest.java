@@ -199,6 +199,38 @@ public class MarketplaceResponseDiagnosticsTest {
     }
 
     /**
+     * 584's search pages of 27 and 48 listings (emulator, 2026-10-23) nest ad story trees past
+     * level 14 under node.story, and the old walk called both pages incomplete.
+     */
+    @Test
+    public void aSearchPageWithDeepAdStoriesReadsComplete() {
+        String story = "{\"other\":".repeat(20) + "{}" + "}".repeat(20);
+        StringBuilder edges = new StringBuilder();
+        for (int i = 0; i < 48; i++) {
+            if (i > 0) edges.append(',');
+            edges.append("{\"node\":{\"__typename\":\"MarketplaceFeedGeneralListingObject\",\"story\":").append(story)
+                    .append(",\"listing\":{\"__typename\":\"GroupCommerceProductItem\",\"listing_price\":{\"amount\":\"1\"},")
+                    .append("\"marketplace_listing_seller\":{\"name\":\"x\"}}}}");
+        }
+        String response = "{\"data\":{\"marketplace_search\":{\"feed_units\":{\"edges\":[" + edges + "]}}}}";
+        assertSame(response, MarketplaceAdFilterForTests.responseWhole(SEARCH, response));
+        String report = LogBufferManager.buildExportText();
+        assertTrue(report, report.contains("capture=complete"));
+        assertTrue(report, report.contains("MarketplaceFeedGeneralListingObject:48"));
+        assertFalse(report, report.contains("shape depth budget"));
+    }
+
+    @Test
+    public void aShapeDeeperThanTheWalkSaysDepthNotTraversal() {
+        int levels = MarketplaceResponseDiagnostics.MAX_LEVEL + 2;
+        String response = "{\"data\":" + "{\"other\":".repeat(levels) + "{}" + "}".repeat(levels) + "}";
+        assertSame(response, MarketplaceAdFilterForTests.responseWhole(SEARCH, response));
+        String report = LogBufferManager.buildExportText();
+        assertTrue(report, report.contains("capture=incomplete(shape depth budget)"));
+        assertFalse(report, report.contains("shape traversal budget"));
+    }
+
+    /**
      * A search page sent as one payload past 256 KB reads to the end. On the S22 one such page
      * stopped before its first payload and read payloads=0, incomplete.
      */

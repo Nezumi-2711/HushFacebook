@@ -73,7 +73,9 @@ internal const val OWN_CODEC_CONFIGURE = "$HDR_BRIGHTNESS->configure($MEDIA_CODE
  * setting it up, and counts whether the phone's decoder said yes. An HLG video is also handed over
  * naming the usual transfer, its BT.2020 colours kept: HLG shows as it is on an ordinary screen,
  * and a VP9 stream, which names no transfer itself, then skips the decoder maker's tone map that
- * left #93's reels bright and yellow.
+ * left #93's reels bright and yellow. A Qualcomm Codec2 decoder (c2.qti.) only gets the HLG
+ * relabel: on a Snapdragon Samsung phone the request starts a vendor tone-map filter that aborts
+ * the media codec service on HDR reels.
  *
  * A second switch, Play SDR versions of HDR videos (#66), goes one step earlier: each DASH manifest
  * string Facebook parses goes to the extension's SdrRenditions first, which takes out an HDR

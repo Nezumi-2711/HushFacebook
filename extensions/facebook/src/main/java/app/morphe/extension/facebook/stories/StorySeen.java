@@ -53,6 +53,13 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * newest card is published as watched again. A newer story changes the newest card, so it shows as
  * new. Nothing about a story leaves the phone.
  *
+ * <p>The viewer opens a bucket at its first card whose seen flag is false. Facebook sets that flag
+ * as cards play, in memory only, and its servers set it from their view records, which a held-back
+ * view never makes. So after a restart a bucket watched partway, or one that got a new card, opened
+ * at card 1 again (#218). {@link #viewed} keeps every card it hears in a second {@link SeenBuckets},
+ * and {@link #watchedHere} answers Facebook's start check for each one, so the viewer passes over
+ * those and starts at the first card not watched. The flag itself isn't changed.
+ *
  * <p>It fails open, like the other hooks: the switch off, a pause, settings that aren't ready yet,
  * or a failure reading the switch send the views as Facebook would, and leave the rings as Facebook
  * draws them. A failure picking out the marked cards holds the whole batch back, as the switch does
@@ -73,6 +80,9 @@ public final class StorySeen {
 
     /** What Hook status counts each bucket published as watched under. */
     static final String MARKED = "marked watched here";
+
+    /** What Hook status counts each card the viewer passed over, picking where a bucket opens, under (#218). */
+    static final String PASSED_OVER = "opened past a card watched here";
 
     /** The type and field of the tree Facebook publishes for a bucket when its servers take a report. */
     static final String BUCKET_TYPE = "DirectMessageThreadBucket";
@@ -126,6 +136,8 @@ public final class StorySeen {
 
     private static volatile Stories stories = PATCHED;
     private static volatile SeenBuckets store;
+    /** Every card watched with the switch on, by its own id (#218). */
+    private static volatile SeenBuckets cardStore;
     /** The buckets watched to the end since the last send, until it's held back. */
     private static final List<WeakReference<Object>> finished = new ArrayList<>();
     /** Each bucket's window: when it opened, by SystemClock.elapsedRealtime, and the marks in it. */
@@ -267,11 +279,15 @@ public final class StorySeen {
             if (peek || !Utils.settingsReady() || !Settings.VIEW_STORIES_ANONYMOUSLY.get()) return;
             Stories access = stories;
             String story = access.storyId(card);
-            if (story == null || !story.equals(newestStory(bucket, access))) return;
             String bucketId = access.bucketId(bucket);
+            if (story == null || bucketId == null) return;
+            long now = System.currentTimeMillis();
+            SeenBuckets cards = cardStore();
+            if (cards != null) cards.watched(story, bucketId, now);
+            if (!story.equals(newestStory(bucket, access))) return;
             SeenBuckets seen = store();
-            if (bucketId == null || seen == null) return;
-            seen.watched(bucketId, story, System.currentTimeMillis());
+            if (seen == null) return;
+            seen.watched(bucketId, story, now);
             synchronized (finished) {
                 finished.add(new WeakReference<>(bucket));
             }
@@ -304,14 +320,42 @@ public final class StorySeen {
             long now = System.currentTimeMillis();
             if (!Settings.VIEW_STORIES_ANONYMOUSLY.savedValue()) {
                 if (!seen.isEmpty(now)) seen.clear();
+                SeenBuckets cards = cardStore();
+                if (cards != null && !cards.isEmpty(now)) cards.clear();
                 return;
             }
-            if (!Settings.VIEW_STORIES_ANONYMOUSLY.get() || seen.isEmpty(now)) return;
+            if (!Settings.VIEW_STORIES_ANONYMOUSLY.get()) return;
+            // Buckets are built before the viewer opens one, so the cards' file is read here,
+            // ahead of the start check that opens the viewer (#218).
+            SeenBuckets cards = cardStore();
+            if (cards != null) cards.isEmpty(now);
+            if (seen.isEmpty(now)) return;
             String bucketId = stories.bucketId(bucket);
             if (bucketId == null || seen.newestWatched(bucketId, now) == null) return;
             Utils.runOnMainThread(() -> publishIfStillWatched(bucket, bucketId));
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.STORY_SEEN, "story bucket made", failure);
+        }
+    }
+
+    /**
+     * Injection point, first thing in the check the viewer makes of each card while it picks where
+     * a bucket opens: true for a card watched on this phone with the switch on, so the check answers
+     * no and the viewer starts past it (#218). Facebook's own answer stands for every other card, and
+     * with the switch off or paused. Never throws.
+     */
+    public static boolean watchedHere(@Nullable Object card) {
+        try {
+            if (card == null || !Utils.settingsReady() || !Settings.VIEW_STORIES_ANONYMOUSLY.get()) return false;
+            SeenBuckets cards = cardStore();
+            if (cards == null) return false;
+            String story = stories.storyId(card);
+            if (story == null || cards.newestWatched(story, System.currentTimeMillis()) == null) return false;
+            HookStatus.counted(FamilyNames.STORY_SEEN, PASSED_OVER);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.STORY_SEEN, "story start", failure);
+            return false;
         }
     }
 
@@ -400,6 +444,21 @@ public final class StorySeen {
     }
 
     @Nullable
+    private static SeenBuckets cardStore() {
+        SeenBuckets cards = cardStore;
+        if (cards != null) return cards;
+        Context context = Utils.getContext();
+        if (context == null) return null;
+        synchronized (StorySeen.class) {
+            if (cardStore == null) {
+                cardStore = new SeenBuckets(context.getSharedPreferences(SeenBuckets.CARDS_FILE, Context.MODE_PRIVATE),
+                        SeenBuckets.MAX_CARDS);
+            }
+            return cardStore;
+        }
+    }
+
+    @Nullable
     private static String text(Object value) {
         return value instanceof String ? (String) value : null;
     }
@@ -407,6 +466,7 @@ public final class StorySeen {
     static void useForTests(@Nullable Stories access) {
         stories = access == null ? PATCHED : access;
         store = null;
+        cardStore = null;
         synchronized (finished) {
             finished.clear();
         }

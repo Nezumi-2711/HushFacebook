@@ -36,6 +36,25 @@ function Assert-Throws {
     throw "$Message No error was raised."
 }
 
+function New-DesktopJarStandIn {
+    # A desktop CLI jar holding only what Get-DesktopPatcherVersion reads: the patcher's
+    # version.properties, left out when -Patcher is empty, or -Properties as that file's text.
+    # Its manifest names no Patcher-Version, so it also stands in for a bundle that names none.
+    param([string]$Path, [string]$Patcher, [string]$Properties)
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    if (Test-Path -LiteralPath $Path) { Remove-Item -LiteralPath $Path -Force }
+    $archive = [System.IO.Compression.ZipFile]::Open($Path, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        $entries = [ordered]@{ 'META-INF/MANIFEST.MF' = "Manifest-Version: 1.0`nImplementation-Title: morphe-desktop`n" }
+        if ($Properties) { $entries['app/morphe/patcher/version.properties'] = $Properties }
+        elseif ($Patcher) { $entries['app/morphe/patcher/version.properties'] = "version=$Patcher`n" }
+        foreach ($name in $entries.Keys) {
+            $writer = New-Object System.IO.StreamWriter($archive.CreateEntry($name).Open())
+            try { $writer.Write($entries[$name]) } finally { $writer.Dispose() }
+        }
+    } finally { $archive.Dispose() }
+}
+
 function New-NotFoundAnswer {
     # What Invoke-WebRequest raises for a 404 in both shells, as far as Assert-UrlReachable reads
     # it: an error whose Response carries the status. A function named Invoke-WebRequest that
@@ -4379,7 +4398,29 @@ try {
             Assert-True (-not (Test-Path -LiteralPath $applyLog) -and
                 @(Get-Content -LiteralPath $applyBuildLog | Where-Object { $_ -like '* :patches:buildAndroid *' }).Count -eq 0) `
                 'An extension-only push built the release bundle or patched the fixtures.'
+            # A desktop CLI bundling another patcher major than the pin stops the push before the
+            # build starts, not at the fixture apply after it (the 0.17.0 push got 17 minutes in).
+            $pinFile = Join-Path $hookRoot 'gradle/libs.versions.toml'
+            New-Item -ItemType Directory -Path (Split-Path -Parent $pinFile) -Force | Out-Null
+            Set-Content -LiteralPath $pinFile -Encoding ASCII -Value @('[versions]', 'morphe-patcher = "2.0.0"')
+            New-DesktopJarStandIn -Path $applyJar -Patcher '1.15.1'
+            Remove-Item -LiteralPath $applyLog, $applyBuildLog -Force -ErrorAction SilentlyContinue
+            Assert-Throws { & $prePushScript -Root $hookRoot -ChangedPaths @('patches/src/main/kotlin/app/morphe/Any.kt') 6> $null } `
+                "*$applyJar bundles morphe-patcher 1.15.1, but gradle/libs.versions.toml needs 2.0.0*" `
+                'A push with a 1.x desktop CLI on the 2.0 pin was not refused up front.'
+            Assert-True (-not (Test-Path -LiteralPath $applyBuildLog) -and -not (Test-Path -LiteralPath $applyLog)) `
+                'A push with a desktop CLI on the wrong patcher built or patched something before it was refused.'
+            New-DesktopJarStandIn -Path $applyJar -Patcher ''
+            Assert-Throws { & $prePushScript -Root $hookRoot -ChangedPaths @('patches/src/main/kotlin/app/morphe/Any.kt') 6> $null } `
+                "*$applyJar has no app/morphe/patcher/version.properties*" `
+                'A push with a desktop CLI that names no patcher was not refused up front.'
+            # On the pin's major the push goes on to build and patch as before.
+            New-DesktopJarStandIn -Path $applyJar -Patcher '2.0.0'
+            & $prePushScript -Root $hookRoot -ChangedPaths @('patches/src/main/kotlin/app/morphe/Any.kt') 6> $null
+            Assert-True (@(Get-Content -LiteralPath $applyLog -ErrorAction SilentlyContinue).Count -eq 2) `
+                'A push with a desktop CLI on the pinned patcher major did not patch the fixtures.'
         } finally {
+            Remove-Item -LiteralPath (Join-Path $hookRoot 'gradle') -Recurse -Force -ErrorAction SilentlyContinue
             $env:HUSHFACEBOOK_FIXTURE_DIR = $applySaved.Fixtures
             $env:HUSHFACEBOOK_DESKTOP_JAR = $applySaved.Jar
             $env:HUSHFACEBOOK_BUILD_WRAPPER = $wrapperStub
@@ -5662,7 +5703,9 @@ try {
         ':old',
         'echo Unknown option -P',
         'exit /b 1') -join "`r`n") + "`r`n"), [System.Text.Encoding]::ASCII)
-    Set-Content -LiteralPath $stubJar -Value 'not a jar' -Encoding ASCII
+    # A jar with the patcher's version file and nothing else: verify-all-patches.ps1 reads which
+    # patcher a CLI bundles before it runs one, and the stand-in java never opens the jar.
+    New-DesktopJarStandIn -Path $stubJar -Patcher $releaseToolchain.PatcherVersion
     New-TestBundleArchive -Path (Join-Path $tools 'patched.apk') -Entries ([ordered]@{
         'AndroidManifest.xml' = 'binary manifest'; 'classes.dex' = "dex`n035" })
 
@@ -5932,6 +5975,57 @@ try {
             "$(@(Get-Content -LiteralPath $javaLog) -join '; ')")
     Assert-True ((Get-Content -LiteralPath $resourceStock -Raw) -ceq (Get-Content -LiteralPath "$newestFixture.merged.txt" -Raw)) `
         'The resource check was not handed the merge as its stock side.'
+    # A jar bundling another patcher major than the bundle's is refused before anything is merged
+    # or patched, naming the jar and both versions: the 0.17.0 push reached the CLI with a 1.18.1
+    # jar on the 2.0 pin. A jar that doesn't say which patcher it bundles is refused too.
+    $otherPatcher = if ([int](($releaseToolchain.PatcherVersion -split '\.')[0]) -gt 1) { '1.15.1' } else { '2.0.0' }
+    $otherJar = Join-Path $tools 'morphe-desktop-other.jar'
+    New-DesktopJarStandIn -Path $otherJar -Patcher $otherPatcher
+    $bareJar = Join-Path $tools 'morphe-desktop-bare.jar'
+    New-DesktopJarStandIn -Path $bareJar -Patcher ''
+    foreach ($wrongJar in @(
+            @{ Jar = $otherJar; Pattern = "*$otherJar bundles morphe-patcher $otherPatcher, but the bundle $(Split-Path -Leaf $releaseBundle) needs $($releaseToolchain.PatcherVersion)*" },
+            @{ Jar = $bareJar; Pattern = "*$bareJar has no app/morphe/patcher/version.properties*" })) {
+        Remove-Item -LiteralPath $javaLog, $mergeLog -Force -ErrorAction SilentlyContinue
+        Assert-Throws {
+            & $verifyAllScript -Apk $newestFixture -DesktopJar $wrongJar.Jar -WorkDir (Join-Path $releaseRoot 'verify-work') `
+                -Bundle $releaseBundle -PatchList (Join-Path $releaseRepo 'patches-list.json') -Java $stubJava `
+                -Aapt2 $stubAapt2 *> $null
+        } $wrongJar.Pattern "verify-all-patches.ps1 took $(Split-Path -Leaf $wrongJar.Jar) for a $($releaseToolchain.PatcherVersion) bundle."
+        Assert-True (-not (Test-Path -LiteralPath $javaLog) -and -not (Test-Path -LiteralPath $mergeLog)) `
+            "verify-all-patches.ps1 merged or ran the CLI before refusing $(Split-Path -Leaf $wrongJar.Jar)."
+    }
+    # A bundle naming no Patcher-Version is held to the checkout's pin instead.
+    $checkoutPin = [regex]::Match((Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'gradle/libs.versions.toml') -Raw),
+        '(?m)^\s*morphe-patcher\s*=\s*"([^"]+)"').Groups[1].Value
+    $pinOther = if ([int](($checkoutPin -split '\.')[0]) -gt 1) { '1.15.1' } else { '2.0.0' }
+    New-DesktopJarStandIn -Path $otherJar -Patcher $pinOther
+    $pinlessBundle = Join-Path $tools 'pinless.mpp'
+    New-DesktopJarStandIn -Path $pinlessBundle -Patcher ''
+    Remove-Item -LiteralPath $javaLog, $mergeLog -Force -ErrorAction SilentlyContinue
+    Assert-Throws {
+        & $verifyAllScript -Apk $newestFixture -DesktopJar $otherJar -WorkDir (Join-Path $releaseRoot 'verify-work') `
+            -Bundle $pinlessBundle -PatchList (Join-Path $releaseRepo 'patches-list.json') -Java $stubJava `
+            -Aapt2 $stubAapt2 *> $null
+    } "*$otherJar bundles morphe-patcher $pinOther, but gradle/libs.versions.toml needs $checkoutPin*" `
+        "verify-all-patches.ps1 took a $pinOther CLI for a bundle naming no patcher, on the $checkoutPin pin."
+    Assert-True (-not (Test-Path -LiteralPath $javaLog) -and -not (Test-Path -LiteralPath $mergeLog)) `
+        'verify-all-patches.ps1 merged or ran the CLI before refusing a CLI for a bundle naming no patcher.'
+    Remove-Item -LiteralPath $otherJar, $bareJar, $pinlessBundle -Force
+    # version.properties is a Java properties file: CRLF, a colon, spaces round the separator.
+    # An empty value doesn't run into the next line.
+    $parsedJar = Join-Path $tools 'morphe-desktop-parsed.jar'
+    foreach ($case in @(
+            @{ Text = "#Generated`r`nversion=2.0.0`r`n"; Want = '2.0.0' },
+            @{ Text = "version : 1.15.1"; Want = '1.15.1' },
+            @{ Text = "  version=2.1.0-dev.3  `n"; Want = '2.1.0-dev.3' },
+            @{ Text = "version=`nname=patcher`n"; Want = $null })) {
+        New-DesktopJarStandIn -Path $parsedJar -Properties $case.Text
+        $parsed = Get-DesktopPatcherVersion -Jar $parsedJar
+        Assert-True ($parsed -eq $case.Want) `
+            "Get-DesktopPatcherVersion read '$parsed' from version.properties '$($case.Text -replace "`r", '\r' -replace "`n", '\n')', not '$($case.Want)'."
+    }
+    Remove-Item -LiteralPath $parsedJar -Force
     foreach ($broken in $brokenMerges) {
         $flag = Join-Path $tools $broken.Flag
         Set-Content -LiteralPath $flag -Value 'on' -Encoding ASCII

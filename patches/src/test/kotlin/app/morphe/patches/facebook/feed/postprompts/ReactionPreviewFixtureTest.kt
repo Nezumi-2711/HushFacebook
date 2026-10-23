@@ -8,12 +8,16 @@ import app.morphe.ExtensionDex
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patches.facebook.feed.FixtureDex
+import app.morphe.patches.facebook.feed.methodsHolding
 import app.morphe.patches.facebook.layout.theme.INLINE_REACTIONS
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
+import app.morphe.patches.facebook.reels.watchhistory.callRegisters
 import app.morphe.patches.shared.compat.AppCompatibilities
+import app.morphe.util.ControlFlow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
@@ -188,6 +192,72 @@ class ReactionPreviewFixtureTest {
         }
         assertEquals("a declared build has no fixture", versions, checked)
         assertEquals("an ABI went unchecked", Fixtures.declaredAbis(), abis)
+    }
+
+    @Test
+    fun `each declared build's reaction count text goes through the extension`() {
+        val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }.toSet()
+        assertTrue("the bundle declares no Facebook build", versions.isNotEmpty())
+        val checked = mutableSetOf<String>()
+        val abis = mutableSetOf<String>()
+        for (version in versions) {
+            for (bundle in Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") }) {
+                val name = bundle.name
+                val holders = FixtureDex.classesHolding(bundle, FEEDBACK_HEADER)
+                    .filterNot { it.type.startsWith(EXTENSION_PACKAGE) }.distinctBy { it.type }
+                val renders = holders.flatMap { methodsHolding(it, FEEDBACK_HEADER) }
+                assertEquals("$name: methods naming $FEEDBACK_HEADER", 1, renders.size)
+                val render = renders.single()
+                val code = render.implementation!!.instructions.toList()
+
+                val call = reactionCountCall(render)
+                assertNotNull("$name: ${render.definingClass} builds no one component from two Strings", call)
+                val init = (code[call!!] as ReferenceInstruction).reference as MethodReference
+                // Negative control: the summary builds other components, and their constructors aren't taken.
+                assertTrue("$name: no other constructor was rejected, so the two-String check proves nothing",
+                    code.count { (it as? ReferenceInstruction)?.reference.let { r -> r is MethodReference && r.name == "<init>" } } > 1)
+                assertEquals("$name: the component is made right before its constructor", Opcode.NEW_INSTANCE, code[call - 1].opcode)
+                assertEquals("$name: of the constructor's type", init.definingClass,
+                    (code[call - 1] as ReferenceInstruction).reference.toString())
+                // Every path into the constructor comes through the new-instance, so the hook in between runs on each.
+                val flow = ControlFlow.of(render)
+                val into = code.indices.filter { call in flow.normal[it] || call in flow.exceptional[it] }
+                assertEquals("$name: only the new-instance leads into the constructor", listOf(call - 1), into)
+                val text = code[call].callRegisters()[1]
+
+                val owner = FixtureDex.classes(bundle, setOf(render.definingClass)).getValue(render.definingClass)
+                val context = PatchContexts.of(listOf(owner))
+                context.hideReactionCount()
+                val patched = context.mutableClassDefBy(owner.type).methods.single {
+                    it.name == render.name && it.parameterTypes == render.parameterTypes
+                }.implementation!!.instructions.toList()
+                assertEquals("$name: two instructions added", code.size + 2, patched.size)
+                val asks = patched[call]
+                assertEquals("$name: the extension is asked", REACTION_COUNT,
+                    ((asks as ReferenceInstruction).reference as MethodReference).toString())
+                assertEquals("$name: with the text and nothing else", listOf(text), asks.callRegisters())
+                assertEquals("$name: its answer is kept", Opcode.MOVE_RESULT_OBJECT, patched[call + 1].opcode)
+                assertEquals("$name: in the text's register", text, (patched[call + 1] as OneRegisterInstruction).registerA)
+                assertEquals("$name: the constructor follows with the same registers", code[call].callRegisters(),
+                    patched[call + 2].callRegisters())
+                assertEquals("$name: the rest is Facebook's", code.map { it.opcode },
+                    patched.filterIndexed { index, _ -> index != call && index != call + 1 }.map { it.opcode })
+                checked += version
+                abis += name.substringAfter("-$version-").substringBefore(".apkm")
+            }
+        }
+        assertEquals("a declared build has no fixture", versions, checked)
+        assertEquals("an ABI went unchecked", Fixtures.declaredAbis(), abis)
+    }
+
+    @Test
+    fun `the extension has the count hook`() {
+        val type = REACTION_COUNT.substringBefore("->")
+        val hook = ExtensionDex.classDef(type).methods.singleOrNull {
+            "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}" == REACTION_COUNT
+        }
+        assertNotNull("the extension has no $REACTION_COUNT", hook)
+        assertTrue("$REACTION_COUNT isn't static", AccessFlags.STATIC.isSet(hook!!.accessFlags))
     }
 
     @Test

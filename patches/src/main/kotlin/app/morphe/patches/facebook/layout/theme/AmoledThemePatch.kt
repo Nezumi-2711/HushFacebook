@@ -14,7 +14,11 @@ import app.morphe.patches.facebook.misc.extension.patchLog
 import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
 import app.morphe.patches.facebook.misc.extension.requireLocals
 import app.morphe.patches.facebook.misc.extension.requireParameterIntact
+import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patches.facebook.misc.extension.FACEBOOK_APPLICATION
+import app.morphe.patches.facebook.misc.settings.declaredInHierarchy
+import app.morphe.patches.shared.misc.extension.EXTENSION_CLASS_DESCRIPTOR
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.colorOption
@@ -314,6 +318,9 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
         val rewritten = mutableMapOf<String, Int>()
         val rewrittenAtNight = mutableSetOf<String>()
         val references = mutableMapOf<String, String>()
+        val wrote = mutableSetOf<String>()
+        val wroteAtNight = mutableSetOf<String>()
+        val literals = mutableMapOf<String, Int>()
 
         // Patcher 2.0 decodes only the files a patch asks for: an undecoded file does not exist yet.
         decode(DEFAULT_COLORS, NIGHT_COLORS)
@@ -327,8 +334,12 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
                         val name = color.getAttribute("name")
                         val value = color.textContent.trim()
                         if (path == DEFAULT_COLORS && value.startsWith("@color/")) references[name] = value.removePrefix("@color/")
+                        if (path == DEFAULT_COLORS) argb(value)?.let { literals[name] = it }
                         val text = routeTwoValue(value, written) ?: continue
                         if (path == DEFAULT_COLORS) rewritten[name] = checkNotNull(argb(value)) else rewrittenAtNight += name
+                        if (argb(value) != BLACK) {
+                            if (path == DEFAULT_COLORS) wrote += name else wroteAtNight += name
+                        }
                         color.textContent = text
                         changed++
                     }
@@ -347,8 +358,42 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
         check(routeTwoRestores.isNotEmpty()) {
             "No colour route two rewrote has a resource id, so light mode's Video tab would stay black"
         }
+
+        writtenColours = writtenColoursTable(wrote, wroteAtNight, literals, references) { name ->
+            resourceIds.getOrNull(ResourceType.COLOR, name) ?: decodedColourId(name)
+        }
     }
 }
+
+/** The resources route two wrote its colour over, for AmoledResources.writtenColours ([writtenColoursTable]). */
+internal var writtenColours = ""
+
+/**
+ * AmoledResources.writtenColours's table: each colour resource route two wrote its colour over
+ * ([wrote] by default, [wroteAtNight] at night), as `"id=D[/p];..."` in hex and sorted by id. D is
+ * `p` where the default colour is route two's, else the default colour Facebook keeps there, read
+ * through one `@color/` reference. `/p` says the night one is route two's too. A resource whose
+ * default colour can't be read that way is left out, since the Background color row's table must
+ * give both. Facebook's own black isn't route two's, so it stays black there too.
+ */
+internal fun writtenColoursTable(
+    wrote: Set<String>,
+    wroteAtNight: Set<String>,
+    literals: Map<String, Int>,
+    references: Map<String, String>,
+    id: (String) -> Long?,
+): String = (wrote + wroteAtNight).mapNotNull { name ->
+    val target = references[name]
+    val default = when {
+        name in wrote -> "p"
+        literals[name] != null -> "%08x".format(literals.getValue(name))
+        target != null && target in wrote -> "p"
+        target != null && literals[target] != null -> "%08x".format(literals.getValue(target))
+        else -> return@mapNotNull null
+    }
+    val night = if (name in wroteAtNight) "/p" else ""
+    id(name)?.let { it to "$default$night" }
+}.sortedBy { it.first }.joinToString(";") { (id, entry) -> "%x=%s".format(id, entry) }
 
 /** The colour resource that holds the Background colour, AmoledTheme.PAGE_COLOUR. */
 internal const val PAGE_COLOUR = "hushfacebook_amoled_page"
@@ -426,7 +471,8 @@ val amoledThemePatch = bytecodePatch(
     description = "Makes Facebook's dark mode black, or a dark color you pick, instead of dark gray, which can " +
         "save battery on OLED screens. Cards and menus stay a shade lighter than the page. Turn on Black cards in " +
         "Hushfacebook settings > Appearance to make them black too, and Lines between posts there for a thin gray " +
-        "line between posts in the feed. Turn on dark mode in Facebook first. It isn't " +
+        "line between posts in the feed. Light background color there gives light mode a soft color in place of " +
+        "white. Turn on dark mode in Facebook first. It isn't " +
         "selected by default because undoing it means patching again. Turn on Expert mode in Manager to pick it.",
     default = false,
 ) {
@@ -434,8 +480,9 @@ val amoledThemePatch = bytecodePatch(
     dependsOn(settingsPatch)
     compatibleWith(*AppCompatibilities.facebook())
 
-    // Issue #34. Routes two and three write the colour into resources and code, so it's chosen
-    // when patching, not in Hushfacebook's settings.
+    // Issue #34. Routes two and three write the colour into resources and code. It's what the
+    // Background color row in Hushfacebook's settings starts from, and what a blank row goes back
+    // to (#214).
     val backgroundOption by colorOption(
         key = "backgroundColour",
         default = "#000000",
@@ -485,7 +532,9 @@ val amoledThemePatch = bytecodePatch(
         // Route three. The palette tables, the top bar of the feed and each Litho component that
         // draws its own chrome all write a colour instead of asking for one, so no resolver and no
         // resource reaches them.
-        check(blackenColourLiterals(background()) > 0) { "No dark colour written in code, so the chrome would stay grey" }
+        // Each reads AmoledTheme's page colour, so the Background color row reaches it (#214).
+        checkPageFields()
+        check(blackenColourLiterals() > 0) { "No dark colour written in code, so the chrome would stay grey" }
 
         // The colours Facebook writes for its dark theme only, past route three's greys: the Create
         // story tile's #333334 stayed grey with Black cards on (#191). Material You reads the same
@@ -515,6 +564,15 @@ val amoledThemePatch = bytecodePatch(
         }
         check(routeTwoRestores.isNotEmpty()) { "Route two's table is empty, so light mode's Video tab would stay black" }
         fillRouteTwoTable(routeTwoRestores)
+
+        // The Background color row (#214): AmoledTheme reads it as Facebook starts, right after the
+        // extension gets its context, and the resources route two wrote over take it per activity.
+        loadBackgroundRow()
+        if (writtenColours.isEmpty()) {
+            patchLog.warning("No colour route two wrote has a resource id, so the Background color row leaves layouts the patched colour")
+        } else {
+            fillWrittenColours(writtenColours)
+        }
 
         // React Native screens such as Marketplace home, whose colours come from their JavaScript
         // as ints on props, past every route.
@@ -863,16 +921,31 @@ internal fun BytecodePatchContext.hookFdsColorsResolvers(target: String) {
 }
 
 /**
- * Route three over the whole app: each dark grey written in code turns black, or the [background]
- * colour the option asks for, except in the [systemBarColourMethods]. The sweep reads every class
- * and rewrites only the classes that hold one, which takes about 30 seconds. Answers how many it
- * rewrote.
+ * Where route three reads the page's colour (issue #214): AmoledTheme's fields, which hold the
+ * Background colour option's colour until the Background color row puts another in as Facebook
+ * starts. A colour Facebook keeps in a long reads the long one.
+ */
+internal const val PAGE_FIELD = "$AMOLED->PAGE:I"
+internal const val PAGE_WIDE_FIELD = "$AMOLED->PAGE_WIDE:J"
+
+/** Checks AmoledTheme has the static fields [blackenColourLiterals] reads, as Material You checks its own. */
+internal fun BytecodePatchContext.checkPageFields() {
+    val fields = classDefBy(AMOLED).fields.filter { AccessFlags.STATIC.isSet(it.accessFlags) }.map { "${it.name}:${it.type}" }
+    listOf(PAGE_FIELD, PAGE_WIDE_FIELD).map { it.substringAfter("->") }.forEach { field ->
+        if (field !in fields) throw PatchException("$AMOLED has no static $field for route three to read")
+    }
+}
+
+/**
+ * Route three over the whole app: each dark grey written in code reads the page's colour instead
+ * ([PAGE_FIELD]), except in the [systemBarColourMethods]. The sweep reads every class and rewrites
+ * only the classes that hold one, which takes about 30 seconds. Answers how many it rewrote.
  *
  * The extension is skipped: its greys are its own, set a step above the page on purpose. Swept,
  * Lines between posts drew its #1D1E23 as black on black on the S22 (#206), and Black cards' button
  * fill, #262627, became the page's colour (#191).
  */
-internal fun BytecodePatchContext.blackenColourLiterals(background: Int = BLACK): Int {
+internal fun BytecodePatchContext.blackenColourLiterals(): Int {
     val handsToBar = systemBarColourMethods()
     val owners = mutableSetOf<String>()
     classDefForEach { classDef ->
@@ -880,7 +953,7 @@ internal fun BytecodePatchContext.blackenColourLiterals(background: Int = BLACK)
         if (classDef.methods.any { it.hasDarkColor() }) owners += classDef.type
     }
     return owners.sumOf { type ->
-        mutableClassDefByOrNull(type)?.methods?.sumOf { if (handsToBar(it)) 0 else it.blackenDarkColors(background) } ?: 0
+        mutableClassDefByOrNull(type)?.methods?.sumOf { if (handsToBar(it)) 0 else it.blackenDarkColors() } ?: 0
     }
 }
 
@@ -977,6 +1050,31 @@ internal fun BytecodePatchContext.fillLightestStep(step: Int) {
     stub.returnEarly(step)
 }
 
+private const val AMOLED_RESOURCES = "Lapp/morphe/extension/facebook/theme/AmoledResources;"
+
+/** Puts [table] ([writtenColoursTable]) in AmoledResources.writtenColours, for the Background color row. */
+internal fun BytecodePatchContext.fillWrittenColours(table: String) {
+    val stub = mutableClassDefBy(AMOLED_RESOURCES).methods.singleOrNull {
+        it.name == "writtenColours" && it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/String;"
+    } ?: throw PatchException("AmoledResources has no writtenColours() for the Background color row")
+    stub.returnEarly(table)
+}
+
+/**
+ * Calls AmoledTheme.load in the application's onCreate, right after the extension's setContext,
+ * which [facebookExtensionPatch] puts first: the Background color row's colour is in place before
+ * Facebook's own startup reads a colour.
+ */
+internal fun BytecodePatchContext.loadBackgroundRow() {
+    val setContext = "$EXTENSION_CLASS_DESCRIPTOR->setContext(Landroid/content/Context;)V"
+    val onCreate = declaredInHierarchy(FACEBOOK_APPLICATION, "onCreate")
+    val index = onCreate.implementation!!.instructions.indexOfFirst {
+        (it as? ReferenceInstruction)?.reference?.toString() == setContext
+    }
+    if (index < 0) throw PatchException("$FACEBOOK_APPLICATION.onCreate doesn't hand the extension its context")
+    onCreate.addInstruction(index + 1, "invoke-static {}, $AMOLED->load()V")
+}
+
 /** Puts route two's [table] in AmoledTheme.routeTwoColours, for light mode to read colours back. */
 internal fun BytecodePatchContext.fillRouteTwoTable(table: String) {
     val stub = mutableClassDefBy(AMOLED).methods.singleOrNull {
@@ -1004,25 +1102,27 @@ private fun Method.hasDarkColor(): Boolean =
     implementation?.instructions?.any { it.isDarkColor() } == true
 
 /**
- * Replaces each dark grey that this method writes with black, or with [background]. Answers how
- * many it replaced.
+ * Replaces each dark grey that this method writes with a read of the page's colour, into the same
+ * register. Answers how many it replaced.
  *
  * A `const-wide/32` carries its value as a narrow literal too, so a colour kept in a long matches.
- * It stays a `const-wide/32`: a narrow `const` in its place leaves the long's upper register
+ * It reads [PAGE_WIDE_FIELD] with `sget-wide`: an int in its place leaves the long's upper register
  * unset, and ART rejects the whole class ("register v0 has type IntegerConstant but expected
- * Long (Low Half)", a static initializer on 580 with every patch on).
+ * Long (Low Half)", a static initializer on 580 with every patch on). The long holds the colour as
+ * `const-wide/32` sign-extends it. A `const` and a `const-wide/32` have an 8-bit register, and so do
+ * both reads, and none of them branches, so nothing around it moves, as with Material You's reads.
  */
-internal fun MutableMethod.blackenDarkColors(background: Int = BLACK): Int {
+internal fun MutableMethod.blackenDarkColors(): Int {
     val sites = (implementation ?: return 0).instructions.withIndex()
         .filter { it.value.isDarkColor() }
         .map { Triple(it.index, (it.value as OneRegisterInstruction).registerA, it.value.opcode) }
 
     sites.asReversed().forEach { (index, register, opcode) ->
-        val black = when (opcode) {
-            Opcode.CONST_WIDE_16, Opcode.CONST_WIDE_32 -> "const-wide/32 v$register, $background"
-            else -> "const v$register, $background"
+        val page = when (opcode) {
+            Opcode.CONST_WIDE_16, Opcode.CONST_WIDE_32 -> "sget-wide v$register, $PAGE_WIDE_FIELD"
+            else -> "sget v$register, $PAGE_FIELD"
         }
-        replaceInstruction(index, black)
+        replaceInstruction(index, page)
     }
     return sites.size
 }
