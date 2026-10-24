@@ -269,6 +269,29 @@ public final class AmoledTheme {
                     "LINK")));
 
     /**
+     * FDS's blue text roles that light mode's Light background color holds too, past
+     * {@link #TEXT_TOKENS} ({@link #light}): a text field's typed text, the Like button's blue and FB
+     * Lite's accent text. Facebook's light theme gives each a blue ({@link MaterialYouTheme#FDS_LIGHT})
+     * that no dark style gives the token, so the Video tab keeps its own (MaterialYouTokenFixtureTest).
+     * ACCENT isn't one: its light blue is the dark style's too.
+     */
+    static final Set<String> LIGHT_TEXT_TOKENS = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    "TEXT_INPUT_ACTIVE_TEXT",
+                    "REACTION_LIKE",
+                    "FBLITE_ACCENT_ON_BACKGROUND")));
+
+    /**
+     * Mig's light grey fills that light mode's Light background color moves, past its surfaces in
+     * {@link #BACKGROUND_TOKENS} ({@link #applyLight}): a pill or a chip's fill and the grey buttons.
+     */
+    static final Set<String> MIG_LIGHT_FILLS = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    "FILL",
+                    "SECONDARY_BUTTON_ENABLED",
+                    "SECONDARY_BUTTON_ON_CARD")));
+
+    /**
      * Facebook's tint for an unread notification's row in dark mode (FDS's NEW_NOTIFICATION_BACKGROUND,
      * #192D88FF), at the alpha {@link #unreadRow} gives it. Over a lighter Background colour it can
      * be the lightest thing text sits on.
@@ -483,15 +506,61 @@ public final class AmoledTheme {
      * stays blue. The Video tab,
      * which stays dark in light mode, keeps its colours: its backgrounds are dark greys, and its
      * text comes with dark mode's colours, which no FDS token has in light mode
-     * ({@link LightTheme}).
+     * ({@link LightTheme}). The blue text roles of {@link #LIGHT_TEXT_TOKENS} are held the same way.
      */
     static int light(int color, String token) {
         if ((color >>> 24) != 0xFF) return color;
         if (BACKGROUND_TOKENS.contains(token) || LIGHT_BACKGROUND_TOKENS.contains(token)) {
-            return isLightNeutral(color) ? AmoledLightBackground.fill(lightBackground, color) : color;
+            return lightSurface(color);
         }
-        if (!TEXT_TOKENS.contains(token) || !LightTheme.text(token, color)) return color;
+        if (!(TEXT_TOKENS.contains(token) || LIGHT_TEXT_TOKENS.contains(token)) || !LightTheme.text(token, color)) {
+            return color;
+        }
         return AmoledLightBackground.held(color, lightTextSurface);
+    }
+
+    /**
+     * Route one for Mig's light scheme, which only light mode asks (issue #214). With the Light
+     * background color row set and Facebook in light mode, a Mig surface ({@link #BACKGROUND_TOKENS})
+     * or light fill ({@link #MIG_LIGHT_FILLS}) in white or a light grey takes the row's colour the
+     * way FDS's do ({@link #light}), and a text role ({@link #TEXT_TOKENS}) comes back darkened
+     * toward black where it would fall under {@link #TEXT_CONTRAST} on the moved grey. The light
+     * scheme answers light mode only, so no dark colour comes through here. Unset, or in dark mode,
+     * each colour comes back as it came.
+     *
+     * @param token an enum constant. Only its name is used.
+     */
+    public static int applyLight(int color, Object token) {
+        HookStatus.invoked(FamilyNames.AMOLED_THEME);
+        if (lightBackground == 0 || (color >>> 24) != 0xFF || !(token instanceof Enum) || DarkMode.on()) return color;
+        String name = ((Enum<?>) token).name();
+        if (BACKGROUND_TOKENS.contains(name) || MIG_LIGHT_FILLS.contains(name)) return lightSurface(color);
+        return TEXT_TOKENS.contains(name) ? AmoledLightBackground.held(color, lightTextSurface) : color;
+    }
+
+    /**
+     * A background's white or light grey ({@link #isLightNeutral}) in light mode, as the Light
+     * background color takes it ({@link AmoledLightBackground#fill}). A colour that's already one of
+     * the row's fills comes back as it is: a surface resource AmoledResources gave the row's colour
+     * reads that way, and filling it again would darken it.
+     */
+    static int lightSurface(int color) {
+        int row = lightBackground;
+        if (row == 0 || !isLightNeutral(color) || AmoledResources.givesLight(color, row)) return color;
+        return AmoledLightBackground.fill(row, color);
+    }
+
+    /**
+     * {@link #light} for a hook that knows its colour's role by name, such as the comment time
+     * ({@link CommentTimeColour}): Facebook's colour while the Light background color row is blank.
+     */
+    static int lightNamed(int color, String token) {
+        return lightBackground == 0 ? color : light(color, token);
+    }
+
+    /** The Light background color row's colour, or 0 while it's blank. */
+    static int lightBackground() {
+        return lightBackground;
     }
 
     /**
@@ -503,8 +572,8 @@ public final class AmoledTheme {
 
         /**
          * Whether {@code color} is the one {@link MaterialYouTheme#FDS_LIGHT} gives {@code token}.
-         * Mig's names never are: route one hooks only Mig's dark scheme, so in light mode its colours
-         * are a dark surface's, such as the Video tab's.
+         * Mig's names never are: Mig's light scheme goes through {@link #applyLight}, so a Mig colour
+         * here comes from its dark scheme, a dark surface's such as the Video tab's.
          */
         static boolean text(String token, int color) {
             int[] light = LIGHT.get(token);
@@ -681,11 +750,28 @@ public final class AmoledTheme {
     /**
      * A background a React Native screen sets on a view (ReactColours), such as the strip behind
      * Marketplace home's chips. It comes from the screen's JavaScript with no token, so it takes
-     * route four's rule.
+     * route four's rule. Only backgrounds come here, so in light mode with the Light background
+     * color row set a white or light grey one takes the row's colour as route one's surfaces do
+     * ({@link #lightSurface}, issue #214).
      */
     static int react(int color) {
         HookStatus.invoked(FamilyNames.AMOLED_THEME);
+        if (lightBackground != 0 && !DarkMode.on()) return lightSurface(color);
         return withoutToken(color);
+    }
+
+    /**
+     * Route four for the fill of a Bloks box (582 {@code LX/4Nl;}) or a native template's box (the
+     * Menu's profile card), a server colour that comes with its role (issue #214).
+     * {@link #parseColor} can't tell a white page from the white label on a blue button, so it
+     * leaves light mode alone. A box's fill is always a background, so with the
+     * Light background color row set and Facebook in light mode a white or light grey one takes the
+     * row's colour as route one's surfaces do ({@link #lightSurface}). Unset, or in dark mode, where
+     * {@link #parseColor} has already answered for it, the fill comes back as it came.
+     */
+    public static int bloksFill(int color) {
+        HookStatus.invoked(FamilyNames.AMOLED_THEME);
+        return lightBackground == 0 || DarkMode.on() ? color : lightSurface(color);
     }
 
     /**
@@ -800,7 +886,8 @@ public final class AmoledTheme {
      * application's resources take the row's colour from here ({@link AmoledResources}). A blank
      * row, a paused Facebook, a colour the row's rule refuses and a build with Material You keep the
      * patch's colour. Material You recolours the same greys, and its resources aren't this table's.
-     * The Light background color row is read here too ({@link #loadLight}).
+     * The Light background color row is read here too ({@link #loadLight}), and the application's
+     * resources take either row's colour once both are read.
      */
     public static void load() {
         try {
@@ -811,22 +898,30 @@ public final class AmoledTheme {
                 // Its own catch, so a failure here still leaves the Background color row read.
                 Logger.printException(() -> "AMOLED: could not read the Light background color row", failure);
             }
-            String text = Settings.AMOLED_BACKGROUND.get();
-            String stored = AmoledBackground.stored(text);
-            if (stored == null) {
-                Logger.printInfo(() -> "AMOLED: Background color " + text + " can't be used, so the patch's colour stays");
-                return;
-            }
-            Integer colour = AmoledBackground.colour(stored);
-            if (stored.isEmpty() || colour == null || colour == written) return;
-            use(colour, AmoledBackground.lightestStep(colour));
-            Logger.printDebug(() -> "AMOLED: Background color " + stored + " in place of the patch's");
+            loadBackground();
             Context context = Utils.getContext();
             if (context != null) AmoledResources.recolour(context);
         } catch (Throwable failure) {
             // Throwable, as in every hook: this runs as the application starts.
             Logger.printException(() -> "AMOLED: could not read the Background color row", failure);
         }
+    }
+
+    /**
+     * The Background color row's part of {@link #load}. A blank row and a colour its rule refuses
+     * keep the patch's colour.
+     */
+    private static void loadBackground() {
+        String text = Settings.AMOLED_BACKGROUND.get();
+        String stored = AmoledBackground.stored(text);
+        if (stored == null) {
+            Logger.printInfo(() -> "AMOLED: Background color " + text + " can't be used, so the patch's colour stays");
+            return;
+        }
+        Integer colour = AmoledBackground.colour(stored);
+        if (stored.isEmpty() || colour == null || colour == written) return;
+        use(colour, AmoledBackground.lightestStep(colour));
+        Logger.printDebug(() -> "AMOLED: Background color " + stored + " in place of the patch's");
     }
 
     /**

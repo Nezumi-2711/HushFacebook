@@ -66,6 +66,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean storyMusicLength() {
+        return false;
+    }
+
     public static boolean pinchToZoom() {
         return false;
     }
@@ -79,6 +83,10 @@ public final class SettingsStatus {
     }
 
     public static boolean sponsoredProfilePosts() {
+        return false;
+    }
+
+    public static boolean profileNotes() {
         return false;
     }
 
@@ -107,6 +115,14 @@ public final class SettingsStatus {
     }
 
     public static boolean doubleTapLike() {
+        return false;
+    }
+
+    public static boolean doubleTapSkip() {
+        return false;
+    }
+
+    public static boolean tapShowsControls() {
         return false;
     }
 
@@ -207,6 +223,10 @@ public final class SettingsStatus {
     }
 
     public static boolean unlockAppIcons() {
+        return false;
+    }
+
+    public static boolean headerText() {
         return false;
     }
 

@@ -42,9 +42,11 @@ public final class FamilyNames {
     public static final String STORY_AUTO_ADVANCE = "Stop Story auto-advance";
     public static final String STORY_SEEN = "View stories anonymously";
     public static final String STORY_UPLOAD_HD = "Upload Stories in HD";
+    public static final String STORY_MUSIC_LENGTH = "Longer music on photo stories";
     public static final String SPONSORED_REELS = "Hide sponsored reels";
     public static final String SPONSORED_SEARCH = "Hide sponsored search results";
     public static final String SPONSORED_PROFILE_POSTS = "Hide sponsored profile posts";
+    public static final String PROFILE_NOTES = "Hide profile notes";
     public static final String SPONSORED_MARKETPLACE = "Hide sponsored Marketplace listings";
     public static final String AFFILIATE_LINKS = "Hide affiliate product links";
     public static final String REEL_DECLUTTER = "Clean up Reels";
@@ -52,6 +54,8 @@ public final class FamilyNames {
     public static final String REEL_WATCH_HISTORY = "Don't send reel watch history";
     public static final String NEWEST_REELS_FIRST = "Newest reels first";
     public static final String DOUBLE_TAP_LIKE = "Turn off double tap to like";
+    public static final String DOUBLE_TAP_SKIP = "Double tap to skip";
+    public static final String TAP_SHOWS_CONTROLS = "Tap shows the controls";
     public static final String REEL_GESTURES = "Open comments with a gesture";
     public static final String KEEP_REEL_SPEED = "Keep the reel speed";
     public static final String HOLD_REEL_FOR_2X = "Hold a reel for 2x";
@@ -76,6 +80,7 @@ public final class FamilyNames {
     public static final String CARRIER_BANNERS = "Hide carrier data banners";
     public static final String SCREEN_TRANSITIONS = "Turn off screen transitions";
     public static final String APP_ICONS = "Unlock app icons";
+    public static final String HEADER_TEXT = "Home header text";
     public static final String EXTERNAL_BROWSER = "Open links in external browser";
     public static final String SANITIZE_SHARING_LINKS = "Sanitize sharing links";
     public static final String UPDATE_PROMPTS = "Stop update prompts";

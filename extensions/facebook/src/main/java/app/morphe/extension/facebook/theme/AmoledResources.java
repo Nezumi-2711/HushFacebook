@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import app.morphe.extension.shared.Logger;
 
@@ -30,6 +31,13 @@ import app.morphe.extension.shared.Logger;
  * over, in the default configuration, the night one or both, with the value the other one keeps.
  * {@link AmoledTheme#PAGE_COLOUR}, the page's colour the patch adds, joins them here, since its id
  * is only known once the APK is built.
+ *
+ * <p>The Light background color row takes the same path in light mode. Facebook's light style
+ * points its surfaces at white and light greys that its text, icons and dividers share, so the
+ * patch gives each of those surfaces a colour resource of its own ({@link #LIGHT_SURFACE}) and
+ * lists Facebook's colours in {@link #lightSurfaces}. With the row set, the table gives each the
+ * row's fill of that colour ({@link AmoledLightBackground#fill}), in the default configuration only:
+ * the dark style sets each of those surfaces itself, so dark mode never reads them.
  */
 public final class AmoledResources {
 
@@ -53,6 +61,15 @@ public final class AmoledResources {
     }
 
     private static volatile Table table = parse(writtenColours());
+
+    /**
+     * The start of the name of each colour resource the patch adds for a light surface, before
+     * Facebook's colour as six lowercase hex digits.
+     */
+    static final String LIGHT_SURFACE = "hushfacebook_amoled_light_";
+
+    /** Facebook's colours that {@link #lightSurfaces} lists, opaque. */
+    private static volatile int[] lightColours = parseLight(lightSurfaces());
 
     /** The loader for the colour in use, made once. Main thread only. */
     @Nullable
@@ -80,6 +97,99 @@ public final class AmoledResources {
     @Nullable
     public static String writtenColours() {
         return null;
+    }
+
+    /**
+     * Filled in by the patch: each colour of Facebook's light style that a surface now reads from a
+     * resource of its own, {@link #LIGHT_SURFACE} and the colour, as {@code "rrggbb;..."} in hex.
+     */
+    @Nullable
+    public static String lightSurfaces() {
+        return null;
+    }
+
+    /** {@link #lightSurfaces}'s colours, opaque. One it can't read is left out, as in {@link #parse}. */
+    static int[] parseLight(@Nullable String text) {
+        if (text == null || text.isEmpty()) return new int[0];
+        String[] entries = text.split(";");
+        int[] colours = new int[entries.length];
+        int count = 0;
+        for (String entry : entries) {
+            if (entry.length() != 6) continue;
+            try {
+                int colour = Integer.parseInt(entry, 16);
+                colours[count++] = 0xFF000000 | colour;
+            } catch (NumberFormatException unreadable) {
+                Logger.printInfo(() -> "AMOLED: left out an unreadable light surface entry", unreadable);
+            }
+        }
+        return Arrays.copyOf(colours, count);
+    }
+
+    /** Package-visible for tests: puts a list of {@link #lightSurfaces}'s form in use. */
+    static void useLightSurfaces(@Nullable String text) {
+        lightColours = parseLight(text);
+        loader = null;
+    }
+
+    /**
+     * Whether {@code color} is the fill the row's colour {@code row} gives one of the light surfaces,
+     * which is what a surface reads once the table is in place. Route one leaves those as they are.
+     */
+    static boolean givesLight(int color, int row) {
+        for (int light : lightColours) {
+            if (AmoledLightBackground.fill(row, light) == color) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The light surfaces' entries for the row's colour {@code row}: index 0 the ids, 1 their default
+     * colours. {@code ids} holds each of {@code colours}' resource ids, or 0 where the build has none.
+     */
+    static int[][] lightEntries(int[] ids, int[] colours, int row) {
+        int[] kept = new int[ids.length];
+        int[] defaults = new int[ids.length];
+        int count = 0;
+        for (int i = 0; i < ids.length; i++) {
+            if (ids[i] <= 0 || !AmoledTheme.isLightNeutral(colours[i])) continue;
+            kept[count] = ids[i];
+            defaults[count] = AmoledLightBackground.fill(row, colours[i]);
+            count++;
+        }
+        return new int[][] {Arrays.copyOf(kept, count), Arrays.copyOf(defaults, count)};
+    }
+
+    /**
+     * {@link #colours}' answer with the light surfaces' {@code light} ({@link #lightEntries}) added
+     * after it, in the default configuration only. An id it lists already keeps its entry.
+     */
+    static int[][] joined(int[][] given, int[][] light) {
+        int[] ids = Arrays.copyOf(given[0], given[0].length + light[0].length);
+        int[] defaults = Arrays.copyOf(given[1], ids.length);
+        int[] nights = Arrays.copyOf(given[2], ids.length);
+        int[] hasNight = Arrays.copyOf(given[3], ids.length);
+        int size = given[0].length;
+        for (int i = 0; i < light[0].length; i++) {
+            boolean listed = false;
+            for (int j = 0; j < size && !listed; j++) listed = ids[j] == light[0][i];
+            if (listed) continue;
+            ids[size] = light[0][i];
+            defaults[size] = light[1][i];
+            size++;
+        }
+        return new int[][] {Arrays.copyOf(ids, size), Arrays.copyOf(defaults, size), Arrays.copyOf(nights, size),
+                Arrays.copyOf(hasNight, size)};
+    }
+
+    /**
+     * Whether a table is wanted: the Background color row has a colour in place of the patch's and
+     * route two wrote resources for it, or the Light background color row has one and the build has
+     * light surfaces for it.
+     */
+    static boolean inUse() {
+        return (AmoledTheme.background() != AmoledTheme.written() && table.ids.length > 0)
+                || (AmoledTheme.lightBackground() != 0 && lightColours.length > 0);
     }
 
     /**
@@ -171,12 +281,12 @@ public final class AmoledResources {
 
     /**
      * Called once the application is created, with AMOLED in the build: from then on, while the
-     * Background color row has a colour in use ({@link AmoledTheme#load}), each activity's resources
-     * take it as the activity is created, before its theme or its views read a colour.
+     * Background color row or the Light background color row has a colour in use
+     * ({@link AmoledTheme#load}), each activity's resources take it as the activity is created,
+     * before its theme or its views read a colour.
      */
     public static synchronized void watchActivities(Context context) {
-        if (watching || table.ids.length == 0 || !(context instanceof Application)) return;
-        if (AmoledTheme.background() == AmoledTheme.written()) return;
+        if (watching || !inUse() || !(context instanceof Application)) return;
         ((Application) context).registerActivityLifecycleCallbacks(new Activities());
         watching = true;
     }
@@ -190,9 +300,8 @@ public final class AmoledResources {
      */
     static void recolour(Context context) {
         try {
-            int colour = AmoledTheme.background();
-            if (colour == AmoledTheme.written() || table.ids.length == 0) return;
-            ResourcesLoader wanted = loader(context, colour);
+            if (!inUse()) return;
+            ResourcesLoader wanted = loader(context);
             if (wanted != null) AccentResources.onAssets(context.getResources()).addLoaders(wanted);
         } catch (Throwable failure) {
             // Throwable, as in every hook: this runs as Facebook starts and as each activity is created.
@@ -200,12 +309,26 @@ public final class AmoledResources {
         }
     }
 
-    /** The loader for {@code colour}, made the first time. */
+    /**
+     * The loader for the rows' colours, made the first time: route two's resources while the
+     * Background color row has a colour of its own, and the light surfaces while the Light
+     * background color row has one.
+     */
     @Nullable
-    private static ResourcesLoader loader(Context context, int colour) throws Exception {
+    private static ResourcesLoader loader(Context context) throws Exception {
         ResourcesLoader known = loader;
         if (known != null) return known;
-        int[][] given = colours(table, colour, AmoledTheme.pageColour(context));
+        int colour = AmoledTheme.background();
+        int[][] given = colour == AmoledTheme.written() || table.ids.length == 0
+                ? new int[][] {new int[0], new int[0], new int[0], new int[0]}
+                : colours(table, colour, AmoledTheme.pageColour(context));
+        int row = AmoledTheme.lightBackground();
+        int light = 0;
+        if (row != 0 && lightColours.length > 0) {
+            int[][] surfaces = lightEntries(lightIds(context, lightColours), lightColours, row);
+            light = surfaces[0].length;
+            given = joined(given, surfaces);
+        }
         int[] ids = given[0];
         if (ids.length == 0) return null;
         boolean[] hasNight = new boolean[ids.length];
@@ -213,8 +336,20 @@ public final class AmoledResources {
         byte[] bytes = ColourTable.write(context.getPackageName(), ids, given[1], given[2], hasNight);
         ResourcesLoader made = maker.make(bytes);
         loader = made;
-        Logger.printDebug(() -> "AMOLED: " + ids.length + " colour resources take the Background color");
+        int lightCount = light;
+        Logger.printDebug(() -> "AMOLED: " + (ids.length - lightCount) + " colour resources take the Background color, "
+                + lightCount + " the Light background color");
         return made;
+    }
+
+    /** The resource id of each light surface's colour resource ({@link #LIGHT_SURFACE}), or 0 where the build has none. */
+    static int[] lightIds(Context context, int[] colours) {
+        int[] ids = new int[colours.length];
+        for (int i = 0; i < colours.length; i++) {
+            String name = LIGHT_SURFACE + String.format(Locale.ROOT, "%06x", colours[i] & 0xFFFFFF);
+            ids[i] = context.getResources().getIdentifier(name, "color", context.getPackageName());
+        }
+        return ids;
     }
 
     private static final class Activities implements Application.ActivityLifecycleCallbacks {

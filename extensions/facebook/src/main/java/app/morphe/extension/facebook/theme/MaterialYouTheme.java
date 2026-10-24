@@ -425,6 +425,25 @@ public final class MaterialYouTheme {
     }
 
     /**
+     * A Bloks bottom sheet's background, such as the account switcher the Menu's account name opens
+     * (issue #37). The sheet takes its colour from a light and dark pair the screen sends, not from an
+     * FDS token, and on 584 its dark side is #1F1F20, a grey none of the other routes know, so the
+     * sheet stayed grey over a Menu in the palette's colours. The patch sends here the colour the
+     * sheet paints its rounded background with, and the one its corner view takes. In dark mode a dark
+     * grey takes the palette's neutral at the same lightness. White, colours, see-through colours and,
+     * with AMOLED in the build, the whole sheet keep theirs.
+     */
+    public static int sheetBackground(int color) {
+        return sheetBackground(color, SettingsStatus.amoledTheme());
+    }
+
+    static int sheetBackground(int color, boolean amoled) {
+        HookStatus.invoked(FamilyNames.MATERIAL_YOU_THEME);
+        if (amoled || !DarkMode.on() || !AmoledTheme.isDarkNeutral(color, AmoledTheme.MAX_BAR_CHANNEL)) return color;
+        return palette().sameLightness(TonePalette.NEUTRAL, color);
+    }
+
+    /**
      * Route two's counterpart: Facebook reading a colour resource with {@code Context.getColor}. The
      * patch sends every such call here, including the ones AMOLED already sent to its own, and
      * AMOLED goes first.

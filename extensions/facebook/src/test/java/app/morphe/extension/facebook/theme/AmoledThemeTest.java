@@ -785,4 +785,137 @@ public class AmoledThemeTest {
         assertEquals("a divider's grey", 0xFF65686C, AmoledTheme.apply(0xFF65686C, Token.DIVIDER));
         assertEquals("no token to go on", 0xFF65686C, AmoledTheme.apply(0xFF65686C, "SECONDARY_TEXT"));
     }
+
+    /** FDS's blue text roles past TEXT_TOKENS, and ACCENT, whose light blue the dark style shares. */
+    enum LightTextToken { TEXT_INPUT_ACTIVE_TEXT, REACTION_LIKE, FBLITE_ACCENT_ON_BACKGROUND, ACCENT }
+
+    /**
+     * Issue #214's reviewer gap: a text field's typed text, the Like button's blue and FB Lite's
+     * accent text are held to 4.5:1 on the moved greys like a link is, while the Video tab's dark
+     * blues and ACCENT keep theirs.
+     */
+    @Test
+    public void aLightBackgroundColourHoldsLightModesBlueTextToAa() {
+        DarkMode.answer(false);
+        int darkest = AmoledLightBackground.colour(AmoledLightBackground.DARKEST_ADMITTED_GREY);
+        for (int background : new int[]{CREAM, 0xFFD8D8D8, darkest}) {
+            AmoledTheme.useLight(background);
+            int button = AmoledTheme.apply(0xFFE2E5E9, LightToken.SECONDARY_BUTTON_BACKGROUND);
+            for (LightTextToken token : new LightTextToken[]{LightTextToken.TEXT_INPUT_ACTIVE_TEXT,
+                    LightTextToken.REACTION_LIKE, LightTextToken.FBLITE_ACCENT_ON_BACKGROUND}) {
+                int colour = token == LightTextToken.TEXT_INPUT_ACTIVE_TEXT ? 0xFF0064D1 : 0xFF0866FF;
+                int held = AmoledTheme.apply(colour, token);
+                assertTrue(token + " on " + Integer.toHexString(background),
+                        contrast(held, button) >= AmoledTheme.TEXT_CONTRAST);
+            }
+        }
+
+        AmoledTheme.useLight(CREAM);
+        assertEquals("the typed text, as a link", 0xFF005FC7, AmoledTheme.apply(0xFF0064D1, LightTextToken.TEXT_INPUT_ACTIVE_TEXT));
+        assertEquals("the Like button's blue", 0xFF0758DD, AmoledTheme.apply(0xFF0866FF, LightTextToken.REACTION_LIKE));
+        assertEquals("the dark style's typed text", 0xFF3E93F8, AmoledTheme.apply(0xFF3E93F8, LightTextToken.TEXT_INPUT_ACTIVE_TEXT));
+        assertEquals("the dark style's Like blue", 0xFF3E93F8, AmoledTheme.apply(0xFF3E93F8, LightTextToken.REACTION_LIKE));
+        assertEquals("ACCENT, a button's fill as well", 0xFF0866FF, AmoledTheme.apply(0xFF0866FF, LightTextToken.ACCENT));
+
+        AmoledTheme.useLight(0);
+        assertEquals("a blank row", 0xFF0064D1, AmoledTheme.apply(0xFF0064D1, LightTextToken.TEXT_INPUT_ACTIVE_TEXT));
+    }
+
+    /** Mig's colour enums' names, as its light scheme hands them over. */
+    enum Mig { SURFACE, WASH, CARD, FILL, SECONDARY_BUTTON_ENABLED, SECONDARY_BUTTON_ON_CARD, PRIMARY, SECONDARY, LINK,
+        LINE, ACCENT_GREEN, WHITE }
+
+    /**
+     * Issue #214's Mig screens: in light mode its light scheme's whites take the Light background
+     * color as FDS's do, its grey fills step under it, and its text is held to 4.5:1 on the moved
+     * grey button.
+     */
+    @Test
+    public void migsLightSchemeTakesTheLightBackgroundColour() {
+        DarkMode.answer(false);
+        AmoledTheme.useLight(CREAM);
+
+        assertEquals("a surface", CREAM, AmoledTheme.applyLight(0xFFFFFFFF, Mig.SURFACE));
+        assertEquals("a card", CREAM, AmoledTheme.applyLight(0xFFFFFFFF, Mig.CARD));
+        assertEquals("the wash", 0xFFF0EBDD, AmoledTheme.applyLight(0xFFF0F2F5, Mig.WASH));
+        assertEquals("a chip's fill", 0xFFF0EBDD, AmoledTheme.applyLight(0xFFF0F2F5, Mig.FILL));
+        assertEquals("a grey button", 0xFFE2DED1, AmoledTheme.applyLight(0xFFE2E5E9, Mig.SECONDARY_BUTTON_ENABLED));
+        assertEquals("a grey button on a card", 0xFFE2DED1, AmoledTheme.applyLight(0xFFE2E5E9, Mig.SECONDARY_BUTTON_ON_CARD));
+
+        int button = AmoledTheme.applyLight(0xFFE2E5E9, Mig.SECONDARY_BUTTON_ENABLED);
+        for (Mig role : new Mig[]{Mig.PRIMARY, Mig.SECONDARY, Mig.LINK}) {
+            for (int colour : new int[]{0xFF080809, 0xFF65686C, 0xFF0064D1, 0xFF8A8D91}) {
+                int held = AmoledTheme.applyLight(colour, role);
+                assertTrue(role + " " + Integer.toHexString(colour), contrast(held, button) >= AmoledTheme.TEXT_CONTRAST);
+            }
+        }
+        assertEquals("the primary text", 0xFF080809, AmoledTheme.applyLight(0xFF080809, Mig.PRIMARY));
+        assertEquals("the secondary text, as FDS's", 0xFF5F6266, AmoledTheme.applyLight(0xFF65686C, Mig.SECONDARY));
+        assertEquals("a link, as FDS's", 0xFF005FC7, AmoledTheme.applyLight(0xFF0064D1, Mig.LINK));
+    }
+
+    /** The mutation controls for Mig's light scheme: blank, dark mode and every other colour are stock. */
+    @Test
+    public void migsLightSchemeIsStockWithoutTheRowAndForTheRest() {
+        DarkMode.answer(false);
+        AmoledTheme.useLight(0);
+        assertEquals("a blank row", 0xFFFFFFFF, AmoledTheme.applyLight(0xFFFFFFFF, Mig.SURFACE));
+        assertEquals("a blank row's text", 0xFF65686C, AmoledTheme.applyLight(0xFF65686C, Mig.SECONDARY));
+
+        AmoledTheme.useLight(CREAM);
+        assertEquals("a divider", 0xFFCED0D4, AmoledTheme.applyLight(0xFFCED0D4, Mig.LINE));
+        assertEquals("a green", 0xFF31A24C, AmoledTheme.applyLight(0xFF31A24C, Mig.ACCENT_GREEN));
+        assertEquals("white text", 0xFFFFFFFF, AmoledTheme.applyLight(0xFFFFFFFF, Mig.WHITE));
+        assertEquals("a pale blue surface", 0xFFE7F3FF, AmoledTheme.applyLight(0xFFE7F3FF, Mig.SURFACE));
+        assertEquals("a translucent white", 0x80FFFFFF, AmoledTheme.applyLight(0x80FFFFFF, Mig.SURFACE));
+        assertEquals("no enum to go on", 0xFFFFFFFF, AmoledTheme.applyLight(0xFFFFFFFF, "SURFACE"));
+        assertEquals("no token at all", 0xFFFFFFFF, AmoledTheme.applyLight(0xFFFFFFFF, null));
+
+        DarkMode.answer(true);
+        assertEquals("dark mode", 0xFFFFFFFF, AmoledTheme.applyLight(0xFFFFFFFF, Mig.SURFACE));
+        assertEquals("dark mode's text", 0xFF65686C, AmoledTheme.applyLight(0xFF65686C, Mig.SECONDARY));
+    }
+
+    /**
+     * Issue #214's server screens: Settings' page and the Menu's profile card are Bloks boxes whose
+     * white fill the server sends, and a React screen's backgrounds come from its JavaScript. Both
+     * are backgrounds only, so in light mode their whites and light greys take the Light background
+     * color as route one's surfaces do.
+     */
+    @Test
+    public void serverBackgroundsTakeTheLightBackgroundColour() {
+        DarkMode.answer(false);
+        AmoledTheme.useLight(CREAM);
+
+        assertEquals("Settings' page", CREAM, AmoledTheme.bloksFill(0xFFFFFFFF));
+        assertEquals("the search box", 0xFFF0EBDD, AmoledTheme.bloksFill(0xFFF0F2F5));
+        assertEquals("a grey button", 0xFFE2DED1, AmoledTheme.bloksFill(0xFFE2E5E9));
+        assertEquals("a React page", CREAM, AmoledTheme.react(0xFFFFFFFF));
+        assertEquals("a React chip", 0xFFF0EBDD, AmoledTheme.react(0xFFF0F2F5));
+        assertEquals("a React page, as ReactColours paints it", CREAM, ReactColours.background(0xFFFFFFFF, true, false));
+    }
+
+    /** The mutation controls for server backgrounds: blank, dark mode and every other colour are as they came. */
+    @Test
+    public void serverBackgroundsAreStockWithoutTheRowAndForTheRest() {
+        DarkMode.answer(false);
+        AmoledTheme.useLight(0);
+        assertEquals("a blank row", 0xFFFFFFFF, AmoledTheme.bloksFill(0xFFFFFFFF));
+        assertEquals("a blank row's React page", 0xFFFFFFFF, AmoledTheme.react(0xFFFFFFFF));
+        assertEquals("a blank row, as ReactColours paints it", 0xFFFFFFFF, ReactColours.background(0xFFFFFFFF, true, false));
+
+        AmoledTheme.useLight(CREAM);
+        assertEquals("a blue button", 0xFF0866FF, AmoledTheme.bloksFill(0xFF0866FF));
+        assertEquals("the Video tab's dark grey", 0xFF252728, AmoledTheme.bloksFill(0xFF252728));
+        assertEquals("the Video tab's React strip", 0xFF252728, AmoledTheme.react(0xFF252728));
+        assertEquals("a pale blue box", 0xFFE7F3FF, AmoledTheme.bloksFill(0xFFE7F3FF));
+        assertEquals("a translucent white", 0x80FFFFFF, AmoledTheme.bloksFill(0x80FFFFFF));
+        assertEquals("a fill the row already gave", CREAM, AmoledTheme.bloksFill(CREAM));
+        assertEquals("server text keeps its white", 0xFFFFFFFF, AmoledTheme.parseColor("#FFFFFF"));
+
+        DarkMode.answer(true);
+        assertEquals("dark mode's white box", 0xFFFFFFFF, AmoledTheme.bloksFill(0xFFFFFFFF));
+        assertEquals("dark mode's grey box", 0xFF333334, AmoledTheme.bloksFill(0xFF333334));
+        assertEquals("dark mode's React strip", BLACK, AmoledTheme.react(0xFF252728));
+    }
 }

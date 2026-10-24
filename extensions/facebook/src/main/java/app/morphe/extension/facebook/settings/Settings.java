@@ -124,6 +124,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_notification_post_footer", FALSE);
 
     /**
+     * The Related posts list under a post's buttons, with Meta AI's titles (#231). It's a plugin of the
+     * socket under the buttons, never a feed unit, so that socket's check gets a no for it
+     * ({@link app.morphe.extension.facebook.feed.RelatedPosts}). Asked as each post is drawn.
+     */
+    public static final BooleanSetting HIDE_RELATED_POSTS =
+            new BooleanSetting("hushfacebook_hide_related_posts", FALSE);
+
+    /**
      * The "Want to see more posts from friends? Find friends" card where the feed runs out of friends'
      * posts (#187). It's a part of the end of feed section, never a feed unit, so the section is told
      * it has no card ({@link app.morphe.extension.facebook.feed.FindFriendsCard}).
@@ -349,6 +357,14 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting UPLOAD_STORIES_IN_HD =
             new BooleanSetting("hushfacebook_upload_stories_in_hd", FALSE);
 
+    /**
+     * A song added to a photo for your Story gets a clip of at least 30 seconds instead of
+     * Facebook's 15 ({@link app.morphe.extension.facebook.stories.StoryMusic}, #156). Starts off.
+     * Read each time a song is picked.
+     */
+    public static final BooleanSetting LONGER_STORY_MUSIC =
+            new BooleanSetting("hushfacebook_longer_story_music", FALSE);
+
     /** The two page filters that take server-inlined ads out of Reels and Watch. */
     public static final BooleanSetting HIDE_SPONSORED_REELS =
             new BooleanSetting("hushfacebook_hide_sponsored_reels", TRUE);
@@ -360,6 +376,14 @@ public class Settings extends BaseSettings {
     /** The posts on a profile or Page timeline that carry Facebook's sponsored data. */
     public static final BooleanSetting HIDE_SPONSORED_PROFILE_POSTS =
             new BooleanSetting("hushfacebook_hide_sponsored_profile_posts", TRUE);
+
+    /**
+     * The note bubble on a profile picture, left out of the profile's Bloks layout ({@link
+     * app.morphe.extension.facebook.profile.ProfileNotes}). Starts off. Read each time Facebook
+     * lays the profile out, so a change shows the next time a profile opens.
+     */
+    public static final BooleanSetting HIDE_PROFILE_NOTES =
+            new BooleanSetting("hushfacebook_hide_profile_notes", FALSE);
 
     /**
      * The ads and boosted listings of Marketplace's feed: its query asks the server to skip them,
@@ -512,6 +536,16 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_slow_connection_message", FALSE);
 
     /**
+     * The tiles in the feed's Reels row play their reel from the start to its end instead of the
+     * short clip Facebook picks, which is often one second played over and over
+     * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#allowsPreviewClip} and
+     * {@link app.morphe.extension.facebook.reels.ReelDeclutter#previewClipEnd}, #228). Off by
+     * default. A change shows on tiles the row draws after it.
+     */
+    public static final BooleanSetting PLAY_FEED_REELS_WHOLE =
+            new BooleanSetting("hushfacebook_play_feed_reels_whole", FALSE);
+
+    /**
      * A video tapped in the feed opens in the full-screen player on its own, with no reels to swipe
      * to after it ({@link app.morphe.extension.facebook.reels.FeedVideoAlone}, #161). The player's
      * reels feed is told nothing more came. The Reels tab keeps scrolling. Off until it's turned on,
@@ -645,6 +679,24 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_turn_off_double_tap_like", FALSE);
 
     /**
+     * Facebook's own double-tap skip on reels and videos, which a server test keeps off for most
+     * accounts: a double tap on the left or right edge skips back or forward 10 seconds, or 5 on a
+     * video under 30 seconds ({@link app.morphe.extension.facebook.reels.DoubleTapSkip}, #225).
+     * Starts off. Read as each player is set up and on each double tap.
+     */
+    public static final BooleanSetting DOUBLE_TAP_SKIP =
+            new BooleanSetting("hushfacebook_double_tap_skip", FALSE);
+
+    /**
+     * A tap on a playing reel shows its controls and lets it play on, Facebook's own answer to a
+     * tap that it ships off, with the controls kept up three seconds in place of one
+     * ({@link app.morphe.extension.facebook.reels.TapShowsControls}, #225). The button in the middle
+     * still pauses. Starts off. Read on each tap.
+     */
+    public static final BooleanSetting TAP_SHOWS_CONTROLS =
+            new BooleanSetting("hushfacebook_tap_shows_controls", FALSE);
+
+    /**
      * A double tap on a reel opens its comments, on the sheet the Comment button opens, in place of
      * liking it ({@link app.morphe.extension.facebook.reels.ReelGestures}, #179). Turn off double
      * tap to like stays the stronger switch: with it on, the double tap does nothing, as before.
@@ -705,6 +757,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HOLD_REEL_RIGHT_EDGE =
             new BooleanSetting("hushfacebook_hold_reel_right_edge", FALSE);
+
+    /**
+     * A video playing in a feed, Home's or Watch's, plays at double speed while you hold it and goes
+     * back to its speed when you let go ({@link app.morphe.extension.facebook.reels.FeedVideoHold}).
+     * Works without {@link #HOLD_REEL_FOR_2X}. Starts off. Off or paused, a hold on a feed video is
+     * Facebook's.
+     */
+    public static final BooleanSetting HOLD_FEED_VIDEO_FOR_2X =
+            new BooleanSetting("hushfacebook_hold_feed_video_for_2x", FALSE);
 
     /**
      * Comment sheets ask for the order in {@link #COMMENT_ORDER} where Facebook's servers would
@@ -894,6 +955,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting PINCH_TO_ZOOM_KEEP =
             new BooleanSetting("hushfacebook_pinch_to_zoom_keep", FALSE, Setting.parent(PINCH_TO_ZOOM));
+
+    /**
+     * Pinch to zoom's third switch (#220): two quick taps on a profile photo zoom it to twice its size
+     * about the tap, and two more put it back. The first tap waits the double tap time, so a lone tap
+     * still opens the photo, just that much later. Never in the story viewer. Starts off. Asked on
+     * each tap, so a change shows from the next one.
+     */
+    public static final BooleanSetting PINCH_TO_ZOOM_DOUBLE_TAP =
+            new BooleanSetting("hushfacebook_pinch_to_zoom_double_tap", FALSE, Setting.parent(PINCH_TO_ZOOM));
 
     /**
      * Videos, reels and video stories start at the quality in {@link #PLAYBACK_QUALITY}, through
@@ -1104,6 +1174,21 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_MENU_ALSO_FROM_META =
             new BooleanSetting("hushfacebook_hide_menu_also_from_meta", TRUE, true);
+
+    /**
+     * The Help and support section of Facebook's Menu, the group Facebook types HELP, with its
+     * header and rows (issue #224). Off until it's turned on. Like Upgrades, it waits for a restart.
+     */
+    public static final BooleanSetting HIDE_MENU_HELP =
+            new BooleanSetting("hushfacebook_hide_menu_help", FALSE, true);
+
+    /**
+     * Keeps the Settings and privacy section of Facebook's Menu, the group Facebook types SETTINGS,
+     * open under its header instead of folded up, so its rows show without a tap (issue #224). Off
+     * until it's turned on. A Menu already built keeps its own state, so it waits for a restart.
+     */
+    public static final BooleanSetting KEEP_MENU_SETTINGS_EXPANDED =
+            new BooleanSetting("hushfacebook_keep_menu_settings_expanded", FALSE, true);
 
     /**
      * The Muse card in Facebook's Menu, Meta's ad for its AI agent app, which reads as dismissed
@@ -1742,6 +1827,26 @@ public class Settings extends BaseSettings {
      */
     public static final StringSetting AMOLED_LIGHT_BACKGROUND =
             new StringSetting("hushfacebook_amoled_light_background", "", true);
+
+    /**
+     * Words of your own at the top of Home in place of Facebook's wordmark, with the Home header text
+     * patch in the build ({@link app.morphe.extension.facebook.misc.HeaderText}, #230). Blank keeps
+     * the wordmark, and so does a paused Facebook. Facebook builds the header once, so a change brings
+     * up the restart row. Not a switch.
+     */
+    public static final StringSetting HEADER_TEXT =
+            new StringSetting("hushfacebook_header_text", "", true);
+
+    /**
+     * The name of a picture of your own for the top of Home, which takes the place of
+     * {@link #HEADER_TEXT}'s words and Facebook's wordmark ({@link
+     * app.morphe.extension.facebook.misc.HeaderPicture}, #230). Empty keeps the words or the
+     * wordmark, and so does a paused Facebook. Only the settings screen writes it, after the shrunk
+     * copy has been written to Facebook's files. It isn't a switch, and a settings file leaves it out:
+     * the picture can't travel in one, and the name alone would point at nothing on another phone.
+     */
+    public static final StringSetting HEADER_PICTURE =
+            new StringSetting("hushfacebook_header_picture", "");
 
     /**
      * The strip some posts carry ("Are you interested in this post?", "Show less", who recently

@@ -31,6 +31,7 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.facebook.ads.affiliate.writesRegister
 import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.returnEarly
+import app.morphe.util.superclassChain
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
@@ -46,6 +47,7 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import app.morphe.patches.facebook.feed.refresh.enumConstant
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import java.io.File
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 
 /** The largest value a channel can have and still count as a background. */
@@ -80,6 +82,9 @@ internal const val LIGHTEST_STEP = 0x42 - 0x0D
 
 /** Gets the resolved colour and its token. Gives the colour to draw. */
 internal const val APPLY = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->apply(ILjava/lang/Object;)I"
+
+/** The same for the Mig light scheme's colours, which only the Light background color row moves (#214). */
+internal const val APPLY_LIGHT = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->applyLight(ILjava/lang/Object;)I"
 
 /** Gets the status bar's colour and whether Facebook's theme is dark. Gives the colour to paint. */
 internal const val STATUS_BAR = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->statusBar(IZ)I"
@@ -312,6 +317,9 @@ private const val NIGHT_COLORS = "res/values-night/colors.xml"
  * anchor here. A value of this exact shape is a colour and nothing else.
  */
 private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
+    // The FDS token names, for light mode's surfaces in the light style ([repointLightSurfaces]).
+    dependsOn(fdsTokenNamesPatch)
+
     execute {
         val written = "#%08x".format(background())
         var changed = 0
@@ -323,7 +331,8 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
         val literals = mutableMapOf<String, Int>()
 
         // Patcher 2.0 decodes only the files a patch asks for: an undecoded file does not exist yet.
-        decode(DEFAULT_COLORS, NIGHT_COLORS)
+        // Every configuration's colours and the default styles, for light mode's surfaces below.
+        decode(DEFAULT_COLORS, NIGHT_COLORS, "res/values*/colors.xml", "res/values/style*.xml")
         listOf(DEFAULT_COLORS, NIGHT_COLORS)
             .filter { get(it, false).exists() }
             .forEach { path ->
@@ -351,6 +360,27 @@ private fun amoledThemeResourcePatch(background: () -> Int) = resourcePatch {
         // The page's colour as a resource of its own, which the token lookup hands a card with Black
         // cards on (#191). Added after the rewrites, so none of them reads it.
         if (get(DEFAULT_COLORS, false).exists()) document(DEFAULT_COLORS).use { addPageColour(it, written) }
+
+        // Light mode's surfaces get resources of their own, for the Light background color row
+        // (#214): Facebook's light style points them at whites its text and icons share.
+        val lightSurfaces = sortedMapOf<String, Int>()
+        if (get(DEFAULT_COLORS, false).exists()) {
+            val colours = readOnly(get(DEFAULT_COLORS)).colourValues()
+            val configured = get("res", false).listFiles().orEmpty()
+                .filter { it.isDirectory && it.name != "values" && it.name.split('-').first() == "values" }
+                .map { File(it, "colors.xml") }.filter { it.isFile }
+                .flatMapTo(mutableSetOf()) { readOnly(it).colourValues().keys }
+            get("res/values", false).listFiles().orEmpty()
+                .filter { it.name.startsWith("style") && it.name.endsWith(".xml") }.sortedBy { it.name }
+                .filter { fdsThemeStyles(readOnly(it), tokenAttributeNames) != null }
+                .forEach { file ->
+                    document("res/values/${file.name}").use { styles ->
+                        lightSurfaces += repointLightSurfaces(styles, tokenAttributeNames, colours, configured)
+                    }
+                }
+            if (lightSurfaces.isNotEmpty()) document(DEFAULT_COLORS).use { addLightSurfaceColours(it, lightSurfaces) }
+        }
+        lightSurfaceColours = lightSurfacesTable(lightSurfaces)
 
         routeTwoRestores = routeTwoTable(rewritten, rewrittenAtNight, references) { name ->
             resourceIds.getOrNull(ResourceType.COLOR, name) ?: decodedColourId(name)
@@ -407,6 +437,86 @@ internal fun addPageColour(document: Document, colour: String) {
         },
     )
 }
+
+/**
+ * The FDS tokens of the surfaces light mode's Light background color moves (#214): AmoledTheme's
+ * BACKGROUND_TOKENS and LIGHT_BACKGROUND_TOKENS, which AmoledLightSurfacesTest holds this to.
+ */
+internal val LIGHT_SURFACE_TOKENS = setOf(
+    "WASH", "SURFACE", "CARD", "ELEVATION", "BANNER", "PRIMARY_UI",
+    "WEB_WASH", "FBLITE_WASH", "SURFACE_BACKGROUND", "BACKGROUND_SURFACE", "DEVICE_BACKGROUND", "BACKGROUND_DEEMPHASIZED",
+    "CARD_BACKGROUND", "CARD_BACKGROUND_FLAT", "CARD_BACKGROUND_LEGACY_WEB", "BACKGROUND_CARD", "BACKGROUND_ELEVATION",
+    "LIST_CELL_BACKGROUND", "ATTACHMENT_FOOTER_BACKGROUND", "ENTITY_HEADER_BACKGROUND",
+    "COMMENT_BACKGROUND", "COMMENT_BACKGROUND_DEEMPHASIZED",
+    "BOTTOM_SHEET_BACKGROUND_DEEMPHASIZED", "BOTTOM_SHEET_INSET_BACKGROUND", "POPOVER_BACKGROUND", "FADED_POPOVER_BACKGROUND",
+    "NAV_BAR_BACKGROUND", "TAB_BAR_BACKGROUND", "BACKGROUND_BANNER", "BACKGROUND_PRIMARY_UI",
+    "TEXT_INPUT_BAR_BACKGROUND", "SECONDARY_BUTTON_BACKGROUND", "SECONDARY_BUTTON_BACKGROUND_OPAQUE",
+)
+
+/** The start of each light surface's colour resource name, before the colour's six hex digits: AmoledResources.LIGHT_SURFACE. */
+internal const val LIGHT_SURFACE = "hushfacebook_amoled_light_"
+
+/** The colours light mode's surfaces got resources of their own for, as AmoledResources.lightSurfaces lists them. */
+internal var lightSurfaceColours = ""
+
+/** The lightest a channel of a white or light grey surface can be no less than: AmoledTheme.LIGHT_MIN_CHANNEL. */
+private const val LIGHT_MIN_CHANNEL = 0xC0
+
+/** An opaque white or light grey, as AmoledTheme.isLightNeutral reads one. */
+internal fun isLightSurface(colour: Int): Boolean {
+    if (colour ushr 24 != 0xFF) return false
+    val channels = listOf(colour shr 16 and 0xFF, colour shr 8 and 0xFF, colour and 0xFF)
+    return channels.min() >= LIGHT_MIN_CHANNEL && channels.max() - channels.min() <= MAX_SPREAD
+}
+
+/**
+ * Light mode's half of route two, for the Light background color row (#214). Facebook's light FDS
+ * style points its surfaces at the same white and light grey resources its text, icons and dividers
+ * read, so a table giving those resources the row's colour would take the rest too. Each item of the
+ * light style for a surface ([LIGHT_SURFACE_TOKENS]) whose colour is a white or light grey
+ * ([isLightSurface]) points at a resource of its own instead, [LIGHT_SURFACE] and the colour's six
+ * hex digits, holding the same colour: a blank row draws what Facebook drew, and AmoledResources'
+ * table gives those resources the row's colour. Only an item the dark style sets too, so dark mode
+ * and the Video tab never read one, and only a colour read through the default configuration alone,
+ * none of whose resources [configured] (any other configuration's) gives a value of its own.
+ * [colours] are the default colours by name. Answers each new resource's colour by name.
+ */
+internal fun repointLightSurfaces(
+    styles: Document,
+    tokens: Map<String, String>,
+    colours: Map<String, String>,
+    configured: Set<String>,
+): Map<String, Int> {
+    val (light, dark) = fdsThemeStyles(styles, tokens) ?: return emptyMap()
+    val setInDark = dark.childElements().map { it.getAttribute("name") }.toSet()
+    val added = sortedMapOf<String, Int>()
+    for (item in light.childElements()) {
+        val attribute = item.getAttribute("name")
+        if (tokens[attribute] !in LIGHT_SURFACE_TOKENS || attribute !in setInDark) continue
+        val colour = defaultColour(item.textContent, colours, configured) ?: continue
+        if (!isLightSurface(colour)) continue
+        val name = LIGHT_SURFACE + "%06x".format(colour and 0xFFFFFF)
+        item.textContent = "@color/$name"
+        added[name] = colour
+    }
+    return added
+}
+
+/** Adds each of [surfaces] ([repointLightSurfaces]) to a `colors.xml` [document], with its colour. */
+internal fun addLightSurfaceColours(document: Document, surfaces: Map<String, Int>) {
+    for ((name, colour) in surfaces) {
+        document.documentElement.appendChild(
+            document.createElement("color").also {
+                it.setAttribute("name", name)
+                it.textContent = "#%08x".format(colour)
+            },
+        )
+    }
+}
+
+/** AmoledResources.lightSurfaces' list: each of [surfaces]' colours as six hex digits, sorted, `;` between. */
+internal fun lightSurfacesTable(surfaces: Map<String, Int>): String =
+    surfaces.values.map { "%06x".format(it and 0xFFFFFF) }.distinct().sorted().joinToString(";")
 
 /**
  * Route two's table for AmoledTheme.routeTwoColours: each default colour it wrote black over, with
@@ -509,6 +619,15 @@ val amoledThemePatch = bytecodePatch(
         // Route one. Four methods and six returns. Each hook keeps the body of the method and
         // sends the value through the extension before the method returns it.
         hookColourResolvers(mig = APPLY, fds = APPLY)
+        // Mig's light scheme answers light mode's older screens, which the Light background color
+        // row moves off white (#214). A build without it keeps the rest of the theme.
+        try {
+            hookLightSchemeResolver()
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. Light background color leaves Mig's light screens white.")
+        } catch (moved: IllegalStateException) {
+            patchLog.warning("${moved.message}. Light background color leaves Mig's light screens white.")
+        }
         fillBackgroundColour(background())
         // Issue #34: a lighter colour's surfaces step up less, and its text roles get lifted.
         fillLightestStep(checkNotNull(lightestStep(background())))
@@ -573,10 +692,31 @@ val amoledThemePatch = bytecodePatch(
         } else {
             fillWrittenColours(writtenColours)
         }
+        // And light mode's surfaces, which take the Light background color row's colour the same way.
+        if (lightSurfaceColours.isEmpty()) {
+            patchLog.warning("No light surface got a resource of its own, so Light background color leaves layouts' surfaces white")
+        } else {
+            fillLightSurfaces(lightSurfaceColours)
+        }
 
         // React Native screens such as Marketplace home, whose colours come from their JavaScript
         // as ints on props, past every route.
         hookReactColours()
+
+        // The fill of each Bloks box and native template box, the server colours that say they're a
+        // background: in light mode Settings' page and the Menu's profile card take the Light
+        // background color (#214), where parseColor can't tell a white page from a white label.
+        // Accent color hooks the same box builder.
+        try {
+            hookBloksFills(AMOLED_BLOKS_FILL)
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. Light background color leaves server screens like Settings white.")
+        }
+        try {
+            hookNativeTemplateBackgrounds()
+        } catch (moved: PatchException) {
+            patchLog.warning("${moved.message}. Light background color leaves native template cards like the Menu's profile card white.")
+        }
 
         // The older comment row's time, whose slot drew blank on a black sheet (#138). Material You
         // calls the same hook and finds it in place.
@@ -619,6 +759,73 @@ internal const val FLEX_BANNER = "Lapp/morphe/extension/facebook/theme/AmoledThe
 
 /** Gets a colour Facebook writes on its dark branch only, for Black cards (#191). Gives the colour to paint. */
 internal const val AMOLED_DARK_BRANCH = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->darkBranch(I)I"
+
+/** Gets a Bloks box's fill, for the Light background color row (#214). Gives the colour to fill with. */
+internal const val AMOLED_BLOKS_FILL = "Lapp/morphe/extension/facebook/theme/AmoledTheme;->bloksFill(I)I"
+
+private const val COLOR_DRAWABLE_INIT = "Landroid/graphics/drawable/ColorDrawable;-><init>(I)V"
+
+/**
+ * Native Templates' backgrounds (#214). The Menu's profile card is a native template, whose box
+ * hands its server colour to Litho's backgroundColor (584 `LX/3T3;->A1H(I)V`) and never reaches the
+ * box builder ([hookBloksFills]). [NativeTemplateBuilderFingerprint]'s builder and the child builder
+ * it calls with its own parameters (584 `LX/4Kd;->A00`) each set a background colour that way, and
+ * each of those colours goes through [target] just before the call.
+ */
+internal fun BytecodePatchContext.hookNativeTemplateBackgrounds(target: String = AMOLED_BLOKS_FILL) {
+    val builder = NativeTemplateBuilderFingerprint.method
+    val parameters = builder.parameterTypes.map(CharSequence::toString)
+    val children = builder.implementation!!.instructions
+        .filter { it.opcode == Opcode.INVOKE_STATIC || it.opcode == Opcode.INVOKE_STATIC_RANGE }
+        .mapNotNull { (it as ReferenceInstruction).reference as? MethodReference }
+        .filter { it.returnType == builder.returnType && it.parameterTypes.map(CharSequence::toString) == parameters }
+        .distinctBy { it.toString() }
+        .map { child ->
+            mutableClassDefBy(child.definingClass).methods.single { method ->
+                method.name == child.name && method.returnType == child.returnType &&
+                    method.parameterTypes.map(CharSequence::toString) == parameters
+            }
+        }
+    val hooked = (listOf(builder) + children).sumOf { hookBackgroundColours(it, target) }
+    if (hooked == 0) throw PatchException("Native Templates' builders set no background colour")
+}
+
+/**
+ * Sends each colour [method] hands Litho's backgroundColor ([isBackgroundColour]) through [target]
+ * just before the call, at the call's label, so a jump to the call takes the colour through too.
+ * Gives how many calls it hooked. Last first, as each insert moves the later indices.
+ */
+private fun BytecodePatchContext.hookBackgroundColours(method: MutableMethod, target: String): Int {
+    val sites = method.implementation!!.instructions.withIndex().mapNotNull { (index, instruction) ->
+        if (instruction.opcode != Opcode.INVOKE_VIRTUAL) return@mapNotNull null
+        val call = (instruction as ReferenceInstruction).reference as MethodReference
+        if (!isBackgroundColour(call)) null else index to (instruction as FiveRegisterInstruction).registerD
+    }
+    sites.asReversed().forEach { (index, colour) ->
+        method.addInstructionsAtControlFlowLabel(
+            index,
+            """
+                invoke-static/range { v$colour .. v$colour }, $target
+                move-result v$colour
+            """,
+        )
+    }
+    return sites.size
+}
+
+/**
+ * Litho's backgroundColor (584 `LX/3T3;->A1H(I)V`, and `A1J` for the pressed state's): an `(I)V`
+ * method of the builder, or a class above it, that wraps its int in a ColorDrawable.
+ */
+private fun BytecodePatchContext.isBackgroundColour(call: MethodReference): Boolean {
+    if (call.returnType != "V" || call.parameterTypes.map(CharSequence::toString) != listOf("I")) return false
+    val method = superclassChain(call.definingClass).firstNotNullOfOrNull { type ->
+        classDefByOrNull(type)?.methods?.firstOrNull { it.name == call.name && it.parameterTypes.map(CharSequence::toString) == listOf("I") }
+    } ?: return false
+    return method.implementation?.instructions?.any {
+        ((it as? ReferenceInstruction)?.reference as? MethodReference)?.toString() == COLOR_DRAWABLE_INIT
+    } == true
+}
 
 /** The FDS token the Data mode banner paints its wrapper with. */
 private const val CARD_BACKGROUND = "CARD_BACKGROUND"
@@ -710,6 +917,15 @@ internal fun BytecodePatchContext.hookColourResolvers(mig: String, fds: String) 
     DarkSchemeResolveFingerprint.method.hookColorReturns(tokenParameterIndex = 0, target = mig)
     hookFdsColorsResolvers(target = fds)
     fdsThemeResolver().hookColorReturns(tokenParameterIndex = 1, target = fds)
+}
+
+/**
+ * The Mig light scheme's resolver sends its colours to [APPLY_LIGHT], which leaves them alone until
+ * the Light background color row is set and Facebook is in light mode (#214). AMOLED only: Material
+ * You's light scheme is its own.
+ */
+internal fun BytecodePatchContext.hookLightSchemeResolver() {
+    LightSchemeResolveFingerprint.method.hookColorReturns(tokenParameterIndex = 0, target = APPLY_LIGHT)
 }
 
 /**
@@ -1057,6 +1273,14 @@ internal fun BytecodePatchContext.fillWrittenColours(table: String) {
     val stub = mutableClassDefBy(AMOLED_RESOURCES).methods.singleOrNull {
         it.name == "writtenColours" && it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/String;"
     } ?: throw PatchException("AmoledResources has no writtenColours() for the Background color row")
+    stub.returnEarly(table)
+}
+
+/** Puts [table] ([lightSurfacesTable]) in AmoledResources.lightSurfaces, for the Light background color row. */
+internal fun BytecodePatchContext.fillLightSurfaces(table: String) {
+    val stub = mutableClassDefBy(AMOLED_RESOURCES).methods.singleOrNull {
+        it.name == "lightSurfaces" && it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/String;"
+    } ?: throw PatchException("AmoledResources has no lightSurfaces() for the Light background color row")
     stub.returnEarly(table)
 }
 
