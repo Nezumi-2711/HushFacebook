@@ -6,6 +6,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).
 * **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
 * **Facebook:** Clearing Recently watched now discards pending watches, so an entry can't come back after Clear. Turning recording off also cancels pending entries, even if you turn it back on straight away.
@@ -13,7 +14,7 @@ Changes in each Hushfacebook version, newest first.
 
 ## 0.18.0 (2026-10-24)
 
-* **Facebook:** Patching on a phone takes about a minute now, down from three. Reels get a 10 second skip when you double tap either edge, and a tap shows their controls without pausing. Hold a feed video for 2x, pinch a story or a profile photo to zoom, and pick your own background color for dark or light mode. You can also put your own words or a picture at the top of Home, save a GIF from a comment, and hide profile notes or the Related posts list. Reel captions keep the bottoms of their letters again too.
+* **Facebook:** With the recommended patches, a phone patch took about a minute in testing, down from three. Reels get a 10 second skip when you double tap either edge, and a tap shows their controls without pausing. Hold a feed video for 2x, pinch a story or a profile photo to zoom, and pick your own background color for dark or light mode. You can also put your own words or a picture at the top of Home, save a GIF from a comment, and hide profile notes or the Related posts list. Reel captions keep the bottoms of their letters again too.
 
 ### Added
 
@@ -57,7 +58,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Changed
 
-* **Facebook:** Patching takes about a third of the time on a phone. Most patches used to read through all 215,000 of Facebook's classes to find the few they change, dozens of full passes in one patch. Now a single pass at the start notes what each class refers to, and a patch only reads the classes that mention what it's looking for. With the recommended patches on Facebook 584, a patch in Morphe Manager on a phone went from a little over 3 minutes on 0.17.0 to just under 1 minute, and on a desktop held to two cores from 54 seconds to 28. It still fits in the memory it needed before, and the patched app comes out the same as before, class for class (issue #216, reported by @AbdulrahmanAlamodi).
+* **Facebook:** The recommended patches took about a third of the time on the tested phone. Most patches used to read through all 215,000 of Facebook's classes to find the few they change, dozens of full passes in one patch. Now a single pass at the start notes what each class refers to, and a patch only reads the classes that mention what it's looking for. With the recommended patches on Facebook 584, a patch in Morphe Manager on a phone went from a little over 3 minutes on 0.17.0 to just under 1 minute, and on a desktop held to two cores from 54 seconds to 28. It still fits in the memory it needed before, and the patched app comes out the same as before, class for class (issue #216, reported by @AbdulrahmanAlamodi).
 * **Facebook:** `Use the system font` patches faster. It used to read through Facebook's code four separate times to find the places it changes, and it built the full name of every call and field along the way. It now makes one pass and only builds a name when the class matches one it cares about. On Facebook 584 with the recommended patches, `Use the system font` went from about 5.9 seconds to 1.5, and the whole patch from 51 seconds to 45 on a desktop. It still changes the same places in Facebook (issue #216, reported by @AbdulrahmanAlamodi).
 * **Tooling:** A push or a fixture check with a morphe-desktop CLI on the wrong patcher stops right away now. The 0.17.0 push ran its whole 17-minute gate with an old 1.18.1 CLI still set in the shell and only failed at the last step, because a bundle built on the 2.0 patcher won't load in a 1.x CLI. `scripts/pre-push.ps1` and `scripts/verify-all-patches.ps1` read which patcher the jar carries before anything heavy runs, and the message names the jar, both versions and, when it applies, the newer jar your user settings already point to.
 
