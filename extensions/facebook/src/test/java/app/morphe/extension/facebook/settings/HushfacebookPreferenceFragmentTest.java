@@ -93,6 +93,8 @@ public class HushfacebookPreferenceFragmentTest {
         ScreenColors.shown = null;
         PauseForTests.resume();
         BaseSettings.SAFE_MODE.resetToDefault();
+        Settings.DOWNLOAD_REELS.resetToDefault();
+        Settings.SHOW_REEL_DOWNLOAD_BUTTON.resetToDefault();
         Settings.SAVE_FOLDER.resetToDefault();
         Settings.SAVE_TO.resetToDefault();
         Settings.VIDEO_SUBFOLDER.resetToDefault();
@@ -546,6 +548,45 @@ public class HushfacebookPreferenceFragmentTest {
             }
             assertEquals("DOWNLOAD", to.getValue());
             assertEquals("Videos and photos go to " + L10n.isolate("Download/Clips") + ".", String.valueOf(folder.getSummary()));
+        }
+    }
+
+    @Test
+    public void theReelSidebarChoiceIsIndependentAndFollowsTheDownloadSwitch() {
+        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.REEL_DOWNLOAD);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<Preference> rows = rowsOf(controller);
+            int mainAt = indexOfKey(rows, Settings.DOWNLOAD_REELS.key);
+            int buttonAt = indexOfKey(rows, Settings.SHOW_REEL_DOWNLOAD_BUTTON.key);
+            assertTrue("no overall reel Download switch", mainAt >= 0);
+            assertEquals("the sidebar choice is not beside its parent", mainAt + 1, buttonAt);
+            SwitchPreference main = (SwitchPreference) rows.get(mainAt);
+            SwitchPreference button = (SwitchPreference) rows.get(buttonAt);
+            assertEquals("Download", String.valueOf(main.getTitle()));
+            assertEquals("Download button on reels", String.valueOf(button.getTitle()));
+            assertTrue(main.isChecked());
+            assertTrue("the existing sidebar layout changed by default", button.isChecked());
+
+            button.setChecked(false);
+            ShadowLooper.idleMainLooper();
+            assertFalse(Settings.SHOW_REEL_DOWNLOAD_BUTTON.savedValue());
+            assertTrue("the sidebar choice changed the overall switch", Settings.DOWNLOAD_REELS.savedValue());
+
+            main.setChecked(false);
+            ShadowLooper.idleMainLooper();
+            assertFalse("the sidebar choice is usable without downloads", button.isEnabled());
+            assertTrue(String.valueOf(button.getSummary()), String.valueOf(button.getSummary()).contains(
+                    L10n.f("Turn on %1$s to use this.", L10n.isolate("Download"))));
+            main.setChecked(true);
+            ShadowLooper.idleMainLooper();
+            assertTrue(button.isEnabled());
+            assertFalse("re-enabling downloads forgot menu-only", Settings.SHOW_REEL_DOWNLOAD_BUTTON.savedValue());
+        }
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<Preference> rows = rowsOf(controller);
+            SwitchPreference button = (SwitchPreference) rows.get(indexOfKey(rows, Settings.SHOW_REEL_DOWNLOAD_BUTTON.key));
+            assertFalse("a new page forgot the sidebar choice", button.isChecked());
+            assertTrue(button.isEnabled());
         }
     }
 

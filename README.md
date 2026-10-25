@@ -22,7 +22,7 @@ Each row in the [patch table](#patches) says how its switch starts. The ad filte
 
 This project has no connection to Meta or to the Morphe project. Neither endorses it, and neither wrote it.
 
-The latest release is [v0.18.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.18.0), with 102 patches. It includes all changes since v0.17.0, among them patching that takes about a minute on a phone, a 10 second double tap skip on reels, pinch to zoom on stories and profile photos, and your own background colors and Home header, as the [changelog](CHANGELOG.md) describes.
+The latest release is [v0.18.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.18.0), with 102 patches. It includes all changes since v0.17.0, among them faster patching with the recommended selection, a 10 second double tap skip on reels, pinch to zoom on stories and profile photos, and your own background colors and Home header, as the [changelog](CHANGELOG.md) describes.
 
 [Add to Morphe](https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook) | [Download a release](https://github.com/SysAdminDoc/Hushfacebook/releases/latest) | [Browse the patches](#patches)
 
@@ -62,6 +62,8 @@ Changing one of those brings up a **Restart Facebook** row at the top of the pag
 Morphe Manager can back up your patch choices but not these switches. **Export settings** saves them to a JSON file, word lists included, and **Import settings** reads one back on this phone or a new one. It shows what the file would change before anything does. **Check for new Hushfacebook releases** under Updates is off until you turn it on. Then it asks GitHub once a day and tells you when there's a newer release, and you update through Morphe Manager as usual.
 
 The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish, Vietnamese and Simplified Chinese are translated, and any other language, Traditional Chinese included, gets English.
+
+To keep Reel downloads in More without the sidebar button, leave **Download** on under **Reels and Watch** and turn off **Download button on reels** on the same page.
 
 ### Blocking Reels
 
@@ -192,9 +194,11 @@ Morphe Manager's default selection has every patch except `AMOLED black theme`, 
 
 Videos save to your gallery at the quality you pick under Downloads, best by default. A running save shows its progress in a notification and at the top of the Downloads page, each with a Cancel button. Turn on **Quiet saves** there if the toasts at the start and end of a save bother you. A save that fails still says why.
 
+Under Playback > Recently watched, Clear also discards watches waiting to be saved. Turning Remember what you watch off stops new entries and discards pending watches. It keeps the entries already on the list.
+
 ## Help
 
-Questions about setting up, or about whether a Facebook build works, go in [Discussions](https://github.com/SysAdminDoc/Hushfacebook/discussions). For something that's broken, use the [bug form](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=bug_report.yml) and attach a diagnostic report from Hushfacebook settings. It leaves out links, IDs and the credentials it recognizes, but read it before you share it. If Facebook crashes before you can reach the settings, attach the newest `crash-` file from Download/Hushfacebook instead. Ideas go on the [feature form](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=feature_request.yml). When Morphe Manager misbehaves with every app, not only Facebook, [Morphe's own tracker](https://github.com/MorpheApp/morphe-manager/issues) is the place.
+Questions about setting up, or about whether a Facebook build works, go in [Discussions](https://github.com/SysAdminDoc/Hushfacebook/discussions). For something that's broken, use the [bug form](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=bug_report.yml) and attach a diagnostic report from Hushfacebook settings. It leaves out links, IDs and the credentials it recognizes, but read it before you share it. If Facebook crashes before you can reach the settings, attach the newest `crash-` file from Download/Hushfacebook instead. The file identifies the Facebook build and the patch bundle that produced it. Ideas go on the [feature form](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=feature_request.yml). When Morphe Manager misbehaves with every app, not only Facebook, [Morphe's own tracker](https://github.com/MorpheApp/morphe-manager/issues) is the place.
 
 ### Unsupported Version
 
