@@ -26,6 +26,7 @@ Unreleased.
 * **Tooling:** Overlapping device builds can't replace each other's argument files or outputs. Invalid patch options keep the previous signed APK.
 * **Tooling:** Retrying publication after an interrupted download check verifies the existing release's files without uploading them again. Drafts and failed lookups stop the retry.
 * **Tooling:** Device checks distinguish Facebook from a separately installed clone. The full audit checks for crashes after settings screenshots and recovery, too.
+* **Tooling:** Crash checks fail promptly if the device disconnects, so an interrupted walk can report its recovery errors.
 
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).

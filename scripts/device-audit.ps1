@@ -276,7 +276,8 @@ function Write-Step([string]$Text) { Write-Host "[audit] $Text" }
 function Format-Shell([string]$Text) { "'" + $Text.Replace("'", "'\''") + "'" }
 
 function Get-AuditCrashes([long]$SinceEpoch) {
-    $crashes = @(Invoke-Adb logcat -b crash -d -v epoch) | Where-Object {
+    # Host-side logcat waits for a missing device. Shell reports a disconnected transport as an error.
+    $crashes = @(Invoke-Adb shell logcat -b crash -d -v epoch) | Where-Object {
         $_ -match '^\s*(\d+)\.\d+\s' -and [long]$Matches[1] -ge $SinceEpoch
     }
     $fatal = @($crashes | Where-Object { $_ -match "Process: $([regex]::Escape($Package))(?=[:,\s]|$)" })

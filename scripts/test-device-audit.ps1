@@ -52,6 +52,12 @@ function Invoke-FakeAdb {
     $global:LASTEXITCODE = 0
     if ($script:disconnected) { throw 'Mock disconnect' }
     if ($command -like '*logcat -b crash -d -v epoch') {
+        if ($script:offlineCrashRead) {
+            # Host logcat waits for a missing transport. Model its wait response without hanging the suite.
+            if ($args[2] -ceq 'logcat') { return '- waiting for device -' }
+            $global:LASTEXITCODE = 1
+            return 'error: device offline'
+        }
         if ($script:failCrashRead) { throw 'Mock crash-buffer failure' }
         return $script:crashBuffer
     }
@@ -694,6 +700,23 @@ try {
     $script:failCrashRead = $true
     try { Assert-Throws { Get-AuditCrashes -SinceEpoch 1730000000 } 'A failed final crash-buffer read returned an empty successful result.' }
     finally { $script:failCrashRead = $false }
+    $script:offlineCrashRead = $true
+    try {
+        foreach ($scriptPath in @($auditPath, (Join-Path $PSScriptRoot 'phone-smoke.ps1'))) {
+            $sourceAst = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
+            $readCrashes = $sourceAst.Find({ param($node)
+                $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                    $node.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                    $node.Left.VariablePath.UserPath -ceq 'crashes'
+            }, $true)
+            if (-not $readCrashes) { throw "No crash-buffer read in $scriptPath" }
+            $offlineError = ''
+            try { . ([scriptblock]::Create($readCrashes.Extent.Text)) }
+            catch { $offlineError = $_.Exception.Message }
+            Assert-That ($offlineError -like '*device offline*') `
+                "$(Split-Path -Leaf $scriptPath) didn't fail promptly on a disconnected crash-read transport."
+        }
+    } finally { $script:offlineCrashRead = $false }
     $script:pageAck = '{"schema":2,"route":"Playback","title":"Newsfeed","locale":"de-DE"}'
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'Wrong localized page was accepted.'
     $script:screenText = @('News feed')

@@ -262,7 +262,7 @@ foreach ($problem in $result.Problems) { $problems.Add($problem) }
 
 # Facebook's own crashes during the walk, from the crash buffer, which outlives the report's
 # single latest-crash slot.
-$crashes = @(Invoke-Adb logcat -b crash -d -v epoch) | Where-Object {
+$crashes = @(Invoke-Adb shell logcat -b crash -d -v epoch) | Where-Object {
     $_ -match '^\s*(\d+)\.\d+\s' -and [long]$Matches[1] -ge $startedEpoch
 }
 $fatal = @($crashes | Where-Object { $_ -match "Process: $([regex]::Escape($Package))(?=[:,\s]|$)" })
