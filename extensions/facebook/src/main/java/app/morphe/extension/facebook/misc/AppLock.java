@@ -1111,7 +1111,7 @@ public final class AppLock {
             reason.setPadding(0, gap / 2, 0, gap);
             column.addView(reason);
 
-            Button unlock = new Button(activity);
+            Button unlock = new Button(getContext());
             unlock.setText(L10n.t("Unlock"));
             // Asks again even while a check may still be on its way: one that never answered mustn't trap Facebook.
             unlock.setOnClickListener(view -> {

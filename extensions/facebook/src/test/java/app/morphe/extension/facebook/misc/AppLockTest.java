@@ -20,6 +20,7 @@ import android.app.Dialog;
 import android.app.KeyguardManager;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.graphics.Color;
 import android.hardware.biometrics.BiometricPrompt;
 import android.view.KeyEvent;
 import android.view.View;
@@ -188,6 +189,20 @@ public class AppLockTest {
         asked.get(0).answer.unlocked();
         assertFalse(AppLock.covered(activity));
         assertFalse(AppLock.covering());
+    }
+
+    @Test
+    public void theUnlockButtonUsesTheLockScreensTheme() {
+        Settings.APP_LOCK.save(true);
+        Activity activity = screen();
+        activity.setTheme(android.R.style.Theme_Material_Light_NoActionBar);
+        front(activity);
+        Button unlock = button(ShadowDialog.getLatestDialog().getWindow().getDecorView());
+        assertNotNull(unlock);
+        double contrastOnBlack = (Color.luminance(unlock.getCurrentTextColor()) + 0.05) / 0.05;
+        assertTrue("the light host's button text is unreadable on the black lock screen", contrastOnBlack >= 4.5);
+        assertTrue("the retry target is shorter than 48 dp", unlock.getMinimumHeight() >=
+                Math.round(48 * activity.getResources().getDisplayMetrics().density));
     }
 
     /** The cover's text for a screen reader: a window name, a heading, and the reason read out when it changes. */

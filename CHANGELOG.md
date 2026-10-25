@@ -15,6 +15,7 @@ Unreleased.
 * **Facebook:** Settings imports now update restart notices, including removing a notice when an import restores the value Facebook is already using. Edits made while an import runs stay consistent with the saved choices.
 * **Facebook:** Word filters recheck the space shared by both lists when you save or import. A preview or another open editor can no longer leave you with lists that won't import again.
 * **Facebook:** A retired unlock prompt can't cancel a newer prompt or replace its feedback.
+* **Facebook:** The Unlock button uses the lock screen's theme, keeping its text readable and its touch target intact when Facebook uses a different theme.
 * **Facebook:** Repeated taps open one settings screen. The last enabled way into settings stays protected after other switches change.
 * **Facebook:** Back to defaults updates launcher shortcuts straight away, while keeping Facebook's own shortcuts.
 * **Facebook:** Canceling a photo in Save all photos also stops the remaining photos.
