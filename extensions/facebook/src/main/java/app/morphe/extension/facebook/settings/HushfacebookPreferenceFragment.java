@@ -2197,6 +2197,12 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         row.setOnPreferenceChangeListener((preference, typed) -> {
             String raw = typed == null ? "" : typed.toString();
             String clean = PostWords.clean(raw);
+            if (row.refuseDuringImport()) return false;
+            String refusal = wordsRefusal(PostWords.size(clean, row.otherListBytes()));
+            if (refusal != null) {
+                row.refuseSave(refusal);
+                return false;
+            }
             if (clean.equals(raw)) return true;
             // Keeps the clean list in place of what was typed, as the folder row does.
             int leftOut = PostWords.leftOut(raw);

@@ -1391,6 +1391,58 @@ public class SettingsBackupTest {
         assertEquals(half, SettingsBackup.parse(both.toString()).hiddenChange());
     }
 
+    @Test
+    public void aPartialWordListImportRechecksSharedRoomBeforeApplying() throws Exception {
+        String half = PostWordsTest.asciiOfBytes(PostWords.MAX_LIST_BYTES / 2);
+        String more = PostWordsTest.asciiOfBytes(PostWords.MAX_LIST_BYTES / 2 + 1);
+        JSONObject file = new JSONObject(fileWith());
+        file.getJSONObject("settings").put(SettingsBackup.HIDDEN.key, half);
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file.toString());
+        Settings.KEPT_WORDS.save(more);
+        Map<String, ?> before = store();
+
+        assertWordRoomRefused(snapshot);
+
+        assertEquals(before, store());
+        assertEquals("", Settings.HIDDEN_WORDS.savedValue());
+        assertEquals(more, Settings.KEPT_WORDS.savedValue());
+        Settings.KEPT_WORDS.save(half);
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertTrue(PostWords.fits(Settings.HIDDEN_WORDS.savedValue(), Settings.KEPT_WORDS.savedValue()));
+        SettingsBackup.parse(SettingsBackup.create());
+    }
+
+    @Test
+    public void aRestoredWordListPreviewRechecksSharedRoomBeforeApplying() throws Exception {
+        String half = PostWordsTest.asciiOfBytes(PostWords.MAX_LIST_BYTES / 2);
+        String more = PostWordsTest.asciiOfBytes(PostWords.MAX_LIST_BYTES / 2 + 1);
+        JSONObject file = new JSONObject(fileWith());
+        file.getJSONObject("settings").put(SettingsBackup.HIDDEN.key, half);
+        Bundle saved = SettingsBackup.parse(file.toString()).toBundle();
+        Settings.KEPT_WORDS.save(more);
+        Map<String, ?> before = store();
+
+        SettingsBackup.Snapshot restored = SettingsBackup.Snapshot.fromBundle(saved);
+        if (restored != null) assertWordRoomRefused(restored);
+
+        assertEquals(before, store());
+        assertEquals("", Settings.HIDDEN_WORDS.savedValue());
+        assertEquals(more, Settings.KEPT_WORDS.savedValue());
+        Settings.KEPT_WORDS.save(half);
+        SettingsBackup.Snapshot fits = SettingsBackup.Snapshot.fromBundle(saved);
+        assertNotNull("a restored preview that fits was dropped", fits);
+        assertEquals(1, SettingsBackup.apply(fits));
+    }
+
+    private static void assertWordRoomRefused(SettingsBackup.Snapshot snapshot) throws Exception {
+        try {
+            SettingsBackup.apply(snapshot);
+            fail("the import kept word lists past their shared room");
+        } catch (SettingsBackup.ApplyFailed refused) {
+            assertTrue("refusing a stale preview changed the previous settings", refused.rolledBack);
+        }
+    }
+
     /** Lists of 1,024 and 1,025 chars, the most a file's string could be before, both come back. */
     @Test
     public void listsEitherSideOfTheOldStringLimitComeBack() throws Exception {

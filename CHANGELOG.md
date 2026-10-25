@@ -10,6 +10,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Facebook:** Word filters recheck the space shared by both lists when you save or import. A preview or another open editor can no longer leave you with lists that won't import again.
 * **Facebook:** A retired unlock prompt can't cancel a newer prompt or replace its feedback.
 * **Facebook:** Canceling a photo in Save all photos also stops the remaining photos.
 * **Facebook:** Photo, Story and GIF saves skip details Facebook has already released, including details nested inside a live post. Menu bookmarks use the same guard.
