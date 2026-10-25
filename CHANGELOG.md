@@ -6,6 +6,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
 * **Facebook:** Clearing Recently watched now discards pending watches, so an entry can't come back after Clear. Turning recording off also cancels pending entries, even if you turn it back on straight away.
 * **Facebook:** Prevent a startup crash with `Newest reels first` when a reel's details haven't loaded yet (Refs #234).
 
