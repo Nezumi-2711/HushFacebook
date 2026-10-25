@@ -6630,6 +6630,48 @@ try {
         Assert-True (-not (Test-Path -LiteralPath (Join-Path $deviceOut 'stock-base.apk'))) `
             "patch-for-device.ps1 left the base APK it read for $build behind."
     }
+    # A second invocation can arrive while the first waits for the build queue. It must
+    # neither overwrite the first argument file nor remove its temporary/output files.
+    $overlapQueue = Join-Path $tools 'overlap-queue.ps1'
+    $overlapResult = Join-Path $tools 'overlap-result.txt'
+    $overlapArguments = @{
+        Root = $releaseRepo; DesktopJar = $stubJar; Java = $stubJava; Aapt2 = $stubAapt2;
+        OutDir = $deviceOut; Apk = $fixturePaths[$releaseTarget.PackageVersion]
+    } | ConvertTo-Json -Compress
+    $overlapBody = @'
+function Invoke-InBuildQueue {
+    param([string]$Label, [scriptblock]$ScriptBlock)
+    if (-not $global:hushDeviceOverlapStarted) {
+        $global:hushDeviceOverlapStarted = $true
+        $parsed = 'OVERLAP_ARGUMENTS' | ConvertFrom-Json
+        $second = @{}
+        foreach ($property in $parsed.PSObject.Properties) { $second[$property.Name] = $property.Value }
+        try {
+            & 'DEVICE_SCRIPT' @second 6> $null
+            [IO.File]::WriteAllText('OVERLAP_RESULT', 'second ran')
+        } catch { [IO.File]::WriteAllText('OVERLAP_RESULT', $_.Exception.Message) }
+    }
+    & $ScriptBlock | Out-Host
+    return $LASTEXITCODE
+}
+'@
+    $overlapBody = $overlapBody.Replace('OVERLAP_ARGUMENTS', $overlapArguments.Replace("'", "''")).
+        Replace('DEVICE_SCRIPT', (Join-Path $PSScriptRoot 'patch-for-device.ps1').Replace("'", "''")).
+        Replace('OVERLAP_RESULT', $overlapResult.Replace("'", "''"))
+    [IO.File]::WriteAllText($overlapQueue, $overlapBody)
+    $savedDeviceQueue = $env:BUILD_QUEUE_SCRIPT
+    try {
+        $env:BUILD_QUEUE_SCRIPT = $overlapQueue
+        $global:hushDeviceOverlapStarted = $false
+        Invoke-DeviceBuild -Apk $fixturePaths[$releaseTarget.PackageVersion]
+        Assert-True ((Get-Content -LiteralPath $overlapResult -Raw) -like '*already using the output directory*') `
+            'An overlapping device build was allowed to replace the active run.'
+        Assert-True (@(Get-Content -LiteralPath $javaLog).Count -eq 1 -and (Test-Path -LiteralPath $deviceApk)) `
+            'The original device build lost its argument file or output to an overlapping run.'
+    } finally {
+        $env:BUILD_QUEUE_SCRIPT = $savedDeviceQueue
+        Remove-Variable -Name hushDeviceOverlapStarted -Scope Global -ErrorAction SilentlyContinue
+    }
     $savedFixtureDir = $env:HUSHFACEBOOK_FIXTURE_DIR
     try {
         $env:HUSHFACEBOOK_FIXTURE_DIR = $fixtures
@@ -6652,6 +6694,7 @@ try {
             @{ Options = @{ 'No such patch' = @('appName=HushBook') }; Pattern = "*No patch named 'No such patch' in this build to give options to*" },
             @{ Options = @{ $firstPatchHere = @('no equals sign') }; Pattern = "*The option 'no equals sign' for*isn't key=value*" })) {
         Remove-Item -LiteralPath $javaLog -Force -ErrorAction SilentlyContinue
+        $beforeInvalidOptions = Get-Sha256Hex -Path $deviceApk
         Assert-Throws {
             Use-StampedBundle {
                 & (Join-Path $PSScriptRoot 'patch-for-device.ps1') -Root $releaseRepo -DesktopJar $stubJar -Java $stubJava `
@@ -6660,6 +6703,8 @@ try {
             }
         } $badOptions.Pattern 'patch-for-device.ps1 took patch options it should have refused.'
         Assert-True (-not (Test-Path -LiteralPath $javaLog)) 'patch-for-device.ps1 started the CLI with patch options it should have refused.'
+        Assert-True ((Test-Path -LiteralPath $deviceApk) -and (Get-Sha256Hex -Path $deviceApk) -ceq $beforeInvalidOptions) `
+            'Invalid patch options deleted the previous signed device build.'
     }
     # An option goes after its own patch's -e. The CLI gives an -O to the -e before it, so one put
     # in front landed on the patch listed before, and App name never reached Hushfacebook settings.

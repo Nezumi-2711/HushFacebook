@@ -20,6 +20,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** Video joins stop copying samples before they exceed their size or storage allowance. The MP4 writer checks the complete output size before writing.
 * **Facebook:** Update checks enforce their time limit when response headers or the end of the body arrive late.
 * **Tooling:** Generated-file cleanup refuses paths through linked parent folders. Invalid CVSS vectors can't lower an advisory's score by repeating metrics.
+* **Tooling:** Overlapping device builds can't replace each other's argument files or outputs. Invalid patch options keep the previous signed APK.
 
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).
