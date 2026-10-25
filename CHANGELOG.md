@@ -14,6 +14,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** Word filters recheck the space shared by both lists when you save or import. A preview or another open editor can no longer leave you with lists that won't import again.
 * **Facebook:** A retired unlock prompt can't cancel a newer prompt or replace its feedback.
 * **Facebook:** Repeated taps open one settings screen. The last enabled way into settings stays protected after other switches change.
+* **Facebook:** Back to defaults updates launcher shortcuts straight away, while keeping Facebook's own shortcuts.
 * **Facebook:** Canceling a photo in Save all photos also stops the remaining photos.
 * **Facebook:** Photo, Story and GIF saves skip details Facebook has already released, including details nested inside a live post. Menu bookmarks use the same guard.
 * **Facebook:** Video joins stop copying samples before they exceed their size or storage allowance. The MP4 writer checks the complete output size before writing.
