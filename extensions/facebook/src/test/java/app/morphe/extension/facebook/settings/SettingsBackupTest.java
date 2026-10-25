@@ -28,6 +28,7 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.SwitchPreference;
 import android.preference.TwoStatePreference;
+import android.widget.ListView;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -103,6 +104,7 @@ import app.morphe.extension.shared.settings.PauseForTests;
 import app.morphe.extension.shared.settings.Setting;
 import app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment;
 import app.morphe.extension.shared.settings.preference.LogBufferManager;
+import app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 import app.morphe.extension.shared.settings.preference.SharedPrefCategory;
 
 /**
@@ -3191,6 +3193,120 @@ public class SettingsBackupTest {
         }
     }
 
+    @Test
+    public void importingARestartGatedSwitchShowsTheRestartRow() throws Exception {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            assertEquals(0, ReopenSettingsAfterRestart.changesWaiting(activity));
+            deliver(activity, tap(activity, page, IMPORT_ROW), fileWith(Settings.USE_SYSTEM_FONT, true));
+
+            shownPreview().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            settle();
+
+            assertTrue(Settings.USE_SYSTEM_FONT.savedValue());
+            assertEquals(1, ReopenSettingsAfterRestart.changesWaiting(activity));
+            assertTrue(AbstractPreferenceFragment.restartPending.contains(Settings.USE_SYSTEM_FONT.key));
+            page.navigation.search("system font");
+            assertTrue("the imported change has no visible restart action", visibleKey(page, SettingsNavigation.RESTART));
+        }
+    }
+
+    @Test
+    public void importingBackToTheRunningValueClearsItsRestartDebt() throws Exception {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            ((SwitchPreference) page.findPreference(Settings.USE_SYSTEM_FONT.key)).setChecked(true);
+            ShadowLooper.idleMainLooper();
+            assertEquals(1, ReopenSettingsAfterRestart.changesWaiting(activity));
+            deliver(activity, tap(activity, page, IMPORT_ROW), fileWith(Settings.USE_SYSTEM_FONT, false));
+
+            shownPreview().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            settle();
+
+            assertFalse(Settings.USE_SYSTEM_FONT.savedValue());
+            assertEquals("restoring the running value still owes a restart", 0,
+                    ReopenSettingsAfterRestart.changesWaiting(activity));
+            assertFalse(AbstractPreferenceFragment.restartPending.contains(Settings.USE_SYSTEM_FONT.key));
+            page.navigation.search("system font");
+            assertFalse(visibleKey(page, SettingsNavigation.RESTART));
+        }
+    }
+
+    @Test
+    public void failedImportsReconcileExistingRestartDebtWithWhatActuallyLanded() throws Exception {
+        FailingStore.Fault[][] failures = {
+                {FailingStore.Fault.COMMIT_THROWS},
+                {FailingStore.Fault.COMMIT_FALSE, FailingStore.Fault.LOST}};
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            SwitchPreference row = (SwitchPreference) page.findPreference(Settings.USE_SYSTEM_FONT.key);
+            for (int index = 0; index < failures.length; index++) {
+                row.setChecked(true);
+                ShadowLooper.idleMainLooper();
+                assertEquals(1, ReopenSettingsAfterRestart.changesWaiting(activity));
+                deliver(activity, tap(activity, page, IMPORT_ROW), fileWith(Settings.USE_SYSTEM_FONT, false));
+                try (FailingStore ignored = FailingStore.install(failures[index])) {
+                    shownPreview().getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                    settle();
+                }
+                boolean keptPreviousValue = index == 0;
+                assertEquals(keptPreviousValue, Settings.USE_SYSTEM_FONT.savedValue());
+                assertEquals(keptPreviousValue, row.isChecked());
+                assertEquals("the restart row disagrees with what survived the failed import",
+                        keptPreviousValue ? 1 : 0, ReopenSettingsAfterRestart.changesWaiting(activity));
+            }
+        }
+    }
+
+    @Test
+    public void anAsyncImportCannotSplitAnotherRowsStoredAndRunningValues() throws Exception {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(activity));
+            deliver(activity, tap(activity, page, IMPORT_ROW), fileWith(Settings.HIDE_REELS_TAB, true));
+            AlertDialog preview = shownPreview();
+            SwitchPreference other = (SwitchPreference) page.findPreference(Settings.HIDE_SPONSORED_POSTS.key);
+            assertTrue(other.isEnabled());
+            SharedPreferences actual = Setting.preferences.preferences;
+            CountDownLatch committing = new CountDownLatch(1);
+            CountDownLatch proceed = new CountDownLatch(1);
+
+            withStore(blockingFirstCommit(actual, committing, proceed), () -> {
+                try {
+                    preview.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                    ShadowLooper.idleMainLooper();
+                    assertTrue("the import never reached its commit", committing.await(5, TimeUnit.SECONDS));
+                    if (other.isEnabled()) {
+                        other.setChecked(!other.isChecked());
+                        ShadowLooper.idleMainLooper();
+                    }
+                } finally {
+                    proceed.countDown();
+                    settle();
+                }
+                return null;
+            });
+
+            assertTrue(Settings.HIDE_REELS_TAB.savedValue());
+            assertEquals("the edited row and the running hook disagree", other.isChecked(),
+                    Settings.HIDE_SPONSORED_POSTS.savedValue());
+            assertEquals("the next start would use a different value", other.isChecked(),
+                    actual.getBoolean(Settings.HIDE_SPONSORED_POSTS.key, Settings.HIDE_SPONSORED_POSTS.defaultValue));
+            assertTrue("the ordinary row stayed disabled after import", other.isEnabled());
+        }
+    }
+
+    private static boolean visibleKey(HushfacebookPreferenceFragment page, String key) {
+        ListView list = page.getView().findViewById(android.R.id.list);
+        for (int index = 0; index < list.getCount(); index++) {
+            if (key.equals(((Preference) list.getItemAtPosition(index)).getKey())) return true;
+        }
+        return false;
+    }
+
     /** A file that moves only the folder says where saves will go, before and after. */
     @Test
     public void importOfAFolderAloneSaysWhereSavesWillGo() throws Exception {
@@ -4041,6 +4157,25 @@ public class SettingsBackupTest {
                                     if (landThenLose && commit > 1 && fail.getAsBoolean()) return false;
                                     Object landed = call.invoke(editor, values);
                                     return !fail.getAsBoolean() && (Boolean) landed;
+                                }
+                                Object result = call.invoke(editor, values);
+                                return result instanceof SharedPreferences.Editor ? editorProxy : result;
+                            });
+                });
+    }
+
+    private static SharedPreferences blockingFirstCommit(SharedPreferences target, CountDownLatch entered,
+                                                          CountDownLatch proceed) {
+        AtomicInteger commits = new AtomicInteger();
+        return (SharedPreferences) Proxy.newProxyInstance(target.getClass().getClassLoader(),
+                new Class<?>[]{SharedPreferences.class}, (proxy, method, args) -> {
+                    if (!method.getName().equals("edit")) return method.invoke(target, args);
+                    SharedPreferences.Editor editor = target.edit();
+                    return Proxy.newProxyInstance(editor.getClass().getClassLoader(),
+                            new Class<?>[]{SharedPreferences.Editor.class}, (editorProxy, call, values) -> {
+                                if (call.getName().equals("commit") && commits.incrementAndGet() == 1) {
+                                    entered.countDown();
+                                    assertTrue("the test did not release the import", proceed.await(5, TimeUnit.SECONDS));
                                 }
                                 Object result = call.invoke(editor, values);
                                 return result instanceof SharedPreferences.Editor ? editorProxy : result;
