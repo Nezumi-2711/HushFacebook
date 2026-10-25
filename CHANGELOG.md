@@ -19,6 +19,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** Photo, Story and GIF saves skip details Facebook has already released, including details nested inside a live post. Menu bookmarks use the same guard.
 * **Facebook:** Video joins stop copying samples before they exceed their size or storage allowance. The MP4 writer checks the complete output size before writing.
 * **Facebook:** Update checks enforce their time limit when response headers or the end of the body arrive late.
+* **Tooling:** Fixture checks validate fingerprint uniqueness. Release receipts reject older retained runs that don't prove validation was enabled.
 * **Tooling:** Generated-file cleanup refuses paths through linked parent folders. Invalid CVSS vectors can't lower an advisory's score by repeating metrics.
 * **Tooling:** Overlapping device builds can't replace each other's argument files or outputs. Invalid patch options keep the previous signed APK.
 

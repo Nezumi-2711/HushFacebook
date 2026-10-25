@@ -302,7 +302,7 @@ On Windows, compare yours with `Get-FileHash -Algorithm SHA256 .\facebook.apkm`,
 
 ## Verify a download
 
-Every release ships `SHA256SUMS.txt` beside the bundle, with a line for the `.mpp` and for each file published with it. Hash the `.mpp` you downloaded the same way as above and compare it with that line. The release receipt published beside it names the two Facebook bundles the patches were applied to, with the hashes listed above.
+Every release ships `SHA256SUMS.txt` beside the bundle, with a line for the `.mpp` and for each file published with it. Hash the `.mpp` you downloaded the same way as above and compare it with that line. The release receipt published beside it names the declared Facebook inputs the patches were applied to, with their hashes.
 
 ## Building from source
 
@@ -315,7 +315,7 @@ export GITHUB_TOKEN=<a token with read:packages>
 ./gradlew :patches:buildAndroid
 ```
 
-Run `generatePatchesList` first, or the bundle loses its Android payload. The bundle lands in `patches/build/release/patches-<version>.mpp`, beside its SHA-256 and a CycloneDX SBOM. Tests run with `./gradlew :patches:test :extensions:facebook:testDebugUnitTest`. Set `HUSHFACEBOOK_FIXTURE_DIR` to a folder holding the Facebook bundles for the tests that read real builds, and put FFmpeg and ffprobe on PATH for the codec tests. Without them those tests skip and say so. `scripts/verify-all-patches.ps1 -Apk <facebook .apkm> -DesktopJar <morphe-desktop jar> -WorkDir <scratch folder>` applies every patch to a real build and checks the result.
+Run `generatePatchesList` before building, and use the finished bundle in `patches/build/release/patches-<version>.mpp`. Later test tasks can replace the intermediate JAR in `build/libs`. The release folder keeps the Android payload intact. Beside the bundle are its SHA-256 and a CycloneDX SBOM. Tests run with `./gradlew :patches:test :extensions:facebook:testDebugUnitTest`. Set `HUSHFACEBOOK_FIXTURE_DIR` to a folder holding the Facebook bundles for the tests that read real builds, and put FFmpeg and ffprobe on PATH for the codec tests. Without them those tests skip and say so. `scripts/verify-all-patches.ps1 -Apk <facebook .apkm> -DesktopJar <morphe-desktop jar> -WorkDir <scratch folder>` applies every patch to a real build and checks fingerprint uniqueness as well as the result.
 
 For native checks, `scripts/device-audit.ps1 -Serial <serial> -ExpectedDevice <AVD name or model> -LeaseDirectory <folder> -LeaseTokenFile <token file>` borrows an existing device lease and needs a new or empty output folder. It launches Facebook through whichever launcher entry is on, so a changed app icon doesn't matter, and stops before any change if there is none or more than one. It checks destinations before swiping, captures settings pages in dark and light, and restores settings, app language and theme. The native walk currently recognizes English navigation labels. `-Locales de` also checks the language Facebook actually uses. A full trusted run with `-WriteBaseline` creates a baseline tied to that build and profile. Partial runs can't replace it, and failed recovery keeps its backups. Hook counts show execution, not proof that a row disappeared.
 

@@ -5625,7 +5625,7 @@ try {
         'if /i "%~nx4"=="MergeSplits.java" goto merge',
         'if /i "%~nx4"=="ResourceTableCheck.java" goto resources',
         'if /i "%~nx4"=="DexDiff.java" goto dexdiff',
-        'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0"',
+        'set "OUT=" & set "RESULT=" & set "LAST=" & set "PREV=" & set "FORCED=0" & set "VALIDATED=0"',
         'shift',
         'shift',
         'rem patch-for-device.ps1 hands the CLI one argument file, a quoted value a line with',
@@ -5652,10 +5652,12 @@ try {
         'if "!PREV!"=="-o" set "OUT=!V!"',
         'if "!PREV!"=="-r" set "RESULT=!V!"',
         'if "!V!"=="-f" set "FORCED=1"',
+        'if "!V!"=="--validate" set "VALIDATED=1"',
         'set "PREV=!V!"',
         'set "LAST=!V!"',
         'exit /b 0',
         ':run',
+        '>>"!HERE!validation.log" echo !VALIDATED!',
         'rem A merged APK names the bundle it came from, whose report and patched manifest these are.',
         'set "SRC=!LAST!"',
         'set "VIA="',
@@ -5858,6 +5860,9 @@ try {
     } catch {
         throw "build-release-receipt.ps1 refused a run of every declared build: $($_.Exception.Message)"
     }
+    $validationLog = Join-Path $tools 'validation.log'
+    Assert-True (@(Get-Content -LiteralPath $validationLog | Where-Object { $_ -ne '1' }).Count -eq 0) `
+        'A fresh release receipt patched without validating fingerprint uniqueness.'
     # Every merge and patch run in one job of the build queue (the stand-in at the top).
     $seen = @(Read-QueueLog)
     Assert-True (($seen -join '|') -eq 'hushfacebook receipt') `
@@ -6109,7 +6114,8 @@ try {
         $stamp = Get-Content -LiteralPath (Join-Path $keptDir 'stamp.json') -Raw | ConvertFrom-Json
         Assert-True ($stamp.bundleSha256 -ceq (Get-Sha256Hex -Path $releaseBundle) -and $stamp.apkSha256 -ceq (Get-Sha256Hex -Path $fixture) -and
             $stamp.patchListSha256 -ceq $listHash -and $stamp.desktopJarSha256 -ceq (Get-Sha256Hex -Path $stubJar) -and
-            $stamp.versionName -ceq $build -and $stamp.forced -eq $forcedHere -and $stamp.merged -eq $true -and $stamp.schema -eq 2 -and
+            $stamp.versionName -ceq $build -and $stamp.forced -eq $forcedHere -and $stamp.merged -eq $true -and $stamp.schema -eq 3 -and
+            $stamp.validated -is [bool] -and $stamp.validated -eq $true -and
             $stamp.patchedSha256 -ceq (Get-Sha256Hex -Path (Join-Path $keptDir 'patched.apk')) -and
             $stamp.resultSha256 -ceq (Get-Sha256Hex -Path (Join-Path $keptDir 'result.json')) -and
             $stamp.mergedSha256 -ceq (Get-Sha256Hex -Path (Join-Path $keptDir 'stock-merged.apk'))) `
@@ -6155,6 +6161,12 @@ try {
         $older | ConvertTo-Json -Depth 4
     }
     $staleStamps = @(
+        @{ Name = 'unvalidated schema 2'; Text = ($stampText -replace '"schema":\s*3', '"schema": 2'); Said = '*older stamp*' },
+        @{ Name = 'a text schema'; Text = ($stampText -replace '"schema":\s*3', '"schema": "3"'); Said = '*older stamp*' },
+        @{ Name = 'a fractional schema'; Text = ($stampText -replace '"schema":\s*3', '"schema": 3.5'); Said = '*older stamp*' },
+        @{ Name = 'no validation mode'; Text = (Get-StampWithout 'validated'); Said = '*without fingerprint validation*' },
+        @{ Name = 'validation disabled'; Text = ($stampText -replace '"validated":\s*true', '"validated": false'); Said = '*without fingerprint validation*' },
+        @{ Name = 'a text validation flag'; Text = ($stampText -replace '"validated":\s*true', '"validated": "true"'); Said = '*without fingerprint validation*' },
         @{ Name = 'another bundle'; Text = $stampText.Replace((Get-Sha256Hex -Path $releaseBundle), ('0' * 64)); Said = '*made with another bundle*' },
         @{ Name = 'no stamp'; Text = $null; Said = '*kept no run of*' },
         @{ Name = 'no merge'; Text = ($stampText -replace '"merged":\s*true', '"merged": false'); Said = '*made with another bundle*' },
