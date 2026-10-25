@@ -17,6 +17,7 @@ import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
 import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.media.PlaybackQuality;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.TextSize;
@@ -929,7 +930,12 @@ public class Settings extends BaseSettings {
      * #183). Starts off. Off or paused, nothing is added; what's listed stays until it's cleared.
      */
     public static final BooleanSetting RECENTLY_WATCHED =
-            new BooleanSetting("hushfacebook_recently_watched", FALSE);
+            new BooleanSetting("hushfacebook_recently_watched", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    RecentlyWatched.recordingChanged();
+                }
+            };
 
     /**
      * With a reel or video paused, a tap on its right third steps it one frame forward and a tap on
