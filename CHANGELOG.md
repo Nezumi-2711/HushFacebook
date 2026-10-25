@@ -10,6 +10,8 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Facebook:** Photo, Story and GIF saves skip details Facebook has already released, including details nested inside a live post. Menu bookmarks use the same guard.
+
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).
 * **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
