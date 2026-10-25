@@ -2,7 +2,9 @@
 
 Changes in each Hushfacebook version, newest first.
 
-## Unreleased
+## 0.18.1 (2026-10-25)
+
+Unreleased.
 
 ### Added
 
