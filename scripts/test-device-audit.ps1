@@ -6,7 +6,7 @@ $auditAst = [System.Management.Automation.Language.Parser]::ParseFile($auditPath
 if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
-    'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
+    'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Find-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
     'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
@@ -92,6 +92,9 @@ function Invoke-FakeAdb {
         if ($script:takeFocusOnDump) { $script:focusedWindow = 'mCurrentFocus=Window{2 u0 NotificationShade}' }
         if ($script:changeOwnWindowAfterDump) { $script:postDumpFocusReads = 0 }
         return $script:uiDump
+    }
+    if ($script:uiDumpAfterDownSwipe -and $command -ceq "-s $Serial shell input swipe $swipeX $swipeTo $swipeX $swipeFrom 300") {
+        $script:uiDump = $script:uiDumpAfterDownSwipe
     }
     if ($command -like '*query-activities*') { return $script:launcherQuery }
     if ($command -match "cmd locale set-app-locales .* --locales '([^']*)'$") { $script:actualLocale = $Matches[1] }
@@ -642,6 +645,70 @@ try {
     $Entry = "$Package/.LoginActivity"
     $Extra = 'app.morphe.extension.facebook'
     $swipeX = 10; $swipeFrom = 20; $swipeTo = 5
+    # A route swipe can leave Menu's row above the phone's permitted tap area.
+    function New-TapDump([string[]]$Bounds) {
+        $nodes = foreach ($box in $Bounds) {
+            "<node package=`"$Package`" content-desc=`"Settings and privacy`" clickable=`"true`" bounds=`"$box`" />"
+        }
+        return "<?xml version=`"1.0`"?><hierarchy>$($nodes -join '')</hierarchy>"
+    }
+    $tapDumpBefore = $script:uiDump
+    $inputLabelBefore = $inputNodeLabel
+    $MinimumTapY = 600
+    $lowBounds = '[0,360][1080,488]'
+    $safeBounds = '[0,1546][1080,1674]'
+    $downSwipe = "-s $Serial shell input swipe $swipeX $swipeTo $swipeX $swipeFrom 300"
+    try {
+        $script:uiDump = New-TapDump @($lowBounds)
+        $script:uiDumpAfterDownSwipe = New-TapDump @($safeBounds)
+        $script:adbCalls.Clear()
+        $found = Find-AuditTapNode 'Settings and privacy'
+        Assert-That ($null -ne $found -and $found.bounds -ceq $safeBounds) 'The navigation row was not freshly selected below the minimum tap Y after moving down.'
+        $commands = @($script:adbCalls)
+        $moveAt = [Array]::IndexOf($commands, $downSwipe)
+        Assert-That (@($commands | Where-Object { $_ -like '* input *' }).Count -eq 1 -and $moveAt -ge 0) 'Moving an unsafe row did not use exactly one permitted downward swipe.'
+        Assert-That ($moveAt -ge 0 -and @($commands | Select-Object -Skip ($moveAt + 1) | Where-Object { $_ -like '*uiautomator dump*' }).Count -ge 1) 'Moving the row did not collect a fresh UI dump before returning it.'
+        if ($null -ne $found -and $found.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$') {
+            $inputNodeLabel = 'Settings and privacy'
+            Invoke-Adb shell input tap ([int](([int]$Matches[1] + [int]$Matches[3]) / 2)) ([int](([int]$Matches[2] + [int]$Matches[4]) / 2)) | Out-Null
+        }
+        Assert-That (@($script:adbCalls | Where-Object { $_ -like '* input tap *' }).Count -eq 1 -and
+            @($script:adbCalls | Where-Object { $_ -like '* input tap 540 1610' }).Count -eq 1) 'The caller tapped the old unsafe row instead of the newly selected row.'
+
+        $script:uiDumpAfterDownSwipe = $null
+        $script:uiDump = New-TapDump @($lowBounds)
+        $script:adbCalls.Clear()
+        $found = Find-AuditTapNode 'Settings and privacy'
+        Assert-That ($null -eq $found) 'A row that remained above the minimum tap Y was returned to the tap caller.'
+        Assert-That (@($script:adbCalls | Where-Object { $_ -ceq $downSwipe }).Count -eq 5 -and
+            @($script:adbCalls | Where-Object { $_ -like '* input *' }).Count -eq 5) 'An immovable unsafe row did not stop after five downward swipes without a tap.'
+
+        foreach ($allowed in @(@{ Minimum = 0; Bounds = $lowBounds }, @{ Minimum = 600; Bounds = '[0,540][1080,660]' })) {
+            $MinimumTapY = $allowed.Minimum
+            $script:uiDump = New-TapDump @($allowed.Bounds)
+            $script:adbCalls.Clear()
+            $found = Find-AuditTapNode 'Settings and privacy'
+            Assert-That ($null -ne $found -and $found.bounds -ceq $allowed.Bounds) "A row meeting the minimum tap Y $MinimumTapY was refused."
+            Assert-That (@($script:adbCalls | Where-Object { $_ -like '* input *' }).Count -eq 0 -and
+                @($script:adbCalls | Where-Object { $_ -like '*uiautomator dump*' }).Count -eq 1) "A row meeting the minimum tap Y $MinimumTapY caused an unnecessary swipe."
+        }
+
+        $MinimumTapY = 600
+        foreach ($badBounds in @(@('invalid'), @($safeBounds, '[0,1000][1080,1128]'))) {
+            $script:uiDump = New-TapDump @($lowBounds)
+            $script:uiDumpAfterDownSwipe = New-TapDump $badBounds
+            $script:adbCalls.Clear()
+            $found = Find-AuditTapNode 'Settings and privacy'
+            Assert-That ($null -eq $found) 'An invalid or ambiguous replacement row was accepted after repositioning.'
+            Assert-That (@($script:adbCalls | Where-Object { $_ -ceq $downSwipe }).Count -eq 5 -and
+                @($script:adbCalls | Where-Object { $_ -like '* input *' }).Count -eq 5) 'Invalid or ambiguous replacement rows did not remain bounded and untapped.'
+        }
+    } finally {
+        $MinimumTapY = 0
+        $script:uiDumpAfterDownSwipe = $null
+        $script:uiDump = $tapDumpBefore
+        $inputNodeLabel = $inputLabelBefore
+    }
     # The launcher entry: default, alternate icon, none and several.
     $realStart = ($auditAst.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Start-Facebook' }, $true)).Extent.Text.Replace('function Start-Facebook', 'function Start-FacebookReal')
     . ([scriptblock]::Create($realStart))

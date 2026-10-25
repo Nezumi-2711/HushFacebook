@@ -29,6 +29,7 @@ Unreleased.
 * **Tooling:** Device checks distinguish Facebook from a separately installed clone. The full audit checks for crashes after settings screenshots and recovery, too.
 * **Tooling:** Crash checks fail promptly if the device disconnects, so an interrupted walk can report its recovery errors.
 * **Tooling:** Corrected DASH test inputs so the full suite reaches the intended cancellation and cleanup checks under the output limits.
+* **Tooling:** Device walks can scroll a navigation row below a caller's reserved screen area before tapping it. A fresh screen check still has to identify one target.
 
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).

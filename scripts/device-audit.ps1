@@ -29,6 +29,7 @@
 
     The phone has to be unlocked and signed in. -WriteBaseline records which families ran, for
     the next run to be held to: run it once on a build you trust after Facebook's version changes.
+    -MinimumTapY keeps navigation taps below a caller's reserved area by scrolling rows down.
 
 .EXAMPLE
     scripts/device-audit.ps1 -Serial emulator-5554 -ExpectedDevice Hushfacebook_API36 -Apk out/hushfacebook.apk
@@ -73,6 +74,9 @@ param(
     # App languages for an extra dark pass over the pages each, like 'de' or 'pt-BR'.
     [string[]]$Locales = @(),
     [int]$MaxScrolls = 14,
+    # A caller can keep taps below an area reserved for system overlays.
+    [ValidateRange(0, 10000)]
+    [int]$MinimumTapY = 0,
     # Leaves the profile's switches on and the audit folder in place, for poking at by hand.
     [switch]$KeepSettings
 )
@@ -427,6 +431,19 @@ function Select-AuditTapNode([string]$Label, [object[]]$Nodes) {
                 [int]$Matches[3] -gt $outer[2] -or [int]$Matches[4] -gt $outer[3]) { return $null }
     }
     return $rows[0]
+}
+
+function Find-AuditTapNode([string]$Label) {
+    for ($look = 0; $look -le 5; $look++) {
+        if ($look -gt 0) {
+            Invoke-Adb shell input swipe $swipeX $swipeTo $swipeX $swipeFrom 300 | Out-Null
+            Start-Sleep -Milliseconds 1200
+        }
+        $node = Select-AuditTapNode $Label @(Get-UiNodes)
+        if ($node -and $node.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$' -and
+                [int](([int]$Matches[2] + [int]$Matches[4]) / 2) -ge $MinimumTapY) { return $node }
+    }
+    return $null
 }
 
 function Save-Screenshot([string]$Path) {
@@ -823,6 +840,7 @@ if ($keyguard -match 'mDreamingLockscreen=true|isKeyguardShowing=true|mShowingLo
 $size = (Invoke-Adb shell wm size) -join ' '
 if ($size -notmatch '(\d+)x(\d+)\s*$') { throw "Could not read the screen size: $size" }
 $width = [int]$Matches[1]; $height = [int]$Matches[2]
+if ($MinimumTapY -ge $height) { throw 'MinimumTapY must be below the bottom of the screen.' }
 $swipeX = [int]($width / 2); $swipeFrom = [int]($height * 0.75); $swipeTo = [int]($height * 0.3)
 $sdk = [int](((Invoke-Adb shell getprop ro.build.version.sdk) -join '').Trim())
 if ($Locales.Count -gt 0 -and $sdk -lt 33) { throw 'App-locale passes require Android 13 or newer.' }
@@ -901,14 +919,7 @@ try {
                 }
                 $skipBack = $false
                 $label = $step.Substring(4)
-                $node = $null
-                for ($look = 0; $look -le 5 -and -not $node; $look++) {
-                    if ($look -gt 0) {
-                        Invoke-Adb shell input swipe $swipeX $swipeTo $swipeX $swipeFrom 300 | Out-Null
-                        Start-Sleep -Milliseconds 1200
-                    }
-                    $node = Select-AuditTapNode $label @(Get-UiNodes)
-                }
+                $node = Find-AuditTapNode $label
                 if ($node -and $node.bounds -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$') {
                     if ([int]$Matches[1] -lt 0 -or [int]$Matches[2] -lt 0 -or
                             [int]$Matches[3] -gt $width -or [int]$Matches[4] -gt $height -or
