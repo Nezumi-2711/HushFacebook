@@ -8031,6 +8031,7 @@ try {
     $flowLog = Join-Path $releaseFlow 'flow.log'
     $flowFails = Join-Path $releaseFlow 'fail.txt'
     $flowTamper = $null
+    $flowGitHub = @{ Release = $null; DownloadsToInterrupt = 0; PublishedAssets = (Join-Path $releaseFlow 'published-assets') }
     New-Item -ItemType Directory -Path (Join-Path $flowRepo 'scripts/release') -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'common.ps1') -Destination (Join-Path $flowRepo 'scripts')
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'patch-target.ps1') -Destination (Join-Path $flowRepo 'scripts')
@@ -8130,18 +8131,55 @@ try {
         if ($call[3] -eq 'github-notes') { Set-Content -LiteralPath $call[[array]::IndexOf($call, '--out') + 1] -Value 'notes' -Encoding ASCII }
     }
     function gh {
-        $call = @($args | ForEach-Object { [string]$_ })
+        # Native gh receives each element of a trailing argument array separately. A function
+        # receives the array itself, so flatten it before reading or copying the uploaded files.
+        $call = @(foreach ($argument in $args) { foreach ($value in @($argument)) { [string]$value } })
         Add-Content -LiteralPath $flowLog -Value ('gh ' + ($call -join ' '))
         $global:LASTEXITCODE = 0
         $what = "$($call[0]) $($call[1])"
         if ((Get-Content -LiteralPath $flowFails -ErrorAction SilentlyContinue) -eq $what) { $global:LASTEXITCODE = 1; return }
+        if ($what -eq 'release create') {
+            if ($null -ne $flowGitHub.Release) {
+                $global:LASTEXITCODE = 1
+                'HTTP 422: Validation Failed (already_exists)'
+                return
+            }
+            New-Item -ItemType Directory -Force -Path $flowGitHub.PublishedAssets | Out-Null
+            foreach ($argument in $call) {
+                if (-not (Test-Path -LiteralPath $argument -PathType Leaf)) { continue }
+                $name = Split-Path -Leaf $argument
+                if ($name -notlike 'patches-*' -and $name -notlike 'release-receipt-*' -and $name -cne 'SHA256SUMS.txt') { continue }
+                Copy-Item -LiteralPath $argument -Destination $flowGitHub.PublishedAssets
+            }
+            $flowGitHub.Release = [pscustomobject]@{
+                tagName = $call[2]; isDraft = $false; publishedAt = '2026-10-09T21:03:04Z'
+                assets = @(Get-ChildItem -LiteralPath $flowGitHub.PublishedAssets -File | ForEach-Object {
+                    [pscustomobject]@{ name = $_.Name; size = $_.Length; state = 'uploaded' }
+                })
+            }
+        }
         if ($what -eq 'release download') {
+            if ($flowGitHub.DownloadsToInterrupt -gt 0) {
+                $flowGitHub.DownloadsToInterrupt--
+                $global:LASTEXITCODE = 1
+                'download interrupted'
+                return
+            }
+            if ($null -eq $flowGitHub.Release -or $flowGitHub.Release.isDraft) { $global:LASTEXITCODE = 1; return }
             $into = $call[[array]::IndexOf($call, '-D') + 1]
             New-Item -ItemType Directory -Force -Path $into | Out-Null
-            Get-ChildItem -LiteralPath $flowAssets -File | Copy-Item -Destination $into
+            Get-ChildItem -LiteralPath $flowGitHub.PublishedAssets -File | Copy-Item -Destination $into
             if ($flowTamper) { Set-Content -LiteralPath (Join-Path $into $flowTamper) -Value 'tampered' -Encoding ASCII }
         }
-        if ($what -eq 'release view') { '2026-10-09T21:03:04Z' }
+        if ($what -eq 'release view') {
+            if ($null -eq $flowGitHub.Release) {
+                $global:LASTEXITCODE = 1
+                'release not found'
+                return
+            }
+            if ($call -contains '--jq') { $flowGitHub.Release.publishedAt }
+            else { $flowGitHub.Release | ConvertTo-Json -Depth 5 -Compress }
+        }
         if ($what -eq 'repo view') { 'Hushfacebook v1.2.2: 1 patches for Facebook 581.0.0.45.58 with Morphe.' }
     }
     & git init --quiet --bare $flowOrigin
@@ -8541,7 +8579,7 @@ try {
     # An emulator walks for a release as well as a phone does.
     Write-FlowWalk @{ serial = 'emulator-5554'; device = 'Hushfacebook_API36'; emulator = $true }
     & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk -Verifier $flowVerifier 6> $null 3> $null
-    $flow = @(Read-FlowLog)
+    $flow = @(Read-FlowLog | Where-Object { $_ -notlike 'gh release view *' })
     Assert-True ($flow.Count -eq 4 -and $flow[0] -like ("staged version=1.2.3 commit=$flowHead swap=refused folder=* files=patches-1.2.3.cdx.json," +
             'patches-1.2.3.mpp,patches-1.2.3.tooling.json,release-receipt-1.2.3.json,SHA256SUMS.txt') -and
         $flow[1] -like "py * github-notes --version 1.2.3 --checked $flowChecked --out *notes.md" -and
@@ -8563,6 +8601,45 @@ try {
     Assert-True (-not (Test-Path -LiteralPath $downloadedTo)) 'Publish left the downloaded copy behind.'
     Assert-True ((& git -C $flowOrigin rev-parse 'v1.2.3^{commit}') -eq (& git -C $flowRepo rev-parse HEAD)) `
         'Publish did not push a v1.2.3 tag on the source commit.'
+
+    # A release exists as soon as create returns, even when the following download is interrupted.
+    # Its assets are the upload's own snapshot, never fresh copies of the current staging folder.
+    $flowGitHub.Release = $null
+    Remove-Item -LiteralPath $flowGitHub.PublishedAssets -Recurse -Force
+    $flowGitHub.DownloadsToInterrupt = 1
+    Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk -Verifier $flowVerifier 6> $null 3> $null } `
+        '*The download back did not pass*' 'The interrupted verification was reported as a completed publish.'
+    Assert-True ($null -ne $flowGitHub.Release -and -not $flowGitHub.Release.isDraft) 'The fake lost the release created before verification failed.'
+    $interrupted = @(Read-FlowLog)
+    Assert-True (@($interrupted | Where-Object { $_ -like 'gh release create *' }).Count -eq 1) 'The interrupted publish did not create its release exactly once.'
+    $publishedHashes = @{}
+    foreach ($file in Get-ChildItem -LiteralPath $flowGitHub.PublishedAssets -File) {
+        $publishedHashes[$file.Name] = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+    }
+    & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk -Verifier $flowVerifier 6> $null 3> $null
+    $retried = @(Read-FlowLog)
+    Assert-True (@($retried | Where-Object { $_ -like 'gh release create *' -or $_ -like 'gh release upload *' -or $_ -like 'gh release edit *' }).Count -eq 0) `
+        'Retry tried to create or change the release that was already published.'
+    Assert-True (@($retried | Where-Object { $_ -like 'gh release view *' }).Count -gt 0 -and
+        @($retried | Where-Object { $_ -like 'gh release download *' }).Count -eq 1) 'Retry did not inspect and verify the existing release.'
+    foreach ($file in Get-ChildItem -LiteralPath $flowGitHub.PublishedAssets -File) {
+        Assert-True ((Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ceq $publishedHashes[$file.Name]) `
+            "Retry replaced the already-published $($file.Name)."
+    }
+    Set-Content -LiteralPath $flowFails -Value 'release view' -Encoding ASCII
+    try {
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk -Verifier $flowVerifier 6> $null 3> $null } `
+            '*could not check whether*' 'An unreadable release was treated as a missing one.'
+        Assert-True (@(Read-FlowLog | Where-Object { $_ -like 'gh release create *' -or $_ -like 'gh release upload *' -or $_ -like 'gh release edit *' }).Count -eq 0) `
+            'A release lookup failure allowed publication changes.'
+    } finally { Remove-Item -LiteralPath $flowFails -Force }
+    $flowGitHub.Release.isDraft = $true
+    try {
+        Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk -Verifier $flowVerifier 6> $null 3> $null } `
+            '*draft*' 'An existing draft was treated as the published release.'
+        Assert-True (@(Read-FlowLog | Where-Object { $_ -like 'gh release create *' -or $_ -like 'gh release upload *' -or $_ -like 'gh release edit *' }).Count -eq 0) `
+            'The draft refusal changed the release.'
+    } finally { $flowGitHub.Release.isDraft = $false }
     $flowTamper = 'patches-1.2.3.mpp'
     Assert-Throws { & $flowScript -Stage publish -Version 1.2.3 -Checked $flowChecked -Walk $flowWalk -Verifier $flowVerifier 6> $null 3> $null } '*hosted patches-1.2.3.mpp differs*' `
         'Publish passed a release whose hosted bundle is not the one it built.'

@@ -22,6 +22,7 @@ Changes in each Hushfacebook version, newest first.
 * **Tooling:** Fixture checks validate fingerprint uniqueness. Release receipts reject older retained runs that don't prove validation was enabled.
 * **Tooling:** Generated-file cleanup refuses paths through linked parent folders. Invalid CVSS vectors can't lower an advisory's score by repeating metrics.
 * **Tooling:** Overlapping device builds can't replace each other's argument files or outputs. Invalid patch options keep the previous signed APK.
+* **Tooling:** Retrying publication after an interrupted download check verifies the existing release's files without uploading them again. Drafts and failed lookups stop the retry.
 
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).
