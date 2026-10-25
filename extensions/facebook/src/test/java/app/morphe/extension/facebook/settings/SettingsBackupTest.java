@@ -309,6 +309,30 @@ public class SettingsBackupTest {
      * name it, and a file that does has it counted as something this build doesn't know.
      */
     @Test
+    public void reelMenuOnlySurvivesExportImportAndTheMainSwitch() throws Exception {
+        Settings.SHOW_REEL_DOWNLOAD_BUTTON.save(false);
+        String file = SettingsBackup.create();
+        JSONObject values = new JSONObject(file).getJSONObject("settings");
+        assertTrue(values.getBoolean(Settings.DOWNLOAD_REELS.key));
+        assertFalse(values.getBoolean(Settings.SHOW_REEL_DOWNLOAD_BUTTON.key));
+
+        Settings.SHOW_REEL_DOWNLOAD_BUTTON.resetToDefault();
+        assertEquals(1, SettingsBackup.apply(SettingsBackup.parse(file)));
+        assertTrue(Settings.DOWNLOAD_REELS.get());
+        assertFalse(Settings.SHOW_REEL_DOWNLOAD_BUTTON.savedValue());
+
+        Settings.DOWNLOAD_REELS.save(false);
+        String disabled = SettingsBackup.create();
+        Settings.DOWNLOAD_REELS.save(true);
+        Settings.SHOW_REEL_DOWNLOAD_BUTTON.save(true);
+        assertEquals(2, SettingsBackup.apply(SettingsBackup.parse(disabled)));
+        assertFalse(Settings.DOWNLOAD_REELS.savedValue());
+        assertFalse(Settings.SHOW_REEL_DOWNLOAD_BUTTON.savedValue());
+        Settings.DOWNLOAD_REELS.save(true);
+        assertFalse("enabling downloads forgot the saved sidebar choice", Settings.SHOW_REEL_DOWNLOAD_BUTTON.get());
+    }
+
+    @Test
     public void thePickedFontStaysOutOfAFile() throws Exception {
         Settings.FONT_SOURCE.save("Inter-Regular.ttf");
         try {

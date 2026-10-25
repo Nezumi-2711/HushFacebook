@@ -63,6 +63,8 @@ Morphe Manager can back up your patch choices but not these switches. **Export s
 
 The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish, Vietnamese and Simplified Chinese are translated, and any other language, Traditional Chinese included, gets English.
 
+To keep Reel downloads in More without the sidebar button, leave **Download** on under **Reels and Watch** and turn off **Download button on reels** on the same page.
+
 ### Blocking Reels
 
 Reels turn up in several places, and no one switch covers them all. Searching the settings for "block reels" brings up a map of them.

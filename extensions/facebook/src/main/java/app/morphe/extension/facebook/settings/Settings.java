@@ -1509,9 +1509,16 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting SAVE_STORY_PHOTOS =
             new BooleanSetting("hushfacebook_save_story_photos", FALSE);
 
-    /** The Download button the reel patch adds to every reel's sidebar. */
+    /** The reel download actions in the sidebar and More menu. */
     public static final BooleanSetting DOWNLOAD_REELS =
             new BooleanSetting("hushfacebook_download_reels", TRUE);
+
+    /**
+     * The sidebar button alone (#244). Starts on to keep the existing layout. Turning this off
+     * leaves Download in More, while DOWNLOAD_REELS still enables both save entry points.
+     */
+    public static final BooleanSetting SHOW_REEL_DOWNLOAD_BUTTON =
+            new BooleanSetting("hushfacebook_show_reel_download_button", TRUE, Setting.parent(DOWNLOAD_REELS));
 
     /**
      * The Download to phone item the video patch adds to the menu of a feed or Watch video. Off,
