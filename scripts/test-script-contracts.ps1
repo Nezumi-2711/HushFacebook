@@ -2061,6 +2061,18 @@ try {
             'CVSS:3.1/AV:n/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H', 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:u/C:H/I:H/A:H')) {
         Assert-True ($null -eq (Get-Cvss3BaseScore -Vector $unscored)) "$unscored was given a CVSS 3 score."
     }
+    foreach ($malformed in @(
+            'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/C:N/I:N/A:N',
+            'CVSS:3.1/C:N/I:N/A:N/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+            'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/E:H/E:U',
+            'CVSS:3.1/av:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H',
+            'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/unknown:H',
+            'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/E:invalid')) {
+        Assert-True ($null -eq (Get-Cvss3BaseScore -Vector $malformed)) "A malformed vector was scored: $malformed"
+        $unrated = Get-AdvisorySeverity -Advisory ([pscustomobject]@{
+            database_specific = @{}; severity = @([pscustomobject]@{ type = 'CVSS_V3'; score = $malformed }) })
+        Assert-True ($unrated.Serious -and $unrated.Level -eq 'UNRATED') 'A malformed vector bypassed the advisory gate.'
+    }
 
     # How serious each recorded advisory is: OSV's label and the vector's score, whichever is worse,
     # and unrated when neither can be read.
@@ -4996,6 +5008,19 @@ try {
     Assert-True (Test-Path -LiteralPath $outside) 'Cleanup deleted a path outside the work directory.'
     # A path that is simply not there is nothing to do, not a failure.
     Remove-GeneratedPath -Path (Join-Path $work 'never-existed') -Root $work
+
+    # A link in an ancestor must not turn a generated path into a path outside this run.
+    $outsideTree = Join-Path $commonRoot 'outside-tree'
+    $outsideRun = Join-Path $outsideTree 'fixture-apply'
+    New-Item -ItemType Directory -Path $outsideRun -Force | Out-Null
+    $keepThroughLink = Join-Path $outsideRun 'keep.txt'
+    Set-Content -LiteralPath $keepThroughLink -Value 'keep' -Encoding ASCII
+    $linkedBuild = Join-Path $work 'build'
+    New-Item -ItemType Junction -Path $linkedBuild -Target $outsideTree | Out-Null
+    try {
+        Remove-GeneratedPath -Path (Join-Path $linkedBuild 'fixture-apply') -Root $work -WarningAction SilentlyContinue
+        Assert-True (Test-Path -LiteralPath $keepThroughLink) 'Generated cleanup followed a linked ancestor outside its root.'
+    } finally { Remove-TreeWithoutFollowingLinks -Path $linkedBuild }
 
     # The version read. -LiteralPath is the difference that had already drifted, so the fixture
     # directory carries the bracket that makes a wildcard read find nothing.
