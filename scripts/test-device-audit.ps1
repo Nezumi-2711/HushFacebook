@@ -7,7 +7,7 @@ if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
     'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
-    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'Resolve-AuditStateBefore')
+    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -51,6 +51,10 @@ function Invoke-FakeAdb {
     $script:adbCalls.Add($command)
     $global:LASTEXITCODE = 0
     if ($script:disconnected) { throw 'Mock disconnect' }
+    if ($command -like '*logcat -b crash -d -v epoch') {
+        if ($script:failCrashRead) { throw 'Mock crash-buffer failure' }
+        return $script:crashBuffer
+    }
     if ($command -like '* pull */applied.json *') {
         $snapshot = if ($script:wrongSnapshot) { '{"wrong":true}' }
             elseif ($null -ne $script:deviceSwitches) { New-TestBackup $script:deviceSwitches }
@@ -104,6 +108,26 @@ function Write-TestLease([string]$Owner = $testToken, [double]$Minutes = 25) {
 }
 
 try {
+    # A stock install and its clone can run on one device. A crash in the clone is not a crash
+    # in the package being audited, but that package's colon-named processes still belong to it.
+    foreach ($scriptPath in @($auditPath, (Join-Path $PSScriptRoot 'phone-smoke.ps1'))) {
+        $sourceAst = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$null, [ref]$null)
+        $selectFatal = $sourceAst.Find({ param($node)
+            $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                $node.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                $node.Left.VariablePath.UserPath -ceq 'fatal'
+        }, $true)
+        if (-not $selectFatal) { throw "No package crash selection in $scriptPath" }
+        $crashes = @(
+            '1730000000.100 1000 1000 E AndroidRuntime: Process: com.facebook.katana, PID: 1000',
+            '1730000000.200 1001 1001 E AndroidRuntime: Process: com.facebook.katana:push, PID: 1001',
+            '1730000000.300 1002 1002 E AndroidRuntime: Process: com.facebook.katana.morphe, PID: 1002',
+            '1730000000.400 1003 1003 E AndroidRuntime: Process: com.facebook.katanax, PID: 1003')
+        . ([scriptblock]::Create($selectFatal.Extent.Text))
+        Assert-That ($fatal.Count -eq 2 -and $fatal[0] -ceq $crashes[0] -and $fatal[1] -ceq $crashes[1]) `
+            "$(Split-Path -Leaf $scriptPath) attributed another package's crash to Facebook."
+    }
+
     Assert-Throws { Invoke-Adb shell input keyevent KEYCODE_WAKEUP } 'Missing token permitted a wake.'
     [IO.File]::WriteAllText($LeaseTokenFile, $testToken)
     Assert-Throws { & $auditPath -Serial $Serial -ExpectedDevice 'Audit_AVD' -OutDir $testRoot -LeaseDirectory $LeaseDirectory -LeaseTokenFile $LeaseTokenFile } 'An occupied output folder was accepted.'
@@ -601,7 +625,12 @@ try {
     function Get-SettingsPages { return 'News feed' }
     function Close-Settings { }
     function Get-ScreenText { return $script:screenText }
-    function Save-Screenshot([string]$Path) { }
+    function Save-Screenshot([string]$Path) {
+        if ($script:crashOnScreenshot) {
+            $script:crashBuffer += '1730000001.100 1000 1000 E AndroidRuntime: Process: com.facebook.katana, PID: 1000'
+            $script:crashOnScreenshot = $false
+        }
+    }
     $SettleSeconds = 0
     $translationTables = Join-Path $PSScriptRoot '..\extensions\shared\library\src\main\l10n'
     $Entry = "$Package/.LoginActivity"
@@ -655,7 +684,16 @@ try {
     $script:foreground = "topResumedActivity=ActivityRecord{1 u0 $Package/.Main t1}"
     $script:screenText = @('Newsfeed')
     $script:pageAck = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"de-DE"}'
+    $script:crashBuffer = @('1729999999.100 1000 1000 E AndroidRuntime: Process: com.facebook.katana, PID: 1000')
+    Assert-That ((Get-AuditCrashes -SinceEpoch 1730000000).Fatal.Count -eq 0) 'An old crash entered the current audit.'
+    $script:crashOnScreenshot = $true
     Assert-That (@(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'Proved translated page was rejected.'
+    $lateCrashes = Get-AuditCrashes -SinceEpoch 1730000000
+    Assert-That ($lateCrashes.Fatal.Count -eq 1 -and $lateCrashes.Fatal[0] -like '1730000001.*') `
+        'A crash recorded during the settings pass was missing from the final collection.'
+    $script:failCrashRead = $true
+    try { Assert-Throws { Get-AuditCrashes -SinceEpoch 1730000000 } 'A failed final crash-buffer read returned an empty successful result.' }
+    finally { $script:failCrashRead = $false }
     $script:pageAck = '{"schema":2,"route":"Playback","title":"Newsfeed","locale":"de-DE"}'
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'Wrong localized page was accepted.'
     $script:screenText = @('News feed')

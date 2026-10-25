@@ -275,6 +275,14 @@ function Write-Step([string]$Text) { Write-Host "[audit] $Text" }
 # One argument for the phone's shell, quoted so spaces and apostrophes survive it.
 function Format-Shell([string]$Text) { "'" + $Text.Replace("'", "'\''") + "'" }
 
+function Get-AuditCrashes([long]$SinceEpoch) {
+    $crashes = @(Invoke-Adb logcat -b crash -d -v epoch) | Where-Object {
+        $_ -match '^\s*(\d+)\.\d+\s' -and [long]$Matches[1] -ge $SinceEpoch
+    }
+    $fatal = @($crashes | Where-Object { $_ -match "Process: $([regex]::Escape($Package))(?=[:,\s]|$)" })
+    return [pscustomobject]@{ Lines = @($crashes); Fatal = $fatal }
+}
+
 # Whether the keyboard is on screen. A dump that doesn't say is no answer either way.
 function Test-AuditKeyboard {
     $state = (Invoke-Adb shell dumpsys input_method) -join "`n"
@@ -849,6 +857,7 @@ $walkBuild = ''
 $walkRan = 0
 $walkFamilies = 0
 $walkCrashes = 0
+$startedEpoch = 0
 
 try {
     # --- Every switch on ----------------------------------------------------------------------
@@ -1013,13 +1022,6 @@ try {
         }
         $summary.Add('Never ran on the walk: ' + $(if ($idle) { $idle -join ', ' } else { 'none' }))
 
-        $crashes = @(Invoke-Adb logcat -b crash -d -v epoch) | Where-Object {
-            $_ -match '^\s*(\d+)\.\d+\s' -and [long]$Matches[1] -ge $startedEpoch
-        }
-        if ($crashes.Count -gt 0) { [IO.File]::WriteAllLines((Join-Path $OutDir 'crash-buffer.txt'), [string[]]$crashes) }
-        $fatal = @($crashes | Where-Object { $_ -match "Process: $([regex]::Escape($Package))\b" })
-        $walkCrashes = $fatal.Count
-        if ($fatal.Count -gt 0) { $problems.Add("Facebook crashed during the audit: $($fatal[0].Trim())") }
     }
 
     # --- Every settings page ------------------------------------------------------------------
@@ -1068,6 +1070,18 @@ try {
 } finally {
     # --- Put things back ----------------------------------------------------------------------
     $recovered = Restore-AuditState
+}
+
+if ($startedEpoch -gt 0) {
+    try {
+        # Settings, locale changes and restoration run after the feed walk. Their crashes count too.
+        $finalCrashes = Get-AuditCrashes -SinceEpoch $startedEpoch
+        if ($finalCrashes.Lines.Count -gt 0) {
+            [IO.File]::WriteAllLines((Join-Path $OutDir 'crash-buffer.txt'), [string[]]$finalCrashes.Lines)
+        }
+        $walkCrashes = $finalCrashes.Fatal.Count
+        if ($walkCrashes -gt 0) { $problems.Add("Facebook crashed during the audit: $($finalCrashes.Fatal[0].Trim())") }
+    } catch { $problems.Add("Could not read the final crash buffer: $($_.Exception.Message)") }
 }
 
 if ($problems.Count -eq 0 -and $WriteBaseline) {
