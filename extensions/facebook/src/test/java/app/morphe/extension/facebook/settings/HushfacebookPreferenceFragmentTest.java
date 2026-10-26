@@ -115,6 +115,58 @@ public class HushfacebookPreferenceFragmentTest {
         }
     }
 
+    @Test
+    public void theLastSettingsEntryStaysDisabledWhenThePageInitializes() {
+        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.MENU_SETTINGS_ROW);
+        List<BooleanSetting> ways = Arrays.asList(Settings.SETTINGS_SHORTCUT,
+                Settings.SETTINGS_LOGO_PRESS, Settings.SETTINGS_MENU_ROW);
+        try {
+            for (BooleanSetting last : ways) {
+                for (BooleanSetting way : ways) way.save(way == last);
+                try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+                    HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(controller.get()));
+                    SwitchPreference row = (SwitchPreference) page.findPreference(last.key);
+                    assertTrue(last.key, row.isChecked());
+                    assertFalse(last.key + " can be switched off after initialization", row.isEnabled());
+                    assertEquals("The last way into these settings stays on.", String.valueOf(row.getSummary()));
+                }
+            }
+        } finally {
+            for (BooleanSetting way : ways) way.resetToDefault();
+        }
+    }
+
+    @Test
+    public void anUnrelatedChangeKeepsTheLastSettingsEntryDisabled() {
+        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.MENU_SETTINGS_ROW, PatchFamily.SPONSORED_POSTS);
+        Settings.SETTINGS_SHORTCUT.save(true);
+        Settings.SETTINGS_LOGO_PRESS.save(true);
+        Settings.SETTINGS_MENU_ROW.save(true);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            HushfacebookPreferenceFragment page = SettingsL10nTest.pageOf(SettingsL10nTest.show(controller.get()));
+            for (BooleanSetting way : Arrays.asList(Settings.SETTINGS_SHORTCUT, Settings.SETTINGS_LOGO_PRESS)) {
+                SwitchPreference row = (SwitchPreference) page.findPreference(way.key);
+                assertNotNull(row.getOnPreferenceChangeListener());
+                assertTrue(row.getOnPreferenceChangeListener().onPreferenceChange(row, false));
+                row.setChecked(false);
+            }
+            ShadowLooper.idleMainLooper();
+            SwitchPreference last = (SwitchPreference) page.findPreference(Settings.SETTINGS_MENU_ROW.key);
+            assertFalse("the normal entry callbacks did not protect the last way in", last.isEnabled());
+
+            SwitchPreference unrelated = (SwitchPreference) page.findPreference(Settings.HIDE_SPONSORED_POSTS.key);
+            unrelated.setChecked(!unrelated.isChecked());
+            ShadowLooper.idleMainLooper();
+            assertTrue(last.isChecked());
+            assertFalse("an unrelated preference change enabled the last way in", last.isEnabled());
+        } finally {
+            Settings.SETTINGS_SHORTCUT.resetToDefault();
+            Settings.SETTINGS_LOGO_PRESS.resetToDefault();
+            Settings.SETTINGS_MENU_ROW.resetToDefault();
+            Settings.HIDE_SPONSORED_POSTS.resetToDefault();
+        }
+    }
+
     /**
      * A test JVM has no patched status flags, so the test above sees only the rows every build
      * has. This one draws the screen with every patch in.

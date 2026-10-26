@@ -135,6 +135,9 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SAVE_BUTTON,
                     L10n.t("Takes the Save button off the side of reels. The buttons above it move down. "
                             + "A change shows from the next reel.")));
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_WHATSAPP_BUTTON,
+                    L10n.t("Hides the WhatsApp button beside reels and videos. WhatsApp stays in the Share menu. "
+                            + "A change shows from the next video.")));
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SOUND_BUTTON,
                     L10n.t("Takes the speaker button off the bottom of the side of reels. "
                             + "A change shows from the next reel.")));
@@ -240,6 +243,8 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.TAP_TO_PLAY_REELS_AFTER_FIRST,
                         L10n.t("With the switch above on, after you play one reel, the reels you swipe to play on their own. The "
                                 + "feed, Watch and stories always wait.")));
+                playback.addPreference(toggle(context, Settings.INLINE_FEED_VIDEO_CONTROLS,
+                        L10n.t("Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.")));
             }
             if (build.contains(PatchFamily.RESUME_LONG_VIDEOS)) {
                 playback.addPreference(toggle(context, Settings.RESUME_LONG_VIDEOS,

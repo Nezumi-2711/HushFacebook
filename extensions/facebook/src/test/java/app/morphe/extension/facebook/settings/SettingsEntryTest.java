@@ -5,11 +5,13 @@
 package app.morphe.extension.facebook.settings;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Intent;
 import android.preference.Preference;
 import android.view.View;
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.morphe.extension.shared.SettingsContextRule;
+import app.morphe.extension.facebook.menu.MenuSettingsRow;
 import app.morphe.extension.shared.settings.BooleanSetting;
 import app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart;
 
@@ -429,6 +432,40 @@ public class SettingsEntryTest {
      * login screen, so the replacement is already in front when the request comes back, and it
      * never resumes again to pick it up. On a phone that left the request pending until it expired.
      */
+    @Test public void repeatedDirectOpensBeforeTheFragmentCommitKeepOneSettingsDialog() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            assertTrue(SettingsEntry.open(activity));
+            assertTrue(SettingsEntry.open(activity));
+
+            assertOneSettingsDialog(activity);
+        }
+    }
+
+    @Test public void repeatedMenuTapsBeforeTheFragmentCommitKeepOneSettingsDialog() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            View menuRow = new View(activity);
+            assertTrue(MenuSettingsRow.onTap(menuRow, MenuSettingsRow.ROW_ID));
+            assertTrue(MenuSettingsRow.onTap(menuRow, MenuSettingsRow.ROW_ID));
+
+            assertOneSettingsDialog(activity);
+        }
+    }
+
+    private static void assertOneSettingsDialog(Activity activity) {
+        activity.getFragmentManager().executePendingTransactions();
+        ShadowLooper.idleMainLooper();
+        int count = 0;
+        for (Fragment fragment : activity.getFragmentManager().getFragments()) {
+            if (fragment instanceof SettingsDialog) count++;
+        }
+        assertEquals("the two requests stacked settings screens", 1, count);
+        assertNotNull(dialogOver(activity));
+    }
+
     @Test public void theScreenFollowsItsHostToAReplacementAlreadyInFront() {
         ActivityController<Activity> login = openedOverNewActivity();
 
@@ -525,9 +562,8 @@ public class SettingsEntryTest {
                         && Settings.OPEN_LINKS_EXTERNALLY.key.equals(((Preference) row).getKey())) onLinks = true;
             }
             assertTrue("the screen didn't open on Links", onLinks);
+            assertTrue(pageOver(activity.get()).navigation.isExpanded("Links"));
 
-            SettingsL10nTest.backOf(dialog).performClick();
-            SettingsL10nTest.backOf(dialog).performClick();
             SettingsL10nTest.backOf(dialog).performClick();
             ShadowLooper.idleMainLooper();
             assertNull("the screen stayed open", dialogOver(activity.get()));
@@ -551,7 +587,8 @@ public class SettingsEntryTest {
         ShadowLooper.idleMainLooper();
         List<String> titles = titles(pageOver(activity.get()));
         assertTrue(titles.toString(), titles.contains("Save videos other apps can open"));
-        assertFalse(titles.toString(), titles.contains("Browse settings"));
+        assertTrue(titles.toString(), titles.contains("Opening Facebook"));
+        assertTrue(pageOver(activity.get()).navigation.isExpanded("Downloads"));
         assertNull("the request was kept for the next screen", SettingsEntry.takeRequestedSetting());
     }
 
@@ -559,23 +596,35 @@ public class SettingsEntryTest {
     @Test public void aRequestForASettingMovesAScreenAlreadyOpen() {
         PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
         ActivityController<Activity> activity = openedOverNewActivity();
-        assertTrue(titles(pageOver(activity.get())).contains("Browse settings"));
+        HushfacebookPreferenceFragment page = pageOver(activity.get());
+        assertTrue(titles(page).contains("Downloads"));
+        assertFalse(page.navigation.isExpanded("Downloads"));
+        page.navigation.navigate("Playback");
         SettingsEntry.onNewIntent(activity.get(),
                 SettingsEntry.settingIntent(RuntimeEnvironment.getApplication(), Settings.DOWNLOAD_COMPATIBLE.key));
         activity.pause().resume();
         ShadowLooper.idleMainLooper();
         List<String> titles = titles(pageOver(activity.get()));
         assertTrue(titles.toString(), titles.contains("Save videos other apps can open"));
+        assertTrue(pageOver(activity.get()).navigation.isExpanded("Downloads"));
+        assertTrue("a setting request collapsed an open section", pageOver(activity.get()).navigation.isExpanded("Playback"));
+        assertNull("the request was kept for the next screen", SettingsEntry.takeRequestedSetting());
     }
 
     /** The launcher entry is open to every app: a request that isn't a key's shape opens the overview. */
     @Test public void aRequestThatIsNoKeyOpensTheOverview() {
+        PatchFamily.inBuildForTests = java.util.EnumSet.allOf(PatchFamily.class);
         Intent odd = SettingsEntry.settingIntent(RuntimeEnvironment.getApplication(), "Save videos\nFAKE LINE");
         ActivityController<Activity> activity = Robolectric.buildActivity(Activity.class, odd).create();
         SettingsEntry.onActivityCreate(activity.get());
         activity.start().resume();
         ShadowLooper.idleMainLooper();
-        assertTrue(titles(pageOver(activity.get())).contains("Browse settings"));
+        HushfacebookPreferenceFragment page = pageOver(activity.get());
+        ListView list = page.getView().findViewById(android.R.id.list);
+        org.junit.Assert.assertEquals(23, list.getCount());
+        org.junit.Assert.assertEquals("section_Opening Facebook", ((Preference) list.getItemAtPosition(0)).getKey());
+        assertFalse(page.navigation.isExpanded("Downloads"));
+        assertFalse(titles(pageOver(activity.get())).contains("More settings"));
         String report = app.morphe.extension.shared.settings.preference.LogBufferManager.buildExportText();
         assertFalse(report, report.contains("FAKE LINE"));
     }

@@ -1,7 +1,7 @@
 ![Hushfacebook. Keep the people. Cut the noise.](assets/readme-hero.png)
 
 <p align="center">
-  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.18.0-0866FF" alt="Version 0.18.0"></a>
+  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.18.1-0866FF" alt="Version 0.18.1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%2011%2B-3DDC84" alt="Platform Android 11+">
   <img src="https://img.shields.io/badge/Facebook-584.0.0.51.56-0866FF" alt="Facebook 584.0.0.51.56">
@@ -47,23 +47,27 @@ On a new phone, import the key in the same place before you patch anything. Rein
 
 ## Settings
 
-<p><img src="assets/settings-overview.png" width="320" alt="Hushfacebook overview with search, Pause and category pages"><img src="assets/settings-downloads.png" width="320" alt="Downloads settings with quality, folder and file name controls"></p>
+<p><img src="assets/settings-overview.png" width="320" alt="Hushfacebook settings with search, Pause and expandable sections"><img src="assets/settings-downloads.png" width="320" alt="Downloads expanded beneath its heading on the main settings page"></p>
 
 There are three ways in. Long-press the Facebook logo at the top of your feed. Long-press Facebook's icon on your home screen and tap **Hushfacebook** (if it isn't there, open Facebook once and try again, and check **Settings shortcut on the app icon** under Menu is on). Or open Facebook's Menu, expand **Settings and privacy** and tap **Hushfacebook settings** at the end. Each has a switch under Menu in the settings (**Open settings from the logo**, **Settings shortcut on the app icon** and **Settings row in Menu**), and the last one still on stays on, so you can always get back in.
 
-The overview groups the main pages in one list, with search and **Pause** above it. **More settings** holds the rest. Search reaches every setting, and you can flip a switch right in the results.
+Every section is on the main settings page. Tap a heading to open its controls underneath, then tap it again to collapse them. Several sections can stay open. Search is below the title, and **Pause** is in the top bar. **Support** expands to show Report a problem and Restart Facebook. Search reaches every setting, and you can flip a switch right in the results. Clearing search returns to your open sections and position.
 
 Switches act straight away, with no restart and no new patching, but what's already on screen stays as it was until Facebook draws it again. A reel keeps the buttons it was built with, and rows already in the feed stay until it loads fresh posts. The Stories tray switch shows the next time you pull the feed down to refresh. A row that tells you to restart Facebook, such as the font and tab switches, waits for that restart.
 
-Changing one of those brings up a **Restart Facebook** row at the top of the page, and a tap reopens Facebook on the same page. The end of the home page has a Restart Facebook row of its own for whenever Facebook needs a fresh start. **Quick setups** turns on a ready-made set of switches at once, and **Report a problem** opens a GitHub bug report with your versions and switches filled in.
+Changing one of those brings up a **Restart Facebook** row at the top of the page. A tap reopens settings with your sections and position restored. You can also restart from **Support** whenever Facebook needs a fresh start. **Report a problem** opens a GitHub bug report with your versions and switches filled in.
 
 **Pause Hushfacebook** turns every switch off from the next start without forgetting your choices. A few things stay in, Lock Facebook among them, and the screen lists them. If Facebook crashes or freezes within a minute of starting three times in a row, Hushfacebook pauses itself and the screen says so.
 
 Morphe Manager can back up your patch choices but not these switches. **Export settings** saves them to a JSON file, word lists included, and **Import settings** reads one back on this phone or a new one. It shows what the file would change before anything does. **Check for new Hushfacebook releases** under Updates is off until you turn it on. Then it asks GitHub once a day and tells you when there's a newer release, and you update through Morphe Manager as usual.
 
-The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish, Vietnamese and Simplified Chinese are translated, and any other language, Traditional Chinese included, gets English.
+The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish, Vietnamese, Simplified Chinese and Traditional Chinese (Taiwan) are translated. Other languages get English.
 
 To keep Reel downloads in More without the sidebar button, leave **Download** on under **Reels and Watch** and turn off **Download button on reels** on the same page.
+
+**Hide WhatsApp on reels**, also under **Reels and Watch**, removes the direct WhatsApp button beside a reel or video. It starts off. WhatsApp stays available in the Share menu.
+
+**Inline feed video controls**, under **Playback**, adds a separate play/pause button to feed videos. It starts off and works independently of **Tap to play**. Tap the video itself for full screen. Live videos and ads keep their own controls.
 
 ### Blocking Reels
 
@@ -81,7 +85,7 @@ Reels turn up in several places, and no one switch covers them all. Searching th
 
 ## Patches
 
-Each row says what the patch does, how its switch starts and which settings page it's on. A row that says "with no switch" works as soon as you patch it in.
+Each row says what the patch does, how its switch starts and which settings section it's in. A row that says "with no switch" works as soon as you patch it in.
 
 | Patch | What it does |
 |---|---|
@@ -118,7 +122,7 @@ Each row says what the patch does, how its switch starts and which settings page
 | `Hide seen posts` | Keeps posts you've already scrolled past out of the feed when it loads again, for 1, 3, 7 or 30 days, so you see something new. The list stays on your phone. Starts off. Turn it on in Hushfacebook settings > News feed. |
 | `Hide Meta AI questions under posts` | Removes the row of Meta AI questions Facebook adds under some posts, for a cleaner feed. The post and its buttons stay. On by default. Turn it off in Hushfacebook settings > News feed. |
 | `Hide Meta AI comment summaries` | Removes Meta AI's summary of the comments from the top of the comment sheet and from under posts, so you read what people actually wrote. Starts off. Turn it on in Hushfacebook settings > Comments. |
-| `Comment sheet options` | Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and sticker buttons, show every reply without tapping View replies, load a whole reply thread as you scroll, open more replies with a tap anywhere on their row, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in Hushfacebook settings > Comments. |
+| `Comment sheet options` | Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and sticker buttons, show every reply without tapping View replies, load a whole reply thread as you scroll, open more replies with a tap anywhere on their row, hide the comments under feed posts, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in Hushfacebook settings > Comments. |
 | `Open comments at full height` | Opens the comment sheet at the full height of the screen instead of part way up, on posts, videos, reels and stories. On reels and videos, Comment opens that sheet instead of the split view. Starts off. Turn it on in Hushfacebook settings > Comments. |
 | `Hide the Feeds header` | Takes the title row and the All, Favorites, Friends, Groups and Pages filters off the top of the Feeds tab, so it opens straight on posts. Starts off. Turn it on in Hushfacebook settings > News feed, then restart Facebook. |
 | `Keep post dates` | Keeps the date under the poster's name, so you can always tell how old a post is. Facebook's newer header can swap it for rotating details, and on some phones the line goes blank. On by default. Turn it off in Hushfacebook settings > News feed. |
@@ -172,7 +176,7 @@ Each row says what the patch does, how its switch starts and which settings page
 | `Stop update prompts` | Stops Facebook asking you to update, since a patched app can't install Meta's updates anyway. Meta App Manager's update prompts and chat prompts aimed at older versions go too. On by default. Turn it off in Hushfacebook settings > Updates. |
 | `Tab bar at the bottom` | Moves Facebook's tab bar to the bottom of the screen on accounts that have it at the top, where it's easier to reach. A second switch puts it at the top instead, as older Facebook had it. Another lets it slide away as you scroll, and two more keep the tab bar or the top bar on screen instead. One gives tablets and unfolded phones the phone layout so the bar can move there too, and one makes the top bar and the tab bar see-through. Another hides the phone's status bar on the main screen until you swipe down from the top. Three more take the Messenger button, its unread count or the Facebook logo out of the top bar. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart Facebook. |
 | `Tag suggestions only after @` | Stops Facebook offering people to tag while you type ordinary words in posts and comments, so names don't pop up in your way. Typing @ still brings up the list. Starts off. Turn it on in Hushfacebook settings > Writing. |
-| `Tap to play` | Videos, reels, stories and music wait for your tap instead of starting by themselves, so nothing plays until you want it to. Starts off. Turn it on in Hushfacebook settings > Playback. |
+| `Tap to play` | Videos, reels, stories and music wait for your tap instead of starting by themselves, so nothing plays until you want it to. A separate switch adds a play/pause button to feed videos. The switches start off in Hushfacebook settings > Playback. |
 | `Turn off double tap to like` | Stops a double tap on a reel or video from liking it, so you don't like things by accident. A single tap still plays or pauses, and the Like button still works. Starts off. Turn it on in Hushfacebook settings > Reels and Watch. |
 | `Double tap to skip` | A double tap on the left or right edge of a reel or video skips back or forward 10 seconds, or 5 on one under 30 seconds. Starts off. Turn it on in Hushfacebook settings > Reels and Watch. |
 | `Tap shows the controls` | A tap on a playing reel shows its controls and lets it keep playing, so you can skip or mute without stopping it. The button in the middle still pauses. Starts off. Turn it on in Hushfacebook settings > Reels and Watch. |
@@ -302,7 +306,7 @@ On Windows, compare yours with `Get-FileHash -Algorithm SHA256 .\facebook.apkm`,
 
 ## Verify a download
 
-Every release ships `SHA256SUMS.txt` beside the bundle, with a line for the `.mpp` and for each file published with it. Hash the `.mpp` you downloaded the same way as above and compare it with that line. The release receipt published beside it names the two Facebook bundles the patches were applied to, with the hashes listed above.
+Every release ships `SHA256SUMS.txt` beside the bundle, with a line for the `.mpp` and for each file published with it. Hash the `.mpp` you downloaded the same way as above and compare it with that line. The release receipt published beside it names the declared Facebook inputs the patches were applied to, with their hashes.
 
 ## Building from source
 
@@ -315,9 +319,9 @@ export GITHUB_TOKEN=<a token with read:packages>
 ./gradlew :patches:buildAndroid
 ```
 
-Run `generatePatchesList` first, or the bundle loses its Android payload. The bundle lands in `patches/build/release/patches-<version>.mpp`, beside its SHA-256 and a CycloneDX SBOM. Tests run with `./gradlew :patches:test :extensions:facebook:testDebugUnitTest`. Set `HUSHFACEBOOK_FIXTURE_DIR` to a folder holding the Facebook bundles for the tests that read real builds, and put FFmpeg and ffprobe on PATH for the codec tests. Without them those tests skip and say so. `scripts/verify-all-patches.ps1 -Apk <facebook .apkm> -DesktopJar <morphe-desktop jar> -WorkDir <scratch folder>` applies every patch to a real build and checks the result.
+Run `generatePatchesList` before building, and use the finished bundle in `patches/build/release/patches-<version>.mpp`. Later test tasks can replace the intermediate JAR in `build/libs`. The release folder keeps the Android payload intact. Beside the bundle are its SHA-256 and a CycloneDX SBOM. Tests run with `./gradlew :patches:test :extensions:facebook:testDebugUnitTest`. Set `HUSHFACEBOOK_FIXTURE_DIR` to a folder holding the Facebook bundles for the tests that read real builds, and put FFmpeg and ffprobe on PATH for the codec tests. Without them those tests skip and say so. `scripts/verify-all-patches.ps1 -Apk <facebook .apkm> -DesktopJar <morphe-desktop jar> -WorkDir <scratch folder>` applies every patch to a real build and checks fingerprint uniqueness as well as the result.
 
-For native checks, `scripts/device-audit.ps1 -Serial <serial> -ExpectedDevice <AVD name or model> -LeaseDirectory <folder> -LeaseTokenFile <token file>` borrows an existing device lease and needs a new or empty output folder. It launches Facebook through whichever launcher entry is on, so a changed app icon doesn't matter, and stops before any change if there is none or more than one. It checks destinations before swiping, captures settings pages in dark and light, and restores settings, app language and theme. The native walk currently recognizes English navigation labels. `-Locales de` also checks the language Facebook actually uses. A full trusted run with `-WriteBaseline` creates a baseline tied to that build and profile. Partial runs can't replace it, and failed recovery keeps its backups. Hook counts show execution, not proof that a row disappeared.
+For native checks, `scripts/device-audit.ps1 -Serial <serial> -ExpectedDevice <AVD name or model> -LeaseDirectory <folder> -LeaseTokenFile <token file>` borrows an existing device lease and needs a new or empty output folder. It launches Facebook through whichever launcher entry is on, so a changed app icon doesn't matter, and stops before any change if there is none or more than one. It checks destinations before swiping, captures settings pages in dark and light, and restores settings, app language and theme. Use `-MinimumTapY <pixels>` when the device reserves the top of its screen. The walk scrolls a navigation row down before tapping it and fails the required step if it can't reach the permitted area. The native walk currently recognizes English navigation labels. `-Locales de` also checks the language Facebook actually uses. Localized passes need a current patched build so the report can confirm its full language order, including fallback text. A full trusted run with `-WriteBaseline` creates a baseline tied to that build and profile. Partial runs can't replace it, and failed recovery keeps its backups. Hook counts show execution, not proof that a row disappeared.
 
 Where things live:
 
@@ -337,6 +341,7 @@ Where things live:
 - [Hushfeed](https://github.com/SysAdminDoc/hushfeed) at `1f1f81a` gave the Gradle build, the shared extension library with its settings screen and diagnostics, the pause, the bytecode helpers and the release checks. The settings export and import came later, from `bcc57ee`.
 - [HushMessenger](https://github.com/SysAdminDoc/HushMessenger) at `e1e90d8` gave the photo hooks and the video idea behind `Send chat photos and videos at original quality`, since Messenger and Facebook's in-app chats share one media transcoder.
 - [HushPinterest](https://github.com/SysAdminDoc/HushPinterest) at `c5be4d9` gave four pieces of the settings screen. They're the quick setups, the search, the Report a problem page and the return to the page you were on after a restart.
+- [JhouHank's contribution](https://github.com/SysAdminDoc/HushFacebook/pull/227) supplies the Traditional Chinese (Taiwan) translation.
 - [Morphe](https://github.com/MorpheApp) and [ReVanced](https://gitlab.com/ReVanced/revanced-patches) gave the patcher and the patch template. `Disable Play Store updates` is Morphe's own patch from [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches) at `1bcd0bc`, which grew from ReVanced's Change version code. Its two files keep Morphe's notice, and their headers say what Hushfacebook changed.
 
 Every source file says where it came from in its header, and [provenance.json](provenance.json) maps each file to the project and commit it came from, with its license. [docs/sources.md](docs/sources.md) covers the other Facebook and Messenger patch projects and what this bundle took from each, and [sources/facebook-sources.json](sources/facebook-sources.json) pins their branches and licenses.

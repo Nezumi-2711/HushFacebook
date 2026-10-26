@@ -2,19 +2,52 @@
 
 Changes in each Hushfacebook version, newest first.
 
-## Unreleased
+## 0.18.1 (2026-10-26)
+
+* **Facebook:** Settings are easier to get around now. Every section opens right on the main page, the rows are more compact, and Pause sits in the top bar. Feed videos can get their own play button, and new switches hide the comments under feed posts or the WhatsApp button on reels. Settings also come in Traditional Chinese. If Facebook crashed at startup for you with `Newest reels first` on, that's fixed too.
 
 ### Added
 
+* **Facebook:** `Inline feed video controls` adds a play/pause button to feed videos, so playback can stay in the feed. It starts off under Playback. Tapping the video itself still opens it full screen (Refs #239).
+* **Facebook:** `Hide WhatsApp on reels` removes the direct WhatsApp button beside reels and videos. It starts off and leaves WhatsApp in the Share menu (Refs #243).
+* **Facebook:** `Hide comments under posts` stops feed posts from showing a few comments under their Like, Comment and Share buttons. Tapping Comment still opens them all, and the quick reply box stays. It starts off under Comments (Refs #253).
+* **Facebook:** Settings now include Traditional Chinese (Taiwan), contributed by JhouHank. When a phone's language names a Chinese script and a country that disagree, the script wins, so Traditional and Simplified text don't get mixed up (Refs #227).
 * **Facebook:** `Download button on reels` now has its own switch under Reels and Watch. Turn it off to keep Download in More without the sidebar button. It starts on, so the existing layout stays. Checked on an emulator, including a menu save opened in Photos and the main Download switch off (Refs #244).
+
+### Changed
+
+* **Facebook:** Every settings section now expands beneath its heading on the main page. Several can stay open, and tapping a heading again collapses it. Your open sections and scroll position come back after you clear a search, rotate the screen or restart from settings.
+* **Facebook:** Settings use compact, full-width rows and a smaller header. Pause moves to the top bar, with reports and restart under Support. The overview no longer shows the active-status card or Quick setups.
 
 ### Fixed
 
-* **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
-* **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).
+* **Tooling:** Playback log checks no longer mistake a timestamp for a video speed.
+* **Facebook:** Settings imports now update restart notices, including removing a notice when an import restores the value Facebook is already using. Edits made while an import runs stay consistent with the saved choices.
+* **Facebook:** Word filters recheck the space shared by both lists when you save or import. A preview or another open editor can no longer leave you with lists that won't import again.
+* **Facebook:** A retired unlock prompt can't cancel a newer prompt or replace its feedback.
+* **Facebook:** The Unlock button uses the lock screen's theme, keeping its text readable and its touch target intact when Facebook uses a different theme.
+* **Facebook:** Repeated taps open one settings screen. The last enabled way into settings stays protected after other switches change.
+* **Facebook:** Back to defaults updates launcher shortcuts straight away, while keeping Facebook's own shortcuts.
+* **Facebook:** Canceling a photo in Save all photos also stops the remaining photos.
+* **Facebook:** Photo, Story and GIF saves skip details Facebook has already released, including details nested inside a live post. Menu bookmarks use the same guard.
+* **Facebook:** Video joins stop copying samples before they exceed their size or storage allowance. The MP4 writer checks the complete output size before writing.
+* **Facebook:** Update checks enforce their time limit when response headers or the end of the body arrive late.
+* **Tooling:** Fixture checks validate fingerprint uniqueness. Release receipts reject older retained runs that don't prove validation was enabled.
+* **Tooling:** Generated-file cleanup refuses paths through linked parent folders. Invalid CVSS vectors can't lower an advisory's score by repeating metrics.
+* **Tooling:** Overlapping device builds can't replace each other's argument files or outputs. Invalid patch options keep the previous signed APK.
+* **Tooling:** Retrying publication after an interrupted download check verifies the existing release's files without uploading them again. Drafts and failed lookups stop the retry.
+* **Tooling:** Device checks distinguish Facebook from a separately installed clone. The full audit checks for crashes after settings screenshots and recovery, too.
+* **Tooling:** Device log reads fail promptly after a disconnect. Walks and bytecode checks still attempt cleanup and report recovery errors.
+* **Tooling:** DASH test inputs are corrected, so the full suite reaches the intended cancellation and cleanup checks under the output limits.
+* **Tooling:** Device walks can scroll a navigation row below a caller's reserved screen area before tapping it. A fresh screen check still has to identify one target.
+* **Tooling:** Reel destination checks read the current Facebook activity directly, so another app's stalled diagnostic can't hide the viewer from the walk.
+* **Tooling:** Locale checks follow the app's language preference order, including its English fallback. The requested configuration and displayed page still have to match.
+* **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute result on a phone used the recommended selection. Optional themes and other phones can take longer (Refs #236).
+* **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. It skips video details Facebook has already released, and the new label follows Facebook's language. Tests cover it against the real Facebook build, but it hasn't been tried on a live reshared Story yet (Refs #207).
 * **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
 * **Facebook:** Clearing Recently watched now discards pending watches, so an entry can't come back after Clear. Turning recording off also cancels pending entries, even if you turn it back on straight away.
-* **Facebook:** Prevent a startup crash with `Newest reels first` when a reel's details haven't loaded yet (Refs #234).
+* **Facebook:** Facebook no longer crashes at startup with `Newest reels first` on when some reels haven't finished loading their details. Those reels keep Facebook's order and the rest still go newest first. Checked on a phone that crashed every launch before the fix (Refs #234, #246).
+* **Facebook:** `Tap anywhere on View more replies` now also covers the `View more replies` row with the down arrow at the end of an open reply thread. Before, it only reached the `View x replies` rows (Refs #219).
 
 ## 0.18.0 (2026-10-24)
 
