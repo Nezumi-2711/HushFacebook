@@ -1,7 +1,7 @@
 ![Hushfacebook. Keep the people. Cut the noise.](assets/readme-hero.png)
 
 <p align="center">
-  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.18.1-0866FF" alt="Version 0.18.1"></a>
+  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.18.0-0866FF" alt="Version 0.18.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%2011%2B-3DDC84" alt="Platform Android 11+">
   <img src="https://img.shields.io/badge/Facebook-584.0.0.51.56-0866FF" alt="Facebook 584.0.0.51.56">
@@ -22,7 +22,7 @@ Each row in the [patch table](#patches) says how its switch starts. The ad filte
 
 This project has no connection to Meta or to the Morphe project. Neither endorses it, and neither wrote it.
 
-The latest release is [v0.18.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.18.0), with 102 patches. It includes all changes since v0.17.0, among them faster patching with the recommended selection, a 10 second double tap skip on reels, pinch to zoom on stories and profile photos, and your own background colors and Home header, as the [changelog](CHANGELOG.md) describes. Source changes for v0.18.1 are under Unreleased in the changelog.
+The latest release is [v0.18.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.18.0), with 102 patches. It includes all changes since v0.17.0, among them faster patching with the recommended selection, a 10 second double tap skip on reels, pinch to zoom on stories and profile photos, and your own background colors and Home header, as the [changelog](CHANGELOG.md) describes.
 
 [Add to Morphe](https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook) | [Download a release](https://github.com/SysAdminDoc/Hushfacebook/releases/latest) | [Browse the patches](#patches)
 
