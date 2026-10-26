@@ -30,6 +30,8 @@
     The phone has to be unlocked and signed in. -WriteBaseline records which families ran, for
     the next run to be held to: run it once on a build you trust after Facebook's version changes.
     -MinimumTapY keeps navigation taps below a caller's reserved area by scrolling rows down.
+    Locale checks follow the app's ordered language list, including its English fallback.
+    The requested application locale and displayed page identity still have to match.
 
 .EXAMPLE
     scripts/device-audit.ps1 -Serial emulator-5554 -ExpectedDevice Hushfacebook_API36 -Apk out/hushfacebook.apk
@@ -763,31 +765,38 @@ function Close-Settings {
     }
 }
 
+function Get-AuditLocaleTable([string]$ActualLocale, [object]$LocaleTags) {
+    if ([string]::IsNullOrEmpty($ActualLocale) -or $LocaleTags -isnot [Collections.IList] -or $LocaleTags.Count -eq 0) { return $null }
+    foreach ($tag in $LocaleTags) {
+        if ($tag -isnot [string] -or $tag -cnotmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') { return $null }
+    }
+    $actualLanguage = $ActualLocale.ToLowerInvariant().Split('-')[0] -replace '^id$', 'in' -replace '^he$', 'iw'
+    $firstLanguage = $LocaleTags[0].Split('-')[0] -replace '^id$', 'in' -replace '^he$', 'iw'
+    if ($actualLanguage -cne $firstLanguage) { return $null }
+    if ($LocaleTags[0] -cin @('en-rxa', 'ar-rxb')) { return $null }
+    foreach ($tag in $LocaleTags) {
+        if ($tag -cmatch '^en(?:-r|$)') { break }
+        $files = @(Get-ChildItem -LiteralPath $translationTables -Filter '*.tsv' | Where-Object { $_.BaseName.ToLowerInvariant() -ceq $tag })
+        if ($files.Count -gt 1) { return $null }
+        if ($files.Count -eq 1) {
+            $rows = @{}
+            foreach ($line in [IO.File]::ReadAllLines($files[0].FullName)) {
+                if ($line.StartsWith('#') -or -not $line.Contains("`t")) { continue }
+                $parts = $line.Split("`t", 2)
+                $rows[$parts[0]] = $parts[1]
+            }
+            return [pscustomobject]@{ Tag = $tag; Rows = $rows }
+        }
+    }
+    return [pscustomobject]@{ Tag = 'en'; Rows = @{} }
+}
+
 function Save-SettingsPages([string]$Pass, [string]$RequestedLocale = '') {
     $dir = Join-Path $OutDir "pages-$Pass"
     New-Item -ItemType Directory -Force $dir | Out-Null
     if (-not $Entry) { throw 'The launcher entry was not resolved. No settings page was opened.' }
     $results = New-Object System.Collections.Generic.List[object]
-    $translations = @{}
-    if ($RequestedLocale) {
-        $tag = $RequestedLocale.ToLowerInvariant() -replace '^id(?=-|$)', 'in'
-        $table = @(Get-ChildItem -LiteralPath $translationTables -Filter '*.tsv' | Where-Object {
-            ($_.BaseName -replace '-r', '-').ToLowerInvariant() -ceq $tag
-        } | Select-Object -First 1)
-        if (-not $table) {
-            $table = @(Get-ChildItem -LiteralPath $translationTables -Filter '*.tsv' | Where-Object {
-                $_.BaseName.ToLowerInvariant() -ceq $tag.Split('-')[0]
-            } | Select-Object -First 1)
-        }
-        if (-not $table -and $tag -notmatch '^en(?:-|$)') { throw "No translation table for requested audit locale: $RequestedLocale" }
-        if ($table) {
-            foreach ($line in [IO.File]::ReadAllLines($table[0].FullName)) {
-                if ($line.StartsWith('#') -or -not $line.Contains("`t")) { continue }
-                $parts = $line.Split("`t", 2)
-                $translations[$parts[0]] = $parts[1]
-            }
-        }
-    }
+    $announcedTable = $null
     foreach ($page in Get-SettingsPages) {
         $name = if ($page) { ($page -replace "[^A-Za-z0-9]+", '-').Trim('-').ToLowerInvariant() } else { 'home' }
         Close-Settings
@@ -815,18 +824,27 @@ function Save-SettingsPages([string]$Pass, [string]$RequestedLocale = '') {
         }
         [IO.File]::WriteAllLines((Join-Path $dir "$name.txt"), [string[]]$allText)
         $localeMatches = $true
+        $table = $null
         if ($RequestedLocale) {
             $requestedTag = $RequestedLocale.ToLowerInvariant() -replace '^in(?=-|$)', 'id'
             $actualTag = ([string]$shown.locale).ToLowerInvariant() -replace '^in(?=-|$)', 'id'
-            $localeMatches = $actualTag -ceq $requestedTag -or $actualTag.StartsWith("$requestedTag-", [StringComparison]::Ordinal)
+            $table = Get-AuditLocaleTable ([string]$shown.locale) $shown.localeTags
+            $localeMatches = $null -ne $table -and ($actualTag -ceq $requestedTag -or $actualTag.StartsWith("$requestedTag-", [StringComparison]::Ordinal))
+            $translations = if ($table) { $table.Rows } else { @{} }
             $titleKey = if (-not $page) { 'Hushfacebook' } elseif ($page -ceq 'more') { 'More settings' } else { $page }
-            $expectedTitle = if ($translations.ContainsKey($titleKey)) { $translations[$titleKey] } else { $titleKey }
+            $expectedTitle = if ($translations.ContainsKey($titleKey) -and -not [string]::IsNullOrEmpty($translations[$titleKey])) {
+                $translations[$titleKey]
+            } else { $titleKey }
             $localeMatches = $localeMatches -and $shown.title -ceq $expectedTitle
+            if ($table -and $announcedTable -cne $table.Tag) {
+                Write-Step "Text for $RequestedLocale resolves to $($table.Tag)."
+                $announcedTable = $table.Tag
+            }
         }
         $opened = $null -ne $shown -and $shown.schema -eq 2 -and $shown.route -ceq $page -and $localeMatches -and
             -not [string]::IsNullOrWhiteSpace($shown.title) -and $allText.Contains($shown.title)
         $results.Add([pscustomobject]@{ Page = $(if ($page) { $page } else { 'Home' }); Name = $name; Shots = $shots
-            Opened = $opened; Locale = $shown.locale })
+            Opened = $opened; Locale = $shown.locale; TextLocale = $(if ($table) { $table.Tag } else { $null }) })
         Write-Step ("{0} {1}: {2} screen(s){3}" -f $Pass, $(if ($page) { $page } else { 'Home' }), $shots, $(if ($opened) { '' } else { ', NOT OPENED' }))
     }
     Close-Settings

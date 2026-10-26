@@ -31,6 +31,7 @@ Unreleased.
 * **Tooling:** Corrected DASH test inputs so the full suite reaches the intended cancellation and cleanup checks under the output limits.
 * **Tooling:** Device walks can scroll a navigation row below a caller's reserved screen area before tapping it. A fresh screen check still has to identify one target.
 * **Tooling:** Reel destination checks read the current Facebook activity directly, so another app's stalled diagnostic can't hide the viewer from the walk.
+* **Tooling:** Locale checks follow the app's language preference order, including its English fallback. The requested configuration and displayed page still have to match.
 
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).

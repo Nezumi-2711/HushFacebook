@@ -6,7 +6,7 @@ $auditAst = [System.Management.Automation.Language.Parser]::ParseFile($auditPath
 if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
-    'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Find-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
+    'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Get-AuditLocaleTable', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Find-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
     'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
@@ -781,7 +781,7 @@ try {
         $script:adbCalls.Clear()
         Start-FacebookReal
         try { Get-Report (Join-Path $OutDir 'report-launcher.txt') | Out-Null } catch { }
-        $script:pageAck = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"de-DE"}'
+        $script:pageAck = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"de-DE","localeTags":["de-rde","de"]}'
         $script:screenText = @('Newsfeed')
         Save-SettingsPages 'dark' | Out-Null
         $starts = @($script:adbCalls | Where-Object { $_ -like '*am start*' -and $_ -notlike '*android.intent.action.VIEW*' })
@@ -802,7 +802,7 @@ try {
     $Entry = "$Package/.LoginActivity"
     $script:foreground = "topResumedActivity=ActivityRecord{1 u0 $Package/.Main t1}"
     $script:screenText = @('Newsfeed')
-    $script:pageAck = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"de-DE"}'
+    $script:pageAck = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"de-DE","localeTags":["de-rde","de"]}'
     $script:crashBuffer = @('1729999999.100 1000 1000 E AndroidRuntime: Process: com.facebook.katana, PID: 1000')
     Assert-That ((Get-AuditCrashes -SinceEpoch 1730000000).Fatal.Count -eq 0) 'An old crash entered the current audit.'
     $script:crashOnScreenshot = $true
@@ -830,17 +830,62 @@ try {
                 "$(Split-Path -Leaf $scriptPath) didn't fail promptly on a disconnected crash-read transport."
         }
     } finally { $script:offlineCrashRead = $false }
-    $script:pageAck = '{"schema":2,"route":"Playback","title":"Newsfeed","locale":"de-DE"}'
+    $script:pageAck = '{"schema":2,"route":"Playback","title":"Newsfeed","locale":"de-DE","localeTags":["de-rde","de"]}'
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'Wrong localized page was accepted.'
     $script:screenText = @('News feed')
-    $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed","locale":"en-US"}'
+    $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed","locale":"en-US","localeTags":["en-rus","en"]}'
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'An English page passed a requested German pass.'
-    $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed","locale":"de-DE"}'
+    $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed","locale":"de-DE","localeTags":["de-rde","de"]}'
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'An English title under German configuration passed.'
-    $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed"}'
+    $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed","localeTags":["de-rde","de"]}'
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'A missing effective locale passed a localized pass.'
     $script:pageAck = ''
     Assert-That (-not @(Save-SettingsPages 'dark-de' 'de')[0].Opened) 'Missing page acknowledgement passed.'
+    # The configuration's primary locale and the runtime's translation lookup order are independent.
+    $actualTranslationTables = $translationTables
+    $translationTables = Join-Path $testRoot 'fallback-translations'
+    New-Item -ItemType Directory -Path $translationTables | Out-Null
+    [IO.File]::WriteAllText((Join-Path $translationTables 'de.tsv'), "News feed`tNewsfeed`n")
+    try {
+        foreach ($case in @(
+            @{ Name = 'base'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar"]}'; Text = 'News feed'; Opened = $true },
+            @{ Name = 'regional'; Requested = 'ar-SA'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar-SA","localeTags":["ar-rsa","ar"]}'; Text = 'News feed'; Opened = $true },
+            @{ Name = 'german-secondary'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"ar","localeTags":["ar","de-rde","de"]}'; Text = 'Newsfeed'; Opened = $true },
+            @{ Name = 'english-before-german'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar","en-rus","en","de"]}'; Text = 'News feed'; Opened = $true },
+            @{ Name = 'unknown-secondary'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar","zz-rzz","zz"]}'; Text = 'News feed'; Opened = $true },
+            @{ Name = 'wrong-secondary-title'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar","de-rde","de"]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'wrong-english-priority'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"ar","localeTags":["ar","en-rus","en","de"]}'; Text = 'Newsfeed'; Opened = $false },
+            @{ Name = 'missing-tags'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar"}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'null-tags'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":null}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'scalar-tags'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":"ar"}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'empty-tags'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":[]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'nonscalar-tags'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar",{"tag":"de"}]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'malformed-tags'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar","not a tag"]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'foreign-first'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"Newsfeed","locale":"ar","localeTags":["de-rde","de","ar"]}'; Text = 'Newsfeed'; Opened = $false },
+            @{ Name = 'wrong-locale'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"en-US","localeTags":["en-rus","en"]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'missing-locale'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","localeTags":["ar"]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'wrong-route'; Requested = 'ar'; Ack = '{"schema":2,"route":"Playback","title":"News feed","locale":"ar","localeTags":["ar"]}'; Text = 'News feed'; Opened = $false },
+            @{ Name = 'wrong-title'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"Playback","locale":"ar","localeTags":["ar"]}'; Text = 'Playback'; Opened = $false },
+            @{ Name = 'wrong-visible-title'; Requested = 'ar'; Ack = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar"]}'; Text = 'Playback'; Opened = $false },
+            @{ Name = 'missing-ack'; Requested = 'ar'; Ack = ''; Text = 'News feed'; Opened = $false }
+        )) {
+            $script:screenText = @($case.Text)
+            $script:pageAck = $case.Ack
+            $fallbackPages = @()
+            $fallbackError = $null
+            try { $fallbackPages = @(Save-SettingsPages "dark-ar-$($case.Name)" $case.Requested) }
+            catch { $fallbackError = $_.Exception.Message }
+            Assert-That ($null -eq $fallbackError -and $fallbackPages.Count -eq 1 -and $fallbackPages[0].Opened -eq $case.Opened) `
+                "Arabic runtime-locale case $($case.Name) did not validate the actual page (error: $fallbackError)."
+        }
+        [IO.File]::WriteAllText((Join-Path $translationTables 'ar.tsv'), "News feed`t`n")
+        $script:screenText = @('News feed')
+        $script:pageAck = '{"schema":2,"route":"News feed","title":"News feed","locale":"ar","localeTags":["ar","de-rde","de"]}'
+        Assert-That (@(Save-SettingsPages 'dark-ar-empty-row' 'ar')[0].Opened) 'An empty translation row refused the English fallback title under Arabic configuration.'
+    } finally {
+        $translationTables = $actualTranslationTables
+        $script:pageAck = ''
+    }
     $script:screenText = @()
     Assert-Throws { Save-SettingsPages 'dark-de' } 'Empty UI nodes passed.'
 } finally {
