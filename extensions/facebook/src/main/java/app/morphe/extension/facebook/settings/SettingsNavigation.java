@@ -6,12 +6,14 @@ package app.morphe.extension.facebook.settings;
 
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.BaseAdapter;
 import android.widget.ListAdapter;
@@ -24,7 +26,9 @@ import android.widget.LinearLayout;
 import android.preference.SwitchPreference;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.settings.BaseSettings;
@@ -36,12 +40,12 @@ import app.morphe.extension.shared.settings.preference.SettingsSearch;
 
 /**
  * A view of the complete preference model. Filtering never removes preferences from their
- * screen, so imports, dependencies, persistence and restart notices still reach hidden pages.
+ * screen, so imports, dependencies, persistence and restart notices reach collapsed sections.
  */
 @SuppressWarnings("deprecation")
 final class SettingsNavigation extends BaseAdapter {
     private static final String STATE = "hushfacebook_navigation";
-    private static final String MORE = "more";
+    private static final String RESTART_STATE = "hushsettings://accordion";
     static final String SUPPORT = "support";
     /** Marks the Pause, Resume or Undo button placed under a status row's title, so a rebind replaces it. */
     private static final String STATUS_ACTION = "hushfacebook_status_action";
@@ -60,9 +64,10 @@ final class SettingsNavigation extends BaseAdapter {
     private final Object guideLinks = new Object();
     /** Which rows the person hasn't seen yet, for the dot beside them. Null when it couldn't start. */
     @Nullable private final NewRowDots dots;
-    private final Preference more;
-    /** The home page's last row, which opens Hushfacebook's Ko-fi page in a browser. */
+    private final Set<String> expanded = new LinkedHashSet<>();
+    /** Report, restart and project links expand in the same list as the settings. */
     private final Preference support;
+    private final PreferenceCategory supportHeading;
     private final Preference supportProject;
     private final Preference buildDetails;
     /** Just above Support: a new GitHub bug report with this install's versions filled in. */
@@ -80,7 +85,7 @@ final class SettingsNavigation extends BaseAdapter {
     private final SettingsRows.Row restart;
     /** Keeps the shared fragment's restart toast off this screen, which shows the restart row instead. */
     private final AbstractPreferenceFragment.RestartFeedbackPresenter restartFeedback;
-    /** The page the last rebuild drew, so a row coming or going on that same page keeps the list's place. */
+    /** The navigation state at the last rebuild, so live row updates keep the list's place. */
     private String rebuiltPage;
     private final Preference empty;
     /** The line a category or search page starts with while a pause applies to it. */
@@ -89,16 +94,14 @@ final class SettingsNavigation extends BaseAdapter {
     private boolean pageAction;
     private String route = "";
     private String query = "";
-    /**
-     * The row Back returns to. With a screen reader on it takes accessibility focus once it's back
-     * on screen: on the S22 TalkBack otherwise held the whole screen, and the person's place in
-     * the list was lost.
-     */
+    /** The toggled header regains screen-reader focus after its children change. */
     private Preference refocus;
     private int homePosition;
     private int homeOffset;
-    private int morePosition;
-    private int moreOffset;
+    private String homeAnchor = "";
+    private Preference pendingAnchor;
+    private int pendingOffset;
+    private int auditGeneration;
 
     private final DataSetObserver changes = new DataSetObserver() {
         @Override public void onChanged() { rebuild(); }
@@ -113,27 +116,27 @@ final class SettingsNavigation extends BaseAdapter {
         source = screen.getRootAdapter();
         Context context = screen.getContext();
         // Stable English route IDs survive a locale change; the displayed names are localized.
-        section("Opening Facebook", L10n.t("Opening Facebook"), L10n.t("Your start tab and launch settings"), SettingsIcons.OPENING, true);
-        section("News feed", L10n.t("News feed"), L10n.t("Ads, suggestions and word filters"), SettingsIcons.FEED, true);
-        section("Stories", L10n.t("Stories"), L10n.t("Saving, playback and anonymous viewing"), SettingsIcons.STORIES, true);
-        section("Reels and Watch", L10n.t("Reels and Watch"), L10n.t("Cleaner reels and video controls"), SettingsIcons.REELS, true);
-        section("Playback", L10n.t("Playback"), L10n.t("Tap to play, quality and resume"), SettingsIcons.PLAYBACK, true);
-        section("Downloads", L10n.t("Downloads"), L10n.t("Quality, format and file names"), SettingsIcons.DOWNLOADS, true);
-        section("Comments", L10n.t("Comments"), L10n.t("Sorting, replies and reactions"), SettingsIcons.COMMENTS, true);
-        section("Writing", L10n.t("Writing"), null, SettingsIcons.WRITING, false);
-        section("Chats", L10n.t("Chats"), null, SettingsIcons.CHATS, false);
-        section("Menu", L10n.t("Menu"), null, SettingsIcons.MENU, false);
-        section("Meta's other products", L10n.t("Meta's other products"), null, SettingsIcons.BLOCK, false);
-        section("Search", L10n.t("Search"), null, SettingsIcons.SEARCH, false);
-        section("Marketplace", L10n.t("Marketplace"), null, SettingsIcons.MARKETPLACE, false);
-        section("Notifications", L10n.t("Notifications"), null, SettingsIcons.NOTIFICATIONS, false);
-        section("Links", L10n.t("Links"), null, SettingsIcons.LINKS, false);
-        section("Privacy", L10n.t("Privacy"), null, SettingsIcons.TELEMETRY, false);
-        section("Updates", L10n.t("Updates"), null, SettingsIcons.UPDATES, false);
-        section("Appearance", L10n.t("Appearance"), null, SettingsIcons.APPEARANCE, false);
-        section("Set when you patched", L10n.t("Set when you patched"), null, SettingsIcons.PATCHED, false);
-        section("Pause, backup and diagnostics", L10n.t("Pause, backup and diagnostics"), null, SettingsIcons.TOOLS, false);
-        section("About", L10n.t("About"), null, SettingsIcons.ABOUT, false);
+        section("Opening Facebook", L10n.t("Opening Facebook"), L10n.t("Your start tab and launch settings"), SettingsIcons.OPENING);
+        section("News feed", L10n.t("News feed"), L10n.t("Ads, suggestions and word filters"), SettingsIcons.FEED);
+        section("Stories", L10n.t("Stories"), L10n.t("Saving, playback and anonymous viewing"), SettingsIcons.STORIES);
+        section("Reels and Watch", L10n.t("Reels and Watch"), L10n.t("Cleaner reels and video controls"), SettingsIcons.REELS);
+        section("Playback", L10n.t("Playback"), L10n.t("Tap to play, quality and resume"), SettingsIcons.PLAYBACK);
+        section("Downloads", L10n.t("Downloads"), L10n.t("Quality, format and file names"), SettingsIcons.DOWNLOADS);
+        section("Comments", L10n.t("Comments"), L10n.t("Sorting, replies and reactions"), SettingsIcons.COMMENTS);
+        section("Writing", L10n.t("Writing"), null, SettingsIcons.WRITING);
+        section("Chats", L10n.t("Chats"), null, SettingsIcons.CHATS);
+        section("Menu", L10n.t("Menu"), null, SettingsIcons.MENU);
+        section("Meta's other products", L10n.t("Meta's other products"), null, SettingsIcons.BLOCK);
+        section("Search", L10n.t("Search"), null, SettingsIcons.SEARCH);
+        section("Marketplace", L10n.t("Marketplace"), null, SettingsIcons.MARKETPLACE);
+        section("Notifications", L10n.t("Notifications"), null, SettingsIcons.NOTIFICATIONS);
+        section("Links", L10n.t("Links"), null, SettingsIcons.LINKS);
+        section("Privacy", L10n.t("Privacy"), null, SettingsIcons.TELEMETRY);
+        section("Updates", L10n.t("Updates"), null, SettingsIcons.UPDATES);
+        section("Appearance", L10n.t("Appearance"), null, SettingsIcons.APPEARANCE);
+        section("Set when you patched", L10n.t("Set when you patched"), null, SettingsIcons.PATCHED);
+        section("Pause, backup and diagnostics", L10n.t("Pause, backup and diagnostics"), null, SettingsIcons.TOOLS);
+        section("About", L10n.t("About"), null, SettingsIcons.ABOUT);
         List<PreferenceCategory> pages = new ArrayList<>();
         for (Section section : sections) pages.add(section.category);
         dots = NewRowDots.create(context, pages);
@@ -141,11 +144,11 @@ final class SettingsNavigation extends BaseAdapter {
         guideIcon(Settings.TAP_TO_PLAY, SettingsIcons.PLAYBACK);
         guideIcon(Settings.HIDE_REELS_TAB, SettingsIcons.REELS);
         guideIcon(Settings.MARKETPLACE_ONLY, SettingsIcons.MARKETPLACE);
-        more = link(context, L10n.t("More settings"), L10n.t("Additional Facebook preferences"), SettingsIcons.SETTINGS);
-        more.setOnPreferenceClickListener(ignored -> { navigate(MORE); return true; });
         support = link(context, L10n.t("Support"), L10n.t("Reports, restart and app information"), SettingsIcons.ABOUT);
         support.setKey(SUPPORT);
-        support.setOnPreferenceClickListener(ignored -> { navigate(SUPPORT); return true; });
+        support.setOnPreferenceClickListener(ignored -> { toggle(SUPPORT); return true; });
+        supportHeading = new SettingsRows.Heading(context);
+        supportHeading.setTitle(support.getTitle());
         supportProject = link(context, L10n.t("Support Hushfacebook"), null, SettingsIcons.OPENING);
         supportProject.setKey(HushfacebookPages.SUPPORT);
         supportProject.setOnPreferenceClickListener(row -> { HushfacebookPages.openSupport(row.getContext()); return true; });
@@ -165,7 +168,7 @@ final class SettingsNavigation extends BaseAdapter {
         restartNow.setSummary(L10n.t("Facebook closes and reopens on this page."));
         restartNow.setIcon(SettingsIcons.icon(context, SettingsIcons.UPDATES, palette().heading));
         restartNow.setOnPreferenceClickListener(row -> {
-            ReopenSettingsAfterRestart.restartInto(row.getContext(), route);
+            ReopenSettingsAfterRestart.restartInto(row.getContext(), restartTarget());
             return true;
         });
         restart = new SettingsRows.Row(context);
@@ -176,7 +179,7 @@ final class SettingsNavigation extends BaseAdapter {
         restart.setSummary(L10n.t("Facebook closes and reopens on this page."));
         restart.setIcon(SettingsIcons.icon(context, SettingsIcons.UPDATES, palette().heading));
         restart.setOnPreferenceClickListener(row -> {
-            ReopenSettingsAfterRestart.restartInto(row.getContext(), route);
+            ReopenSettingsAfterRestart.restartInto(row.getContext(), restartTarget());
             return true;
         });
         // The row appears as the switch flips. A screen reader hears the saved message as well,
@@ -193,19 +196,27 @@ final class SettingsNavigation extends BaseAdapter {
         pageStatus.setSelectable(false);
         pageStatus.setPersistent(false);
         Bundle state = saved == null ? null : saved.getBundle(STATE);
+        if (state == null) state = restartState(host.startPage());
         if (state != null) {
             route = state.getString("route", "");
             query = state.getString("query", "");
             homePosition = state.getInt("homePosition");
             homeOffset = state.getInt("homeOffset");
-            morePosition = state.getInt("morePosition");
-            moreOffset = state.getInt("moreOffset");
-            if (!MORE.equals(route) && !SUPPORT.equals(route) && selected() == null) route = "";
+            homeAnchor = state.getString("homeAnchor", "");
+            ArrayList<String> opened = state.getStringArrayList("expanded");
+            if (opened != null) {
+                for (String id : opened) if (header(id) != null) expanded.add(id);
+            } else if (header(route) != null) {
+                // Saved state and restart markers from the earlier category screens still open the target.
+                expanded.add(route);
+            }
+            if (header(route) == null) route = "";
         } else {
             // Nothing saved: the page the screen was asked to open on, such as the one a restart
             // from the restart row left.
             route = host.startPage();
-            if (!MORE.equals(route) && !SUPPORT.equals(route) && selected() == null) route = "";
+            if (header(route) != null) expanded.add(route);
+            else route = "";
         }
         source.registerDataSetObserver(changes);
         list.setAdapter(this);
@@ -221,17 +232,17 @@ final class SettingsNavigation extends BaseAdapter {
         });
         rebuild();
         showPage();
-        if (state != null) showAt(state.getInt("position"), state.getInt("offset"));
+        if (state != null) restoreAnchor(state.getString("anchor", ""), state.getInt("position"), state.getInt("offset"));
+        else if (header(route) != null) showAt(visible.indexOf(header(route)), 0);
     }
 
-    private void section(String id, String title, String detail, String icon, boolean primary) {
+    private void section(String id, String title, String detail, String icon) {
         for (Preference candidate : page.sections()) {
             if (!title.contentEquals(candidate.getTitle())) continue;
             Preference link = link(screen.getContext(), title, detail, icon);
-            if (!primary) link.setIcon(SettingsIcons.icon(screen.getContext(), icon, palette().heading));
             link.setKey("section_" + id);
-            link.setOnPreferenceClickListener(ignored -> { navigate(id); return true; });
-            sections.add(new Section(id, (PreferenceCategory) candidate, link, primary));
+            link.setOnPreferenceClickListener(ignored -> { toggle(id); return true; });
+            sections.add(new Section(id, (PreferenceCategory) candidate, link));
             return;
         }
     }
@@ -256,25 +267,40 @@ final class SettingsNavigation extends BaseAdapter {
     }
 
     private CharSequence title() {
-        if (MORE.equals(route)) return more.getTitle();
         if (SUPPORT.equals(route)) return support.getTitle();
         Section section = selected();
         return section == null ? "Hushfacebook" : section.category.getTitle();
     }
 
     private void showPage() {
-        host.showPage(title(), route.isEmpty(), query);
+        host.showPage("Hushfacebook", true, query);
         String shownRoute = route;
-        list.post(() -> {
-            if (host.getDialog() != null && host.getDialog().isShowing() && list.isAttachedToWindow() && list.getAdapter() == this
-                    && shownRoute.equals(route)) AuditMode.pageShown(list.getContext(), route, title());
+        int generation = ++auditGeneration;
+        if (!query.isEmpty()) return;
+        list.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                list.getViewTreeObserver().removeOnPreDrawListener(this);
+                if (generation != auditGeneration || !query.isEmpty() || !shownRoute.equals(route)
+                        || host.getDialog() == null || !host.getDialog().isShowing()
+                        || !list.isAttachedToWindow() || list.getAdapter() != SettingsNavigation.this
+                        || list.getChildCount() == 0 || list.isLayoutRequested()) return true;
+                Preference target = header(route);
+                int index = visible.indexOf(target);
+                if (target != null && (index < list.getFirstVisiblePosition() || index > list.getLastVisiblePosition()))
+                    return true;
+                AuditMode.pageShown(list.getContext(), route, title(), new ArrayList<>(expanded), sectionRows(route));
+                return true;
+            }
         });
     }
 
-    /** The page showing is left: what it listed is seen. A search result page isn't a page of its own. */
+    /** Closing settings acknowledges open sections. Search alone never marks a section seen. */
     private void leftPage() {
-        Section section = selected();
-        if (dots == null || section == null || !query.isEmpty()) return;
+        for (Section section : sections) if (expanded.contains(section.id)) acknowledge(section);
+    }
+
+    private void acknowledge(Section section) {
+        if (dots == null) return;
         try {
             dots.left(section.category);
         } catch (RuntimeException ignored) {
@@ -286,7 +312,8 @@ final class SettingsNavigation extends BaseAdapter {
     private boolean fresh(Preference item) {
         if (dots == null || !query.isEmpty()) return false;
         try {
-            for (Section section : sections) if (item == section.link) return dots.anyNew(section.category);
+            for (Section section : sections) if (item == section.link)
+                return !expanded.contains(section.id) && dots.anyNew(section.category);
             return dots.isNew(item);
         } catch (RuntimeException failed) {
             return false;
@@ -294,23 +321,89 @@ final class SettingsNavigation extends BaseAdapter {
     }
 
     void navigate(String destination) {
-        leftPage();
         refocus = null;
-        rememberIndex();
         query = "";
-        route = destination;
-        if (!MORE.equals(route) && !SUPPORT.equals(route) && selected() == null) route = "";
+        route = header(destination) == null ? "" : destination;
+        if (route.isEmpty()) {
+            leftPage();
+            expanded.clear();
+        } else expanded.add(route);
         rebuild();
         showPage();
-        showAt(0, 0);
-        list.sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+        showAt(route.isEmpty() ? 0 : visible.indexOf(header(route)), 0);
+    }
+
+    boolean isExpanded(String id) {
+        return expanded.contains(id);
+    }
+
+    @Nullable
+    private Preference header(String id) {
+        if (SUPPORT.equals(id)) return support;
+        for (Section section : sections) if (section.id.equals(id)) return section.link;
+        return null;
+    }
+
+    @Nullable
+    private String headerId(Preference item) {
+        if (item == support) return SUPPORT;
+        for (Section section : sections) if (section.link == item) return section.id;
+        return null;
+    }
+
+    private int sectionRows(String id) {
+        if (!expanded.contains(id)) return 0;
+        if (SUPPORT.equals(id)) {
+            int count = 0;
+            for (Preference row : new Preference[]{report, restartNow, supportProject})
+                if (visible.contains(row)) count++;
+            return count;
+        }
+        for (Section section : sections) if (section.id.equals(id)) {
+            int count = 0;
+            for (int i = 0; i < section.category.getPreferenceCount(); i++)
+                if (visible.contains(section.category.getPreference(i))) count++;
+            return count;
+        }
+        return 0;
+    }
+
+    private void toggle(String id) {
+        setExpanded(id, !expanded.contains(id));
+    }
+
+    private void setExpanded(String id, boolean open) {
+        Preference header = header(id);
+        if (header == null || expanded.contains(id) == open) return;
+        int before = visible.indexOf(header);
+        View bound = list.getChildAt(before - list.getFirstVisiblePosition());
+        int top = bound == null ? 0 : bound.getTop();
+        int position = list.getFirstVisiblePosition();
+        String anchor = position < visible.size() ? rowToken(getItem(position)) : "";
+        View first = list.getChildAt(0);
+        int offset = first == null ? 0 : first.getTop();
+        if (open) expanded.add(id);
+        else {
+            for (Section section : sections) if (section.id.equals(id)) acknowledge(section);
+            expanded.remove(id);
+        }
+        route = id;
+        query = "";
+        refocus = header;
+        rebuild();
+        showPage();
+        if (bound != null) {
+            // Keep the tapped header in place, revealing at least one child near the bottom edge.
+            int reveal = Math.max(0, list.getHeight() - bound.getHeight() - dp(72));
+            showAt(visible.indexOf(header), open ? Math.min(top, reveal) : top);
+        } else restoreAnchor(anchor, visible.indexOf(header), offset);
     }
 
     boolean open(Preference preference) {
         for (Section section : sections) {
             if (preference != section.category && preference.getParent() != section.category) continue;
             navigate(section.id);
-            // A link to one setting lands on its row rather than the top of a long page.
+            // A link to one setting reveals its row within the expanded section.
             int row = visible.indexOf(preference);
             if (row > 0) showAt(row, 0);
             return true;
@@ -320,12 +413,13 @@ final class SettingsNavigation extends BaseAdapter {
 
     void search(String text) {
         if (query.equals(text)) return;
+        auditGeneration++;
         refocus = null;
         if (query.isEmpty()) rememberIndex();
         query = text;
-        route = "";
         rebuild();
-        showAt(query.isEmpty() ? homePosition : 0, query.isEmpty() ? homeOffset : 0);
+        if (query.isEmpty()) restoreAnchor(homeAnchor, homePosition, homeOffset);
+        else showAt(0, 0);
     }
 
     boolean back() {
@@ -334,22 +428,16 @@ final class SettingsNavigation extends BaseAdapter {
             showPage();
             return true;
         }
-        if (route.isEmpty()) return false;
-        leftPage();
-        Section section = selected();
-        Preference left = section != null ? section.link : SUPPORT.equals(route) ? support : more;
-        route = section != null && !section.primary ? MORE : "";
-        rebuild();
-        showPage();
-        showAt(MORE.equals(route) ? morePosition : homePosition,
-                MORE.equals(route) ? moreOffset : homeOffset);
-        refocus = left;
-        return true;
+        return false;
     }
 
     private void showAt(int position, int offset) {
-        // A header resize otherwise syncs the old page's visible children back over this
-        // selection in touch mode. Rebind when changing pages; normal preference updates
+        if (getCount() == 0) return;
+        position = Math.max(0, Math.min(position, getCount() - 1));
+        pendingAnchor = getItem(position);
+        pendingOffset = offset;
+        // A header resize otherwise syncs the old visible children back over this
+        // selection in touch mode. Rebind when revealing a section; normal preference updates
         // still keep their current views and scroll position through notifyDataSetChanged.
         list.setAdapter(this);
         // Outside touch mode, selection skips read-only status rows and headings. Offset the
@@ -375,30 +463,91 @@ final class SettingsNavigation extends BaseAdapter {
     private void rememberIndex() {
         View first = list.getChildAt(0);
         int offset = first == null ? 0 : first.getTop();
-        if (route.isEmpty() && query.isEmpty()) {
+        if (query.isEmpty()) {
             homePosition = list.getFirstVisiblePosition();
             homeOffset = offset;
-        } else if (MORE.equals(route)) {
-            morePosition = list.getFirstVisiblePosition();
-            moreOffset = offset;
+            homeAnchor = homePosition < getCount() ? rowToken(getItem(homePosition)) : "";
         }
     }
 
     void save(Bundle out) {
+        out.putBundle(STATE, currentState());
+    }
+
+    private Bundle currentState() {
+        rememberIndex();
         Bundle state = new Bundle();
         state.putString("route", route);
         state.putString("query", query);
         state.putInt("homePosition", homePosition);
         state.putInt("homeOffset", homeOffset);
-        state.putInt("morePosition", morePosition);
-        state.putInt("moreOffset", moreOffset);
+        state.putString("homeAnchor", homeAnchor);
+        state.putStringArrayList("expanded", new ArrayList<>(expanded));
         state.putInt("position", list.getFirstVisiblePosition());
+        state.putString("anchor", list.getFirstVisiblePosition() < getCount()
+                ? rowToken(getItem(list.getFirstVisiblePosition())) : "");
         View first = list.getChildAt(0);
         state.putInt("offset", first == null ? 0 : first.getTop());
-        out.putBundle(STATE, state);
+        return state;
+    }
+
+    private String rowToken(Preference item) {
+        String id = headerId(item);
+        if (id != null) return "section:" + id;
+        for (Section section : sections) if (item == section.category) return "heading:" + section.id;
+        if (item == buildDetails) return "build";
+        if (item == screen.getPreference(0)) return "status";
+        return item.hasKey() ? "key:" + item.getKey() : "";
+    }
+
+    private void restoreAnchor(String anchor, int fallback, int offset) {
+        if (anchor != null && !anchor.isEmpty()) {
+            for (int i = 0; i < getCount(); i++) if (anchor.equals(rowToken(getItem(i)))) {
+                showAt(i, offset);
+                return;
+            }
+        }
+        showAt(fallback, offset);
+    }
+
+    /** Reuse the existing expiring, one-shot restart marker for UI state only. */
+    private String restartTarget() {
+        Bundle state = currentState();
+        Uri.Builder uri = Uri.parse(RESTART_STATE).buildUpon();
+        for (String id : expanded) uri.appendQueryParameter("open", id);
+        for (String key : new String[]{"route", "query", "anchor", "homeAnchor"})
+            uri.appendQueryParameter(key, state.getString(key, ""));
+        for (String key : new String[]{"position", "offset", "homePosition", "homeOffset"})
+            uri.appendQueryParameter(key, Integer.toString(state.getInt(key)));
+        return uri.build().toString();
+    }
+
+    @Nullable
+    private Bundle restartState(String value) {
+        if (value == null || !value.startsWith(RESTART_STATE + "?")) return null;
+        Bundle state = new Bundle();
+        if (value.length() > 32768) return state;
+        Uri uri = Uri.parse(value);
+        if (!"hushsettings".equals(uri.getScheme()) || !"accordion".equals(uri.getAuthority())) return state;
+        state.putStringArrayList("expanded", new ArrayList<>(uri.getQueryParameters("open")));
+        for (String key : new String[]{"route", "query", "anchor", "homeAnchor"}) {
+            String text = uri.getQueryParameter(key);
+            state.putString(key, text == null ? "" : text);
+        }
+        for (String key : new String[]{"position", "offset", "homePosition", "homeOffset"}) {
+            try {
+                int number = Integer.parseInt(uri.getQueryParameter(key));
+                state.putInt(key, Math.max(-10000, Math.min(10000, number)));
+            } catch (NumberFormatException malformed) {
+                // A malformed or older UI marker opens safely at the top; saved settings are separate.
+                state.putInt(key, 0);
+            }
+        }
+        return state;
     }
 
     void close() {
+        auditGeneration++;
         leftPage();
         source.unregisterDataSetObserver(changes);
         AbstractPreferenceFragment.clearRestartFeedbackPresenter(restartFeedback);
@@ -408,11 +557,13 @@ final class SettingsNavigation extends BaseAdapter {
     void restartChanged() { rebuild(); }
 
     private void rebuild() {
-        int restartWas = visible.indexOf(restart);
-        boolean pageStatusWas = visible.contains(pageStatus);
+        View first = list.getChildAt(0);
+        Preference anchor = first != null && first.getTag() instanceof Preference
+                ? (Preference) first.getTag() : pendingAnchor;
+        int position = visible.indexOf(anchor);
+        int offset = first == null ? pendingOffset : first.getTop();
         visible.clear();
         List<String> terms = SettingsSearch.terms(query);
-        Section selected = selected();
         if (!terms.isEmpty()) {
             for (Section section : sections) {
                 boolean headingAdded = false;
@@ -425,19 +576,17 @@ final class SettingsNavigation extends BaseAdapter {
                     visible.add(row);
                 }
             }
+            boolean supportAdded = false;
+            for (Preference row : new Preference[]{report, restartNow, supportProject}) {
+                if (row == restartNow && ReopenSettingsAfterRestart.changesWaiting(screen.getContext()) > 0) continue;
+                if (!SettingsSearch.matchesTerms(terms, support.getTitle(), row.getTitle(), row.getSummary())) continue;
+                if (!supportAdded) visible.add(supportHeading);
+                supportAdded = true;
+                visible.add(row);
+            }
             host.showResults(visible.size() - headings());
             if (visible.isEmpty()) visible.add(empty);
             else addPageStatus();
-        } else if (selected != null) {
-            for (int i = 0; i < selected.category.getPreferenceCount(); i++) visible.add(selected.category.getPreference(i));
-            addPageStatus();
-        } else if (MORE.equals(route)) {
-            for (Section section : sections) if (!section.primary) visible.add(section.link);
-        } else if (SUPPORT.equals(route)) {
-            visible.add(report);
-            if (ReopenSettingsAfterRestart.changesWaiting(screen.getContext()) <= 0) visible.add(restartNow);
-            visible.add(supportProject);
-            visible.add(buildDetails);
         } else {
             if (HushfacebookPause.isPaused() || HushfacebookPause.pausesNextStart(screen.getContext()))
                 visible.add(screen.getPreference(0));
@@ -450,17 +599,26 @@ final class SettingsNavigation extends BaseAdapter {
             // Only in a build that lacks another default patch: the card's own line under it.
             Preference missing = screen.findPreference(HushfacebookPreferenceFragment.MISSING_DEFAULTS);
             if (missing != null) visible.add(missing);
-            for (Section section : sections) if (section.primary) visible.add(section.link);
-            visible.add(more);
+            for (Section section : sections) {
+                visible.add(section.link);
+                if (expanded.contains(section.id)) {
+                    for (int i = 0; i < section.category.getPreferenceCount(); i++) visible.add(section.category.getPreference(i));
+                }
+            }
             visible.add(support);
+            if (expanded.contains(SUPPORT)) {
+                visible.add(report);
+                if (ReopenSettingsAfterRestart.changesWaiting(screen.getContext()) <= 0) visible.add(restartNow);
+                visible.add(supportProject);
+            }
             visible.add(buildDetails);
         }
         addRestart();
         bindAction(host.pauseAction, HushfacebookPause.isPaused(), HushfacebookPause.pausesNextStart(screen.getContext()));
-        host.pauseAction.setVisibility(route.isEmpty() && query.isEmpty() ? View.VISIBLE : View.GONE);
+        host.pauseAction.setVisibility(query.isEmpty() ? View.VISIBLE : View.GONE);
         if (terms.isEmpty()) host.showResults(-1);
         notifyDataSetChanged();
-        keepPlace(restartWas, pageStatusWas);
+        keepPlace(anchor, position, offset);
     }
 
     /**
@@ -479,22 +637,14 @@ final class SettingsNavigation extends BaseAdapter {
         visible.add(underStatus ? 1 : 0, restart);
     }
 
-    /**
-     * The restart row comes and goes above the rows in view when a switch is flipped. On the same
-     * page, with nothing else above moving, the list moves with it, so the row that was tapped
-     * stays where it was. A row added at the top of what's in view is left to push the list down,
-     * so it's seen.
-     */
-    private void keepPlace(int restartWas, boolean pageStatusWas) {
+    /** Keep the same control in view when notices or live download rows change above it. */
+    private void keepPlace(Preference anchor, int position, int offset) {
         String pageWas = rebuiltPage;
         rebuiltPage = route + '\n' + query;
-        int restartNow = visible.indexOf(restart);
-        if (!rebuiltPage.equals(pageWas) || (restartWas < 0) == (restartNow < 0)
-                || pageStatusWas != visible.contains(pageStatus) || list.getChildCount() == 0) return;
-        int first = list.getFirstVisiblePosition();
-        int top = list.getChildAt(0).getTop();
-        if (restartNow >= 0 && restartNow < first) list.setSelectionFromTop(first + 1, top);
-        else if (restartWas >= 0 && restartWas < first) list.setSelectionFromTop(first - 1, top);
+        if (!rebuiltPage.equals(pageWas) || anchor == null || position < 0) return;
+        int next = visible.indexOf(anchor);
+        // At the very top, allow a new notice to appear. A scrolled list retains its item and offset.
+        if (next >= 0 && next != position && (position > 0 || offset < 0)) showAt(next, offset);
     }
 
     private int headings() {
@@ -553,6 +703,7 @@ final class SettingsNavigation extends BaseAdapter {
     @Override public View getView(int position, View recycled, ViewGroup parent) {
         Preference item = getItem(position);
         View row = item.getView(null, parent);
+        row.setTag(item);
         if (item == buildDetails) {
             row.setBackgroundColor(palette().background);
             row.setPaddingRelative(dp(16), dp(10), dp(16), dp(10));
@@ -573,11 +724,11 @@ final class SettingsNavigation extends BaseAdapter {
             boolean first = position == 0 || group(getItem(position - 1)) != group;
             boolean last = position + 1 == getCount() || group(getItem(position + 1)) != group;
             palette().paintSurface(row, item, first, last);
-            if (MORE.equals(route) && query.isEmpty()) {
-                row.setMinimumHeight(dp(48));
-                row.setPaddingRelative(dp(16), dp(10), dp(16), dp(10));
-            }
+            if (query.isEmpty() && item.getParent() instanceof PreferenceCategory)
+                row.setPaddingRelative(row.getPaddingStart() + dp(12), row.getPaddingTop(), row.getPaddingEnd(), row.getPaddingBottom());
         }
+        String sectionId = headerId(item);
+        if (sectionId != null) bindHeader(row, item, sectionId);
         NewRowDots.paint(row, fresh(item), palette().accent);
         if (item == screen.getPreference(0)) {
             TextView title = row.findViewById(android.R.id.title);
@@ -589,6 +740,37 @@ final class SettingsNavigation extends BaseAdapter {
         }
         if (item == screen.getPreference(0)) styleBuildDetails(row);
         return row;
+    }
+
+    private void bindHeader(View row, Preference item, String id) {
+        boolean open = expanded.contains(id);
+        row.setAccessibilityHeading(true);
+        row.setStateDescription(L10n.t(open ? "Expanded" : "Collapsed"));
+        View arrow = row.findViewWithTag(ScreenColors.CHEVRON);
+        if (arrow != null) {
+            boolean rtl = row.getResources().getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+            arrow.setRotation((open ? -90 : 90) * (rtl ? -1 : 1));
+        }
+        TextView title = row.findViewById(android.R.id.title);
+        if (title != null && open) title.setTextColor(palette().heading);
+        row.setAccessibilityDelegate(new SettingsRows.RowSemantics(item, Button.class) {
+            @Override public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                boolean shown = expanded.contains(id);
+                info.setHeading(true);
+                info.setStateDescription(L10n.t(shown ? "Expanded" : "Collapsed"));
+                info.addAction(shown ? AccessibilityNodeInfo.AccessibilityAction.ACTION_COLLAPSE
+                        : AccessibilityNodeInfo.AccessibilityAction.ACTION_EXPAND);
+            }
+
+            @Override public boolean performAccessibilityAction(View host, int action, Bundle arguments) {
+                if (action == AccessibilityNodeInfo.ACTION_EXPAND || action == AccessibilityNodeInfo.ACTION_COLLAPSE) {
+                    setExpanded(id, action == AccessibilityNodeInfo.ACTION_EXPAND);
+                    return true;
+                }
+                return super.performAccessibilityAction(host, action, arguments);
+            }
+        });
     }
 
     /** Keep provenance visible without giving it the weight of the current running state. */
@@ -681,9 +863,8 @@ final class SettingsNavigation extends BaseAdapter {
 
     Object group(Preference item) {
         if (item == screen.getPreference(0) || item == restart || item == buildDetails) return item;
-        if (SUPPORT.equals(route)) return support;
-        if (item == more || item == support) return sections;
-        for (Section section : sections) if (item == section.link) return section.primary ? sections : more;
+        if (headerId(item) != null) return item;
+        if (item == report || item == restartNow || item == supportProject) return support;
         if (!query.trim().isEmpty() && item.getParent() != null) return item.getParent();
         String key = item.getKey();
         if (Settings.DEFAULT_COMMENT_ORDER.key.equals(key) || Settings.COMMENT_ORDER.key.equals(key)) {
@@ -706,12 +887,10 @@ final class SettingsNavigation extends BaseAdapter {
         final String id;
         final PreferenceCategory category;
         final Preference link;
-        final boolean primary;
-        Section(String id, PreferenceCategory category, Preference link, boolean primary) {
+        Section(String id, PreferenceCategory category, Preference link) {
             this.id = id;
             this.category = category;
             this.link = link;
-            this.primary = primary;
         }
     }
 }

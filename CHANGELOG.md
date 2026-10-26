@@ -16,6 +16,7 @@ Unreleased.
 
 ### Changed
 
+* **Facebook:** Every settings section now expands beneath its heading on the main page. Several can stay open, and tapping a heading again collapses it. Clearing search, rotating the screen and restarting from settings restore the open sections and your position.
 * **Facebook:** Settings use compact, full-width rows and a smaller header. Pause moves to the top bar, with reports and restart under Support. The overview no longer shows the active-status card or Quick setups.
 
 ### Fixed

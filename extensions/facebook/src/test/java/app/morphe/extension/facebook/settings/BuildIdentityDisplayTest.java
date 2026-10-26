@@ -78,12 +78,6 @@ public class BuildIdentityDisplayTest {
                 root.layout(0, 0, 1080, 2340);
                 ShadowLooper.idleMainLooper();
                 ListView list = root.findViewById(android.R.id.list);
-                list.setSelection(list.getCount() - 1);
-                ShadowLooper.idleMainLooper();
-                TextView summary = root.findViewWithTag(SettingsDialog.BUILD_DETAILS);
-                assertNotNull(summary);
-                assertTrue(summary.getText().toString(), summary.getText().toString().contains("0.7.1"));
-                assertTrue("detail lines: " + summary.getLineCount(), summary.getLineCount() <= 4);
                 int categories = 0;
                 for (int i = 0; i < list.getChildCount(); i++) {
                     View row = list.getChildAt(i);
@@ -94,6 +88,12 @@ public class BuildIdentityDisplayTest {
                 }
                 assertTrue("only " + categories + " categories fit", categories >= 4);
                 capture(root, "identity-overview-1080" + (paused ? "-paused" : "-active"));
+                list.setSelection(list.getCount() - 1);
+                ShadowLooper.idleMainLooper();
+                TextView summary = root.findViewWithTag(SettingsDialog.BUILD_DETAILS);
+                assertNotNull("build details are missing from the end of the main list", summary);
+                assertTrue(summary.getText().toString(), summary.getText().toString().contains("0.7.1"));
+                assertTrue("detail lines: " + summary.getLineCount(), summary.getLineCount() <= 4);
             }
         }
     }
