@@ -1694,6 +1694,9 @@ Takes the numbers off the Like, Comment and Share buttons under posts, so each s
 Hide counts on reels	Ocultar los números en los reels
 # context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
 Takes the numbers away from under a reel's Like, Comment and Share icons. The icons stay where they are. A change shows from the next reel.	Quita los números debajo de los iconos Me gusta, Comentar y Compartir de un reel. Los iconos se quedan donde están. Un cambio se ve a partir del siguiente reel.
+# context: Reels and Watch switch for the dedicated WhatsApp sidebar button, independent of the Share menu
+Hide WhatsApp on reels	Ocultar WhatsApp en los reels
+Hides the WhatsApp button beside reels and videos. WhatsApp stays in the Share menu. A change shows from the next video.	Oculta el botón de WhatsApp junto a los reels y los videos. WhatsApp sigue en el menú Compartir. El cambio se aplica a partir del siguiente video.
 # context: switch title under Reels and Watch; Save is Facebook's own label for the bookmark button down a reel's right side, so use Facebook's wording in your language
 Hide Save on reels	Ocultar Guardar en los reels
 # context: summary of that switch; the buttons under it are Download and More

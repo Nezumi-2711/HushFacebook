@@ -65,6 +65,8 @@ The settings follow the language Facebook shows. German, Spanish, Indonesian, Br
 
 To keep Reel downloads in More without the sidebar button, leave **Download** on under **Reels and Watch** and turn off **Download button on reels** on the same page.
 
+**Hide WhatsApp on reels**, also under **Reels and Watch**, removes the direct WhatsApp button beside a reel or video. It starts off. WhatsApp stays available in the Share menu.
+
 ### Blocking Reels
 
 Reels turn up in several places, and no one switch covers them all. Searching the settings for "block reels" brings up a map of them.

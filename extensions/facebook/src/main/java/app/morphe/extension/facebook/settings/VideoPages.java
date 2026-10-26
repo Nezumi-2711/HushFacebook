@@ -135,6 +135,9 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SAVE_BUTTON,
                     L10n.t("Takes the Save button off the side of reels. The buttons above it move down. "
                             + "A change shows from the next reel.")));
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_WHATSAPP_BUTTON,
+                    L10n.t("Hides the WhatsApp button beside reels and videos. WhatsApp stays in the Share menu. "
+                            + "A change shows from the next video.")));
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SOUND_BUTTON,
                     L10n.t("Takes the speaker button off the bottom of the side of reels. "
                             + "A change shows from the next reel.")));

@@ -1694,6 +1694,9 @@ Takes the numbers off the Like, Comment and Share buttons under posts, so each s
 Hide counts on reels	Ẩn số đếm trên reel
 # context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
 Takes the numbers away from under a reel's Like, Comment and Share icons. The icons stay where they are. A change shows from the next reel.	Bỏ các con số bên dưới biểu tượng Thích, Bình luận và Chia sẻ của reel. Các biểu tượng vẫn ở nguyên chỗ. Thay đổi hiện từ reel tiếp theo.
+# context: Reels and Watch switch for the dedicated WhatsApp sidebar button, independent of the Share menu
+Hide WhatsApp on reels	Ẩn WhatsApp trên reel
+Hides the WhatsApp button beside reels and videos. WhatsApp stays in the Share menu. A change shows from the next video.	Ẩn nút WhatsApp bên cạnh reel và video. WhatsApp vẫn có trong menu Chia sẻ. Thay đổi có hiệu lực từ video tiếp theo.
 # context: switch title under Reels and Watch; Save is Facebook's own label for the bookmark button down a reel's right side, so use Facebook's wording in your language
 Hide Save on reels	Ẩn nút Lưu trên reel
 # context: summary of that switch; the buttons under it are Download and More

@@ -192,6 +192,7 @@ public final class SettingsBackup {
             Settings.HIDE_REEL_SEARCH_PILL,
             Settings.HIDE_REEL_COUNTS,
             Settings.HIDE_REEL_SAVE_BUTTON,
+            Settings.HIDE_REEL_WHATSAPP_BUTTON,
             Settings.HIDE_REEL_SOUND_BUTTON,
             Settings.HIDE_REEL_AUDIO_LINE,
             Settings.HIDE_SLOW_CONNECTION_MESSAGE,

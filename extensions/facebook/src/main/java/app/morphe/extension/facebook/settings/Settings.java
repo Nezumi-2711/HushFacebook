@@ -511,6 +511,10 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting HIDE_REEL_SAVE_BUTTON =
             new BooleanSetting("hushfacebook_hide_reel_save_button", FALSE);
 
+    /** The direct WhatsApp sidebar button, independent of the share-sheet item. Off by default. */
+    public static final BooleanSetting HIDE_REEL_WHATSAPP_BUTTON =
+            new BooleanSetting("hushfacebook_hide_reel_whatsapp_button", FALSE);
+
     /**
      * The speaker button at the bottom of a reel's right side isn't built
      * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#showsSoundButton}, #190). Off by
