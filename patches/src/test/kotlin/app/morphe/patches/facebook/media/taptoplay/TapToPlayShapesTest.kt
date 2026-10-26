@@ -134,10 +134,16 @@ class TapToPlayShapesTest {
             const/4 v2, 0x0
             invoke-direct {v0, v1, v2}, $type-><init>(Ljava/lang/String;I)V
             sput-object v0, $type->user:$type
+            sput-object v0, $type->alias:$type
             return-void
         """ else "\nreturn-void"
-        val fields = if (user) listOf(ImmutableField(type, "user", type,
-            AccessFlags.PUBLIC.value or AccessFlags.STATIC.value, null, null, null)) else emptyList()
+        // Like 584, the constant is also stored in a plain static alias that isn't an enum entry.
+        val fields = if (user) listOf(
+            ImmutableField(type, "user", type,
+                AccessFlags.PUBLIC.value or AccessFlags.STATIC.value or AccessFlags.ENUM.value, null, null, null),
+            ImmutableField(type, "alias", type,
+                AccessFlags.PUBLIC.value or AccessFlags.STATIC.value or AccessFlags.FINAL.value, null, null, null),
+        ) else emptyList()
         return ImmutableClassDef(type, AccessFlags.PUBLIC.value, "Ljava/lang/Enum;", null, null, null, fields,
             listOf(ImmutableMethod.of(method(type, "<clinit>", emptyList(), "V", body, registers = 3, static = true))))
     }

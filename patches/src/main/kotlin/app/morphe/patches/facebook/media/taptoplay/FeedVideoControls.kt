@@ -43,11 +43,12 @@ internal fun BytecodePatchContext.installFeedVideoControls(play: Method) {
     val owner = classDefBy(play.definingClass)
     val trigger = play.parameterTypes.single().toString()
     val triggerClass = classDefBy(trigger)
+    // 584 also stores BY_USER in a plain static alias (`LX/2T4;->A01`), so only the enum constant counts.
     val userFields = enumConstantFields(triggerClass).filterValues { it == "BY_USER" }.keys
     val user = triggerClass.fields.singleOrNull {
         it.name in userFields && it.type == trigger && AccessFlags.PUBLIC.isSet(it.accessFlags)
-                && AccessFlags.STATIC.isSet(it.accessFlags)
-    } ?: refuse("expected one public BY_USER field in $trigger")
+                && AccessFlags.STATIC.isSet(it.accessFlags) && AccessFlags.ENUM.isSet(it.accessFlags)
+    } ?: refuse("expected one public BY_USER enum constant in $trigger")
     val pauses = grootPauses(owner, trigger)
     val inner = innerPause(pauses) ?: refuse("no pause the other pauses hand on to")
     val pause = pauses.singleOrNull {

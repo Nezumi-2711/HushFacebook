@@ -22,6 +22,7 @@ import app.morphe.patches.facebook.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
 import app.morphe.patches.shared.compat.AppCompatibilities
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -178,7 +179,10 @@ class TapToPlayFixtureTest {
                 nativeCommands.forEach { call ->
                     assertEquals(listOf(trigger), call.parameterTypes.map(CharSequence::toString))
                 }
-                val user = enumConstantFields(classes.getValue(trigger)).filterValues { it == "BY_USER" }.keys.single()
+                val userNames = enumConstantFields(classes.getValue(trigger)).filterValues { it == "BY_USER" }.keys
+                val user = classes.getValue(trigger).fields.single {
+                    it.name in userNames && AccessFlags.ENUM.isSet(it.accessFlags)
+                }.name
                 assertEquals("$name: inline commands use the native user trigger twice", 2, commandCode.count {
                     val field = (it as? ReferenceInstruction)?.reference as? FieldReference
                     it.opcode == Opcode.SGET_OBJECT && field?.definingClass == trigger && field.name == user
