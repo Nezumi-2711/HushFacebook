@@ -8,6 +8,7 @@ Unreleased.
 
 ### Added
 
+* **Facebook:** `Inline feed video controls` adds a play/pause button to feed videos, so playback can stay in the feed. It starts off under Playback. Tapping the video itself still opens it full screen (Refs #239).
 * **Facebook:** `Hide WhatsApp on reels` removes the direct WhatsApp button beside reels and videos. It starts off and leaves WhatsApp in the Share menu (Refs #243).
 * **Facebook:** Settings now include Traditional Chinese (Taiwan), contributed by JhouHank. An explicit Chinese script takes priority over a conflicting country, so Traditional and Simplified text stay distinct (Refs #227).
 * **Facebook:** `Download button on reels` now has its own switch under Reels and Watch. Turn it off to keep Download in More without the sidebar button. It starts on, so the existing layout stays. Checked on an emulator, including a menu save opened in Photos and the main Download switch off (Refs #244).

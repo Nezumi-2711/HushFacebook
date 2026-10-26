@@ -19,6 +19,7 @@ import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
+import app.morphe.extension.facebook.reels.FeedVideoControls;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
@@ -917,6 +918,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting TAP_TO_PLAY_REELS_AFTER_FIRST =
             new BooleanSetting("hushfacebook_tap_to_play_reels_after_first", FALSE);
+
+    /** A separate feed play/pause button. Native video taps still open fullscreen. Starts off. */
+    public static final BooleanSetting INLINE_FEED_VIDEO_CONTROLS =
+            new BooleanSetting("hushfacebook_inline_feed_video_controls", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
 
     /**
      * A video longer than two minutes that was left partway picks up where it was left, once, the

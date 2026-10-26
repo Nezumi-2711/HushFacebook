@@ -1936,3 +1936,7 @@ The app holding that picture is taking too long, so Hushfacebook stopped waiting
 The app holding the last picture still hasn't answered. Try again later.	提供上一張圖片的應用程式仍未回應。請稍後再試。
 # context: primary save row for a Story that reshares a Reel
 Save video	儲存影片
+Inline feed video controls	動態消息影片控制項
+Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	在動態消息影片上加入播放或暫停按鈕。輕觸影片本身仍會以全螢幕開啟。直播影片和廣告保留原有控制項。
+Play feed video	播放動態消息影片
+Pause feed video	暫停動態消息影片

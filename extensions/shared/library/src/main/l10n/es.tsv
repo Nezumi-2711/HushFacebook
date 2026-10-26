@@ -1932,3 +1932,7 @@ Couldn't remove the header picture. Try again.	No se pudo quitar la imagen del e
 The app holding that picture is taking too long, so Hushfacebook stopped waiting. The top of Home didn't change.	La app que guarda esa imagen tarda demasiado, así que Hushfacebook dejó de esperar. La parte superior de Inicio no cambió.
 # context: toast when a tap on Home header picture comes while the last stalled app still holds a worker
 The app holding the last picture still hasn't answered. Try again later.	La app de la última imagen aún no ha respondido. Inténtalo más tarde.
+Inline feed video controls	Controles de video en el feed
+Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Añade un botón de reproducción y pausa a los videos del feed. Toca el video para abrirlo a pantalla completa. Los videos en directo y los anuncios conservan sus propios controles.
+Play feed video	Reproducir video del feed
+Pause feed video	Pausar video del feed

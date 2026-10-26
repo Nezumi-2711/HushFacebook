@@ -243,6 +243,8 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.TAP_TO_PLAY_REELS_AFTER_FIRST,
                         L10n.t("With the switch above on, after you play one reel, the reels you swipe to play on their own. The "
                                 + "feed, Watch and stories always wait.")));
+                playback.addPreference(toggle(context, Settings.INLINE_FEED_VIDEO_CONTROLS,
+                        L10n.t("Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.")));
             }
             if (build.contains(PatchFamily.RESUME_LONG_VIDEOS)) {
                 playback.addPreference(toggle(context, Settings.RESUME_LONG_VIDEOS,
