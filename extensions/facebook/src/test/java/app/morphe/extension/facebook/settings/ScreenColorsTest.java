@@ -403,7 +403,8 @@ public class ScreenColorsTest {
                 int drawn = title.getCurrentTextColor();
                 int enabledColor = drawn | 0xFF000000;
                 assertTrue("\"" + title.getText() + "\" is " + Integer.toHexString(drawn),
-                        enabledColor == colors.title || enabledColor == colors.heading);
+                        enabledColor == colors.title || enabledColor == colors.heading
+                                || (row.isAccessibilityHeading() && enabledColor == colors.summary));
                 // Disabled Marketplace options use the existing 38% Material tint. The old
                 // assertion assumed every row on a newly opened page could be tapped.
                 assertEquals(title.getText().toString(),

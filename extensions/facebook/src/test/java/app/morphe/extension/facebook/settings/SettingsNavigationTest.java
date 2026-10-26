@@ -103,9 +103,8 @@ public class SettingsNavigationTest {
 
     @Test public void homeAndEveryCategoryAreReachableWithoutRemovingTheModel() {
         assertNotNull(page.navigation);
-        // Status, Quick setups, Browse settings, six feature categories, More settings, Report a
-        // problem, Restart Facebook and Support Hushfacebook.
-        assertEquals(13, list().getCount());
+        // Seven feature categories, More settings, Support and compact build details.
+        assertEquals(10, list().getCount());
         assertEquals(21, page.sections().size());
         int total = page.getPreferenceScreen().getRootAdapter().getCount();
         for (Preference section : page.sections()) {
@@ -116,42 +115,42 @@ public class SettingsNavigationTest {
             assertTrue(page.navigation.back());
             while (page.navigation.back()) { }
         }
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
     }
 
     /**
      * The home page ends with Support Hushfacebook, under More settings, Report a problem and Restart Facebook. A tap
      * opens the Ko-fi page in a browser of its own, and with no browser a tip names the address and Facebook keeps running.
      */
-    @Test public void theHomePageEndsWithSupportWhichOpensKoFi() {
+    @Test public void supportKeepsReportsRestartAndTheProjectLinkReachable() {
         Map<String, Object> before = savedValues();
-        int last = list().getCount() - 1;
-        Preference row = (Preference) list().getItemAtPosition(last);
+        assertFalse(contains(SettingsNavigation.REPORT));
+        assertFalse(contains(SettingsNavigation.RESTART_NOW));
+        tap(SettingsNavigation.SUPPORT);
+        int count = list().getCount();
+        Preference row = (Preference) list().getItemAtPosition(count - 2);
         assertEquals(HushfacebookPages.SUPPORT, row.getKey());
         assertEquals("Support Hushfacebook", String.valueOf(row.getTitle()));
         assertNull(row.getSummary());
-        assertEquals("Restart Facebook", String.valueOf(((Preference) list().getItemAtPosition(last - 1)).getTitle()));
-        assertEquals("Report a problem", String.valueOf(((Preference) list().getItemAtPosition(last - 2)).getTitle()));
-        assertEquals("More settings", String.valueOf(((Preference) list().getItemAtPosition(last - 3)).getTitle()));
-        assertTrue(list().getAdapter().isEnabled(last));
-
+        assertTrue(contains(SettingsNavigation.REPORT));
+        assertTrue(contains(SettingsNavigation.RESTART_NOW));
         tap(HushfacebookPages.SUPPORT);
         Intent started = shadowOf(controller.get()).getNextStartedActivity();
         assertNotNull("nothing opened", started);
         assertEquals(Intent.ACTION_VIEW, started.getAction());
         assertEquals("https://ko-fi.com/X8K126YVER", started.getDataString());
         assertTrue(started.hasCategory(Intent.CATEGORY_BROWSABLE));
-        assertTrue("the page would open inside Facebook's task",
-                (started.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
+        assertTrue((started.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
         assertNull(started.getComponent());
-        assertEquals("the tap left the home page", last + 1, list().getCount());
-
+        assertEquals("the tap left Support", count, list().getCount());
         shadowOf(RuntimeEnvironment.getApplication()).checkActivities(true);
         tap(HushfacebookPages.SUPPORT);
         assertEquals("No app on this phone can open the link. The address is " + L10n.isolate("ko-fi.com/X8K126YVER") + ".",
                 ShadowToast.getTextOfLatestToast());
         assertFalse(controller.get().isFinishing());
         assertEquals(before, savedValues());
+        assertTrue(page.navigation.back());
+        assertEquals(10, list().getCount());
     }
 
     @Test public void categoryClickChangesOnlyTheSettingWhoseRowWasTapped() {
@@ -357,19 +356,19 @@ public class SettingsNavigationTest {
         assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
         assertEquals(categoryCount("Playback") + 1, list().getCount());
         while (page.navigation.back()) { }
-        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(1)).getKey());
-        assertEquals(13, list().getCount());
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
+        assertEquals(11, list().getCount());
 
         // Two changes are counted, and the row goes once neither is owed.
         app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.add(
                 Settings.BOTTOM_TAB_BAR.key);
         page.navigation.restartChanged();
         assertEquals("Restart Facebook to apply 2 changes",
-                String.valueOf(((Preference) list().getItemAtPosition(1)).getTitle()));
+                String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
         app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
         page.navigation.restartChanged();
         assertFalse(contains(SettingsNavigation.RESTART));
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
     }
 
     /**
@@ -457,11 +456,12 @@ public class SettingsNavigationTest {
      * The home page's own Restart Facebook row, just above Support, restarts Facebook with no change waiting and brings
      * the screen back on the home page. While a change waits, the counting restart row at the top is the page's only one.
      */
-    @Test public void theHomePageHasItsOwnRestartRowUntilAChangeWaits() {
+    @Test public void supportHasItsOwnRestartRowUntilAChangeWaits() {
         List<Context> restarted = new ArrayList<>();
         app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart.setRestarterForTests(restarted::add);
+        page.navigation.navigate(SettingsNavigation.SUPPORT);
         int own = position(SettingsNavigation.RESTART_NOW);
-        assertEquals(list().getCount() - 2, own);
+        assertEquals(list().getCount() - 3, own);
         Preference row = (Preference) list().getItemAtPosition(own);
         assertEquals("Restart Facebook", String.valueOf(row.getTitle()));
         assertEquals("Facebook closes and reopens on this page.", String.valueOf(row.getSummary()));
@@ -471,7 +471,7 @@ public class SettingsNavigationTest {
                 Settings.HOLD_ANALYTICS_UPLOADS.key);
         page.navigation.restartChanged();
         assertFalse("two restart rows on one page", contains(SettingsNavigation.RESTART_NOW));
-        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(1)).getKey());
+        assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
         app.morphe.extension.shared.settings.preference.AbstractPreferenceFragment.restartPending.clear();
         page.navigation.restartChanged();
         assertFalse(contains(SettingsNavigation.RESTART));
@@ -483,10 +483,11 @@ public class SettingsNavigationTest {
         while (page.navigation.back()) { }
 
         Map<String, Object> before = savedValues();
+        page.navigation.navigate(SettingsNavigation.SUPPORT);
         tap(SettingsNavigation.RESTART_NOW);
         assertEquals(1, restarted.size());
         assertEquals(before, savedValues());
-        assertEquals("", app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart
+        assertEquals(SettingsNavigation.SUPPORT, app.morphe.extension.shared.settings.preference.ReopenSettingsAfterRestart
                 .takeFresh(Setting.preferences.preferences, android.os.SystemClock.elapsedRealtime()));
     }
 
@@ -528,15 +529,12 @@ public class SettingsNavigationTest {
         controller.get().getFragmentManager().executePendingTransactions();
         ShadowLooper.idleMainLooper();
         page = page(dialog);
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
     }
 
     /** Each Quick setups choice changes its switches through their rows and says how many changed. */
     @Test public void quickSetupsChangeTheirSwitchesAndSayHowMany() {
-        Preference row = (Preference) list().getItemAtPosition(1);
-        assertEquals(SettingsNavigation.QUICK_SETUPS, row.getKey());
-        assertEquals("Quick setups", String.valueOf(row.getTitle()));
-        tap(SettingsNavigation.QUICK_SETUPS);
+        page.showQuickSetups();
         AlertDialog choices = (AlertDialog) org.robolectric.shadows.ShadowDialog.getLatestDialog();
         assertNotNull("Quick setups opened no dialog", choices);
         android.widget.ListAdapter cards = choices.getListView().getAdapter();
@@ -559,9 +557,9 @@ public class SettingsNavigationTest {
             int privacy = offOnScreen(QuickSetupKeys.PRIVACY);
             assertEquals(privacy, page.applyQuickSetup(QuickSetupKeys.privacy()));
             assertEquals("Changed " + privacy + " settings", ShadowToast.getTextOfLatestToast());
-            assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(1)).getKey());
+            assertEquals(SettingsNavigation.RESTART, ((Preference) list().getItemAtPosition(0)).getKey());
             assertEquals("Restart Facebook to apply 2 changes",
-                    String.valueOf(((Preference) list().getItemAtPosition(1)).getTitle()));
+                    String.valueOf(((Preference) list().getItemAtPosition(0)).getTitle()));
 
             assertEquals(0, page.applyQuickSetup(QuickSetupKeys.quiet()));
             assertEquals("Changed 0 settings", ShadowToast.getTextOfLatestToast());
@@ -576,54 +574,31 @@ public class SettingsNavigationTest {
     }
 
     /** A long press on the Quick setups row takes it off the home page and says where it comes back. */
-    @Test public void aLongPressOnQuickSetupsHidesTheRowAndSaysWhereItComesBack() {
-        Preference row = (Preference) list().getItemAtPosition(1);
-        assertEquals(SettingsNavigation.QUICK_SETUPS, row.getKey());
-        assertTrue(String.valueOf(row.getSummary()).endsWith(" Press and hold to hide this row."));
-        assertTrue(String.valueOf(row.getSummary()).startsWith("Turn on a set of switches in one tap"));
-        assertFalse(BaseSettings.HIDE_QUICK_SETUPS.savedValue());
-        // Any other row keeps its own behavior.
-        assertFalse(longPress(HushfacebookPages.SUPPORT));
-        assertFalse(BaseSettings.HIDE_QUICK_SETUPS.savedValue());
-        assertTrue(contains(SettingsNavigation.QUICK_SETUPS));
-
-        assertTrue(longPress(SettingsNavigation.QUICK_SETUPS));
-        assertTrue(BaseSettings.HIDE_QUICK_SETUPS.savedValue());
-        assertTrue(Setting.preferences.preferences.getBoolean(BaseSettings.HIDE_QUICK_SETUPS.key, false));
-        assertFalse("the row stayed on the home page", contains(SettingsNavigation.QUICK_SETUPS));
-        assertEquals(12, list().getCount());
-        assertEquals("Quick setups hidden. Bring it back from Pause, backup and diagnostics.",
-                ShadowToast.getTextOfLatestToast());
-        assertFalse("hiding the row waits for no restart", contains(SettingsNavigation.RESTART));
+    @Test public void homeHasNoQuickSetupsOrHiddenLongPressAction() {
+        Map<String, Object> before = savedValues();
+        assertFalse(contains("action_quick_setups"));
+        assertNull(list().getOnItemLongClickListener());
+        assertEquals(before, savedValues());
+        assertFalse(contains(SettingsNavigation.RESTART));
     }
 
     /** The row on Pause, backup and diagnostics shows the state and a tap flips it, home page included. */
-    @Test public void theRestoreRowBringsQuickSetupsBackAndFlipsItsSummary() {
-        assertTrue(longPress(SettingsNavigation.QUICK_SETUPS));
-        page.navigation.navigate("Pause, backup and diagnostics");
-        Preference restore = (Preference) list().getItemAtPosition(position(HushfacebookPages.QUICK_SETUPS_HOME));
-        assertEquals("Quick setups on the home page", String.valueOf(restore.getTitle()));
-        assertEquals("Hidden. Tap to show it again.", String.valueOf(restore.getSummary()));
-        assertNull("the row stores nothing of its own", Setting.getSettingFromPath(restore.getKey()));
-        tap(HushfacebookPages.QUICK_SETUPS_HOME);
-        assertFalse(BaseSettings.HIDE_QUICK_SETUPS.savedValue());
-        assertEquals("Shown. Tap to hide it.", String.valueOf(restore.getSummary()));
-        while (page.navigation.back()) { }
-        assertTrue(contains(SettingsNavigation.QUICK_SETUPS));
-        assertEquals(13, list().getCount());
-        // And back the other way from the same row.
-        page.navigation.navigate("Pause, backup and diagnostics");
-        tap(HushfacebookPages.QUICK_SETUPS_HOME);
-        assertTrue(BaseSettings.HIDE_QUICK_SETUPS.savedValue());
-        assertEquals("Hidden. Tap to show it again.", String.valueOf(restore.getSummary()));
-        while (page.navigation.back()) { }
-        assertFalse(contains(SettingsNavigation.QUICK_SETUPS));
+    @Test public void legacyQuickSetupsFlagsCannotRestoreRemovedHomeBlocks() {
+        for (boolean oldHidden : new boolean[]{false, true}) {
+            BaseSettings.HIDE_QUICK_SETUPS.save(oldHidden);
+            recreate();
+            assertFalse(contains("action_quick_setups"));
+            assertFalse(titles().contains("Hushfacebook is on"));
+            assertEquals(10, list().getCount());
+            assertNull(page.findPreference("action_quick_setups_home"));
+            assertEquals(oldHidden, BaseSettings.HIDE_QUICK_SETUPS.savedValue());
+        }
     }
 
     /** The restore row shows up in the settings search. */
-    @Test public void searchFindsTheQuickSetupsRestoreRow() {
+    @Test public void searchDoesNotOfferTheRemovedHomeRestoreControl() {
         findSearch(dialog.getView()).setText("quick setups on the home page");
-        assertTrue(titles().toString(), titles().contains("Quick setups on the home page"));
+        assertEquals(java.util.List.of("No matching settings"), titles());
     }
 
     private boolean longPress(String key) {
@@ -653,6 +628,7 @@ public class SettingsNavigationTest {
     /** Report a problem opens GitHub's bug form in a browser with the versions and switches filled in. */
     @Test public void reportAProblemOpensAFilledInGitHubForm() throws Exception {
         Map<String, Object> before = savedValues();
+        page.navigation.navigate(SettingsNavigation.SUPPORT);
         tap(SettingsNavigation.REPORT);
         Intent started = shadowOf(controller.get()).getNextStartedActivity();
         assertNotNull("nothing opened", started);
@@ -675,6 +651,7 @@ public class SettingsNavigationTest {
         assertEquals(before, savedValues());
 
         shadowOf(RuntimeEnvironment.getApplication()).checkActivities(true);
+        page.navigation.navigate(SettingsNavigation.SUPPORT);
         tap(SettingsNavigation.REPORT);
         assertEquals("No app on this phone can open the link. The address is "
                 + L10n.isolate("github.com/SysAdminDoc/Hushfacebook") + ".", ShadowToast.getTextOfLatestToast());
@@ -754,9 +731,8 @@ public class SettingsNavigationTest {
         recreate();
         layout(dialog.getView());
         TextView summary = list().getChildAt(0).findViewById(android.R.id.summary);
-        String[] lines = summary.getText().toString().split("\n", 2);
-        assertEquals("Tap Resume, then restart Facebook.", lines[0]);
-        assertEquals(HushfacebookPreferenceFragment.overviewBuildDetails().replace('\n', ' '), lines[1]);
+        assertEquals("Tap Resume, then restart Facebook.", summary.getText().toString());
+        assertEquals("Resume", statusAction().getText().toString());
     }
 
     /**
@@ -764,26 +740,20 @@ public class SettingsNavigationTest {
      * "Hushfacebook" broke inside the word. The button now precedes long recovery advice too.
      */
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    public void atLargeTextTheStatusActionSitsBetweenItsTitleAndAdvice() {
+    public void toolbarPauseRemainsVisibleAtLargeText() {
         org.robolectric.RuntimeEnvironment.setFontScale(2f);
         try {
             recreate();
             layout(dialog.getView());
-            View row = list().getChildAt(0);
-            TextView title = row.findViewById(android.R.id.title);
-            TextView summary = row.findViewById(android.R.id.summary);
-            android.text.Layout lines = title.getLayout();
-            for (int line = 0; line + 1 < lines.getLineCount(); line++) {
-                char last = title.getText().charAt(lines.getLineEnd(line) - 1);
-                assertTrue("\"" + title.getText() + "\" breaks inside a word after line " + line, Character.isWhitespace(last));
-            }
-            assertEquals(View.GONE, row.findViewById(android.R.id.widget_frame).getVisibility());
-            android.widget.Button action = firstButton(row);
-            assertNotNull("no Pause button in the status row", action);
-            assertEquals(summary.getParent(), action.getParent());
-            assertTrue("the button overlaps the title", action.getTop() >= title.getBottom());
-            assertTrue("the button overlaps the advice", action.getBottom() <= summary.getTop());
+            android.widget.Button action = statusAction();
+            TextView title = findHeading(dialog.getView());
             assertEquals("Pause", action.getText().toString());
+            assertTrue(action.getParent() == title.getParent());
+            android.graphics.Rect shown = new android.graphics.Rect();
+            assertTrue(action.getGlobalVisibleRect(shown));
+            assertEquals(action.getHeight(), shown.height());
+            assertEquals(action.getWidth(), shown.width());
+            assertFalse(titles().contains("Hushfacebook is on"));
         } finally {
             org.robolectric.RuntimeEnvironment.setFontScale(1f);
         }
@@ -802,9 +772,9 @@ public class SettingsNavigationTest {
     }
 
     private android.widget.Button statusAction() {
-        android.view.ViewGroup frame = list().getChildAt(0).findViewById(android.R.id.widget_frame);
-        assertEquals(1, frame.getChildCount());
-        return (android.widget.Button) frame.getChildAt(0);
+        android.widget.Button action = dialog.getView().findViewWithTag("hushfacebook_toolbar_pause");
+        assertNotNull(action);
+        return action;
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -841,7 +811,7 @@ public class SettingsNavigationTest {
         assertEquals("No matching settings", ((Preference) list().getItemAtPosition(0)).getTitle());
         assertTrue(page.navigation.back());
         assertEquals("", search.getText().toString());
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
     }
 
     @Test @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -907,23 +877,23 @@ public class SettingsNavigationTest {
             assertTrue(search.isFocusable());
             assertEquals(L10n.t("Back"), back.getContentDescription().toString());
             assertTrue(back.getWidth() >= 48 * density && back.getHeight() >= 48 * density);
-            assertTrue("The page title must sit below the back toolbar", heading.getTop() >= bar.getBottom());
+            assertTrue("The title stays in the toolbar", heading == bar || heading.getParent() == bar);
             assertTrue("The search must sit below the page title", search.getTop() + ((View) search.getParent()).getTop()
-                    >= heading.getBottom());
+                    >= bar.getBottom());
             if (scale == 1f) {
-                assertEquals(32 * density, title.getTextSize(), 0.1f);
+                assertEquals(22 * density, title.getTextSize(), 0.1f);
                 assertEquals(View.INVISIBLE, clear.getVisibility());
-                assertEquals(8 * density, bar.getPaddingStart(), 0.1f);
-                assertEquals(20 * density, bar.getPaddingEnd(), 0.1f);
-                assertEquals(20 * density, heading.getPaddingStart(), 0.1f);
-                assertEquals(20 * density, heading.getPaddingEnd(), 0.1f);
+                assertEquals(4 * density, bar.getPaddingStart(), 0.1f);
+                assertEquals(12 * density, bar.getPaddingEnd(), 0.1f);
+                assertEquals(4 * density, heading.getPaddingStart(), 0.1f);
+                assertEquals(12 * density, heading.getPaddingEnd(), 0.1f);
             }
             search.setText("video");
             assertEquals(View.VISIBLE, clear.getVisibility());
             assertTrue(clear.isClickable());
             assertTrue(clear.performClick());
             assertEquals("", search.getText().toString());
-            assertEquals(13, list().getCount());
+            assertEquals(10, list().getCount());
             android.app.Dialog shown = dialog.getDialog();
             assertTrue(back.performClick());
             assertFalse(shown.isShowing());
@@ -1095,9 +1065,9 @@ public class SettingsNavigationTest {
         page = page(dialog);
         Map<String, Object> before = savedValues();
 
-        assertEquals(14, list().getCount());
-        assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
-        Preference row = (Preference) list().getItemAtPosition(1);
+        assertEquals(11, list().getCount());
+        assertEquals(0, position(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
+        Preference row = (Preference) list().getItemAtPosition(0);
         assertEquals("1 default patch isn't in this build", String.valueOf(row.getTitle()));
         assertEquals("Tap to see which.", String.valueOf(row.getSummary()));
         tap(HushfacebookPreferenceFragment.MISSING_DEFAULTS);
@@ -1112,7 +1082,7 @@ public class SettingsNavigationTest {
         controller = Robolectric.buildActivity(Activity.class).setup().visible();
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
-        row = (Preference) list().getItemAtPosition(1);
+        row = (Preference) list().getItemAtPosition(0);
         assertEquals("2 default patches aren't in this build", String.valueOf(row.getTitle()));
         tap(HushfacebookPreferenceFragment.MISSING_DEFAULTS);
         assertEquals("Not in this build: " + L10n.isolate("Hide sponsored posts") + " and "
@@ -1129,15 +1099,15 @@ public class SettingsNavigationTest {
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
 
-        assertEquals(14, list().getCount());
-        assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
+        assertEquals(11, list().getCount());
+        assertEquals(0, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
         assertFalse(contains(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
-        Preference row = (Preference) list().getItemAtPosition(1);
+        Preference row = (Preference) list().getItemAtPosition(0);
         assertEquals("Profiles, photos and posts won't open", String.valueOf(row.getTitle()));
         assertEquals("Patch again with " + L10n.isolate("Restore screens on re-signed builds")
                 + " selected. A patched Facebook needs it to open profiles, photos, posts and some of Facebook's Settings pages.",
                 String.valueOf(row.getSummary()));
-        assertFalse(list().getAdapter().isEnabled(1));
+        assertFalse(list().getAdapter().isEnabled(0));
     }
 
     @Test public void missingRestoreScreensComesBeforeOtherMissingDefaults() {
@@ -1150,10 +1120,10 @@ public class SettingsNavigationTest {
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
 
-        assertEquals(15, list().getCount());
-        assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
-        assertEquals(2, position(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
-        Preference defaults = (Preference) list().getItemAtPosition(2);
+        assertEquals(12, list().getCount());
+        assertEquals(0, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
+        assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
+        Preference defaults = (Preference) list().getItemAtPosition(1);
         assertEquals("1 default patch isn't in this build", String.valueOf(defaults.getTitle()));
         tap(HushfacebookPreferenceFragment.MISSING_DEFAULTS);
         assertEquals("Not in this build: " + L10n.isolate("Hide sponsored reels")
@@ -1171,7 +1141,7 @@ public class SettingsNavigationTest {
         dialog = SettingsL10nTest.show(controller.get());
         page = page(dialog);
 
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
         assertFalse(contains(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
         assertFalse(contains(HushfacebookPreferenceFragment.MISSING_DEFAULTS));
     }
@@ -1188,7 +1158,7 @@ public class SettingsNavigationTest {
         try {
             dialog = SettingsL10nTest.show(clone.get());
             page = page(dialog);
-            assertEquals(1, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
+            assertEquals(0, position(HushfacebookPreferenceFragment.MISSING_RESTORE_TRUST));
         } finally {
             clone.close();
         }
@@ -1271,8 +1241,8 @@ public class SettingsNavigationTest {
             dialog = SettingsL10nTest.show(controller.get());
             page = page(dialog);
             assertTrue("the stored-off switch was dropped", Setting.preferences.preferences.contains(Settings.HIDE_REELS_TAB.key));
-            assertEquals(1, position(StartsOffNote.KEY));
-            Preference note = (Preference) list().getItemAtPosition(1);
+            assertEquals(0, position(StartsOffNote.KEY));
+            Preference note = (Preference) list().getItemAtPosition(0);
             assertEquals("28 switches start off now", String.valueOf(note.getTitle()));
             assertEquals("After this update, a switch you had on may be off now. Tap to see which.",
                     String.valueOf(note.getSummary()));
@@ -1493,14 +1463,16 @@ public class SettingsNavigationTest {
 
     @Test public void recreationKeepsTheCategoryAndSearchQuery() {
         page.navigation.open(page.findPreference(Settings.TAP_TO_PLAY.key));
+        int before = list().getCount();
         recreate();
         assertTrue(contains(Settings.TAP_TO_PLAY.key));
+        assertTrue(contains(Settings.INLINE_FEED_VIDEO_CONTROLS.key));
         // Playback: Tap to play and Only the first reel waits, Resume long videos, Remember what you watch and
         // its Recently watched list, Frame step, Default playback quality and its Playback quality, Reels quality
         // and Stories quality lists, Picture-in-picture and Only from a reel's More menu, Picture-in-picture
         // button, Turn off HDR brightness, Play SDR versions of HDR videos, Skip silent parts, Keep feed videos
         // muted, Keep the progress bar, Show a reel's time and Tap the bar to seek.
-        assertEquals(20, list().getCount());
+        assertEquals(before, list().getCount());
         page.navigation.back();
         findSearch(dialog.getView()).setText("other apps");
         recreate();
@@ -1512,12 +1484,12 @@ public class SettingsNavigationTest {
         page.navigation.open(page.findPreference(Settings.TAP_TO_PLAY.key));
         SettingsL10nTest.backOf(dialog).performClick();
         assertTrue(dialog.getDialog().isShowing());
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
         page.navigation.navigate("About");
         dialog.getDialog().onBackPressed();
-        assertEquals(15, list().getCount());
+        assertEquals(14, list().getCount());
         dialog.getDialog().onBackPressed();
-        assertEquals(13, list().getCount());
+        assertEquals(10, list().getCount());
         dialog.getDialog().onBackPressed();
         ShadowLooper.idleMainLooper();
         assertFalse(controller.get().isFinishing());
@@ -1567,9 +1539,8 @@ public class SettingsNavigationTest {
 
     @Test public void visibleNavigationAndSearchKeepTheirAccessibilityRoles() {
         layout(dialog.getView());
-        View heading = list().getChildAt(2);
-        assertTrue(heading.createAccessibilityNodeInfo().isHeading());
-        View opening = list().getChildAt(3);
+        assertTrue(findHeading(dialog.getView()).createAccessibilityNodeInfo().isHeading());
+        View opening = list().getChildAt(0);
         assertEquals(android.widget.Button.class.getName(), opening.createAccessibilityNodeInfo().getClassName());
         assertTrue(opening.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
         assertEquals("Marketplace only", ((Preference) list().getItemAtPosition(0)).getTitle());
@@ -1616,8 +1587,11 @@ public class SettingsNavigationTest {
                 TextView title = findHeading(dialog.getView());
                 assertEquals(TextView.AUTO_SIZE_TEXT_TYPE_NONE, title.getAutoSizeTextType());
                 float scaledDensity = title.getResources().getDisplayMetrics().scaledDensity;
-                assertEquals(28 * scaledDensity, title.getTextSize(), 0.1f);
-                assertTrue("Long category headings must wrap instead of shrinking", title.getLineCount() > 1);
+                assertEquals(22 * scaledDensity, title.getTextSize(), 0.1f);
+                assertTrue("A long category heading must fit or wrap without shrinking",
+                        title.getPaint().measureText(title.getText().toString()) <= title.getWidth()
+                                - title.getCompoundPaddingLeft() - title.getCompoundPaddingRight()
+                                || title.getLineCount() > 1);
             }
             assertUncutText(dialog.getView());
             list().setSelection(list().getCount() - 1);

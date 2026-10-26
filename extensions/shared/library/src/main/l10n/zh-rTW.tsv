@@ -747,14 +747,10 @@ Active. Marketplace, Notifications and Profile/Menu stay. Find Hushfacebook sett
 Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	已生效。保留活動、通知與個人檔案／選單。可在選單的「設定和隱私」中找到 Hushfacebook 設定。
 
 # context: Settings overview, category navigation and search.
-Marketplace only, Events only and your start tab	僅使用 Marketplace、僅使用活動與啟動分頁
 Ads, suggestions and word filters	廣告、推薦與字詞篩選
-Suggestions, saving, auto-advance and viewing anonymously	推薦、儲存、自動切換與匿名觀看
 Cleaner reels and video controls	簡化 Reels 與影片控制項
 Tap to play, quality and resume	點按播放、畫質與接續播放
 Quality, format and file names	畫質、格式與檔名
-Settings	設定
-Browse settings	瀏覽設定
 More settings	更多設定
 Additional Facebook preferences	其他 Facebook 偏好設定
 No matching settings	找不到符合的設定
@@ -1577,13 +1573,8 @@ Report a problem	回報問題
 Opens a GitHub report with your versions and settings filled in. Add what happened.	開啟已填入版本與設定資訊的 GitHub 問題回報。請補充發生的情況。
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	快速設定
-Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	一次啟用一組開關，或將所有開關恢復為初始狀態。長按可隱藏此列。
 # context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
-Quick setups hidden. Bring it back from %1$s.	已隱藏快速設定。可從 %1$s 恢復顯示。
 # context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
-Quick setups on the home page	在首頁顯示快速設定
-Shown. Tap to hide it.	已顯示。點按可隱藏。
-Hidden. Tap to show it again.	已隱藏。點按可再次顯示。
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	安靜模式
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	隱藏廣告、推薦、推廣與提示，並停止惱人的通知。
@@ -1944,3 +1935,8 @@ Inline feed video controls	動態消息影片控制項
 Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	在動態消息影片上加入播放或暫停按鈕。輕觸影片本身仍會以全螢幕開啟。直播影片和廣告保留原有控制項。
 Play feed video	播放動態消息影片
 Pause feed video	暫停動態消息影片
+Support	說明與支援
+Reports, restart and app information	問題回報、重新啟動和應用程式資訊
+Your start tab and launch settings	啟動分頁與啟動設定
+Saving, playback and anonymous viewing	儲存、播放與匿名瀏覽
+Sorting, replies and reactions	排序、回覆與心情

@@ -743,14 +743,10 @@ Active. Marketplace, Notifications and Profile/Menu stay. Find Hushfacebook sett
 Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	Aktiv. Veranstaltungen, Benachrichtigungen und Profil/Menü bleiben erhalten. Die Hushfacebook-Einstellungen findest du im Menü unter Einstellungen und Privatsphäre.
 
 # context: Settings overview, category navigation and search.
-Marketplace only, Events only and your start tab	Marketplace-Modus, Veranstaltungs-Modus und Starttab
 Ads, suggestions and word filters	Werbung, Vorschläge und Wortfilter
-Suggestions, saving, auto-advance and viewing anonymously	Vorschläge, Speichern, automatischer Wechsel und anonymes Ansehen
 Cleaner reels and video controls	Reels und Videosteuerung
 Tap to play, quality and resume	Antippen zum Abspielen, Qualität und Fortsetzen
 Quality, format and file names	Qualität, Format und Dateinamen
-Settings	Einstellungen
-Browse settings	Einstellungen durchsuchen
 More settings	Weitere Einstellungen
 Additional Facebook preferences	Weitere Facebook-Einstellungen
 No matching settings	Keine passenden Einstellungen
@@ -1575,13 +1571,8 @@ Report a problem	Problem melden
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Öffnet eine GitHub-Meldung, in der deine Versionen und Einstellungen schon stehen. Ergänze, was passiert ist.
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	Schnelleinstellungen
-Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Schalte mehrere Schalter mit einem Tippen ein oder setze alle Schalter auf ihren Ausgangszustand zurück. Halte gedrückt, um diese Zeile auszublenden.
 # context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
-Quick setups hidden. Bring it back from %1$s.	Schnelleinstellungen ausgeblendet. Du bekommst sie unter %1$s zurück.
 # context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
-Quick setups on the home page	Schnelleinstellungen auf der Startseite
-Shown. Tap to hide it.	Angezeigt. Tippe zum Ausblenden.
-Hidden. Tap to show it again.	Ausgeblendet. Tippe, um sie wieder anzuzeigen.
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	Ruhig
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Blendet Werbung, Vorschläge, Werbeaktionen und Aufforderungen aus und stoppt lästige Benachrichtigungen.
@@ -1940,3 +1931,8 @@ Inline feed video controls	Wiedergabesteuerung im Feed
 Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Fügt Feed-Videos eine Wiedergabe-/Pausetaste hinzu. Tippe auf das Video selbst, um es im Vollbild zu öffnen. Live-Videos und Anzeigen behalten ihre eigenen Steuerelemente.
 Play feed video	Feed-Video abspielen
 Pause feed video	Feed-Video pausieren
+Support	Hilfe
+Reports, restart and app information	Fehlerberichte, Neustart und App-Informationen
+Your start tab and launch settings	Starttab und Startverhalten
+Saving, playback and anonymous viewing	Speichern, Wiedergabe und anonymes Ansehen
+Sorting, replies and reactions	Sortierung, Antworten und Reaktionen
