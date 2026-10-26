@@ -42,12 +42,11 @@ Unreleased.
 * **Tooling:** Device walks can scroll a navigation row below a caller's reserved screen area before tapping it. A fresh screen check still has to identify one target.
 * **Tooling:** Reel destination checks read the current Facebook activity directly, so another app's stalled diagnostic can't hide the viewer from the walk.
 * **Tooling:** Locale checks follow the app's language preference order, including its English fallback. The requested configuration and displayed page still have to match.
-
 * **Tooling:** Photo download and optional theme patches inspect fewer classes and skip unrelated call names. A full Facebook 584 comparison found the same hook sites. The earlier one-minute phone result used the recommended selection; optional themes and other phones can take longer (Refs #236).
 * **Facebook:** A Story that reshares a Reel uses `Save video` for its main save option. Released video details are skipped safely. Checked with regression tests, the exact Facebook fixture and a native menu control. The new label follows Facebook's language. A live reshared Story still needs checking (Refs #207).
 * **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
 * **Facebook:** Clearing Recently watched now discards pending watches, so an entry can't come back after Clear. Turning recording off also cancels pending entries, even if you turn it back on straight away.
-* **Facebook:** Prevent a startup crash with `Newest reels first` when a reel's details haven't loaded yet (Refs #234).
+* **Facebook:** Facebook no longer crashes at startup with `Newest reels first` on when some reels haven't finished loading their details. Those reels keep Facebook's order and the rest still go newest first. Checked on a phone that crashed every launch before the fix (Refs #234, #246).
 * **Facebook:** `Tap anywhere on View more replies` now also covers the `View more replies` row with the down arrow at the end of an open reply thread. Before, it only reached the `View x replies` rows (Refs #219).
 
 ## 0.18.0 (2026-10-24)
