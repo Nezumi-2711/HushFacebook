@@ -850,6 +850,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_related_groups_under_comments", FALSE);
 
     /**
+     * Feed posts show none of the few comments Facebook draws under their buttons
+     * ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}, #253). The Comment button
+     * still opens them all. Off by default. A change shows on posts drawn after it.
+     */
+    public static final BooleanSetting HIDE_POST_COMMENT_PREVIEWS =
+            new BooleanSetting("hushfacebook_hide_post_comment_previews", FALSE);
+
+    /**
      * Comments whose words link to an online shop, like the Shopee links pasted under reels, are
      * left out with their replies ({@link app.morphe.extension.facebook.comments.CommentSheetOptions},
      * #118). Off by default. A change shows on the next comments drawn.
