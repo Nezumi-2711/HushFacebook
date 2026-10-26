@@ -10,6 +10,7 @@ import app.morphe.patches.facebook.comments.summaries.descriptor
 import app.morphe.patches.facebook.comments.summaries.switchKeys
 import app.morphe.patches.facebook.feed.FixtureDex
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
+import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.methodsHolding
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
 import app.morphe.patches.shared.compat.AppCompatibilities
@@ -48,7 +49,8 @@ import java.io.File
  * is found by its name, and the one paging flag of the comment list it builds goes through the
  * extension just before it's written (#140). The View more replies row is found by its render's
  * name, and the boolean that picks whether its words alone or the whole row take a tap goes
- * through the extension right after Facebook reads it (#219). The video viewer's comment bar is found by the names
+ * through the extension right after Facebook reads it (#219). So does the nameless pager under an
+ * open reply thread, found as the one thing the thread's comment list makes that reads it. The video viewer's comment bar is found by the names
  * of its sticker and GIF buttons, and once both are built the extension is asked and a yes clears
  * them. The whole bar around them is the class naming its layout transition that builds that row,
  * and its render asks first and returns nothing on a yes (#213). Reads the fixture bundles from
@@ -318,8 +320,9 @@ class CommentSheetOptionsFixtureTest {
         assertEquals("$where: the code before the hook runs into it", listOf(write), ControlFlow.of(method).normal[write - 1])
     }
 
-    private fun replyRow(bundle: File, name: String): ReplyRowTap {
-        val found = replyRowTap(holders(bundle, name), name)
+    private fun replyRow(bundle: File, name: String): ReplyRowTap = hookedRow(bundle, replyRowTap(holders(bundle, name), name))
+
+    private fun hookedRow(bundle: File, found: ReplyRowTap): ReplyRowTap {
         val render = found.render
         val where = "${bundle.name}: ${render.descriptor()}"
         val row = FixtureDex.classes(bundle, setOf(render.definingClass)).values.single()
@@ -436,6 +439,27 @@ class CommentSheetOptionsFixtureTest {
             val sheetAsks = sheet.render.implementation!!.instructions.toList()[sheet.kept - 1].reference()
             val feedAsks = row.render.implementation!!.instructions.toList()[row.kept - 1].reference()
             assertEquals("${bundle.name}: both rows read the same server answer", sheetAsks, feedAsks)
+        }
+
+    @Test
+    fun `each declared build asks before the View more replies pager under an open thread picks which part of it takes a tap`() =
+        bundles { bundle ->
+            val sheet = replyRowTap(holders(bundle, VIEW_MORE_REPLIES))
+            val found = threadPagerTap(holders(bundle, COMMENT_LIST), sheet) { types -> FixtureDex.classes(bundle, types) }
+            val pager = hookedRow(bundle, found)
+            assertNotEquals("${bundle.name}: the pager isn't the View replies row", sheet.render.definingClass,
+                pager.render.definingClass)
+            val sheetAsks = sheet.render.implementation!!.instructions.toList()[sheet.kept - 1].reference()
+            val pagerAsks = pager.render.implementation!!.instructions.toList()[pager.kept - 1].reference()
+            assertEquals("${bundle.name}: both rows read the same server answer", sheetAsks, pagerAsks)
+            val list = holders(bundle, COMMENT_LIST).single { holder ->
+                holder.methods.any { it.name == "<init>" && holdsString(it, COMMENT_LIST) }
+            }
+            assertTrue("${bundle.name}: the thread's list makes the pager", list.methods.any { method ->
+                method.implementation?.instructions?.any {
+                    it.opcode == Opcode.NEW_INSTANCE && it.reference() == pager.render.definingClass
+                } == true
+            })
         }
 
     @Test

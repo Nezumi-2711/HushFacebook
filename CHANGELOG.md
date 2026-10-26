@@ -42,6 +42,7 @@ Unreleased.
 * **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
 * **Facebook:** Clearing Recently watched now discards pending watches, so an entry can't come back after Clear. Turning recording off also cancels pending entries, even if you turn it back on straight away.
 * **Facebook:** Prevent a startup crash with `Newest reels first` when a reel's details haven't loaded yet (Refs #234).
+* **Facebook:** `Tap anywhere on View more replies` now also covers the `View more replies` row with the down arrow at the end of an open reply thread. Before, it only reached the `View x replies` rows (Refs #219).
 
 ## 0.18.0 (2026-10-24)
 

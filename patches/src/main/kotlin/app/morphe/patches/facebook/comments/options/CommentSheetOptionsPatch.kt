@@ -200,6 +200,12 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * finishes the outer row bare; false, it finishes the row and wraps all of it. The call on either
  * side of that check is the row's finishing call (584 `LX/4B4;->A0K`), the words' side again first,
  * so the same search finds it and the same hook goes in.
+ * The View more replies pager under an open reply thread, the one with the down arrow, is another
+ * component again (584 `LX/DXS;->render`), drawn by the thread's [COMMENT_LIST] and naming nothing.
+ * It reads the same boolean (into v21): true, it wraps the arrow and words in its tap target and sets
+ * that in a plain row; false, the tap target is the whole padded row. It's found as the one thing
+ * the list makes whose render asks that answer, and the same hook goes in after it (#219, where the
+ * switch reached View 7 replies but not this row).
  *
  * Hide comments with shop links and Hide comments with your words (#118): the same comment section
  * draws its one comment, with its replies, in the one method of it besides the constructor that
@@ -249,6 +255,9 @@ val commentSheetOptionsPatch = bytecodePatch(
         val replyList = replyList(holders(EXPANDED_REPLIES), holders(COMMENT_LIST))
         val replyRow = replyRowTap(holders(VIEW_MORE_REPLIES))
         val feedReplyRow = replyRowTap(holders(FEED_VIEW_MORE_REPLIES), FEED_VIEW_MORE_REPLIES)
+        val threadPager = threadPagerTap(holders(COMMENT_LIST), replyRow) { types ->
+            types.mapNotNull { classDefByOrNull(it) }.associateBy { it.type }
+        }
         val viewer = viewerButtons(holders(VIEWER_GIF))
         val videoBar = videoCommentBar(holders(VIDEO_COMMENT_BAR), viewer.render)
 
@@ -270,6 +279,9 @@ val commentSheetOptionsPatch = bytecodePatch(
         mutableClassDefBy(feedReplyRow.render.definingClass).methods
             .single { it.descriptor() == feedReplyRow.render.descriptor() }
             .tapWholeReplyRow(feedReplyRow)
+        mutableClassDefBy(threadPager.render.definingClass).methods
+            .single { it.descriptor() == threadPager.render.descriptor() }
+            .tapWholeReplyRow(threadPager)
         mutableClassDefBy(viewer.render.definingClass).methods.single { it.descriptor() == viewer.render.descriptor() }
             .holdViewerButtons(viewer)
         mutableClassDefBy(videoBar.definingClass).methods.single { it.descriptor() == videoBar.descriptor() }
@@ -779,6 +791,65 @@ internal fun replyRowTap(holders: List<ClassDef>, name: String = VIEW_MORE_REPLI
         refuse("$where doesn't take v$flag from a call answering a boolean")
     }
     if (flag > 255) refuse("$where keeps its flag in v$flag, out of a move-result's reach")
+    val at = kept + 1
+    if (flow.normal[kept] != listOf(at)) refuse("$where doesn't run straight on from v$flag's write")
+    for (index in code.indices) {
+        for (next in flow.normal[index] + flow.exceptional[index]) {
+            if (next == at && index != kept) refuse("$where has a jump to instruction $at, where the hook goes")
+        }
+    }
+    return ReplyRowTap(render, kept, flag)
+}
+
+/**
+ * The View more replies pager at the end of an open reply thread, from [lists], the classes loading
+ * [COMMENT_LIST], [sheetRow], the comment sheet's View more replies row, and [classes], which reads
+ * the classes it's handed. The pager names nothing, so it's found through the list that draws it:
+ * the one class whose constructor names [COMMENT_LIST], the classes its methods make, and of those
+ * the one with a one-argument method answering an object that asks the same server answer
+ * [sheetRow] keeps. That ask runs straight into its `move-result`, the hook goes right after it, so
+ * nothing may jump there, and at least two checks of the answer must be reached by that write alone.
+ * Refuses unless each holds.
+ */
+internal fun threadPagerTap(
+    lists: List<ClassDef>,
+    sheetRow: ReplyRowTap,
+    classes: (Set<String>) -> Map<String, ClassDef>,
+): ReplyRowTap {
+    val named = lists.filter { holder -> holder.methods.any { it.name == "<init>" && holdsString(it, COMMENT_LIST) } }
+        .distinctBy { it.type }
+    val list = named.singleOrNull() ?: refuse("expected one class naming itself \"$COMMENT_LIST\", found ${named.size}")
+    val ask = sheetRow.render.implementation!!.instructions.toList()[sheetRow.kept - 1].methodCall()?.toString()
+        ?: refuse("${sheetRow.render.descriptor()} keeps an answer no call gave it")
+
+    val made = list.methods.flatMap { method ->
+        method.implementation?.instructions?.mapNotNull { instruction ->
+            if (instruction.opcode != Opcode.NEW_INSTANCE) return@mapNotNull null
+            ((instruction as ReferenceInstruction).reference as TypeReference).type
+        }.orEmpty()
+    }.toSet() - list.type - sheetRow.render.definingClass
+    val renders = classes(made).values.flatMap { it.methods }.filter { method ->
+        method.parameterTypes.size == 1 && method.returnType.startsWith("L") &&
+            method.implementation?.instructions?.any { it.methodCall()?.toString() == ask } == true
+    }.distinctBy { it.descriptor() }
+    val render = renders.singleOrNull()
+        ?: refuse("expected one renderer ${list.type} makes that asks $ask, found ${renders.size}")
+    val where = render.descriptor()
+    val code = render.implementation!!.instructions.toList()
+    val asks = code.indices.filter { code[it].methodCall()?.toString() == ask }
+    val asked = asks.singleOrNull() ?: refuse("$where asks $ask ${asks.size} times, not once")
+    val kept = asked + 1
+    if (code.getOrNull(kept)?.opcode != Opcode.MOVE_RESULT) refuse("$where doesn't keep the answer of $ask")
+    val flag = (code[kept] as OneRegisterInstruction).registerA
+    if (flag > 255) refuse("$where keeps its flag in v$flag, out of a move-result's reach")
+
+    val flow = ControlFlow.of(render)
+    val checks = code.indices.filter {
+        code[it].opcode in setOf(Opcode.IF_EQZ, Opcode.IF_NEZ) && (code[it] as OneRegisterInstruction).registerA == flag &&
+            kept in render.writersReaching(it, flag)
+    }
+    if (checks.size < 2) refuse("$where checks v$flag ${checks.size} times after the answer, not two or more")
+    if (checks.any { render.writersReaching(it, flag) != listOf(kept) }) refuse("$where sets v$flag another way before a check")
     val at = kept + 1
     if (flow.normal[kept] != listOf(at)) refuse("$where doesn't run straight on from v$flag's write")
     for (index in code.indices) {
