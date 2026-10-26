@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
 import app.morphe.extension.facebook.settings.Settings;
+import app.morphe.extension.facebook.reels.FeedVideoControls;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.diagnostics.DiagnosticCategory;
@@ -189,7 +190,9 @@ public final class TapToPlay {
 
     /** The hook, first thing in FbGrootPlayer's play. False, and the play returns at once. */
     public static boolean allowStart(Object player, Object trigger) {
-        return allow(player, trigger, "player start", "", true);
+        boolean allowed = allow(player, trigger, "player start", "", true);
+        FeedVideoControls.changed(player);
+        return allowed;
     }
 
     /** The hook, first thing in the older Rich Video Player's playback controller play. */
@@ -252,6 +255,7 @@ public final class TapToPlay {
      * start right after may go ahead ({@link #backFromWindow}).
      */
     public static void paused(Object player) {
+        FeedVideoControls.changed(player);
         try {
             HookStatus.invoked(FamilyNames.TAP_TO_PLAY);
             HookStatus.bound(FamilyNames.TAP_TO_PLAY, "player pause");
@@ -267,6 +271,7 @@ public final class TapToPlay {
 
     /** The hook, first thing where FbGrootPlayer binds a video. A new video waits for a tap. */
     public static void rebound(Object player) {
+        FeedVideoControls.rebound(player);
         try {
             HookStatus.invoked(FamilyNames.TAP_TO_PLAY);
             HookStatus.bound(FamilyNames.TAP_TO_PLAY, "player rebind");

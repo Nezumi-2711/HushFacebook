@@ -67,6 +67,8 @@ To keep Reel downloads in More without the sidebar button, leave **Download** on
 
 **Hide WhatsApp on reels**, also under **Reels and Watch**, removes the direct WhatsApp button beside a reel or video. It starts off. WhatsApp stays available in the Share menu.
 
+**Inline feed video controls**, under **Playback**, adds a separate play/pause button to feed videos. It starts off and works independently of **Tap to play**. Tap the video itself for full screen. Live videos and ads keep their own controls.
+
 ### Blocking Reels
 
 Reels turn up in several places, and no one switch covers them all. Searching the settings for "block reels" brings up a map of them.
@@ -174,7 +176,7 @@ Each row says what the patch does, how its switch starts and which settings page
 | `Stop update prompts` | Stops Facebook asking you to update, since a patched app can't install Meta's updates anyway. Meta App Manager's update prompts and chat prompts aimed at older versions go too. On by default. Turn it off in Hushfacebook settings > Updates. |
 | `Tab bar at the bottom` | Moves Facebook's tab bar to the bottom of the screen on accounts that have it at the top, where it's easier to reach. A second switch puts it at the top instead, as older Facebook had it. Another lets it slide away as you scroll, and two more keep the tab bar or the top bar on screen instead. One gives tablets and unfolded phones the phone layout so the bar can move there too, and one makes the top bar and the tab bar see-through. Another hides the phone's status bar on the main screen until you swipe down from the top. Three more take the Messenger button, its unread count or the Facebook logo out of the top bar. Starts off. Turn it on in Hushfacebook settings > Appearance, then restart Facebook. |
 | `Tag suggestions only after @` | Stops Facebook offering people to tag while you type ordinary words in posts and comments, so names don't pop up in your way. Typing @ still brings up the list. Starts off. Turn it on in Hushfacebook settings > Writing. |
-| `Tap to play` | Videos, reels, stories and music wait for your tap instead of starting by themselves, so nothing plays until you want it to. Starts off. Turn it on in Hushfacebook settings > Playback. |
+| `Tap to play` | Videos, reels, stories and music wait for your tap instead of starting by themselves, so nothing plays until you want it to. A separate switch adds a play/pause button to feed videos. The switches start off in Hushfacebook settings > Playback. |
 | `Turn off double tap to like` | Stops a double tap on a reel or video from liking it, so you don't like things by accident. A single tap still plays or pauses, and the Like button still works. Starts off. Turn it on in Hushfacebook settings > Reels and Watch. |
 | `Double tap to skip` | A double tap on the left or right edge of a reel or video skips back or forward 10 seconds, or 5 on one under 30 seconds. Starts off. Turn it on in Hushfacebook settings > Reels and Watch. |
 | `Tap shows the controls` | A tap on a playing reel shows its controls and lets it keep playing, so you can skip or mute without stopping it. The button in the middle still pauses. Starts off. Turn it on in Hushfacebook settings > Reels and Watch. |

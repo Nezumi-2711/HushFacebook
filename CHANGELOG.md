@@ -9,6 +9,7 @@ Unreleased.
 ### Added
 
 * **Facebook:** Facebook 584.0.0.51.56 now covers 32-bit phones. Build 475817404, the armeabi-v7a Android 11+ bundle, is declared next to the arm64 build 475817393, and every patch applies to it.
+* **Facebook:** `Inline feed video controls` adds a play/pause button to feed videos, so playback can stay in the feed. It starts off under Playback. Tapping the video itself still opens it full screen (Refs #239).
 * **Facebook:** `Hide WhatsApp on reels` removes the direct WhatsApp button beside reels and videos. It starts off and leaves WhatsApp in the Share menu (Refs #243).
 * **Facebook:** Settings now include Traditional Chinese (Taiwan), contributed by JhouHank. An explicit Chinese script takes priority over a conflicting country, so Traditional and Simplified text stay distinct (Refs #227).
 * **Facebook:** `Download button on reels` now has its own switch under Reels and Watch. Turn it off to keep Download in More without the sidebar button. It starts on, so the existing layout stays. Checked on an emulator, including a menu save opened in Photos and the main Download switch off (Refs #244).
@@ -42,6 +43,7 @@ Unreleased.
 * **Facebook:** Crash files now identify the Facebook build and the patch bundle that produced them, even if settings won't open. They also include architecture details.
 * **Facebook:** Clearing Recently watched now discards pending watches, so an entry can't come back after Clear. Turning recording off also cancels pending entries, even if you turn it back on straight away.
 * **Facebook:** Prevent a startup crash with `Newest reels first` when a reel's details haven't loaded yet (Refs #234).
+* **Facebook:** `Tap anywhere on View more replies` now also covers the `View more replies` row with the down arrow at the end of an open reply thread. Before, it only reached the `View x replies` rows (Refs #219).
 
 ## 0.18.0 (2026-10-24)
 
