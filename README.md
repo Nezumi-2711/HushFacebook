@@ -61,7 +61,7 @@ Changing one of those brings up a **Restart Facebook** row at the top of the pag
 
 Morphe Manager can back up your patch choices but not these switches. **Export settings** saves them to a JSON file, word lists included, and **Import settings** reads one back on this phone or a new one. It shows what the file would change before anything does. **Check for new Hushfacebook releases** under Updates is off until you turn it on. Then it asks GitHub once a day and tells you when there's a newer release, and you update through Morphe Manager as usual.
 
-The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish, Vietnamese and Simplified Chinese are translated, and any other language, Traditional Chinese included, gets English.
+The settings follow the language Facebook shows. German, Spanish, Indonesian, Brazilian Portuguese, Turkish, Vietnamese, Simplified Chinese and Traditional Chinese (Taiwan) are translated. Other languages get English.
 
 To keep Reel downloads in More without the sidebar button, leave **Download** on under **Reels and Watch** and turn off **Download button on reels** on the same page.
 
@@ -337,6 +337,7 @@ Where things live:
 - [Hushfeed](https://github.com/SysAdminDoc/hushfeed) at `1f1f81a` gave the Gradle build, the shared extension library with its settings screen and diagnostics, the pause, the bytecode helpers and the release checks. The settings export and import came later, from `bcc57ee`.
 - [HushMessenger](https://github.com/SysAdminDoc/HushMessenger) at `e1e90d8` gave the photo hooks and the video idea behind `Send chat photos and videos at original quality`, since Messenger and Facebook's in-app chats share one media transcoder.
 - [HushPinterest](https://github.com/SysAdminDoc/HushPinterest) at `c5be4d9` gave four pieces of the settings screen. They're the quick setups, the search, the Report a problem page and the return to the page you were on after a restart.
+- [JhouHank's contribution](https://github.com/SysAdminDoc/HushFacebook/pull/227) supplies the Traditional Chinese (Taiwan) translation.
 - [Morphe](https://github.com/MorpheApp) and [ReVanced](https://gitlab.com/ReVanced/revanced-patches) gave the patcher and the patch template. `Disable Play Store updates` is Morphe's own patch from [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches) at `1bcd0bc`, which grew from ReVanced's Change version code. Its two files keep Morphe's notice, and their headers say what Hushfacebook changed.
 
 Every source file says where it came from in its header, and [provenance.json](provenance.json) maps each file to the project and commit it came from, with its license. [docs/sources.md](docs/sources.md) covers the other Facebook and Messenger patch projects and what this bundle took from each, and [sources/facebook-sources.json](sources/facebook-sources.json) pins their branches and licenses.
