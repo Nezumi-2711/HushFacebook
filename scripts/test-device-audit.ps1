@@ -79,7 +79,15 @@ function Invoke-FakeAdb {
     if ($command -like '* pull */before.json *' -and $script:orphanBackup) { [IO.File]::WriteAllText([string]$args[-1], $script:orphanBackup) }
     if ($command -like '*cat */import.txt*') { return 'applied 4' }
     if ($command -like '*dumpsys activity activities') { return $script:foreground }
-    if ($command -like '*dumpsys activity top') { return $script:topDump }
+    if ($command -like '*dumpsys activity top') {
+        if (-not $script:simulateGlobalTimeout) { return $script:topDump }
+        return @('  ACTIVITY com.other.gallery/.ImageQuickView 30d65d pid=2364 userId=0',
+            '  SERVICE activity DUMP TIMEOUT 10000ms')
+    }
+    if ($command -ceq "-s $Serial shell dumpsys activity '$script:topComponent'") {
+        if ($script:changeWindowDuringTop) { $script:focusedWindow = "mCurrentFocus=Window{changed u0 $Package/$Package.Main}" }
+        return $script:topDump
+    }
     if ($command -like '*dumpsys input_method') { return $script:imeState }
     if ($command -like '*dumpsys window') {
         if ($script:changeOwnWindowAfterDump -and $null -ne $script:postDumpFocusReads) {
@@ -275,6 +283,44 @@ try {
     Assert-That (-not (Test-AuditReelViewer (New-TopDump -ParentName 'GoneFragment{123abc}') "$Package/.Main")) 'A reel viewer with no parent header passed.'
     Assert-That (-not (Test-AuditReelViewer (New-TopDump -ReelHeader 'OtherFragment{77} (aa id=0x1)') "$Package/.Main")) 'A reel viewer only listed passed.'
     Assert-That (-not (Test-AuditReelViewer @((New-TopDump) + (New-TopDump)) "$Package/.Main")) 'A screen listed twice passed.'
+    Assert-That (Test-AuditReelViewer @((New-TopDump -Resumed 'false') + (New-TopDump)) "$Package/.Main") 'A paused instance hid the uniquely resumed reel of the same component.'
+    Assert-That (-not (Test-AuditReelViewer @((New-TopDump -Resumed 'false') + (New-TopDump -ReelHeader 'OtherFragment{77} (aa id=0x1)')) "$Package/.Main")) 'A paused reel behind the resumed Menu proved the destination.'
+    $nestedResume = ((New-TopDump -Resumed 'false') -join "`n").Replace('mCreated=true mResumed=false', 'mCreated=true mResumed=true')
+    Assert-That (-not (Test-AuditReelViewer @($nestedResume) "$Package/.Main")) 'A fragment manager resume flag overrode the activity state.'
+    $doubleState = ((New-TopDump) -join "`n").Replace('      mResumed=true', "      mResumed=true`n      mResumed=true")
+    Assert-That (-not (Test-AuditReelViewer @($doubleState) "$Package/.Main")) 'Conflicting or duplicate activity state lines proved a destination.'
+    $notRunning = @('TASK 10433:com.facebook.katana id=7700 userId=0', "  ACTIVITY $Package/.Main old pid=(not running)")
+    Assert-That (Test-AuditReelViewer @($notRunning + (New-TopDump)) "$Package/.Main") 'A retained nonrunning record hid the resumed reel.'
+    $nonrunningWithIds = @('TASK 10433:com.facebook.katana id=7700 userId=0', "  ACTIVITY $Package/.Main old pid=(not running) userId=0 uid=10588 displayId=0(type=INTERNAL)")
+    Assert-That (Test-AuditReelViewer @($nonrunningWithIds + (New-TopDump)) "$Package/.Main") 'User or display IDs on a nonrunning record hid the resumed reel.'
+    Assert-That (-not (Test-AuditReelViewer $notRunning "$Package/.Main")) 'A nonrunning record proved a reel.'
+    Assert-That (-not (Test-AuditReelViewer @((($notRunning -join "`n").Replace('pid=(not running)', 'pid=123')) + (New-TopDump)) "$Package/.Main")) 'A running record without client state was ignored.'
+    $contradictoryClient = ((New-TopDump) -join "`n").Replace('pid=18012 userId=0', 'pid=(not running)')
+    Assert-That (-not (Test-AuditReelViewer @($contradictoryClient) "$Package/.Main")) 'A nonrunning record with contradictory resumed client state passed.'
+    # Other apps can stall the global top dump before Facebook's client is reached.
+    $foregroundBeforeTop = $script:foreground
+    $windowBeforeTop = $script:focusedWindow
+    try {
+        $script:simulateGlobalTimeout = $true
+        foreach ($component in @("$Package/.Main", "$Package/.immersiveactivity.ImmersiveActivity")) {
+            $script:topComponent = $component
+            $script:foreground = "topResumedActivity=ActivityRecord{1 u0 $component t1}"
+            $script:focusedWindow = "mCurrentFocus=Window{1 u0 $component}"
+            $script:topDump = ((New-TopDump) -join "`n").Replace("$Package/.Main", $component)
+            $script:adbCalls.Clear()
+            Assert-That (Get-AuditReelProof) 'The current reel was lost behind another app in an unscoped activity dump.'
+            Assert-That (@($script:adbCalls | Where-Object { $_ -ceq "-s $Serial shell dumpsys activity '$component'" }).Count -eq 1) 'Reel proof did not request the exact resumed component.'
+            Assert-That (@($script:adbCalls | Where-Object { $_ -like '*dumpsys activity *' -and $_ -notlike '*dumpsys activity activities' -and $_ -cne "-s $Serial shell dumpsys activity '$component'" }).Count -eq 0) 'Reel proof requested a global, package-wide or fixed-launcher client dump.'
+        }
+        $script:changeWindowDuringTop = $true
+        Assert-That (-not (Get-AuditReelProof)) 'Reel proof survived a changed input window while its client dump ran.'
+    } finally {
+        $script:foreground = $foregroundBeforeTop
+        $script:focusedWindow = $windowBeforeTop
+        $script:changeWindowDuringTop = $false
+        $script:simulateGlobalTimeout = $false
+        $script:topComponent = "$Package/.Main"
+    }
     $script:topDump = (New-TopDump) -join "`n"
     $inputReel = $true
     $script:adbCalls.Clear()

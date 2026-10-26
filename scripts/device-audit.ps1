@@ -356,7 +356,7 @@ function Test-AuditDestination([string]$Route, [object[]]$Nodes) {
     return $false
 }
 
-# Whether $Activity's section of "dumpsys activity top" is resumed and shows a reel viewer: a
+# Whether $Activity's section of an activity client dump is resumed and shows a reel viewer: a
 # WatchFeedOrWarionFragment that's shown and visible to the user, inside fragments that are too.
 # A fragment's fields are the lines indented under its header, up to its child fragments. Lines
 # naming a fragment after "#n:" or "mParent=" only list it. Anything ambiguous is no proof.
@@ -364,11 +364,26 @@ function Test-AuditReelViewer([string[]]$Top, [string]$Activity) {
     $lines = @(($Top -join "`n") -split "\r?\n")
     $heads = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^(?:TASK |\s*ACTIVITY )') { $i } })
     $mine = @($heads | Where-Object { $lines[$_] -match '^\s*ACTIVITY (\S+)\s' -and $Matches[1] -ceq $Activity })
-    if ($mine.Count -ne 1) { return $false }
-    $next = @(@($heads | Where-Object { $_ -gt $mine[0] }) + $lines.Count)[0]
-    if ($next -le $mine[0] + 1) { return $false }
-    $section = $lines[($mine[0] + 1)..($next - 1)]
-    if (-not @($section | Where-Object { $_ -cmatch '\bmResumed=true\b' }).Count) { return $false }
+    $section = $null
+    foreach ($head in $mine) {
+        $next = @(@($heads | Where-Object { $_ -gt $head }) + $lines.Count)[0]
+        $candidate = if ($next -gt $head + 1) { $lines[($head + 1)..($next - 1)] } else { @() }
+        $text = $candidate -join "`n"
+        $local = [regex]::Matches($text, '(?m)^([ \t]*)Local Activity \S+ State:$')
+        if ($lines[$head] -cmatch '\spid=\(not running\)(?:\s|$)') {
+            if ($local.Count -ne 0) { return $false }
+            continue
+        }
+        if ($local.Count -ne 1) { return $false }
+        $stateIndent = $local[0].Groups[1].Value.Length + 2
+        $states = [regex]::Matches($text, "(?m)^[ \t]{$stateIndent}mResumed=(true|false)\b")
+        if ($states.Count -ne 1) { return $false }
+        if ($states[0].Groups[1].Value -ceq 'true') {
+            if ($null -ne $section) { return $false }
+            $section = $candidate
+        }
+    }
+    if ($null -eq $section) { return $false }
     $fields = @{}
     $name = $null
     $indent = 0
@@ -406,10 +421,11 @@ function Test-AuditReelViewer([string[]]$Top, [string]$Activity) {
 function Get-AuditReelProof {
     Assert-AuditForeground
     $windowBefore = $script:auditWindowIdentity
-    $top = @(Invoke-Adb shell dumpsys activity top)
+    $activity = $windowBefore.Substring(0, $windowBefore.IndexOf('|'))
+    $top = @(Invoke-Adb shell dumpsys activity (Format-Shell $activity))
     Assert-AuditForeground
     if ($script:auditWindowIdentity -cne $windowBefore) { return $false }
-    return Test-AuditReelViewer $top $windowBefore.Substring(0, $windowBefore.IndexOf('|'))
+    return Test-AuditReelViewer $top $activity
 }
 
 # The one node a "tap:<label>" step may tap, or $null. A row can repeat its label on a child that
