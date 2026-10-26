@@ -8,6 +8,7 @@ Unreleased.
 
 ### Added
 
+* **Facebook:** Facebook 584.0.0.51.56 now covers 32-bit phones. Build 475817404, the armeabi-v7a Android 11+ bundle, is declared next to the arm64 build 475817393, and every patch applies to it.
 * **Facebook:** `Hide WhatsApp on reels` removes the direct WhatsApp button beside reels and videos. It starts off and leaves WhatsApp in the Share menu (Refs #243).
 * **Facebook:** Settings now include Traditional Chinese (Taiwan), contributed by JhouHank. An explicit Chinese script takes priority over a conflicting country, so Traditional and Simplified text stay distinct (Refs #227).
 * **Facebook:** `Download button on reels` now has its own switch under Reels and Watch. Turn it off to keep Download in More without the sidebar button. It starts on, so the existing layout stays. Checked on an emulator, including a menu save opened in Photos and the main Download switch off (Refs #244).
