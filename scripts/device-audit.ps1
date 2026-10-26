@@ -606,13 +606,33 @@ function Get-AuditLocales {
     return $locales
 }
 
+# JSON objects as hashtables in both editions. Windows PowerShell has no -AsHashtable, and the
+# pre-push hook falls back to it wherever git's PATH has no pwsh, so every restore check there
+# threw "A parameter cannot be found that matches parameter name 'AsHashtable'".
+function ConvertFrom-AuditJsonTable([string]$Json) {
+    if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('AsHashtable')) {
+        return , ($Json | ConvertFrom-Json -AsHashtable)
+    }
+    $toTable = {
+        param($value)
+        if ($value -is [System.Management.Automation.PSCustomObject]) {
+            $table = @{}
+            foreach ($property in $value.PSObject.Properties) { $table[$property.Name] = & $toTable $property.Value }
+            return , $table
+        }
+        if ($value -is [array]) { return , @(foreach ($item in $value) { & $toTable $item }) }
+        return $value
+    }
+    return , (& $toTable ($Json | ConvertFrom-Json))
+}
+
 # Whether $Restored puts back every switch $Original holds, and holds each switch $Original has
 # no entry for (one added after the build that wrote it) at its value in $Defaults.
 function Test-AuditSettingsRestored([string]$Original, [string]$Restored, [string]$Defaults) {
     try {
-        $before = $Original | ConvertFrom-Json -AsHashtable
-        $after = $Restored | ConvertFrom-Json -AsHashtable
-        $reset = $Defaults | ConvertFrom-Json -AsHashtable
+        $before = ConvertFrom-AuditJsonTable $Original
+        $after = ConvertFrom-AuditJsonTable $Restored
+        $reset = ConvertFrom-AuditJsonTable $Defaults
     } catch { return $false }
     foreach ($snapshot in @($before, $after, $reset)) {
         if ($snapshot -isnot [hashtable] -or $snapshot.settings -isnot [hashtable]) { return $false }

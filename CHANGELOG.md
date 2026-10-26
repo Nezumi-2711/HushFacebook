@@ -2,6 +2,12 @@
 
 Changes in each Hushfacebook version, newest first.
 
+## Unreleased
+
+### Fixed
+
+* **Tooling:** Device audits read their settings snapshots in Windows PowerShell too, so the push check no longer fails every restore case where git can't find pwsh.
+
 ## 0.18.1 (2026-10-26)
 
 * **Facebook:** Settings are easier to get around now. Every section opens right on the main page, the rows are more compact, and Pause sits in the top bar. Feed videos can get their own play button, and new switches hide the comments under feed posts or the WhatsApp button on reels. Settings also come in Traditional Chinese. If Facebook crashed at startup for you with `Newest reels first` on, that's fixed too.
