@@ -12,6 +12,7 @@ Unreleased.
 
 ### Fixed
 
+* **Tooling:** Playback log checks no longer mistake a timestamp for a video speed.
 * **Facebook:** Settings imports now update restart notices, including removing a notice when an import restores the value Facebook is already using. Edits made while an import runs stay consistent with the saved choices.
 * **Facebook:** Word filters recheck the space shared by both lists when you save or import. A preview or another open editor can no longer leave you with lists that won't import again.
 * **Facebook:** A retired unlock prompt can't cancel a newer prompt or replace its feedback.
