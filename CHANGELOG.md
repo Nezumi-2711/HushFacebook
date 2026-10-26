@@ -27,7 +27,7 @@ Unreleased.
 * **Tooling:** Overlapping device builds can't replace each other's argument files or outputs. Invalid patch options keep the previous signed APK.
 * **Tooling:** Retrying publication after an interrupted download check verifies the existing release's files without uploading them again. Drafts and failed lookups stop the retry.
 * **Tooling:** Device checks distinguish Facebook from a separately installed clone. The full audit checks for crashes after settings screenshots and recovery, too.
-* **Tooling:** Crash checks fail promptly if the device disconnects, so an interrupted walk can report its recovery errors.
+* **Tooling:** Device log reads fail promptly after a disconnect. Walks and bytecode checks still attempt cleanup and report recovery errors.
 * **Tooling:** Corrected DASH test inputs so the full suite reaches the intended cancellation and cleanup checks under the output limits.
 * **Tooling:** Device walks can scroll a navigation row below a caller's reserved screen area before tapping it. A fresh screen check still has to identify one target.
 * **Tooling:** Reel destination checks read the current Facebook activity directly, so another app's stalled diagnostic can't hide the viewer from the walk.
