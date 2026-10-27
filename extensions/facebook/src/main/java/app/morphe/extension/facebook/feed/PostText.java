@@ -38,6 +38,13 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * attachments come from PostSources' accessor, which the same patch fills in. A build where it
  * isn't filled in reads the messages alone, as before.
  *
+ * <p>On 584 a link card's bold headline is usually not that {@code title}: Facebook's own headline
+ * reader takes the {@code link_title} of the attachment's first {@code action_links} entry, and its
+ * other reader {@code title_with_entities}, and falls back on {@code title} only when those are
+ * empty. So each of those is read too: {@code title_with_entities} through {@code getCachedModel}
+ * like the description, and every action link's {@code link_title} through {@code getCachedString},
+ * the list coming from a stub the patch fills with the attachment's accessor of it.
+ *
  * <p>Nothing here keeps, logs or reports the text. What a read found is one of the shapes in
  * {@link Outcome}, and only the rule that asked sees the words.
  *
@@ -55,6 +62,9 @@ public final class PostText {
     /** An attachment's headline, a plain string, and the line under it, a TextWithEntities. */
     static final int LINK_TITLE_KEY = "title".hashCode();
     static final int LINK_DESCRIPTION_KEY = "description".hashCode();
+    /** The headline as a TextWithEntities, and an action link's headline, a plain string. */
+    static final int LINK_TITLE_TEXT_KEY = "title_with_entities".hashCode();
+    static final int ACTION_LINK_TITLE_KEY = "link_title".hashCode();
 
     /** A tree model is tagged with the first four bytes of its GraphQL type name's MD5. */
     static final int TEXT_TYPE_TAG = StoryFlag.typeTag(TEXT_TYPE);
@@ -64,6 +74,7 @@ public final class PostText {
 
     static final StoryFlag.Accessor MESSAGE = PostText::message;
     static final StoryFlag.Accessor ATTACHED = PostText::attachedStory;
+    static final StoryFlag.Accessor ACTION_LINKS = PostText::actionLinks;
 
     /** The route the report counts each post on while Hide reposts is on. */
     static final String REPOST_ROUTE = "Reposts";
@@ -131,14 +142,23 @@ public final class PostText {
     }
 
     /**
+     * Injection point, filled in by the patch: an attachment's {@code action_links} list, or null
+     * when it has none. Only a GraphQLStoryAttachment may be passed.
+     */
+    public static Object actionLinks(Object attachment) {
+        return StoryFlag.NOT_PATCHED;
+    }
+
+    /**
      * The words of a feed unit: its message's text and its attachments' headlines and descriptions,
      * then the same of the post it shares when it shares one. Never throws. A unit that isn't a
      * story, has no text, or has a part this can't read answers why, with no words, and the rule
      * keeps it: a word from the keep list could be in the part that wasn't read. An attachments
-     * accessor that was never filled in reads no attachments, and the messages still count.
+     * accessor that was never filled in reads no attachments, and the messages still count; an
+     * action links accessor that was never filled in reads no action links.
      */
     static Read read(@Nullable Object feedUnit, StoryFlag.Accessor message, StoryFlag.Accessor attached,
-            StoryFlag.Accessor links) {
+            StoryFlag.Accessor links, StoryFlag.Accessor actionLinks) {
         if (feedUnit == null) return Read.of(Outcome.NO_UNIT);
         Members found = members();
         report();
@@ -148,7 +168,7 @@ public final class PostText {
         List<String> texts = new ArrayList<>(4);
         Outcome own = messageText(feedUnit, message, found, texts);
         if (!readable(own)) return Read.of(own);
-        Outcome ownLinks = linkText(feedUnit, links, found, texts);
+        Outcome ownLinks = linkText(feedUnit, links, actionLinks, found, texts);
         if (!readable(ownLinks)) return Read.of(ownLinks);
 
         Object wrapped;
@@ -166,7 +186,7 @@ public final class PostText {
         if (wrapped != null && found.story.isInstance(wrapped)) {
             Outcome shared = messageText(wrapped, message, found, texts);
             if (!readable(shared)) return Read.of(shared);
-            Outcome sharedLinks = linkText(wrapped, links, found, texts);
+            Outcome sharedLinks = linkText(wrapped, links, actionLinks, found, texts);
             if (!readable(sharedLinks)) return Read.of(sharedLinks);
         }
 
@@ -249,13 +269,14 @@ public final class PostText {
     }
 
     /**
-     * Adds the headline and description of each of [story]'s attachments to [texts], skipping one
+     * Adds the headlines and description of each of [story]'s attachments to [texts], skipping one
      * already there (a share often carries the card of the post it wraps). Answers
      * {@link Outcome#TEXT} or {@link Outcome#NO_TEXT}, or {@link Outcome#READ_FAILED} when a read
      * threw. An accessor the patch never filled in, or a build without the description's members,
      * reads less and still answers cleanly, so the words read before #255 judge the post as they did.
      */
-    private static Outcome linkText(Object story, StoryFlag.Accessor accessor, Members found, List<String> texts) {
+    private static Outcome linkText(Object story, StoryFlag.Accessor accessor, StoryFlag.Accessor actionLinks,
+            Members found, List<String> texts) {
         Object list;
         try {
             list = accessor.model(story);
@@ -269,11 +290,17 @@ public final class PostText {
             for (Object attachment : (Iterable<?>) list) {
                 if (!found.treeModel.isInstance(attachment)) continue;
                 any |= add(texts, found.cachedString.invoke(attachment, LINK_TITLE_KEY));
-                if (found.cachedModel == null || found.text == null) continue;
-                Object description = found.cachedModel.invoke(attachment, LINK_DESCRIPTION_KEY, found.text, TEXT_TYPE_TAG);
-                if (found.text.isInstance(description)) {
-                    any |= add(texts, found.cachedString.invoke(description, TEXT_KEY));
+                Object links = actionLinks.model(attachment);
+                if (links != StoryFlag.NOT_PATCHED && links instanceof Iterable) {
+                    for (Object link : (Iterable<?>) links) {
+                        if (found.treeModel.isInstance(link)) {
+                            any |= add(texts, found.cachedString.invoke(link, ACTION_LINK_TITLE_KEY));
+                        }
+                    }
                 }
+                if (found.cachedModel == null || found.text == null) continue;
+                any |= addText(texts, found, found.cachedModel.invoke(attachment, LINK_TITLE_TEXT_KEY, found.text, TEXT_TYPE_TAG));
+                any |= addText(texts, found, found.cachedModel.invoke(attachment, LINK_DESCRIPTION_KEY, found.text, TEXT_TYPE_TAG));
             }
         } catch (InvocationTargetException failure) {
             HookStatus.threw(FamilyNames.POST_WORDS, "link text reader", failure.getCause());
@@ -283,6 +310,12 @@ public final class PostText {
             return Outcome.READ_FAILED;
         }
         return any ? Outcome.TEXT : Outcome.NO_TEXT;
+    }
+
+    /** Adds the words of [model] to [texts] when it's a TextWithEntities with words that aren't there yet. */
+    private static boolean addText(List<String> texts, Members found, @Nullable Object model)
+            throws ReflectiveOperationException {
+        return found.text.isInstance(model) && add(texts, found.cachedString.invoke(model, TEXT_KEY));
     }
 
     /** Adds [value] to [texts] when it's a string with words that isn't there yet. */

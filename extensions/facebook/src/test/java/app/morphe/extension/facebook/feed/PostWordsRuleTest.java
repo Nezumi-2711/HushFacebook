@@ -364,7 +364,50 @@ public class PostWordsRuleTest {
 
     private static String words(Object story, StoryFlag.Accessor message, StoryFlag.Accessor attached,
             StoryFlag.Accessor links) {
-        return FeedFilter.wordsReason(story, message, attached, links);
+        return FeedFilter.wordsReason(story, message, attached, links, PostText.ACTION_LINKS);
+    }
+
+    /** An attachment's action link, holding the headline 584 shows on a link card. */
+    private static BaseModelWithTree actionLink(String headline) {
+        return new BaseModelWithTree(0).with("link_title", headline);
+    }
+
+    /**
+     * #255 on 584: a card whose bold headline is its first action link's link_title or its
+     * title_with_entities, with no plain title, as Juan Carlos's YouTube card in a Florida
+     * gardening group read on the S22 2026-10-27, which the plain title alone kept.
+     */
+    @Test
+    public void anActionLinksHeadlineOrTheTitleTextCounts() {
+        listen("pineapple pleasure", "");
+        Answers noMessage = new Answers(null);
+        Answers noShare = new Answers(null);
+        GraphQLStory linked = new GraphQLStory();
+        GraphQLStory titled = new GraphQLStory();
+        GraphQLStoryAttachment youtube = card(null, null);
+        GraphQLStoryAttachment titleText = card(null, null);
+        titleText.withModel("title_with_entities", new GraphQLTextWithEntities("Pineapple pleasure mango taste test"));
+        Answers links = new Answers(null)
+                .with(linked, Arrays.asList(youtube))
+                .with(titled, Arrays.asList(titleText));
+        Answers actionLinks = new Answers(null)
+                .with(youtube, Arrays.asList(actionLink("Pineapple Pleasure mango taste test")));
+
+        assertEquals(FeedFilter.WORDS_REASON, FeedFilter.wordsReason(linked, noMessage, noShare, links, actionLinks));
+        assertEquals(FeedFilter.WORDS_REASON, FeedFilter.wordsReason(titled, noMessage, noShare, links, actionLinks));
+        assertNull("the control: the same card read before this fix, without the action links",
+                FeedFilter.wordsReason(linked, noMessage, noShare, links, PostText.ACTION_LINKS));
+        assertNull("an action link that isn't a tree model is skipped", FeedFilter.wordsReason(linked, noMessage, noShare,
+                links, new Answers(null).with(youtube, Arrays.asList(new Object(), null))));
+
+        listen("pineapple pleasure", "mango");
+        assertNull("a keep phrase in the action link keeps the post",
+                FeedFilter.wordsReason(linked, noMessage, noShare, links, actionLinks));
+        assertNull("an action links accessor that throws keeps the post", FeedFilter.wordsReason(linked,
+                new Answers(FeedGuardForTests.postText("pineapple pleasure")), noShare, links,
+                new Answers(new IllegalStateException())));
+        assertEquals(FeedFilter.WORDS_ROUTE + ": 6 lists, 6 items, 2 removed. Last reason: hide word. "
+                + "Removed: hide word 2. Kinds: hide word 2, no text 2, keep word 1, read failed 1", wordsLine());
     }
 
     /** #255: a news post whose only mention of the word is its link card's headline or description. */
