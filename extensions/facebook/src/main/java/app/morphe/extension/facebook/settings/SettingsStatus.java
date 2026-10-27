@@ -370,6 +370,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean fullPostText() {
+        return false;
+    }
+
     public static boolean autoTranslation() {
         return false;
     }

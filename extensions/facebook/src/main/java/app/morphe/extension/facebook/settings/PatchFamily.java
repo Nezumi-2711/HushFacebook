@@ -71,6 +71,8 @@ public enum PatchFamily {
             Settings.HIDE_META_AI_QUESTIONS),
     POST_DATES(FamilyNames.POST_DATES, "postDates", null,
             Settings.KEEP_POST_DATES),
+    FULL_POST_TEXT(FamilyNames.FULL_POST_TEXT, "fullPostText", null,
+            Settings.SHOW_FULL_POST_TEXT),
     AUTO_TRANSLATION(FamilyNames.AUTO_TRANSLATION, "autoTranslation", null,
             Settings.TURN_OFF_AUTO_TRANSLATION),
     FEEDS_HEADER(FamilyNames.FEEDS_HEADER, "feedsHeader", null,

@@ -838,6 +838,15 @@
     },
     {
       "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/feed/posttext/**"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: showing a post's whole text in the feed. In Facebook 584 one method takes a Spannable and a CharacterStyle, returns a Spannable, and reads the post line limit key (0x32d58eae). It calls a static helper that answers the cut text as a SpannableString, or null when the text fits, and branches on that answer right away. The patch finds that method by its shape and the key, checks there's one such call followed by its move-result and the null check, and hands the answer to the extension, which answers null while the switch is on so the whole text goes out."
+    },
+    {
+      "paths": [
         "patches/src/main/kotlin/app/morphe/patches/facebook/feed/seen/**"
       ],
       "origin": "original",

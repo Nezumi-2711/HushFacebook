@@ -239,6 +239,10 @@ final class FeedPages {
                         L10n.t("Shows the post's date under the poster's name instead of Facebook's rotating details, which can go "
                                 + "blank on some phones.")));
             }
+            if (build.contains(PatchFamily.FULL_POST_TEXT)) {
+                feed.addPreference(toggle(context, Settings.SHOW_FULL_POST_TEXT,
+                        L10n.t("Posts in the feed show all of their text, so there's no See more to tap.")));
+            }
             if (build.contains(PatchFamily.AUTO_TRANSLATION)) {
                 // Each post and reel reads the answer as it's drawn, so a change shows on the next ones.
                 feed.addPreference(toggle(context, Settings.TURN_OFF_AUTO_TRANSLATION,
