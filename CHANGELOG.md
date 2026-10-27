@@ -4,6 +4,10 @@ Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Added
+
+* **Facebook:** `Hide the Create button` under Appearance takes the + button for new posts, reels and stories out of the top bar, on both versions of the bar Facebook hands out. It starts off and shows after a restart (Refs #257).
+
 ### Changed
 
 * **Settings:** Every Hush title wears Facebook's blues now, drifting through them with a light sheen passing over. That covers the settings bar and search, Hush dialogs, the screen shown when settings can't open, and the lock cover. Each color stays easy to read on its background in every theme, and the titles keep moving even with Android's animations turned off.

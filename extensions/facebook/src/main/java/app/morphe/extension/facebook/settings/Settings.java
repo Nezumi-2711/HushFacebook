@@ -1818,6 +1818,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_facebook_logo", FALSE, true);
 
     /**
+     * The home top bar loses its Create (+) button and the buttons beside it close up (#257,
+     * {@link app.morphe.extension.facebook.navigation.TopBarButtons}). A change waits for a restart.
+     */
+    public static final BooleanSetting HIDE_CREATE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_create_button", FALSE, true);
+
+    /**
      * Facebook's dark mode controller answers dark whatever its own setting says
      * ({@link app.morphe.extension.facebook.theme.ForceDarkMode}), for tablets whose Facebook
      * settings have no Dark mode row. Facebook asks as each screen applies its theme, so a change

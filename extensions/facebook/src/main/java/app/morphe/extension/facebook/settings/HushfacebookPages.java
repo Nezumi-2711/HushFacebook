@@ -152,6 +152,9 @@ final class HushfacebookPages {
             appearance.addPreference(toggle(context, Settings.HIDE_FACEBOOK_LOGO,
                     L10n.t("Hides the Facebook logo in the top bar. The empty spot is the same size and still opens "
                             + "Hushfacebook settings when you press and hold it. Restart Facebook to see the change.")));
+            appearance.addPreference(toggle(context, Settings.HIDE_CREATE_BUTTON,
+                    L10n.t("Takes the + button for making a post, reel or story out of the top bar. "
+                            + "Restart Facebook to see the change.")));
         }
         if (build.contains(PatchFamily.HIDDEN_TABS)) {
             // Facebook builds the tab bar once, so a change waits for a restart.

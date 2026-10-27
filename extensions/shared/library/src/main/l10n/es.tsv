@@ -1679,6 +1679,8 @@ Keeps the Messenger button but drops the unread count on it.	Mantiene el botón 
 Hide the Facebook logo	Ocultar el logotipo de Facebook
 # context: summary of that switch; Hushfacebook is the app's name and stays as it is; press and hold is a long press
 Hides the Facebook logo in the top bar. The empty spot is the same size and still opens Hushfacebook settings when you press and hold it. Restart Facebook to see the change.	Oculta el logotipo de Facebook en la barra superior. El hueco tiene el mismo tamaño y, al mantenerlo pulsado, sigue abriendo los ajustes de Hushfacebook. Reinicia Facebook para ver el cambio.
+Hide the Create button	Ocultar el botón Crear
+Takes the + button for making a post, reel or story out of the top bar. Restart Facebook to see the change.	Quita de la barra superior el botón + para crear publicaciones, reels e historias. Reinicia Facebook para ver el cambio.
 # context: switch title under News feed; the counts are the numbers on the Like, Comment and Share buttons under a post
 Hide counts on posts	Ocultar los números en las publicaciones
 # context: summary of that switch; Like, Comment and Share are Facebook's own button labels, so use Facebook's wording in your language
