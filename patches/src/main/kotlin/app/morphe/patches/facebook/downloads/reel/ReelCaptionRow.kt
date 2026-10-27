@@ -20,9 +20,12 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.ClassDef
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -54,14 +57,24 @@ private const val STRING = "Ljava/lang/String;"
 private const val LIST = "Ljava/util/List;"
 private const val OBJECT = "Ljava/lang/Object;"
 
+/** The helper this adds to the caption's tap lambda class. */
+internal const val CAPTION_REMEMBER_HELPER = "hushfacebookRememberCaption"
+
 /**
  * A reel caption's render, as the patch finds it: the component that draws the caption under a reel
- * (#240), its render method, and the two fields it renders from, the reel and the caption's whole
- * text. The component builds its tap lambda there, and Kotlin keeps that lambda's captured names,
- * `$baseDescriptionText` and `$shortFormVideoUnit`, which give the reel's type. Nothing obfuscated
- * is written down.
+ * (#240), its render method, and the tap lambda it builds there with the caption it shows. Kotlin
+ * keeps that lambda's captured names, `$baseDescriptionText` and `$shortFormVideoUnit`, so the reel
+ * and its whole caption are read off the lambda by name. Nothing obfuscated is written down.
+ *
+ * The lambda is the place to read them: the component's own CharSequence field is only a caption
+ * handed in from outside, null in the Reels viewer, where the render builds the caption itself.
  */
-internal class CaptionRender(val render: MutableMethod, val unit: FieldReference, val caption: FieldReference)
+internal class CaptionRender(
+    val render: MutableMethod,
+    val lambda: String,
+    val unit: FieldReference,
+    val caption: FieldReference,
+)
 
 internal fun BytecodePatchContext.captionRender(patch: String): CaptionRender {
     val (component, render, lambda) = classDefByStrings(DESCRIPTION_COMPONENT, StringComparisonType.EQUALS)
@@ -77,39 +90,74 @@ internal fun BytecodePatchContext.captionRender(patch: String): CaptionRender {
                 Triple(classDef, method, lambda)
             }
         }.singleOrPatchException("$patch: the one reel caption render holding \"$DESCRIPTION_COMPONENT\" and building its tap lambda")
-    if (AccessFlags.STATIC.isSet(render.accessFlags)) {
-        throw PatchException("$patch: the reel caption render ${component.type}->${render.name} is static")
-    }
-    val unitType = lambda.fields.singleOrNull { it.name == UNIT_FIELD }?.type
-        ?: throw PatchException("$patch: the caption's tap lambda ${lambda.type} keeps no $UNIT_FIELD")
     return CaptionRender(
         render = mutableClassDefBy(component.type).findMutableMethodOf(render),
-        unit = instanceField(patch, component, unitType, "reel"),
-        caption = instanceField(patch, component, CHAR_SEQUENCE, "caption"),
+        lambda = lambda.type,
+        unit = lambdaField(patch, lambda, UNIT_FIELD),
+        caption = lambdaField(patch, lambda, BASE_DESCRIPTION_FIELD),
     )
 }
 
-private fun instanceField(patch: String, classDef: ClassDef, type: String, what: String): FieldReference =
-    classDef.fields.filter { it.type == type && !AccessFlags.STATIC.isSet(it.accessFlags) }
-        .singleOrPatchException("$patch: the one $what field, $type, of the reel caption component ${classDef.type}")
-        .let { ImmutableFieldReference(classDef.type, it.name, it.type) }
+private fun lambdaField(patch: String, lambda: ClassDef, name: String): FieldReference =
+    lambda.fields.filter { it.name == name && !AccessFlags.STATIC.isSet(it.accessFlags) }
+        .singleOrPatchException("$patch: the caption's tap lambda ${lambda.type} keeping one $name")
+        .let { ImmutableFieldReference(lambda.type, it.name, it.type) }
+
+/** The first register of a call, ranged or not. */
+private fun Instruction.firstRegister(): Int = when (this) {
+    is RegisterRangeInstruction -> startRegister
+    is FiveRegisterInstruction -> registerC
+    else -> throw IllegalArgumentException("$opcode carries no registers")
+}
 
 /**
- * Hands each reel caption the render draws to [CAPTION_HANDLER], with the reel it belongs to, first
- * thing in the render. The extension keeps the text by the reel's video id for the row below.
+ * Hands each reel caption the render draws to [CAPTION_HANDLER], with the reel it belongs to, right
+ * after the render builds the caption's tap lambda: a helper on the lambda's class reads both off it.
+ * The extension keeps the text by the reel's video id for the row below.
  */
 internal fun BytecodePatchContext.rememberCaptions(patch: String) {
     val caption = captionRender(patch)
-    caption.render.requireFreeAt(patch, 0, listOf(0, 1))
-    caption.render.addInstructions(
-        0,
-        """
-            move-object/from16 v1, p0
-            iget-object v0, v1, ${caption.unit}
-            iget-object v1, v1, ${caption.caption}
-            invoke-static { v0, v1 }, $CAPTION_HANDLER->remember($OBJECT$CHAR_SEQUENCE)V
-        """,
-    )
+    val lambda = caption.lambda
+    if (caption.caption.type != CHAR_SEQUENCE) {
+        throw PatchException("$patch: the caption's tap lambda $lambda keeps its caption as ${caption.caption.type}")
+    }
+    val helper = ImmutableMethod(
+        lambda,
+        CAPTION_REMEMBER_HELPER,
+        listOf(ImmutableMethodParameter(lambda, null, null)),
+        "V",
+        AccessFlags.PUBLIC.value or AccessFlags.STATIC.value,
+        null,
+        null,
+        MutableMethodImplementation(3),
+    ).toMutable().apply {
+        addInstructions(
+            0,
+            """
+                iget-object v0, p0, ${caption.unit}
+                iget-object v1, p0, ${caption.caption}
+                invoke-static { v0, v1 }, $CAPTION_HANDLER->remember($OBJECT$CHAR_SEQUENCE)V
+                return-void
+            """,
+        )
+    }
+    mutableClassDefBy(lambda).methods.add(helper)
+
+    val built = caption.render.implementation!!.instructions.withIndex().filter { (_, instruction) ->
+        val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+        (instruction.opcode == Opcode.INVOKE_DIRECT || instruction.opcode == Opcode.INVOKE_DIRECT_RANGE) &&
+            reference?.definingClass == lambda && reference.name == "<init>"
+    }.map { (index, instruction) -> index to instruction.firstRegister() }
+    if (built.isEmpty()) {
+        throw PatchException("$patch: the reel caption render ${caption.render.definingClass}->${caption.render.name} never builds $lambda")
+    }
+    // Last first, so the earlier indexes still point where they did.
+    for ((index, register) in built.asReversed()) {
+        caption.render.addInstructions(
+            index + 1,
+            "invoke-static/range { v$register .. v$register }, $lambda->$CAPTION_REMEMBER_HELPER($lambda)V",
+        )
+    }
 }
 
 /**

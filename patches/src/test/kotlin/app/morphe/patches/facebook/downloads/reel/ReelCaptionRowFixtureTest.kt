@@ -14,6 +14,7 @@ import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
@@ -25,9 +26,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Issue #240: on each declared build, the reel caption's render hands its reel and whole caption to
- * the extension first thing, read from the component's one field of the reel's type and its one
- * CharSequence field. A reel's More sheet builder asks a helper for the Copy caption row first thing,
+ * Issue #240: on each declared build, the reel caption's render hands each tap lambda it builds to a
+ * helper right after building it, and the helper hands the lambda's reel and whole caption to the
+ * extension. The component's own caption field is null in the Reels viewer, so the lambda is where
+ * the shown caption lives. A reel's More sheet builder asks a helper for the Copy caption row first thing,
  * with the sheet's context, the reel's video id and the row list in v0 to v2, and the helper draws
  * the row with Facebook's own copy icon.
  */
@@ -90,19 +92,33 @@ class ReelCaptionRowFixtureTest {
                 val withIcons = PatchContexts.of(classes.values)
                 val caption = withIcons.captionRender("the fixture")
                 val render = caption.render
-                assertTrue("$name: the reel field is the lambda's reel type: ${caption.unit}", caption.unit.type.startsWith("L"))
-                assertEquals("$name: the caption is a CharSequence", "Ljava/lang/CharSequence;", caption.caption.type)
+                val lambda = caption.lambda
+                assertEquals("$name: the reel is the lambda's", "$lambda->\$shortFormVideoUnit", caption.unit.toString().substringBefore(':'))
+                assertEquals("$name: the caption is the lambda's whole text",
+                    "$lambda->\$baseDescriptionText:Ljava/lang/CharSequence;", caption.caption.toString())
 
                 withIcons.rememberCaptions("the fixture")
                 val patchedRender = withIcons.mutableClassDefBy(render.definingClass).methods
                     .single { it.name == render.name && it.parameterTypes == render.parameterTypes }
-                val head = patchedRender.implementation!!.instructions.take(4)
-                assertEquals("$name: the render hands the reel and its caption over first thing",
-                    listOf(caption.unit.toString(), caption.caption.toString()),
-                    head.mapNotNull { ((it as? ReferenceInstruction)?.reference as? FieldReference)?.toString() })
-                assertEquals("$name: then calls remember",
-                    "$CAPTION_HANDLER->remember(Ljava/lang/Object;Ljava/lang/CharSequence;)V",
-                    ((head[3] as ReferenceInstruction).reference as MethodReference).toString())
+                val instructions = patchedRender.implementation!!.instructions.toList()
+                val builds = instructions.indices.filter { i ->
+                    val reference = (instructions[i] as? ReferenceInstruction)?.reference as? MethodReference
+                    reference?.definingClass == lambda && reference.name == "<init>"
+                }
+                assertTrue("$name: the render builds the lambda", builds.isNotEmpty())
+                for (i in builds) {
+                    val built = instructions[i]
+                    val next = instructions[i + 1] as RegisterRangeInstruction
+                    assertEquals("$name: right after the lambda is built, the helper gets it",
+                        "$lambda->$CAPTION_REMEMBER_HELPER($lambda)V", ((next as ReferenceInstruction).reference as MethodReference).toString())
+                    val lambdaRegister = if (built is RegisterRangeInstruction) built.startRegister else (built as FiveRegisterInstruction).registerC
+                    assertEquals("$name: the helper gets the very lambda", "$lambdaRegister 1", "${next.startRegister} ${next.registerCount}")
+                }
+                val rememberer = withIcons.mutableClassDefBy(lambda).methods.single { it.name == CAPTION_REMEMBER_HELPER }
+                assertEquals("$name: the helper reads the reel and the caption off the lambda",
+                    listOf(caption.unit.toString(), caption.caption.toString()), rememberer.fields())
+                assertEquals("$name: and hands them to remember",
+                    listOf("$CAPTION_HANDLER->remember(Ljava/lang/Object;Ljava/lang/CharSequence;)V"), rememberer.calls())
 
                 val sheetAgain = withIcons.moreSheet("the fixture")
                 withIcons.addCaptionRow("the fixture", sheetAgain)

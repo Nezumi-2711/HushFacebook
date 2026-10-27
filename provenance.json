@@ -1212,7 +1212,7 @@
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook from Facebook 584: a Copy caption row in a reel's More sheet. The reel caption's render is found by the component name it gives its text and the tap lambda whose kept Kotlin names give the caption and the reel's type; its first call hands the reel and the whole caption to the extension, which keeps a bounded set of captions by video id. The sheet builder's first call adds the row through a helper, drawn with the copy icon Facebook's own icon enum names, only for a reel whose caption was seen. The tap copies the text to the clipboard."
+      "changes": "Written for Hushfacebook from Facebook 584: a Copy caption row in a reel's More sheet. The reel caption's render is found by the component name it gives its text and the tap lambda whose kept Kotlin names give the caption and the reel's type; right after the render builds that lambda, a helper added to its class reads the reel and the whole caption off it and hands them to the extension, which keeps a bounded set of captions by video id. The sheet builder's first call adds the row through a helper, drawn with the copy icon Facebook's own icon enum names, only for a reel whose caption was seen. The tap copies the text to the clipboard."
     },
     {
       "paths": [

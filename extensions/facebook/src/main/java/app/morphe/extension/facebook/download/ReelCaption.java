@@ -67,7 +67,7 @@ public final class ReelCaption {
     }
 
     /**
-     * Injection point, first thing in a reel caption's render: keeps [caption] by [unit]'s video id.
+     * Injection point, right after a reel caption's render builds its tap lambda: keeps [caption] by [unit]'s video id.
      * Never throws.
      *
      * @param unit    the reel the caption belongs to, a GraphQL model.
