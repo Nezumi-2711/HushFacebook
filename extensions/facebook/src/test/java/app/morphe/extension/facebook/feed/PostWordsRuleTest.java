@@ -15,6 +15,7 @@ import com.facebook.graphql.model.GraphQLStoryAttachment;
 import com.facebook.graphql.model.GraphQLTextWithEntities;
 import com.facebook.graphql.modelutil.BaseModelWithTree;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -24,6 +25,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -428,6 +430,76 @@ public class PostWordsRuleTest {
                 + "Removed: hide word 2. Kinds: hide word 2", wordsLine());
     }
 
+    /**
+     * A Bloks-drawn card's debug string, shaped like the sagesacre.com card the S22 read 2026-10-27:
+     * an image whose spoken label sits under the same key as a Text component's string, the domain,
+     * an ellipsis, then the headline in a nested box.
+     */
+    private static String bloksCard(String headline) {
+        String text = PostText.BLOKS_TEXT_COMPONENT;
+        String box = String.valueOf((char) 0x3408);
+        String image = String.valueOf((char) 0x340B);
+        String layout = "{\"layout\":{\"bloks_payload\":{\"data\":[],\"tree\":{\"" + box + "\":{\" \":["
+                + "{\"" + image + "\":{\"$\":\"Image\",\"&\":\"Image\"}},"
+                + "{\"" + text + "\":{\"&\":\"sagesacre.com\",\"*\":\"13.00sp\"}},"
+                + "{\"" + text + "\":{\"&\":" + JSONObject.quote(String.valueOf((char) 0x2026)) + "}},"
+                + "{\"" + box + "\":{\" \":[{\"" + text + "\":{\"&\":" + JSONObject.quote(headline)
+                + ",\"*\":\"15.00sp\",\"#\":\"sans-serif-medium\"}}]}}]}}}}}";
+        return "{\"style_infos\":[{\"bundle\":{\"bloks_bundle_tree\":" + JSONObject.quote(layout) + "}}],\"title\":null}";
+    }
+
+    /**
+     * #255 on 584: a card drawn from a Bloks layout with every field above null, as Zone9Garden.com's
+     * sagesacre.com card in a Florida gardening group read on the S22 2026-10-27.
+     */
+    @Test
+    public void aBloksCardsHeadlineCounts() {
+        listen("fall & winter garden", "");
+        Answers noMessage = new Answers(null);
+        Answers noShare = new Answers(null);
+        GraphQLStory story = new GraphQLStory();
+        GraphQLStoryAttachment bloks = card(null, null);
+        bloks.debugString(bloksCard("The 10 Best Vegetables to Plant Now for a Zone 9-10 Fall & Winter Garden"));
+        Answers links = new Answers(null).with(story, Arrays.asList(bloks));
+        assertEquals(FeedFilter.WORDS_REASON, words(story, noMessage, noShare, links));
+
+        listen("image", "");
+        assertNull("an image's spoken label isn't the card's text", words(story, noMessage, noShare, links));
+        listen("fall & winter garden", "vegetables");
+        assertNull("a keep phrase in the layout keeps the post", words(story, noMessage, noShare, links));
+
+        listen("fall & winter garden", "");
+        GraphQLStory titled = new GraphQLStory();
+        GraphQLStoryAttachment plain = card("Tonight's results", null);
+        plain.debugString(bloksCard("Fall & Winter Garden"));
+        assertNull("a card with a title isn't read through its layout",
+                words(titled, noMessage, noShare, new Answers(null).with(titled, Arrays.asList(plain))));
+        assertEquals(0, plain.debugReads);
+
+        GraphQLStory gone = new GraphQLStory();
+        GraphQLStoryAttachment released = card(null, null);
+        released.debugString(bloksCard("Fall & Winter Garden"));
+        released.released();
+        assertNull("a released card's layout isn't read",
+                words(gone, noMessage, noShare, new Answers(null).with(gone, Arrays.asList(released))));
+        assertEquals(0, released.debugReads);
+        assertFalse(released.readAfterRelease);
+        assertEquals(FeedFilter.WORDS_ROUTE + ": 5 lists, 5 items, 1 removed. Last reason: hide word. "
+                + "Removed: hide word 1. Kinds: no match 2, hide word 1, keep word 1, no text 1", wordsLine());
+    }
+
+    /** Only Text components count, every layout in the string is read, and one that won't parse adds nothing. */
+    @Test
+    public void bloksTextsReadsEachTextComponent() {
+        assertEquals(Arrays.asList("sagesacre.com", "Headline"), PostText.bloksTexts(bloksCard("Headline")));
+        assertEquals(Arrays.asList("sagesacre.com", "One", "sagesacre.com", "Two"),
+                PostText.bloksTexts(bloksCard("One") + bloksCard("Two")));
+        assertEquals(Collections.emptyList(), PostText.bloksTexts("{\"bloks_bundle_tree\":\"{not json\"}"));
+        assertEquals(Collections.emptyList(), PostText.bloksTexts("{\"bloks_bundle_tree\":null}"));
+        assertEquals(Collections.emptyList(), PostText.bloksTexts("{\"bloks_bundle_tree\":"));
+        assertEquals(Collections.emptyList(), PostText.bloksTexts("no layout here"));
+    }
+
     /** The controls: a card without the phrase, a keep phrase on the card, and a card on the shared post. */
     @Test
     public void aLinkCardIsJudgedLikeThePostsOwnWords() {
@@ -486,7 +558,7 @@ public class PostWordsRuleTest {
         FeedFilterCounters.clear();
         PostText.Members complete = PostText.Members.lookUp(PostText.class.getClassLoader());
         PostText.cachedMembers = new PostText.Members(complete.story, complete.treeModel, null, complete.typeTag,
-                complete.text, complete.cachedModel);
+                complete.text, complete.cachedModel, complete.debugString);
         assertFalse(guard("spoiler"));
         String report = String.join("\n", HookStatus.report());
         assertTrue(report, report.contains(FamilyNames.POST_WORDS + ": invoked 1, 2 found, 1 missing. "

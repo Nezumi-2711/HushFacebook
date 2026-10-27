@@ -8,9 +8,15 @@ import androidx.annotation.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import app.morphe.extension.facebook.settings.FamilyNames;
@@ -45,6 +51,13 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * like the description, and every action link's {@code link_title} through {@code getCachedString},
  * the list coming from a stub the patch fills with the attachment's accessor of it.
  *
+ * <p>Some 584 cards have none of those (a Page's article shared into a group, a garden blog's
+ * link): every one of the fields above reads null and the card draws from a serialized Bloks
+ * layout under the attachment's {@code style_infos}, reached through an aliased field whose key
+ * depends on the query. For an attachment whose {@code title} reads null, the words are taken from
+ * that layout as the tree's own {@code toExpensiveHumanReadableDebugString} spells it out: the
+ * {@code bloks_bundle_tree} JSON, and in it the text of every Text component (S22 2026-10-27).
+ *
  * <p>Nothing here keeps, logs or reports the text. What a read found is one of the shapes in
  * {@link Outcome}, and only the rule that asked sees the words.
  *
@@ -65,6 +78,17 @@ public final class PostText {
     /** The headline as a TextWithEntities, and an action link's headline, a plain string. */
     static final int LINK_TITLE_TEXT_KEY = "title_with_entities".hashCode();
     static final int ACTION_LINK_TITLE_KEY = "link_title".hashCode();
+
+    /**
+     * A Bloks-drawn card's layout, a JSON string under this field in the attachment's debug string.
+     * In the layout a component is an object keyed by its type, one character, and a Text
+     * component's string sits under {@code &} (584, S22 2026-10-27).
+     */
+    static final String BLOKS_TREE_FIELD = "\"bloks_bundle_tree\":";
+    static final String BLOKS_TEXT_COMPONENT = String.valueOf((char) 0x341B);
+    static final String BLOKS_TEXT = "&";
+    /** Deeper than any layout seen, so a malformed one can't run the walk away. */
+    private static final int BLOKS_MAX_DEPTH = 96;
 
     /** A tree model is tagged with the first four bytes of its GraphQL type name's MD5. */
     static final int TEXT_TYPE_TAG = StoryFlag.typeTag(TEXT_TYPE);
@@ -289,7 +313,9 @@ public final class PostText {
         try {
             for (Object attachment : (Iterable<?>) list) {
                 if (!found.treeModel.isInstance(attachment)) continue;
-                any |= add(texts, found.cachedString.invoke(attachment, LINK_TITLE_KEY));
+                Object title = found.cachedString.invoke(attachment, LINK_TITLE_KEY);
+                any |= add(texts, title);
+                if (title == null) any |= bloksText(texts, found, attachment);
                 Object links = actionLinks.model(attachment);
                 if (links != StoryFlag.NOT_PATCHED && links instanceof Iterable) {
                     for (Object link : (Iterable<?>) links) {
@@ -316,6 +342,70 @@ public final class PostText {
     private static boolean addText(List<String> texts, Members found, @Nullable Object model)
             throws ReflectiveOperationException {
         return found.text.isInstance(model) && add(texts, found.cachedString.invoke(model, TEXT_KEY));
+    }
+
+    /**
+     * Adds the words of [attachment]'s Bloks layout to [texts], when the build has the debug string
+     * reader and the attachment's tree is still there: that reader goes to native code, where a
+     * released tree crashes past any try block.
+     */
+    private static boolean bloksText(List<String> texts, Members found, Object attachment)
+            throws ReflectiveOperationException {
+        if (found.debugString == null || FeedFilter.released(attachment)) return false;
+        Object debug = found.debugString.invoke(attachment);
+        if (!(debug instanceof String)) return false;
+        boolean any = false;
+        for (String text : bloksTexts((String) debug)) any |= add(texts, text);
+        return any;
+    }
+
+    /**
+     * The strings of every Text component in each Bloks layout [debug] holds, in layout order. A
+     * layout that doesn't parse adds nothing, so its card reads as it did before. Never throws.
+     */
+    static List<String> bloksTexts(String debug) {
+        List<String> found = new ArrayList<>(4);
+        int at = debug.indexOf(BLOKS_TREE_FIELD);
+        while (at >= 0) {
+            int from = at + BLOKS_TREE_FIELD.length();
+            try {
+                Object layout = new JSONTokener(debug.substring(from)).nextValue();
+                if (layout instanceof String) collect(new JSONTokener((String) layout).nextValue(), null, found, 0);
+            } catch (JSONException | RuntimeException unreadable) {
+                // Not a layout this reads.
+            }
+            at = debug.indexOf(BLOKS_TREE_FIELD, from);
+        }
+        return found;
+    }
+
+    private static void collect(@Nullable Object node, @Nullable String type, List<String> found, int depth) {
+        if (depth > BLOKS_MAX_DEPTH) return;
+        if (node instanceof JSONObject) {
+            JSONObject object = (JSONObject) node;
+            if (BLOKS_TEXT_COMPONENT.equals(type)) {
+                Object text = object.opt(BLOKS_TEXT);
+                if (text instanceof String && wordy((String) text)) found.add((String) text);
+            }
+            Iterator<String> keys = object.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                collect(object.opt(key), key, found, depth + 1);
+            }
+        } else if (node instanceof JSONArray) {
+            JSONArray array = (JSONArray) node;
+            for (int i = 0; i < array.length(); i++) collect(array.opt(i), null, found, depth + 1);
+        }
+    }
+
+    /** Whether [text] has a letter or a digit, so a lone ellipsis isn't counted as words. */
+    private static boolean wordy(String text) {
+        for (int i = 0; i < text.length(); ) {
+            int point = text.codePointAt(i);
+            if (Character.isLetterOrDigit(point)) return true;
+            i += Character.charCount(point);
+        }
+        return false;
     }
 
     /** Adds [value] to [texts] when it's a string with words that isn't there yet. */
@@ -353,15 +443,24 @@ public final class PostText {
         /** Only an attachment's description needs these two, so neither is part of {@link #complete}. */
         @Nullable final Class<?> text;
         @Nullable final Method cachedModel;
+        /** Only a Bloks-drawn card needs it, so it isn't part of {@link #complete} either. */
+        @Nullable final Method debugString;
 
         Members(@Nullable Class<?> story, @Nullable Class<?> treeModel, @Nullable Method cachedString,
                 @Nullable Field typeTag, @Nullable Class<?> text, @Nullable Method cachedModel) {
+            this(story, treeModel, cachedString, typeTag, text, cachedModel, null);
+        }
+
+        Members(@Nullable Class<?> story, @Nullable Class<?> treeModel, @Nullable Method cachedString,
+                @Nullable Field typeTag, @Nullable Class<?> text, @Nullable Method cachedModel,
+                @Nullable Method debugString) {
             this.story = story;
             this.treeModel = treeModel;
             this.cachedString = cachedString;
             this.typeTag = typeTag;
             this.text = text;
             this.cachedModel = cachedModel;
+            this.debugString = debugString;
         }
 
         boolean complete() {
@@ -375,6 +474,7 @@ public final class PostText {
             Method cachedString = null;
             Method cachedModel = null;
             Field typeTag = null;
+            Method debugString = null;
             try {
                 if (treeModel != null) {
                     Method method = treeModel.getMethod("getCachedString", int.class);
@@ -399,7 +499,16 @@ public final class PostText {
             } catch (NoSuchFieldException | RuntimeException missing) {
                 // Named in the report.
             }
-            return new Members(story, treeModel, cachedString, typeTag, classOrNull(TEXT_CLASS, loader), cachedModel);
+            try {
+                if (tree != null) {
+                    Method method = tree.getMethod("toExpensiveHumanReadableDebugString");
+                    if (method.getReturnType() == String.class) debugString = method;
+                }
+            } catch (NoSuchMethodException | RuntimeException missing) {
+                // Named in the report.
+            }
+            return new Members(story, treeModel, cachedString, typeTag, classOrNull(TEXT_CLASS, loader), cachedModel,
+                    debugString);
         }
 
         /**
@@ -416,6 +525,9 @@ public final class PostText {
             if (text == null) HookStatus.missingMember(family, "class", "com.facebook.graphql.model", "GraphQLTextWithEntities");
             if (cachedModel == null) {
                 HookStatus.missingMember(family, "method", StoryFlag.TREE_MODEL_CLASS, "getCachedModel(int, Class, int)");
+            }
+            if (debugString == null) {
+                HookStatus.missingMember(family, "method", StoryFlag.TREE_CLASS, "toExpensiveHumanReadableDebugString()");
             }
         }
 
