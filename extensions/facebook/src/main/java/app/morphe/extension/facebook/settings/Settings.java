@@ -721,19 +721,19 @@ public class Settings extends BaseSettings {
 
     /**
      * A speed picked in a reel's menu stays for the next reels where it was picked, ads and live
-     * videos aside, until another is picked or Facebook restarts
-     * ({@link app.morphe.extension.facebook.media.ReelSpeed}). Nothing is
-     * stored. Off or paused, each reel starts at the speed Facebook starts it at.
+     * videos aside, until another is picked, and is saved so a restart keeps it
+     * ({@link app.morphe.extension.facebook.media.ReelSpeed}). Normal speed forgets it.
+     * Off or paused, each reel starts at the speed Facebook starts it at.
      */
     public static final BooleanSetting KEEP_REEL_SPEED =
             new BooleanSetting("hushfacebook_keep_reel_speed", TRUE);
 
     /**
      * A speed picked in a feed or Watch video's gear menu stays for the next videos that aren't
-     * reels, ads or live, until another is picked or Facebook restarts. Reels keep their own speed
-     * by {@link #KEEP_REEL_SPEED}. It rides on Keep the reel speed's hooks
-     * ({@link app.morphe.extension.facebook.media.ReelSpeed}). Nothing is stored. Off or paused,
-     * each video starts at the speed Facebook starts it at.
+     * reels, ads or live, until another is picked, and is saved so a restart keeps it. Reels keep
+     * their own speed by {@link #KEEP_REEL_SPEED}. It rides on Keep the reel speed's hooks
+     * ({@link app.morphe.extension.facebook.media.ReelSpeed}). Normal speed forgets it. Off or
+     * paused, each video starts at the speed Facebook starts it at.
      */
     public static final BooleanSetting KEEP_VIDEO_SPEED =
             new BooleanSetting("hushfacebook_keep_video_speed", FALSE);
