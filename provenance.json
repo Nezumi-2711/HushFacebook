@@ -1085,6 +1085,15 @@
     },
     {
       "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/appicons/LauncherIconStyle.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: the Icon style option of Hushfacebook settings for issue #278, after the idea of Hushfeed's two plain app icons. No artwork ships. The resource patch reads the application icon from the manifest, finds its one adaptive-icon configuration and the themed-icon vector its monochrome layer names, and writes a solid background color and a one-color copy of that vector inline into the adaptive icon. The monochrome layer stays."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/HeaderPicture.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/HeaderText.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/headertext/HomeHeaderTextPatch.kt"
