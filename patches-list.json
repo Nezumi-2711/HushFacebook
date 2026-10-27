@@ -2763,7 +2763,7 @@
     },
     {
       "name": "Open comments at full height",
-      "description": "Opens the comment sheet at the full height of the screen instead of part way up, on posts, videos, reels and stories. On reels and videos, Comment opens that sheet instead of the split view. Starts off. Turn it on in Hushfacebook settings > Comments and writing.",
+      "description": "Opens the comment sheet at the full height of the screen instead of part way up, on posts, videos, reels and stories. On reels and videos, Comment opens that sheet instead of the split view. A second switch pauses a reel while its comments are open. Both start off. Turn them on in Hushfacebook settings > Comments and writing.",
       "category": "Comments",
       "use": true,
       "dependencies": [
