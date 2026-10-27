@@ -146,6 +146,9 @@ public class SettingsBackupTest {
         out.put("hushfacebook_header_picture",
                 "it names the picture at the top of Home, whose shrunk copy only this install holds. A settings file "
                         + "can't carry the picture itself, and the name alone would point at nothing on another phone.");
+        out.put("hushfacebook_save_storage",
+                "it names the SD card saves go to by the volume name Android gave that card in this phone, which "
+                        + "points at nothing on another phone.");
         out.put("hushfacebook_seen_share_items",
                 "it records the share items this install's Facebook offered, which the hook writes, not a choice.");
         out.put("hushfacebook_seen_menu_tiles",
@@ -187,6 +190,7 @@ public class SettingsBackupTest {
         ShadowLooper.idleMainLooper();
         for (BooleanSetting setting : SettingsBackup.ALLOWLIST) setting.resetToDefault();
         Settings.SAVE_FOLDER.resetToDefault();
+        Settings.SAVE_STORAGE.resetToDefault();
         Settings.DOWNLOAD_QUALITY.resetToDefault();
         Settings.FILENAME_TEMPLATE.resetToDefault();
         Settings.PHOTO_FILENAME_TEMPLATE.resetToDefault();
@@ -779,6 +783,7 @@ public class SettingsBackupTest {
         Settings.SAVE_FOLDER.save("Clips");
         String file = SettingsBackup.create();
         Settings.SAVE_FOLDER.resetToDefault();
+        Settings.SAVE_STORAGE.resetToDefault();
 
         SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
         assertEquals("Clips", snapshot.folder);

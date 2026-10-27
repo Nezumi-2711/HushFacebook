@@ -2004,3 +2004,10 @@ A post with this text would stay, because the patterns took too long on it.	Ein 
 A post with this text would stay. Nothing on either list matches it.	Ein Beitrag mit diesem Text würde bleiben. Nichts aus beiden Listen passt.
 # context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
 Only the first %1$d characters were checked.	Nur die ersten %1$d Zeichen wurden geprüft.
+Save on	Speichern auf
+Phone storage	Telefonspeicher
+SD card that isn't in the phone	SD-Karte, die nicht im Telefon steckt
+Videos and photos are saved on the phone's storage.	Videos und Fotos werden im Telefonspeicher gespeichert.
+Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.	Videos und Fotos werden im Telefonspeicher gespeichert. Setze eine SD-Karte ein, um stattdessen dort zu speichern.
+The SD card you picked isn't in the phone, so videos and photos are saved on the phone's storage until it's back.	Die gewählte SD-Karte steckt nicht im Telefon, daher werden Videos und Fotos im Telefonspeicher gespeichert, bis sie wieder da ist.
+Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	Videos und Fotos werden auf %1$s gespeichert, in denselben Ordnern. Bereits gespeicherte Dateien bleiben, wo sie sind.

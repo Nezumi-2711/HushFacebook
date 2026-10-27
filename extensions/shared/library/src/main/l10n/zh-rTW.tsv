@@ -2008,3 +2008,10 @@ A post with this text would stay, because the patterns took too long on it.	含�
 A post with this text would stay. Nothing on either list matches it.	含這段文字的貼文會保留。兩個清單都沒有相符的項目。
 # context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
 Only the first %1$d characters were checked.	只檢查了前 %1$d 個字元。
+Save on	儲存位置
+Phone storage	手機儲存空間
+SD card that isn't in the phone	不在手機中的 SD 卡
+Videos and photos are saved on the phone's storage.	影片和相片會儲存在手機儲存空間。
+Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.	影片和相片會儲存在手機儲存空間。插入 SD 卡即可改存到卡上。
+The SD card you picked isn't in the phone, so videos and photos are saved on the phone's storage until it's back.	你選擇的 SD 卡不在手機中，因此在它插回之前，影片和相片會儲存在手機儲存空間。
+Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	影片和相片會儲存在 %1$s 上，資料夾不變。已儲存的內容會留在原處。

@@ -2004,3 +2004,10 @@ A post with this text would stay, because the patterns took too long on it.	Post
 A post with this text would stay. Nothing on either list matches it.	Postingan dengan teks ini akan tetap tampil. Tidak ada yang cocok dari kedua daftar.
 # context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
 Only the first %1$d characters were checked.	Hanya %1$d karakter pertama yang diperiksa.
+Save on	Simpan di
+Phone storage	Penyimpanan ponsel
+SD card that isn't in the phone	Kartu SD yang tidak ada di ponsel
+Videos and photos are saved on the phone's storage.	Video dan foto disimpan di penyimpanan ponsel.
+Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.	Video dan foto disimpan di penyimpanan ponsel. Pasang kartu SD untuk menyimpannya di sana.
+The SD card you picked isn't in the phone, so videos and photos are saved on the phone's storage until it's back.	Kartu SD yang Anda pilih tidak ada di ponsel, jadi video dan foto disimpan di penyimpanan ponsel sampai kartunya kembali.
+Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	Video dan foto disimpan di %1$s, dalam folder yang sama. Simpanan yang sudah ada tetap di tempatnya.

@@ -1094,6 +1094,15 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/SaveStorage.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook for issue #274: lists the SD cards Android's StorageManager and MediaStore both report as mounted, picks the one the Save on setting names, and falls back to the phone's storage while it's out of the phone."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/HeaderPicture.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/HeaderText.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/headertext/HomeHeaderTextPatch.kt"

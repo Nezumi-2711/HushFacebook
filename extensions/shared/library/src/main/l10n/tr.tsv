@@ -2004,3 +2004,10 @@ A post with this text would stay, because the patterns took too long on it.	Bu m
 A post with this text would stay. Nothing on either list matches it.	Bu metni içeren bir gönderi kalırdı. İki listeden hiçbiri eşleşmiyor.
 # context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
 Only the first %1$d characters were checked.	Yalnızca ilk %1$d karakter kontrol edildi.
+Save on	Kaydetme yeri
+Phone storage	Telefon depolaması
+SD card that isn't in the phone	Telefonda olmayan SD kart
+Videos and photos are saved on the phone's storage.	Videolar ve fotoğraflar telefon depolamasına kaydedilir.
+Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.	Videolar ve fotoğraflar telefon depolamasına kaydedilir. Bunun yerine karta kaydetmek için bir SD kart takın.
+The SD card you picked isn't in the phone, so videos and photos are saved on the phone's storage until it's back.	Seçtiğiniz SD kart telefonda değil, bu yüzden kart geri takılana kadar videolar ve fotoğraflar telefon depolamasına kaydedilir.
+Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	Videolar ve fotoğraflar aynı klasörlerle %1$s üzerine kaydedilir. Önceden kaydedilenler yerinde kalır.

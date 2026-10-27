@@ -24,6 +24,7 @@ import android.widget.TextView;
 
 import app.morphe.extension.facebook.comments.CommentOrder;
 import app.morphe.extension.facebook.download.DownloadQuality;
+import app.morphe.extension.facebook.download.SaveStorage;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
 import app.morphe.extension.facebook.feed.PostWordsForTests;
@@ -59,6 +60,7 @@ import org.robolectric.shadows.ShadowToast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -610,6 +612,72 @@ public class HushfacebookPreferenceFragmentTest {
         }
     }
 
+    /** The Save on row (#274) sits right above Save to and starts on the phone's storage. */
+    @Test
+    public void theSaveOnRowSitsAboveSaveTo() {
+        PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.STORY_DOWNLOAD);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<Preference> rows = rowsOf(controller);
+            int onAt = -1;
+            int toAt = -1;
+            for (int i = 0; i < rows.size(); i++) {
+                if (rows.get(i) instanceof ValueRows.SaveStorageRow) onAt = i;
+                if (rows.get(i) instanceof ValueRows.SaveToRow) toAt = i;
+            }
+            assertTrue("no Save on row with a download in the build", onAt >= 0);
+            assertEquals("Save on isn't right above Save to", toAt - 1, onAt);
+            ValueRows.SaveStorageRow on = (ValueRows.SaveStorageRow) rows.get(onAt);
+            assertEquals(Settings.SAVE_STORAGE.key, on.getKey());
+            assertEquals("Save on", String.valueOf(on.getTitle()));
+            assertEquals("", on.getValue());
+        }
+    }
+
+    /**
+     * The Save on row lists the phone's storage and each card in the phone, keeps a picked card
+     * that's out of the phone, and says where saves go in each case.
+     */
+    @Test
+    public void theSaveOnRowListsThePhoneAndEachCard() {
+        Context context = RuntimeEnvironment.getApplication();
+        List<SaveStorage.Card> card = Arrays.asList(new SaveStorage.Card("1a2b-3c4d", "SanDisk SD card"));
+
+        ValueRows.SaveStorageRow none = HushfacebookPreferenceFragment.saveStorageRow(context, Collections.emptyList());
+        assertEquals(Arrays.asList("Phone storage"), texts(none.getEntries()));
+        assertEquals(Arrays.asList(""), texts(none.getEntryValues()));
+        assertEquals("Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.",
+                String.valueOf(none.getSummary()));
+
+        ValueRows.SaveStorageRow phone = HushfacebookPreferenceFragment.saveStorageRow(context, card);
+        assertEquals(Arrays.asList("Phone storage", L10n.isolate("SanDisk SD card")), texts(phone.getEntries()));
+        assertEquals(Arrays.asList("", "1a2b-3c4d"), texts(phone.getEntryValues()));
+        assertEquals("Videos and photos are saved on the phone's storage.", String.valueOf(phone.getSummary()));
+        phone.setValue("1a2b-3c4d");
+        assertEquals("Videos and photos are saved on " + L10n.isolate("SanDisk SD card")
+                + ", in the same folders. Saves you already have stay where they are.", String.valueOf(phone.getSummary()));
+
+        Settings.SAVE_STORAGE.save("1a2b-3c4d");
+        try {
+            ValueRows.SaveStorageRow out = HushfacebookPreferenceFragment.saveStorageRow(context, Collections.emptyList());
+            assertEquals(Arrays.asList("Phone storage", "SD card that isn't in the phone"), texts(out.getEntries()));
+            assertEquals(Arrays.asList("", "1a2b-3c4d"), texts(out.getEntryValues()));
+            assertEquals("1a2b-3c4d", out.getValue());
+            assertEquals("The SD card you picked isn't in the phone, so videos and photos are saved on the phone's "
+                    + "storage until it's back.", String.valueOf(out.getSummary()));
+            assertEquals("Videos and photos are saved on " + L10n.isolate("SanDisk SD card")
+                    + ", in the same folders. Saves you already have stay where they are.",
+                    String.valueOf(HushfacebookPreferenceFragment.saveStorageRow(context, card).getSummary()));
+        } finally {
+            Settings.SAVE_STORAGE.resetToDefault();
+        }
+    }
+
+    private static List<String> texts(CharSequence[] items) {
+        List<String> out = new ArrayList<>();
+        for (CharSequence item : items) out.add(String.valueOf(item));
+        return out;
+    }
+
     @Test
     public void theReelSidebarChoiceIsIndependentAndFollowsTheDownloadSwitch() {
         PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.REEL_DOWNLOAD);
@@ -1011,6 +1079,7 @@ public class HushfacebookPreferenceFragmentTest {
             collect(page.getPreferenceScreen(), rows);
             ValueRows.QualityRow quality = null;
             int qualityAt = -1;
+            int onAt = -1;
             int toAt = -1;
             int folderAt = -1;
             for (int i = 0; i < rows.size(); i++) {
@@ -1018,12 +1087,15 @@ public class HushfacebookPreferenceFragmentTest {
                     quality = (ValueRows.QualityRow) rows.get(i);
                     qualityAt = i;
                 }
+                if (rows.get(i) instanceof ValueRows.SaveStorageRow) onAt = i;
                 if (rows.get(i) instanceof ValueRows.SaveToRow) toAt = i;
                 if (rows.get(i) instanceof ValueRows.FolderRow) folderAt = i;
             }
             assertNotNull("no quality row with a download in the build", quality);
-            // Save to (#42) goes between them: the top folder, then the folder under it.
-            assertEquals("the quality row isn't right above Save to", toAt - 1, qualityAt);
+            // Save on (#274) and Save to (#42) go between them: the storage, the top folder, then the
+            // folder under it.
+            assertEquals("the quality row isn't right above Save on", onAt - 1, qualityAt);
+            assertEquals("Save on isn't right above Save to", toAt - 1, onAt);
             assertEquals("Save to isn't right above the folder", folderAt - 1, toAt);
             assertEquals(Settings.DOWNLOAD_QUALITY.key, quality.getKey());
             assertEquals("Download quality", String.valueOf(quality.getTitle()));

@@ -2007,6 +2007,15 @@ public class Settings extends BaseSettings {
             new EnumSetting<>("hushfacebook_save_to", SaveTo.MOVIES_AND_PICTURES);
 
     /**
+     * The storage saves go to (#274): empty, the default, for the phone's own, or the MediaStore
+     * volume name of an SD card ({@link app.morphe.extension.facebook.download.SaveStorage}). While
+     * that card is out of the phone, saves go to the phone's storage. It isn't a switch, and it
+     * stays out of settings files, since a card's name means nothing on another phone.
+     */
+    public static final StringSetting SAVE_STORAGE =
+            new StringSetting("hushfacebook_save_storage", "");
+
+    /**
      * The folder every save goes to, under the top folder {@link #SAVE_TO} names. The
      * settings row and an import keep it clean, and {@link SaveFolder#sanitize} cleans it again
      * wherever it's read, so whatever wrote the store, a save lands in one folder under each.

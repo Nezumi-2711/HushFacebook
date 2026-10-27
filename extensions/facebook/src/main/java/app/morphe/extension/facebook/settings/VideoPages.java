@@ -14,6 +14,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.photoNameRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.playbackQualityRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.qualityRow;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveStorageRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveToRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.sendAppRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subfolderRow;
@@ -373,6 +374,7 @@ final class VideoPages {
                             + "converted to H.264 on your phone instead of saved smaller. Slower, and videos over 10 minutes "
                             + "stay smaller.")));
             downloads.addPreference(qualityRow(context));
+            downloads.addPreference(saveStorageRow(context));
             downloads.addPreference(saveToRow(context));
             downloads.addPreference(folderRow(context));
             downloads.addPreference(fileNameRow(context));

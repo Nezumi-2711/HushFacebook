@@ -1999,3 +1999,10 @@ A post with this text would stay, because the patterns took too long on it.	含�
 A post with this text would stay. Nothing on either list matches it.	含这段文字的帖子会保留。两个列表都没有匹配项。
 # context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
 Only the first %1$d characters were checked.	只检查了前 %1$d 个字符。
+Save on	保存位置
+Phone storage	手机存储
+SD card that isn't in the phone	不在手机中的 SD 卡
+Videos and photos are saved on the phone's storage.	视频和照片保存在手机存储中。
+Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.	视频和照片保存在手机存储中。插入 SD 卡即可改为保存到卡上。
+The SD card you picked isn't in the phone, so videos and photos are saved on the phone's storage until it's back.	你选择的 SD 卡不在手机中，因此在它插回之前，视频和照片会保存在手机存储中。
+Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	视频和照片保存在 %1$s 上，文件夹不变。已保存的内容留在原处。

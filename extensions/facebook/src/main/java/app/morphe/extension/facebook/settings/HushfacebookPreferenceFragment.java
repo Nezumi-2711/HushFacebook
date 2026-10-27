@@ -47,6 +47,7 @@ import app.morphe.extension.facebook.download.DownloadQuality;
 import app.morphe.extension.facebook.download.FileNameTemplate;
 import app.morphe.extension.facebook.download.SaveControl;
 import app.morphe.extension.facebook.download.SaveFolder;
+import app.morphe.extension.facebook.download.SaveStorage;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
 import app.morphe.extension.facebook.feed.PostSources;
@@ -91,6 +92,7 @@ import app.morphe.extension.facebook.settings.ValueRows.HomeFeedRow;
 import app.morphe.extension.facebook.settings.ValueRows.PlaybackQualityRow;
 import app.morphe.extension.facebook.settings.ValueRows.QuietHourRow;
 import app.morphe.extension.facebook.settings.ValueRows.QualityRow;
+import app.morphe.extension.facebook.settings.ValueRows.SaveStorageRow;
 import app.morphe.extension.facebook.settings.ValueRows.SaveToRow;
 import app.morphe.extension.facebook.settings.ValueRows.SendAppRow;
 import app.morphe.extension.facebook.settings.ValueRows.StartTabRow;
@@ -1904,6 +1906,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             ((DownloadActionRow) listPreference).showSummary();
         } else if (listPreference instanceof SaveToRow) {
             ((SaveToRow) listPreference).showSummary();
+        } else if (listPreference instanceof SaveStorageRow) {
+            ((SaveStorageRow) listPreference).showSummary();
         } else if (listPreference instanceof StartTabRow) {
             ((StartTabRow) listPreference).showSummary();
         } else if (listPreference instanceof FeedsSubtabRow) {
@@ -2034,6 +2038,59 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 SaveTo.DOWNLOAD.name()});
         row.setValue(Settings.SAVE_TO.savedValue().name());
         return row;
+    }
+
+    /** {@link #saveStorageRow(Context, List)} with the cards in the phone now. */
+    static SaveStorageRow saveStorageRow(Context context) {
+        return saveStorageRow(context, SaveStorage.cards(context));
+    }
+
+    /**
+     * The storage saves go to (#274): the phone's, or one of [cards]. A card picked before and out
+     * of the phone now stays in the list, so the row still shows the choice, and saves go to the
+     * phone's storage until it's back. The cards' names come from Android, so they're isolated
+     * like a folder name.
+     */
+    static SaveStorageRow saveStorageRow(Context context, List<SaveStorage.Card> cards) {
+        SaveStorageRow row = new SaveStorageRow(context);
+        row.setKey(Settings.SAVE_STORAGE.key);
+        row.setTitle(L10n.t("Save on"));
+        row.setDialogTitle(L10n.t("Save on"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        String picked = Settings.SAVE_STORAGE.savedValue();
+        List<CharSequence> entries = new ArrayList<>();
+        List<CharSequence> values = new ArrayList<>();
+        entries.add(L10n.t("Phone storage"));
+        values.add("");
+        for (SaveStorage.Card card : cards) {
+            entries.add(L10n.isolate(card.label));
+            values.add(card.volume);
+        }
+        if (!picked.isEmpty() && SaveStorage.pick(picked, cards) == null) {
+            entries.add(L10n.t("SD card that isn't in the phone"));
+            values.add(picked);
+        }
+        row.setEntries(entries.toArray(new CharSequence[0]));
+        row.setEntryValues(values.toArray(new CharSequence[0]));
+        row.setValue(picked);
+        return row;
+    }
+
+    /**
+     * What the Save on row says for [volume], the list's [label] for it, and whether the list offers
+     * a card at all ([choices]).
+     */
+    static String saveStorageSummary(String volume, String label, boolean choices) {
+        if (volume == null || volume.isEmpty() || label == null) {
+            return choices ? L10n.t("Videos and photos are saved on the phone's storage.")
+                    : L10n.t("Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.");
+        }
+        if (label.equals(L10n.t("SD card that isn't in the phone"))) {
+            return L10n.t("The SD card you picked isn't in the phone, so videos and photos are saved on the phone's "
+                    + "storage until it's back.");
+        }
+        return L10n.f("Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where "
+                + "they are.", label);
     }
 
     /** What the Save to row says for [to]. */

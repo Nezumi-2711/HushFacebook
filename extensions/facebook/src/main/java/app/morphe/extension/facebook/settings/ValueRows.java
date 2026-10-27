@@ -24,6 +24,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.accentSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.textSizeSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.quietHourLabel;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveStorageSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveToSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.sendAppSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.showAllText;
@@ -669,6 +670,45 @@ final class ValueRows {
                 if (candidate.name().equals(getValue())) to = candidate;
             }
             setSummary(saveToSummary(to));
+        }
+
+        @Override
+        protected void onBindView(View view) {
+            super.onBindView(view);
+            showAllText(view);
+            ScreenColors.row(view, this);
+            view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+        }
+
+        /** Its list takes the screen's colours, as the other rows' dialogs do. */
+        @Override
+        protected void showDialog(Bundle state) {
+            super.showDialog(state);
+            if (getDialog() instanceof AlertDialog) ScreenColors.dialog((AlertDialog) getDialog());
+        }
+    }
+
+    /**
+     * The Save on row (#274): the phone's storage or an SD card. Its summary follows its value,
+     * whoever sets it, and names the card the list showed for it.
+     */
+    static final class SaveStorageRow extends PlainSummaryList {
+        SaveStorageRow(Context context) {
+            super(context);
+        }
+
+        @Override
+        public void setValue(String value) {
+            super.setValue(value);
+            showSummary();
+        }
+
+        void showSummary() {
+            String value = getValue();
+            int index = value == null ? -1 : findIndexOfValue(value);
+            CharSequence[] entries = getEntries();
+            String label = index < 0 || entries == null ? null : String.valueOf(entries[index]);
+            setSummary(saveStorageSummary(value, label, entries != null && entries.length > 1));
         }
 
         @Override

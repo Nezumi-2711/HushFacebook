@@ -2004,3 +2004,10 @@ A post with this text would stay, because the patterns took too long on it.	Bài
 A post with this text would stay. Nothing on either list matches it.	Bài viết có nội dung này sẽ được giữ lại. Không có gì trong hai danh sách khớp.
 # context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
 Only the first %1$d characters were checked.	Chỉ %1$d ký tự đầu tiên được kiểm tra.
+Save on	Lưu vào
+Phone storage	Bộ nhớ điện thoại
+SD card that isn't in the phone	Thẻ SD không có trong điện thoại
+Videos and photos are saved on the phone's storage.	Video và ảnh được lưu vào bộ nhớ điện thoại.
+Videos and photos are saved on the phone's storage. Put in an SD card to save on it instead.	Video và ảnh được lưu vào bộ nhớ điện thoại. Lắp thẻ SD để lưu vào thẻ.
+The SD card you picked isn't in the phone, so videos and photos are saved on the phone's storage until it's back.	Thẻ SD bạn đã chọn không có trong điện thoại, nên video và ảnh được lưu vào bộ nhớ điện thoại cho đến khi thẻ được lắp lại.
+Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	Video và ảnh được lưu vào %1$s, trong cùng các thư mục. Những gì đã lưu vẫn ở nguyên chỗ cũ.
