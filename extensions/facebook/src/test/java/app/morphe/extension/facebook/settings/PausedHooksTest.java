@@ -67,6 +67,7 @@ import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
 import app.morphe.extension.facebook.download.PhotoSave;
 import app.morphe.extension.facebook.download.PlayerSourcesForTests;
+import app.morphe.extension.facebook.download.ReelCaptionForTests;
 import app.morphe.extension.facebook.download.ReelDownload;
 import app.morphe.extension.facebook.download.SaveRulesForTests;
 import app.morphe.extension.facebook.download.StoryPhoto;
@@ -703,8 +704,8 @@ public class PausedHooksTest {
                 () -> StoryPhoto.menuTitle(new UnmarkedPhotoStoryCard()) != null,
                 // The recorder runs in every player Facebook builds, not only in stories.
                 PlayerSourcesForTests::recordsAPlayer));
-        // Every reel's sidebar gets the Download button.
-        probes.put(PatchFamily.REEL_DOWNLOAD, Collections.singletonList(ReelDownload::showsButton));
+        // Every reel's sidebar gets the Download button, and a reel whose caption was seen gets Copy caption.
+        probes.put(PatchFamily.REEL_DOWNLOAD, Arrays.asList(ReelDownload::showsButton, ReelCaptionForTests::addsTheRow));
         // A video post's menu gets Download to phone, and the video recorder keeps a player.
         // Its copied-link option reads the clipboard as a screen comes to the front.
         probes.put(PatchFamily.VIDEO_DOWNLOAD, Arrays.asList(

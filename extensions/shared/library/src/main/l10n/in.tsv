@@ -964,6 +964,16 @@ Couldn't open an app for this link	Tidak bisa membuka aplikasi untuk tautan ini
 Video link	Tautan video
 # context: Toast after a long press on the reel button copied its link
 Link copied	Tautan disalin
+# context: row title in a reel's three-dot More menu; the caption is the text under the reel
+Copy caption	Salin keterangan
+# context: Clipboard label of a copied reel caption
+Reel caption	Keterangan reel
+# context: Toast after Copy caption copied a reel's caption
+Caption copied	Keterangan disalin
+# context: switch title under Saving reels on the Reels and Watch page
+Copy reel captions	Salin keterangan reel
+# context: summary of that switch; More is the reel's three-dot menu, See more is the link that opens a long caption
+A reel's More menu gets Copy caption, which copies the whole caption, even the part behind See more.	Menu Lainnya pada reel mendapat Salin keterangan, yang menyalin seluruh keterangan, termasuk bagian di balik Lihat selengkapnya.
 # context: Toast when a reel's link can't be built
 Couldn't find this reel's link	Tautan reel ini tidak ditemukan
 # context: Toast when a feed video's link can't be built

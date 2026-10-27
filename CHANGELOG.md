@@ -8,6 +8,7 @@ Changes in each Hushfacebook version, newest first.
 
 * **Facebook:** Facebook 584.0.0.51.56 now works on 32-bit phones too. The armeabi-v7a Android 11+ bundle, build 475817404, is declared next to the arm64 build 475817393, and every patch applies to it. Contributed by toidicakhia (Refs #254).
 * **Facebook:** `Hide the Create button` under Tabs and navigation takes the + button for new posts, reels and stories out of the top bar, on both versions of the bar Facebook hands out. It starts off and shows after a restart (Refs #257).
+* **Facebook:** A reel's More menu has `Copy caption` now. It copies the whole caption, including the part hidden behind See more, so there's no more screenshotting a long caption to get its text. It's on by default, and `Copy reel captions` under Reels and Watch turns it off (Refs #240).
 
 ### Changed
 

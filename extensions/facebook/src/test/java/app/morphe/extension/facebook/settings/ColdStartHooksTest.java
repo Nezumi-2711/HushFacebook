@@ -53,6 +53,7 @@ import app.morphe.extension.facebook.download.CommentGifForTests;
 import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
 import app.morphe.extension.facebook.download.PlayerSourcesForTests;
+import app.morphe.extension.facebook.download.ReelCaptionForTests;
 import app.morphe.extension.facebook.download.ReelDownload;
 import app.morphe.extension.facebook.download.VideoMenuItemForTests;
 import app.morphe.extension.facebook.emoji.SystemEmoji;
@@ -250,6 +251,7 @@ public class ColdStartHooksTest {
         assertFalse(MediaDownload.offersSave(false));
         assertTrue("Facebook's own yes has to stand", MediaDownload.offersSave(true));
         assertFalse(ReelDownload.showsButton());
+        assertFalse("a reel's More sheet built before the context got Copy caption", ReelCaptionForTests.addsTheRow());
         assertNull(ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsRemixAttribution"))));
         assertFalse("a Reels tab audio line drawn before the context came off", ReelDeclutter.hideAudioLine());
         assertFalse("a slow connection message posted before the context was held back",

@@ -968,6 +968,16 @@ Couldn't open an app for this link	無法開啟可處理此連結的應用程式
 Video link	影片連結
 # context: Toast after a long press on the reel button copied its link
 Link copied	已複製連結
+# context: row title in a reel's three-dot More menu; the caption is the text under the reel
+Copy caption	複製說明文字
+# context: Clipboard label of a copied reel caption
+Reel caption	Reels 說明文字
+# context: Toast after Copy caption copied a reel's caption
+Caption copied	已複製說明文字
+# context: switch title under Saving reels on the Reels and Watch page
+Copy reel captions	複製 Reels 說明文字
+# context: summary of that switch; More is the reel's three-dot menu, See more is the link that opens a long caption
+A reel's More menu gets Copy caption, which copies the whole caption, even the part behind See more.	Reels 的「更多」選單會多出「複製說明文字」，可複製完整的說明文字，包括「查看更多」後隱藏的部分。
 # context: Toast when a reel's link can't be built
 Couldn't find this reel's link	找不到這則 Reels 的連結
 # context: Toast when a feed video's link can't be built

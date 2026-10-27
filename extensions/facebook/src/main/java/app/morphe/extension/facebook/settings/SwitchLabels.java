@@ -168,6 +168,7 @@ final class SwitchLabels {
         if (setting == Settings.HOLD_FEED_VIDEO_FOR_2X) return L10n.t("Hold a feed video for 2x");
         if (setting == Settings.DOWNLOAD_REELS) return L10n.t("Download");
         if (setting == Settings.SHOW_REEL_DOWNLOAD_BUTTON) return L10n.t("Download button on reels");
+        if (setting == Settings.COPY_REEL_CAPTION) return L10n.t("Copy reel captions");
         if (setting == Settings.TAP_TO_PLAY) return L10n.t("Tap to play");
         if (setting == Settings.TAP_TO_PLAY_REELS_AFTER_FIRST) return L10n.t("Only the first reel waits");
         if (setting == Settings.INLINE_FEED_VIDEO_CONTROLS) return L10n.t("Inline feed video controls");

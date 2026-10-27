@@ -502,15 +502,24 @@ public class PatchFamilyTest {
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.AMOLED_THEME), true).get(0));
         Settings.AMOLED_FLAT_CARDS.resetToDefault();
         // The reel button has a switch now, so the report says what it's set to.
-        assertEquals("Download any reel: on (hushfacebook_download_reels=on, hushfacebook_show_reel_download_button=on)",
+        assertEquals("Download any reel: on (hushfacebook_download_reels=on, hushfacebook_show_reel_download_button=on, "
+                        + "hushfacebook_copy_reel_caption=on)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DOWNLOAD), false).get(0));
         Settings.SHOW_REEL_DOWNLOAD_BUTTON.save(false);
-        assertEquals("Download any reel: on (hushfacebook_download_reels=on, hushfacebook_show_reel_download_button=off)",
+        assertEquals("Download any reel: on (hushfacebook_download_reels=on, hushfacebook_show_reel_download_button=off, "
+                        + "hushfacebook_copy_reel_caption=on)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DOWNLOAD), false).get(0));
         Settings.SHOW_REEL_DOWNLOAD_BUTTON.resetToDefault();
+        // Copy caption saves nothing, so with downloads off it still keeps the patch on (#240).
         Settings.DOWNLOAD_REELS.save(false);
-        assertEquals("Download any reel: disabled by its switch (hushfacebook_download_reels=off, hushfacebook_show_reel_download_button=on)",
+        assertEquals("Download any reel: on (hushfacebook_download_reels=off, hushfacebook_show_reel_download_button=on, "
+                        + "hushfacebook_copy_reel_caption=on)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DOWNLOAD), false).get(0));
+        Settings.COPY_REEL_CAPTION.save(false);
+        assertEquals("Download any reel: disabled by its switch (hushfacebook_download_reels=off, "
+                        + "hushfacebook_show_reel_download_button=on, hushfacebook_copy_reel_caption=off)",
+                PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DOWNLOAD), false).get(0));
+        Settings.COPY_REEL_CAPTION.resetToDefault();
         Settings.DOWNLOAD_REELS.resetToDefault();
         // So has the video menu's item, and a pause takes it out whole.
         // Its copied-link offer is an option of that item: on alone, it doesn't turn the patch on.

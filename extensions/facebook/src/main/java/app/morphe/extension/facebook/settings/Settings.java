@@ -1543,6 +1543,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_show_reel_download_button", TRUE, Setting.parent(DOWNLOAD_REELS));
 
     /**
+     * Copy caption in a reel's More sheet, which copies the reel's whole caption (#240). Starts on.
+     * It saves nothing, so it stands apart from DOWNLOAD_REELS.
+     */
+    public static final BooleanSetting COPY_REEL_CAPTION =
+            new BooleanSetting("hushfacebook_copy_reel_caption", TRUE);
+
+    /**
      * The Download to phone item the video patch adds to the menu of a feed or Watch video. Off,
      * the menu is Facebook's own.
      */

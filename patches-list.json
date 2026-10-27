@@ -773,7 +773,7 @@
     },
     {
       "name": "Download any reel",
-      "description": "Adds a Download button beside every reel and a Download row to its More menu, so you can keep reels on your phone. Videos save at the quality you set, best by default. On by default. Turn it off in Hushfacebook settings > Reels and Watch.",
+      "description": "Adds a Download button beside every reel and a Download row to its More menu, so you can keep reels on your phone. Videos save at the quality you set, best by default. The More menu also gets Copy caption, which copies the reel's whole caption. On by default. Turn either off in Hushfacebook settings > Reels and Watch.",
       "category": "Downloads",
       "use": true,
       "dependencies": [

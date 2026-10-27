@@ -229,6 +229,8 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.SHOW_REEL_DOWNLOAD_BUTTON,
                     L10n.t("Add a Download button to reels, using your download quality. Off or paused, Facebook's own buttons return."))
                     .needs(Settings.DOWNLOAD_REELS));
+            reels.addPreference(toggle(context, Settings.COPY_REEL_CAPTION,
+                    L10n.t("A reel's More menu gets Copy caption, which copies the whole caption, even the part behind See more.")));
         }
     }
 
