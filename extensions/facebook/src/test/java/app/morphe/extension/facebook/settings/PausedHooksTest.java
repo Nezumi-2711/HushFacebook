@@ -586,9 +586,10 @@ public class PausedHooksTest {
                     FeedVideoAlone.feedVideoTapped();
                     return FeedVideoAlone.holdsBack(new Object());
                 },
-                // So does a reel's data source as the reels viewer opens from the feed.
+                // So does a reel's data source as the reels viewer opens from the feed. A feed reel's
+                // origin: an ordinary video post's ("newsfeed::feed_story") keeps Facebook's answer (#237).
                 () -> {
-                    FeedVideoAlone.reelsViewerOpening("newsfeed::feed_story");
+                    FeedVideoAlone.reelsViewerOpening("newsfeed::fb_shorts_native_in_feed_unit");
                     return FeedVideoAlone.seedOnly(new Object());
                 },
                 // And that viewer's list shows no loading page after the video.
