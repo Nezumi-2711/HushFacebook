@@ -349,6 +349,48 @@ public class EditDialogKeyboardTest {
         }
     }
 
+    /**
+     * Typing in the sample keeps the verdict under it in sight. The scroll follows the caret, and
+     * with the keyboard up that left the line below the field off the screen on the S22.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "w360dp-h640dp")
+    public void theVerdictScrollsIntoSightWhileTheSampleIsTyped() {
+        Settings.HIDDEN_WORDS.save(lines(60));
+        PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            ValueRows.WordsRow row = (ValueRows.WordsRow) shown(controller, Settings.HIDDEN_WORDS.key);
+            AlertDialog dialog = (AlertDialog) row.getDialog();
+            try {
+                EditText sample = sampleField(dialog, row.getEditText());
+                ScrollView scroll = scrollAround(sample);
+                assertNotNull(scroll);
+                sample.requestFocus();
+                sample.setText("has w59 in it");
+                ShadowLooper.idleMainLooper(300, TimeUnit.MILLISECONDS);
+                dialog.getWindow().getDecorView().getViewTreeObserver().dispatchOnPreDraw();
+                for (int frame = 0; frame < 32; frame++) {
+                    ShadowLooper.idleMainLooper(16, TimeUnit.MILLISECONDS);
+                    scroll.computeScroll();
+                }
+                ArrayList<View> found = new ArrayList<>();
+                dialog.getWindow().getDecorView().findViewsWithText(found,
+                        "A post with this text would be hidden.", View.FIND_VIEWS_WITH_TEXT);
+                assertEquals(1, found.size());
+                int[] line = new int[2];
+                int[] port = new int[2];
+                found.get(0).getLocationInWindow(line);
+                scroll.getLocationInWindow(port);
+                assertTrue("the verdict is out of sight: line " + line[1] + "-" + (line[1] + found.get(0).getHeight())
+                        + ", scroll " + port[1] + "-" + (port[1] + scroll.getHeight()),
+                        line[1] >= port[1] && line[1] + found.get(0).getHeight() <= port[1] + scroll.getHeight());
+            } finally {
+                if (dialog.isShowing()) dialog.dismiss();
+            }
+        }
+    }
+
     /** The dialog's one edit field that isn't [list]. */
     private static EditText sampleField(AlertDialog dialog, EditText list) {
         ArrayList<View> all = new ArrayList<>();

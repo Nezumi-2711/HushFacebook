@@ -43,6 +43,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -248,6 +249,11 @@ final class ValueRows {
             PostWords.PreviewResult result = PostWords.preview(text, hides ? typed : other, hides ? other : typed,
                     Settings.POST_WORDS_WHOLE_WORDS.savedValue());
             verdict.setText(wordsPreviewLine(result, text.trim().isEmpty()));
+            // With the keyboard up, the scroll follows the caret and leaves the line under the field out of sight.
+            if (sample.hasFocus()) {
+                TextView line = verdict;
+                line.post(() -> line.requestRectangleOnScreen(new Rect(0, 0, line.getWidth(), line.getHeight()), true));
+            }
         }
 
         int otherListBytes() {
