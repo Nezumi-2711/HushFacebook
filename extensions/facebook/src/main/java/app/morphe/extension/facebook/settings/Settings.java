@@ -2299,6 +2299,16 @@ public class Settings extends BaseSettings {
             new EnumSetting<>("hushfacebook_accent_color", AccentColor.Preset.FACEBOOK, true);
 
     /**
+     * The colour the count badges on the tabs take ({@link app.morphe.extension.facebook.theme.MarkColors}),
+     * as {@code #RRGGBB}, issue #263. Blank keeps Facebook's red, and so does a paused Facebook. Screens
+     * pick their colours as they build, so a change brings up the restart row. Not a switch.
+     */
+    public static final StringSetting BADGE_COLOR = new StringSetting("hushfacebook_badge_color", "", true);
+
+    /** The colour the Facebook logo at the top of Home takes, the same way. Blank keeps Facebook's blue. */
+    public static final StringSetting LOGO_COLOR = new StringSetting("hushfacebook_logo_color", "", true);
+
+    /**
      * Where {@link #USE_SYSTEM_FONT} takes its font from: empty for the phone's own, or the name of
      * the font file picked in the settings, whose copy sits in Facebook's files
      * ({@link app.morphe.extension.facebook.font.FontFile}). Only the settings screen writes it,

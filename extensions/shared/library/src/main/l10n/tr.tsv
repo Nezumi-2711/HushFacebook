@@ -2054,3 +2054,31 @@ Reels order will be set to %1$s.	Reels sırası %1$s olarak ayarlanacak.
 Cast button on feed videos	Akış videolarında yayınla düğmesi
 Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.	Akış videolarına bir yayınla düğmesi ekler. Videoyu, Web Video Caster gibi sende olan bir yayın uygulamasına verir, o da TV'ne gönderir. Facebook'un artık kendi yayınlama özelliği yok.
 Cast this video	Bu videoyu yayınla
+# context: title of the row that holds a color code for the count badges on the tabs
+Badge color	Rozet rengi
+# context: title of the row that holds a color code for the Facebook logo at the top of Home
+Logo color	Logo rengi
+# context: dialog message of the Logo color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the Facebook logo at the top of Home, like #2ECC71. Leave it blank for Facebook's blue.	Ana Sayfa'nın üstündeki Facebook logosu için bir renk kodu (#RRGGBB), örneğin #2ECC71. Facebook'un mavisi için boş bırakın.
+# context: dialog message of the Badge color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the count badges on the tabs, like #2ECC71. Leave it blank for Facebook's red.	Sekmelerdeki sayı rozetleri için bir renk kodu (#RRGGBB), örneğin #2ECC71. Facebook'un kırmızısı için boş bırakın.
+# context: summary of the Logo color row while it's blank
+The Facebook logo keeps its blue. Type a color code to change it.	Facebook logosu mavi kalır. Değiştirmek için bir renk kodu yazın.
+# context: summary of the Badge color row while it's blank
+Badges keep Facebook's red. Type a color code to change it.	Rozetler Facebook'un kırmızısında kalır. Değiştirmek için bir renk kodu yazın.
+# context: summary of the Logo color row; %1$s is a color code like #2ECC71
+The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.	Ana Sayfa'nın üstündeki Facebook logosu %1$s. Değişikliği görmek için Facebook'u yeniden başlatın.
+# context: summary of the Badge color row; %1$s is a color code like #2ECC71
+Count badges on the tabs are %1$s. Restart Facebook to see the change.	Sekmelerdeki sayı rozetleri %1$s. Değişikliği görmek için Facebook'u yeniden başlatın.
+# context: shown when Save is tapped on the Badge or Logo color row with text that isn't a color code; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+"%1$s" isn't a color. Type a six-digit color code (#RRGGBB), like #2ECC71, or leave it blank for Facebook's own.	“%1$s” bir renk değil. Altı haneli bir renk kodu (#RRGGBB) yazın, örneğin #2ECC71, ya da Facebook'un rengi için boş bırakın.
+# context: shown when Save is tapped on the Badge or Logo color row with a see-through color; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+%1$s is see-through. Type a solid six-digit color code (#RRGGBB), like #2ECC71.	%1$s saydam. Altı haneli opak bir renk kodu (#RRGGBB) yazın, örneğin #2ECC71.
+# context: import preview sentence: the file sets the Badge color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be Facebook's red.	Yamalı Facebook'unuz Rozet ve logo renkleri'ni içeriyorsa rozetler Facebook'un kırmızısı olur.
+# context: import preview sentence: the file sets the Logo color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be Facebook's blue.	Yamalı Facebook'unuz Rozet ve logo renkleri'ni içeriyorsa logo Facebook'un mavisi olur.
+# context: import preview sentence: the file sets the Badge color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Yamalı Facebook'unuz Rozet ve logo renkleri'ni içeriyorsa rozetler %1$s olur.
+# context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Yamalı Facebook'unuz Rozet ve logo renkleri'ni içeriyorsa logo %1$s olur.

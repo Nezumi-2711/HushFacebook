@@ -134,7 +134,7 @@ internal var plainTokens: Set<String> = emptySet()
 internal var integerReadAttributeIds: Set<Int> = emptySet()
 
 /** The token enum FDSColors resolves, and its constants. */
-private fun BytecodePatchContext.fdsTokens(): Pair<ClassDef, TokenConstants> {
+internal fun BytecodePatchContext.fdsTokens(): Pair<ClassDef, TokenConstants> {
     val tokenType = fdsColourSource(classDefBy(fdsColors()))!!.parameterTypes[1].toString()
     val tokenClass = classDefBy(tokenType)
     return tokenClass to tokenConstants(tokenClass.methods.single { it.name == "<clinit>" }, tokenType)

@@ -1394,6 +1394,16 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/theme/MarkColors.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/layout/theme/MarkColorsPatch.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: Badge and logo colors. It hooks the themes' FDS colour resolvers (each resolver on FDSColors and the view code's theme resolver) with its own target, after theirs, and the extension swaps the colour of the NOTIFICATION_BADGE token for the Badge color row's code and of FB_WORDMARK and FB_LOGO for the Logo color row's, keeping Facebook's alpha. Every other token, a blank row and Pause leave Facebook's colour. The patch refuses to apply when the FDS token enum lacks any of the three names."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/navigation/TabBadges.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/navigation/tabbadges/HideTabBadgesPatch.kt"
       ],

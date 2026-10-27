@@ -92,6 +92,7 @@ Each row says what the patch does, how its switch starts and which settings sect
 | Patch | What it does |
 |---|---|
 | `Accent color` | Swaps Facebook's blue on links, buttons, switches and the selected tab for a color you like better. Nothing changes until you pick one. Pick a color in Hushfacebook settings > Appearance. |
+| `Badge and logo colors` | Paints the count badges on the tabs and the Facebook logo at the top of Home in colors you pick. Nothing changes until you type a color. Set them in Hushfacebook settings > Appearance. |
 | `Allow screenshots` | Lets you take screenshots and screen recordings on the pages where Facebook blocks them, so you can keep a copy of what's on screen. Starts off. Turn it on in Hushfacebook settings > Privacy. |
 | `AMOLED black theme` | Makes Facebook's dark mode black, or a dark color you pick, instead of dark gray, which can save battery on OLED screens. Cards and menus stay a shade lighter than the page. Turn on Black cards in Hushfacebook settings > Appearance to make them black too, and Lines between posts there for a thin gray line between posts in the feed. Light background color there gives light mode a soft color in place of white. Turn on dark mode in Facebook first. It isn't selected by default because undoing it means patching again. Turn on Expert mode in Manager to pick it. |
 | `Block ad telemetry` | Stops Facebook watching for screenshots of ads and reporting which apps you install after seeing ads, and stops several of the ways it sends your phone's advertising ID, so less of what you do feeds its ad tracking. Works as soon as you patch it in, with no switch. |
@@ -306,7 +307,7 @@ A few rows hand a link to another app instead of going online themselves. **Send
 | Minimum Android version | Android 11 |
 | Download | [APKMirror](https://www.apkmirror.com/apk/facebook-2/facebook/) |
 
-There are 104 patches for `com.facebook.katana`, and a release only goes out once every one of them has applied to that build. Older Facebook versions like 583 and 582 aren't supported any more, so update Facebook before you patch. When a newer stable Facebook comes out, Hushfacebook moves to it and drops the one before. Meta's builds for Android 9 and 8 can't be patched at all, since their code sits in a compressed archive the patcher can't read.
+There are 105 patches for `com.facebook.katana`, and a release only goes out once every one of them has applied to that build. Older Facebook versions like 583 and 582 aren't supported any more, so update Facebook before you patch. When a newer stable Facebook comes out, Hushfacebook moves to it and drops the one before. Meta's builds for Android 9 and 8 can't be patched at all, since their code sits in a compressed archive the patcher can't read.
 
 SHA-256 of the .apkm file the patches are checked against. APKMirror swapped its arm64 file for a fuller one on October 22 with the same code inside, so either arm64 hash is fine:
 

@@ -273,6 +273,8 @@ public enum PatchFamily {
     MATERIAL_YOU_THEME(FamilyNames.MATERIAL_YOU_THEME, "materialYouTheme", FamilyNames.MATERIAL_YOU_THEME),
     // No switch: a list picks the accent, and Pause makes it read Facebook's blue, so nothing stays in.
     ACCENT_COLOR(FamilyNames.ACCENT_COLOR, "accentColor", Settings.ACCENT_COLOR),
+    // No switch: two color codes pick the colors, and Pause makes them read Facebook's own.
+    MARK_COLORS(FamilyNames.MARK_COLORS, "markColors", Settings.BADGE_COLOR),
     RESTORE_TRUST(FamilyNames.RESTORE_TRUST, "restoreTrust", "Profiles and posts work again"),
     // Runs while the application is built, before a switch can be read, and keeps Facebook starting.
     TRANSLATED_START(FamilyNames.TRANSLATED_START, "translatedStart", "Start-up fix for x86 phones"),

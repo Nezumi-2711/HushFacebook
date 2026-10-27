@@ -403,6 +403,8 @@ public class SettingsBackupPreference extends Preference {
             if (snapshot.reelsOrderChange() != null) parts.add(reelsOrderSentence(snapshot.reelsOrderChange()));
             if (snapshot.backgroundChange() != null) parts.add(backgroundSentence(snapshot.backgroundChange()));
             if (snapshot.lightBackgroundChange() != null) parts.add(lightBackgroundSentence(snapshot.lightBackgroundChange()));
+            if (snapshot.badgeChange() != null) parts.add(markColorSentence(false, snapshot.badgeChange()));
+            if (snapshot.logoChange() != null) parts.add(markColorSentence(true, snapshot.logoChange()));
             if (snapshot.headerTextChange() != null) parts.add(headerTextSentence(snapshot.headerTextChange()));
             if (snapshot.seenKeep != null && snapshot.changes().containsKey(SettingsBackup.SEEN_KEEP)) {
                 parts.add(L10n.f("Posts you've seen will stay hidden for %1$s.",
@@ -605,6 +607,17 @@ public class SettingsBackupPreference extends Preference {
         }
         return L10n.f("If your patched Facebook includes the AMOLED black theme, dark mode's backgrounds will be %1$s.",
                 L10n.isolate(background));
+    }
+
+    /** The sentence that says which color the badges, or with [logo] the logo, will take after an import, [code] blank or a code. */
+    static String markColorSentence(boolean logo, String code) {
+        if (code.isEmpty()) {
+            return logo ? L10n.t("If your patched Facebook includes Badge and logo colors, the logo will be Facebook's blue.")
+                    : L10n.t("If your patched Facebook includes Badge and logo colors, badges will be Facebook's red.");
+        }
+        return logo ? L10n.f("If your patched Facebook includes Badge and logo colors, the logo will be %1$s.",
+                L10n.isolate(code))
+                : L10n.f("If your patched Facebook includes Badge and logo colors, badges will be %1$s.", L10n.isolate(code));
     }
 
     /** The sentence that says which color light mode's backgrounds will take after an import, [background] blank or a code. */
@@ -932,6 +945,8 @@ public class SettingsBackupPreference extends Preference {
                     + (snapshot.reelsOrderChange() == null ? "" : " " + reelsOrderSentence(snapshot.reelsOrderChange()))
                     + (snapshot.backgroundChange() == null ? "" : " " + backgroundSentence(snapshot.backgroundChange()))
                     + (snapshot.lightBackgroundChange() == null ? "" : " " + lightBackgroundSentence(snapshot.lightBackgroundChange()))
+                    + (snapshot.badgeChange() == null ? "" : " " + markColorSentence(false, snapshot.badgeChange()))
+                    + (snapshot.logoChange() == null ? "" : " " + markColorSentence(true, snapshot.logoChange()))
                     + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()));
             accepted = Utils.runOnBackgroundThread(() -> {
                 try {

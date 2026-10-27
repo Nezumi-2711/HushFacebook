@@ -2058,3 +2058,31 @@ Reels order will be set to %1$s.	Reels 排序方式將設為 %1$s。
 Cast button on feed videos	動態影片上的投放按鈕
 Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.	為動態中的影片加入投放按鈕。它會把影片交給你已安裝的投放應用程式（例如 Web Video Caster），由它傳送到電視。Facebook 已不再內建投放功能。
 Cast this video	投放這部影片
+# context: title of the row that holds a color code for the count badges on the tabs
+Badge color	徽章顏色
+# context: title of the row that holds a color code for the Facebook logo at the top of Home
+Logo color	標誌顏色
+# context: dialog message of the Logo color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the Facebook logo at the top of Home, like #2ECC71. Leave it blank for Facebook's blue.	首頁頂端 Facebook 標誌的色碼（#RRGGBB），例如 #2ECC71。留白則使用 Facebook 的藍色。
+# context: dialog message of the Badge color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the count badges on the tabs, like #2ECC71. Leave it blank for Facebook's red.	分頁上數字徽章的色碼（#RRGGBB），例如 #2ECC71。留白則使用 Facebook 的紅色。
+# context: summary of the Logo color row while it's blank
+The Facebook logo keeps its blue. Type a color code to change it.	Facebook 標誌維持藍色。輸入色碼即可變更。
+# context: summary of the Badge color row while it's blank
+Badges keep Facebook's red. Type a color code to change it.	徽章維持 Facebook 的紅色。輸入色碼即可變更。
+# context: summary of the Logo color row; %1$s is a color code like #2ECC71
+The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.	首頁頂端的 Facebook 標誌為 %1$s。重新啟動 Facebook 即可看到變更。
+# context: summary of the Badge color row; %1$s is a color code like #2ECC71
+Count badges on the tabs are %1$s. Restart Facebook to see the change.	分頁上的數字徽章為 %1$s。重新啟動 Facebook 即可看到變更。
+# context: shown when Save is tapped on the Badge or Logo color row with text that isn't a color code; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+"%1$s" isn't a color. Type a six-digit color code (#RRGGBB), like #2ECC71, or leave it blank for Facebook's own.	「%1$s」不是顏色。請輸入六位數色碼（#RRGGBB），例如 #2ECC71，或留白以使用 Facebook 的顏色。
+# context: shown when Save is tapped on the Badge or Logo color row with a see-through color; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+%1$s is see-through. Type a solid six-digit color code (#RRGGBB), like #2ECC71.	%1$s 是透明的。請輸入不透明的六位數色碼（#RRGGBB），例如 #2ECC71。
+# context: import preview sentence: the file sets the Badge color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be Facebook's red.	如果你修補的 Facebook 包含「徽章和標誌顏色」，徽章將使用 Facebook 的紅色。
+# context: import preview sentence: the file sets the Logo color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be Facebook's blue.	如果你修補的 Facebook 包含「徽章和標誌顏色」，標誌將使用 Facebook 的藍色。
+# context: import preview sentence: the file sets the Badge color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be %1$s.	如果你修補的 Facebook 包含「徽章和標誌顏色」，徽章將為 %1$s。
+# context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	如果你修補的 Facebook 包含「徽章和標誌顏色」，標誌將為 %1$s。

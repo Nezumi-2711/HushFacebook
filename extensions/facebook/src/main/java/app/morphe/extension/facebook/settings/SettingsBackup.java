@@ -51,6 +51,7 @@ import app.morphe.extension.facebook.feed.ReactionCeiling;
 import app.morphe.extension.facebook.theme.AccentColor;
 import app.morphe.extension.facebook.theme.AmoledBackground;
 import app.morphe.extension.facebook.theme.AmoledLightBackground;
+import app.morphe.extension.facebook.theme.MarkColors;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
 import app.morphe.extension.facebook.navigation.StartTab;
 import app.morphe.extension.facebook.feed.SeenPosts;
@@ -486,6 +487,14 @@ public final class SettingsBackup {
     static final StringSetting LIGHT_BACKGROUND = Settings.AMOLED_LIGHT_BACKGROUND;
 
     /**
+     * Badge and logo colors, each held in a file as its row keeps it: blank, or {@code #RRGGBB} in
+     * capitals that {@link MarkColors} takes. Anything else refuses the whole file, as a Background
+     * color does.
+     */
+    static final StringSetting BADGE = Settings.BADGE_COLOR;
+    static final StringSetting LOGO = Settings.LOGO_COLOR;
+
+    /**
      * Home header text, held in a file as its row keeps it: blank, or one line {@link HeaderText}
      * leaves as it is. Text written any other way refuses the whole file.
      */
@@ -575,7 +584,7 @@ public final class SettingsBackup {
     static final List<Setting<?>> VALUES = Collections.unmodifiableList(
             Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, CEILING, REELS_ORDER, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
                     FILE_NAME, PHOTO_NAME, ACTION, APP, START, SUBTAB, ORDER, PLAYBACK, REELS_QUALITY, STORIES_QUALITY,
-                    QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, TEXT_SIZE, ACCENT));
+                    QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, TEXT_SIZE, ACCENT, BADGE, LOGO));
 
     /** The longest name or value a file holds that isn't a word list, far past a package name. */
     private static final int MAX_OTHER_CHARS = 1024;
@@ -685,6 +694,8 @@ public final class SettingsBackup {
         private static final String HOME_FEED_NAME = "home_feed";
         private static final String BACKGROUND_NAME = "amoled_background";
         private static final String LIGHT_BACKGROUND_NAME = "amoled_light_background";
+        private static final String BADGE_NAME = "badge_color";
+        private static final String LOGO_NAME = "logo_color";
         private static final String HEADER_TEXT_NAME = "header_text";
         private static final String REELS_ORDER_NAME = "reels_order";
 
@@ -780,6 +791,12 @@ public final class SettingsBackup {
         /** The Light background color the file holds, the same way. */
         @Nullable
         String lightBackground;
+        /** The Badge color the file holds, the same way. */
+        @Nullable
+        String badge;
+        /** The Logo color the file holds, the same way. */
+        @Nullable
+        String logo;
         /** The Home header text the file holds, the same way. */
         @Nullable
         String headerText;
@@ -1006,6 +1023,10 @@ public final class SettingsBackup {
             if (backgroundChange != null) changes.put(BACKGROUND, backgroundChange);
             String lightBackgroundChange = lightBackgroundChange();
             if (lightBackgroundChange != null) changes.put(LIGHT_BACKGROUND, lightBackgroundChange);
+            String badgeChange = badgeChange();
+            if (badgeChange != null) changes.put(BADGE, badgeChange);
+            String logoChange = logoChange();
+            if (logoChange != null) changes.put(LOGO, logoChange);
             String headerTextChange = headerTextChange();
             if (headerTextChange != null) changes.put(HEADER_TEXT, headerTextChange);
             ReelsOrder reelsOrderChange = reelsOrderChange();
@@ -1224,6 +1245,20 @@ public final class SettingsBackup {
             return lightBackground.equals(LIGHT_BACKGROUND.savedValue()) ? null : lightBackground;
         }
 
+        /** The Badge color this file sets, or null when it names none or the one already set. */
+        @Nullable
+        String badgeChange() {
+            if (badge == null) return null;
+            return badge.equals(BADGE.savedValue()) ? null : badge;
+        }
+
+        /** The Logo color this file sets, or null when it names none or the one already set. */
+        @Nullable
+        String logoChange() {
+            if (logo == null) return null;
+            return logo.equals(LOGO.savedValue()) ? null : logo;
+        }
+
         /** The Home header text this file sets, or null when it names none or the one already set. */
         @Nullable
         String headerTextChange() {
@@ -1287,6 +1322,8 @@ public final class SettingsBackup {
             if (homeFeed != null) state.putString(HOME_FEED_NAME, homeFeed.fileValue);
             if (background != null) state.putString(BACKGROUND_NAME, background);
             if (lightBackground != null) state.putString(LIGHT_BACKGROUND_NAME, lightBackground);
+            if (badge != null) state.putString(BADGE_NAME, badge);
+            if (logo != null) state.putString(LOGO_NAME, logo);
             if (headerText != null) state.putString(HEADER_TEXT_NAME, headerText);
             if (reelsOrder != null) state.putString(REELS_ORDER_NAME, reelsOrder.fileValue);
             state.putInt(UNKNOWN, unknown);
@@ -1354,6 +1391,10 @@ public final class SettingsBackup {
             read.background = isBackground(background) ? (String) background : null;
             Object lightBackground = state.get(LIGHT_BACKGROUND_NAME);
             read.lightBackground = isLightBackground(lightBackground) ? (String) lightBackground : null;
+            Object badge = state.get(BADGE_NAME);
+            read.badge = isMarkColor(badge) ? (String) badge : null;
+            Object logo = state.get(LOGO_NAME);
+            read.logo = isMarkColor(logo) ? (String) logo : null;
             Object headerText = state.get(HEADER_TEXT_NAME);
             read.headerText = HeaderText.isClean(headerText instanceof String ? (String) headerText : null)
                     ? (String) headerText : null;
@@ -1430,6 +1471,10 @@ public final class SettingsBackup {
             switches.put(BACKGROUND.key, background == null ? "" : background);
             String lightBackground = AmoledLightBackground.stored(of(LIGHT_BACKGROUND));
             switches.put(LIGHT_BACKGROUND.key, lightBackground == null ? "" : lightBackground);
+            String badge = MarkColors.stored(of(BADGE));
+            switches.put(BADGE.key, badge == null ? "" : badge);
+            String logo = MarkColors.stored(of(LOGO));
+            switches.put(LOGO.key, logo == null ? "" : logo);
             switches.put(HEADER_TEXT.key, HeaderText.clean(of(HEADER_TEXT)));
             return new JSONObject()
                     .put(FORMAT_NAME, FORMAT)
@@ -1557,6 +1602,8 @@ public final class SettingsBackup {
         FeedsSubtab homeFeed = null;
         String background = null;
         String lightBackground = null;
+        String badge = null;
+        String logo = null;
         String headerText = null;
         ReelsOrder reelsOrder = null;
         JSONObject values = (JSONObject) settings;
@@ -1638,6 +1685,13 @@ public final class SettingsBackup {
                 Object value = values.opt(name);
                 if (!isLightBackground(value)) throw new Rejected(Reason.VALUE, "Not a Light background color: " + name);
                 lightBackground = (String) value;
+                continue;
+            }
+            if (BADGE.key.equals(name) || LOGO.key.equals(name)) {
+                Object value = values.opt(name);
+                if (!isMarkColor(value)) throw new Rejected(Reason.VALUE, "Not a color code: " + name);
+                if (BADGE.key.equals(name)) badge = (String) value;
+                else logo = (String) value;
                 continue;
             }
             if (HEADER_TEXT.key.equals(name)) {
@@ -1795,6 +1849,8 @@ public final class SettingsBackup {
         read.homeFeed = homeFeed;
         read.background = background;
         read.lightBackground = lightBackground;
+        read.badge = badge;
+        read.logo = logo;
         read.headerText = headerText;
         read.reelsOrder = reelsOrder;
         return read;
@@ -1808,6 +1864,11 @@ public final class SettingsBackup {
     /** A Light background color as its row keeps it, which {@link AmoledLightBackground} takes. */
     static boolean isLightBackground(@Nullable Object value) {
         return value instanceof String && value.equals(AmoledLightBackground.stored((String) value));
+    }
+
+    /** A Badge or Logo color as its row keeps it, which {@link MarkColors} takes. */
+    static boolean isMarkColor(@Nullable Object value) {
+        return value instanceof String && value.equals(MarkColors.stored((String) value));
     }
 
     /**

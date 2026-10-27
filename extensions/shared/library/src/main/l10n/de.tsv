@@ -2054,3 +2054,31 @@ Reels order will be set to %1$s.	Die Reihenfolge der Reels wird auf %1$s gesetzt
 Cast button on feed videos	Cast-Taste bei Feed-Videos
 Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.	Fügt Feed-Videos eine Cast-Taste hinzu. Sie übergibt das Video an eine Cast-App, die du hast, etwa Web Video Caster, die es an deinen Fernseher sendet. Facebook selbst kann nicht mehr casten.
 Cast this video	Dieses Video casten
+# context: title of the row that holds a color code for the count badges on the tabs
+Badge color	Badge-Farbe
+# context: title of the row that holds a color code for the Facebook logo at the top of Home
+Logo color	Logofarbe
+# context: dialog message of the Logo color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the Facebook logo at the top of Home, like #2ECC71. Leave it blank for Facebook's blue.	Ein Farbcode (#RRGGBB) für das Facebook-Logo oben auf der Startseite, etwa #2ECC71. Lass das Feld leer für das Blau von Facebook.
+# context: dialog message of the Badge color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the count badges on the tabs, like #2ECC71. Leave it blank for Facebook's red.	Ein Farbcode (#RRGGBB) für die Zähler-Badges auf den Tabs, etwa #2ECC71. Lass das Feld leer für das Rot von Facebook.
+# context: summary of the Logo color row while it's blank
+The Facebook logo keeps its blue. Type a color code to change it.	Das Facebook-Logo bleibt blau. Gib einen Farbcode ein, um das zu ändern.
+# context: summary of the Badge color row while it's blank
+Badges keep Facebook's red. Type a color code to change it.	Badges bleiben im Rot von Facebook. Gib einen Farbcode ein, um das zu ändern.
+# context: summary of the Logo color row; %1$s is a color code like #2ECC71
+The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.	Das Facebook-Logo oben auf der Startseite ist %1$s. Starte Facebook neu, um die Änderung zu sehen.
+# context: summary of the Badge color row; %1$s is a color code like #2ECC71
+Count badges on the tabs are %1$s. Restart Facebook to see the change.	Zähler-Badges auf den Tabs sind %1$s. Starte Facebook neu, um die Änderung zu sehen.
+# context: shown when Save is tapped on the Badge or Logo color row with text that isn't a color code; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+"%1$s" isn't a color. Type a six-digit color code (#RRGGBB), like #2ECC71, or leave it blank for Facebook's own.	„%1$s“ ist keine Farbe. Gib einen sechsstelligen Farbcode (#RRGGBB) ein, etwa #2ECC71, oder lass das Feld leer für die Farbe von Facebook.
+# context: shown when Save is tapped on the Badge or Logo color row with a see-through color; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+%1$s is see-through. Type a solid six-digit color code (#RRGGBB), like #2ECC71.	%1$s ist durchsichtig. Gib einen deckenden sechsstelligen Farbcode (#RRGGBB) ein, etwa #2ECC71.
+# context: import preview sentence: the file sets the Badge color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be Facebook's red.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, sind Badges im Rot von Facebook.
+# context: import preview sentence: the file sets the Logo color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be Facebook's blue.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, ist das Logo im Blau von Facebook.
+# context: import preview sentence: the file sets the Badge color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, sind Badges %1$s.
+# context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, ist das Logo %1$s.
