@@ -22,9 +22,11 @@ import android.graphics.Shader;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -56,6 +58,17 @@ public class ShimmerTitleTest {
         ScreenColors dark = ScreenColors.of(TonePalette.fallback(), false);
         return new int[]{ScreenColors.DEFAULT.background, ScreenColors.DEFAULT.dialog, light.background, light.dialog,
                 dark.background, dark.dialog, Color.BLACK, 0xFF0D1117, 0xFF1E1E2E, 0xFF242526, Color.WHITE};
+    }
+
+    /**
+     * Inside a frame the animation clock never reads earlier than the last time read outside one.
+     * That time outlives each test while Robolectric winds the uptime back, so a test after one that
+     * ran its clock further would see the title's clock stand still. A read outside a frame takes
+     * the current uptime.
+     */
+    @Before
+    public void startTheAnimationClockFromThisTest() {
+        AnimationUtils.currentAnimationTimeMillis();
     }
 
     @Test
