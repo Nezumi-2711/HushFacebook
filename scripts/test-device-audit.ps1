@@ -967,8 +967,9 @@ try {
     $script:screenText = @()
     Assert-Throws { Save-SettingsPages 'dark-de' } 'Empty UI nodes passed.'
 
-    # A sheet an earlier step left over the page a link opened (the S22 walk, 2026-10-27) gets one
-    # Back, then the link goes again. A reel route, proved by its activity, never gets the Back.
+    # A sheet an earlier step left over the page a link opened (the S22 walks, 2026-10-27) gets up to
+    # two Backs, each followed by the link, since the comment sheet's first Back only drops the
+    # composer's focus. A reel route, proved by its activity, never gets the Back.
     & {
         $SettleSeconds = 0
         function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
@@ -977,10 +978,11 @@ try {
         function Test-AuditDestination([string]$Route, [object[]]$Nodes) { $script:pageAnswers.Dequeue() }
         function Get-AuditReelProof { $script:pageAnswers.Dequeue() }
         $cases = @(
-            @{ Reel = $false; Answers = @($true); Proved = $true; Backs = 0; Starts = 1; Retried = $false; Name = 'a page proved at once' },
-            @{ Reel = $false; Answers = @($false, $true); Proved = $true; Backs = 1; Starts = 2; Retried = $true; Name = 'a covered page' },
-            @{ Reel = $false; Answers = @($false, $false); Proved = $false; Backs = 1; Starts = 2; Retried = $true; Name = 'a page never reached' },
-            @{ Reel = $true; Answers = @($false); Proved = $false; Backs = 0; Starts = 1; Retried = $false; Name = 'a reel not proved' })
+            @{ Reel = $false; Answers = @($true); Proved = $true; Backs = 0; Starts = 1; Name = 'a page proved at once' },
+            @{ Reel = $false; Answers = @($false, $true); Proved = $true; Backs = 1; Starts = 2; Name = 'a covered page' },
+            @{ Reel = $false; Answers = @($false, $false, $true); Proved = $true; Backs = 2; Starts = 3; Name = 'a focused comment sheet' },
+            @{ Reel = $false; Answers = @($false, $false, $false); Proved = $false; Backs = 2; Starts = 3; Name = 'a page never reached' },
+            @{ Reel = $true; Answers = @($false); Proved = $false; Backs = 0; Starts = 1; Name = 'a reel not proved' })
         foreach ($case in $cases) {
             $script:routeCalls = [Collections.Generic.List[string]]::new()
             $script:pageAnswers = [Collections.Generic.Queue[bool]]::new([bool[]]$case.Answers)
@@ -989,7 +991,7 @@ try {
             $starts = @($script:routeCalls | Where-Object { $_ -like 'shell am start *-d fb://notifications *' }).Count
             Assert-That ($proved -eq $case.Proved) "Open-AuditRoute gave the wrong answer for $($case.Name)."
             Assert-That ($backs -eq $case.Backs -and $starts -eq $case.Starts) "Open-AuditRoute sent $backs Back and $starts links for $($case.Name)."
-            Assert-That ($script:auditRouteRetried -eq $case.Retried) "Open-AuditRoute misreported its second try for $($case.Name)."
+            Assert-That ($script:auditRouteBacks -eq $case.Backs) "Open-AuditRoute reported $($script:auditRouteBacks) Backs for $($case.Name)."
             Assert-That ($script:pageAnswers.Count -eq 0) "Open-AuditRoute skipped a proof for $($case.Name)."
         }
     }

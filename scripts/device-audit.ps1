@@ -433,20 +433,22 @@ function Get-AuditReelProof {
 
 # Opens a walk route's link and proves the page it reached. A sheet an earlier step left open can
 # cover the page the link opened (the comment sheet the hold on a reel left on the S22, 2026-10-27,
-# failing the notifications step on two walks in a row), so a page that isn't proved gets one Back,
-# which closes what covers it, and the link goes again. A reel's proof reads its activity, which a
-# sheet can't hide, so a reel route gets no second try.
+# failing the notifications step on two walks in a row), so a page that isn't proved gets a Back,
+# which closes what covers it, and the link goes again. That comment sheet holds the composer's
+# focus, so its first Back only drops the focus and a second one closes it (third S22 walk,
+# 2026-10-27): up to two Backs, each followed by the link. A reel's proof reads its activity, which
+# a sheet can't hide, so a reel route gets no second try.
 function Open-AuditRoute([string]$Route, [bool]$Reel) {
-    $script:auditRouteRetried = $false
+    $script:auditRouteBacks = 0
     for ($attempt = 1; ; $attempt++) {
         $launch = (Invoke-Adb shell am start -W -a android.intent.action.VIEW -d $Route -p $Package) -join "`n"
         Start-Sleep -Seconds $SettleSeconds
         $proved = $launch -cmatch '(?m)^Status: ok\r?$' -and
             $(if ($Reel) { Get-AuditReelProof } else { Test-AuditDestination $Route @(Get-UiNodes) })
-        if ($proved -or $Reel -or $attempt -ge 2) { return [bool]$proved }
+        if ($proved -or $Reel -or $attempt -ge 3) { return [bool]$proved }
         Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
         Start-Sleep -Seconds 1
-        $script:auditRouteRetried = $true
+        $script:auditRouteBacks++
     }
 }
 
@@ -1064,8 +1066,8 @@ try {
                 $routeStep = $null
                 $reel = $ReelRoutes -ccontains $step
                 $routeVerified = Open-AuditRoute $step $reel
-                if ($script:auditRouteRetried) {
-                    $summary.Add("Walk: step $stepNumber ($step) $(if ($routeVerified) { 'was proved' } else { 'was still not proved' }) after one Back and a second try.")
+                if ($script:auditRouteBacks) {
+                    $summary.Add("Walk: step $stepNumber ($step) $(if ($routeVerified) { 'was proved' } else { 'was still not proved' }) after $($script:auditRouteBacks) Back(s), each followed by the link again.")
                 }
                 if (-not $routeVerified) {
                     $summary.Add("Walk: destination not proved at step $stepNumber ($step). No input sent.")
