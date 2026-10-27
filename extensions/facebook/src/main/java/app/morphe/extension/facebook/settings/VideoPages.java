@@ -17,6 +17,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveToRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.sendAppRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subfolderRow;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subheading;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.surfaceQualityRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.toggle;
 
@@ -34,7 +35,7 @@ import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.settings.BooleanSetting;
 
 /**
- * The category pages for video: Reels and Watch, Playback and Downloads. Each method adds its section to the page
+ * The category pages for video: Reels and Watch, Video and audio, and Downloads. Each method adds its section to the page
  * {@link HushfacebookPreferenceFragment#initialize} builds, and leaves it out when the build has none of
  * its patches, but for the sections every build has.
  */
@@ -56,7 +57,7 @@ final class VideoPages {
                 L10n.t("In News feed, Hide Reels in the feed blocks the rows of reels between posts.")));
         reels.addPreference(reelsLink(page, context, build, PatchFamily.TAP_TO_PLAY, Settings.TAP_TO_PLAY,
                 L10n.t("Reels that play by themselves"),
-                L10n.t("In Playback, Tap to play blocks autoplay, so reels and other videos wait for your tap.")));
+                L10n.t("In Video and audio, Tap to play blocks autoplay, so reels and other videos wait for your tap.")));
         // Without Hide the Reels tab, Facebook's own Hide is the answer, on the accounts that have it.
         if (build.contains(PatchFamily.REELS_TAB)) {
             reels.addPreference(reelsLink(page, context, build, PatchFamily.REELS_TAB, Settings.HIDE_REELS_TAB,
@@ -73,6 +74,7 @@ final class VideoPages {
                 L10n.t("Everything except Marketplace"),
                 L10n.t("In Opening Facebook, Marketplace only blocks the feed, the Reels tab and the other social "
                         + "tabs after a restart.")));
+        subheading(reels, L10n.t("Reels tab and ads"));
         if (build.contains(PatchFamily.REELS_TAB)) {
             // Facebook keeps the tab bar it built, so a change waits for a restart and the page says so.
             reels.addPreference(toggle(context, Settings.HIDE_REELS_TAB,
@@ -99,6 +101,7 @@ final class VideoPages {
                     L10n.t("Hides reels and Watch videos that Facebook marks as made with AI. Ones only their creator labeled "
                             + "stay. Off by default, since it hasn't been tried on a real account yet.")));
         }
+        subheading(reels, L10n.t("On reels and videos"));
         if (build.contains(PatchFamily.REEL_DECLUTTER)) {
             reels.addPreference(toggle(context, Settings.HIDE_REEL_CHIPS,
                     L10n.t("Hides prompts and promos under reels, like Remix, Use template, Add yours, Edits, Stars, games, "
@@ -170,6 +173,7 @@ final class VideoPages {
                             + "of its own pick. It can't fetch newer ones, and reels already placed stay put. Off by "
                             + "default, since it hasn't been tried on a real account yet.")));
         }
+        subheading(reels, L10n.t("Video controls"));
         if (build.contains(PatchFamily.DOUBLE_TAP_LIKE)) {
             reels.addPreference(toggle(context, Settings.TURN_OFF_DOUBLE_TAP_LIKE,
                     L10n.t("A double tap on a reel or video no longer likes it or shows a heart. A single tap and the Like "
@@ -220,6 +224,7 @@ final class VideoPages {
                             + "without the switches above.")));
         }
         if (build.contains(PatchFamily.REEL_DOWNLOAD)) {
+            subheading(reels, L10n.t("Saving reels"));
             reels.addPreference(toggle(context, Settings.DOWNLOAD_REELS, null));
             reels.addPreference(toggle(context, Settings.SHOW_REEL_DOWNLOAD_BUTTON,
                     L10n.t("Add a Download button to reels, using your download quality. Off or paused, Facebook's own buttons return."))
@@ -227,7 +232,7 @@ final class VideoPages {
         }
     }
 
-    /** Playback. */
+    /** Video and audio, whose route is still Playback, its earlier name. */
     static void playback(HushfacebookPreferenceFragment page, PreferenceScreen screen, Context context,
             Set<PatchFamily> build) {
         if (build.contains(PatchFamily.TAP_TO_PLAY) || build.contains(PatchFamily.RESUME_LONG_VIDEOS)
@@ -235,7 +240,8 @@ final class VideoPages {
                 || build.contains(PatchFamily.PLAYBACK_QUALITY) || build.contains(PatchFamily.PICTURE_IN_PICTURE)
                 || build.contains(PatchFamily.HDR_BRIGHTNESS) || build.contains(PatchFamily.SKIP_SILENCE)
                 || build.contains(PatchFamily.KEEP_FEED_VIDEOS_MUTED) || build.contains(PatchFamily.PROGRESS_BAR)) {
-            PreferenceCategory playback = category(screen, L10n.t("Playback"));
+            PreferenceCategory playback = category(screen, L10n.t("Video and audio"));
+            subheading(playback, L10n.t("Autoplay and resume"));
             if (build.contains(PatchFamily.TAP_TO_PLAY)) {
                 playback.addPreference(toggle(context, Settings.TAP_TO_PLAY,
                         L10n.t("Videos, reels, stories and music wait for your tap instead of playing by themselves. Facebook's own "
@@ -256,30 +262,13 @@ final class VideoPages {
                                 + "again after the feed refreshes. Nothing leaves your phone.")));
                 playback.addPreference(RecentlyWatchedScreen.row(page, context));
             }
-            if (build.contains(PatchFamily.FRAME_STEP)) {
-                // Asked on each tap, so a change shows from the next one.
-                playback.addPreference(toggle(context, Settings.FRAME_STEP,
-                        L10n.t("With a reel or video paused, tap its right side to step one frame forward and its left "
-                                + "side to step one frame back. Tap the middle to play.")));
-            }
+            subheading(playback, L10n.t("Video quality"));
             if (build.contains(PatchFamily.PLAYBACK_QUALITY)) {
                 playback.addPreference(toggle(context, Settings.DEFAULT_PLAYBACK_QUALITY,
                         L10n.t("Play videos, reels and stories at the quality below. A quality picked in a video's own menu still wins.")));
                 playback.addPreference(playbackQualityRow(context));
                 playback.addPreference(surfaceQualityRow(context, true));
                 playback.addPreference(surfaceQualityRow(context, false));
-            }
-            if (build.contains(PatchFamily.PICTURE_IN_PICTURE)) {
-                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE,
-                        L10n.t("A playing reel or full-screen video keeps going in a small window when you leave Facebook. Android 12 or later.")));
-                // Asked as each window is armed and on each tap of the row, so a change shows from the next reel.
-                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE_FROM_MENU,
-                        L10n.t("Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu "
-                                + "(the three dots) when you want one. That row shows on upright reels, not wide ones.")));
-                // Asked as each screen is armed and as the screen changes, so a change shows within a moment.
-                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE_BUTTON,
-                        L10n.t("Shows a small button at the left edge of a reel or video that has the window ready. Tap it to open "
-                                + "the window right away. Works with Picture-in-picture on.")));
             }
             if (build.contains(PatchFamily.HDR_BRIGHTNESS)) {
                 // Asked as each screen comes to the front, so a change shows from the next one.
@@ -292,6 +281,7 @@ final class VideoPages {
                                 + "The screen doesn't brighten and the picture stays as sharp. Works with the switch above "
                                 + "on or off.")));
             }
+            subheading(playback, L10n.t("Sound"));
             if (build.contains(PatchFamily.SKIP_SILENCE)) {
                 // Asked as each player's sound starts, so a change shows from the next seek or video.
                 playback.addPreference(toggle(context, Settings.SKIP_SILENT_PARTS,
@@ -304,6 +294,13 @@ final class VideoPages {
                         L10n.t("Videos in your feed start with the sound off every time you open Facebook, and only you "
                                 + "turn it on. Tap a video's speaker or press volume up to hear it.")));
             }
+            subheading(playback, L10n.t("Controls and picture-in-picture"));
+            if (build.contains(PatchFamily.FRAME_STEP)) {
+                // Asked on each tap, so a change shows from the next one.
+                playback.addPreference(toggle(context, Settings.FRAME_STEP,
+                        L10n.t("With a reel or video paused, tap its right side to step one frame forward and its left "
+                                + "side to step one frame back. Tap the middle to play.")));
+            }
             if (build.contains(PatchFamily.PROGRESS_BAR)) {
                 playback.addPreference(toggle(context, Settings.KEEP_PROGRESS_BAR,
                         L10n.t("A reel's progress bar stays full size, ready to drag. A full-screen video's controls "
@@ -315,6 +312,18 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.TAP_TO_SEEK,
                         L10n.t("Tap anywhere on a reel's or video's progress bar to jump there, instead of dragging "
                                 + "the dot.")));
+            }
+            if (build.contains(PatchFamily.PICTURE_IN_PICTURE)) {
+                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE,
+                        L10n.t("A playing reel or full-screen video keeps going in a small window when you leave Facebook. Android 12 or later.")));
+                // Asked as each window is armed and on each tap of the row, so a change shows from the next reel.
+                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE_FROM_MENU,
+                        L10n.t("Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu "
+                                + "(the three dots) when you want one. That row shows on upright reels, not wide ones.")));
+                // Asked as each screen is armed and as the screen changes, so a change shows within a moment.
+                playback.addPreference(toggle(context, Settings.PICTURE_IN_PICTURE_BUTTON,
+                        L10n.t("Shows a small button at the left edge of a reel or video that has the window ready. Tap it to open "
+                                + "the window right away. Works with Picture-in-picture on.")));
             }
         }
     }

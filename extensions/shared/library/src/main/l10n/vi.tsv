@@ -110,7 +110,7 @@ The top bar with search and Messenger stays put while you scroll down, instead o
 # context: switch title under Appearance, after Keep the top bar on screen; a big screen is a tablet or the inner screen of a folding phone, and the phone layout is the one Facebook shows on a normal phone
 Phone layout on big screens	Bố cục điện thoại trên màn hình lớn
 # context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
-A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	Máy tính bảng hoặc điện thoại gập khi mở ra sẽ dùng bố cục Facebook dành cho điện thoại, nên các công tắc thanh tab ở trên cũng hoạt động trên màn hình lớn. Bố cục rộng hơn dành cho màn hình lớn của Facebook sẽ mất đi. Mặc định tắt vì chưa được thử trên màn hình lớn. Khởi động lại Facebook để thấy thay đổi.
+A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar choices above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	Máy tính bảng hoặc điện thoại gập khi mở ra sẽ dùng bố cục Facebook dành cho điện thoại, nên các tùy chọn thanh tab ở trên cũng hoạt động trên màn hình lớn. Bố cục rộng hơn dành cho màn hình lớn của Facebook sẽ mất đi. Mặc định tắt vì chưa được thử trên màn hình lớn. Khởi động lại Facebook để thấy thay đổi.
 # context: switch title under Appearance, after Phone layout on big screens; it makes Facebook's top bar (search and Messenger) and its tab bar partly transparent
 See-through bars	Thanh trong suốt
 # context: description of that switch; the feed is the list of posts on Home, and blurred means frosted like glass
@@ -191,7 +191,7 @@ Reels show up in four places, and each one has its own control.	Reels xuất hi�
 Reels in the feed	Reels trên bảng tin
 In News feed, Hide Reels in the feed blocks the rows of reels between posts.	Trong Bảng tin, Ẩn Reels trên bảng tin chặn các hàng reel giữa các bài viết.
 Reels that play by themselves	Reels tự phát
-In Playback, Tap to play blocks autoplay, so reels and other videos wait for your tap.	Trong Phát lại, Nhấn để phát chặn tự động phát, nên reel và video khác chờ bạn nhấn.
+In Video and audio, Tap to play blocks autoplay, so reels and other videos wait for your tap.	Trong Video và âm thanh, Nhấn để phát chặn tự động phát, nên reel và video khác chờ bạn nhấn.
 The Reels tab	Tab Reels
 # context: map line without the patch; %1$s is the patch's English name in Morphe Manager
 Facebook's own setting blocks it. Open Settings, Tab bar, Customize the bar and choose Hide next to Reels, which some accounts call Video. If neither is listed, choose the %1$s patch in Morphe Manager and patch again.	Cài đặt riêng của Facebook có thể chặn tab này. Mở Cài đặt, Thanh tab, Tùy chỉnh thanh rồi chọn Ẩn cạnh Reels (một số tài khoản gọi là Video). Nếu không thấy cả hai, hãy chọn bản vá %1$s trong Morphe Manager và vá lại.
@@ -464,7 +464,6 @@ Hide Meta AI in search	Ẩn Meta AI trong tìm kiếm
 # context: summary of that switch; Meta AI and Ask Meta AI are Meta's own names, as Facebook shows them
 Search no longer shows Meta AI answers or Ask Meta AI prompts, or sends your search to Meta AI. Results for people, groups, pages and posts stay.	Tìm kiếm không còn hiện câu trả lời của Meta AI hay lời nhắc Hỏi Meta AI, và không gửi nội dung tìm kiếm cho Meta AI. Kết quả về người, nhóm, trang và bài viết vẫn giữ nguyên.
 # context: settings section heading for the Default comment order switch and its list
-Comments	Bình luận
 # context: switch title; on, a post's comments open in the order chosen in the list below it
 Default comment order	Thứ tự bình luận mặc định
 # context: summary of that switch; a link to a comment is one from a notification, say
@@ -745,7 +744,6 @@ Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings 
 # context: Settings overview, category navigation and search.
 Ads, suggestions and word filters	Quảng cáo, gợi ý và bộ lọc từ
 Cleaner reels and video controls	Reel gọn hơn và điều khiển video
-Tap to play, quality and resume	Nhấn để phát, chất lượng và phát tiếp
 Quality, format and file names	Chất lượng, định dạng và tên tệp
 No matching settings	Không có cài đặt phù hợp
 %1$d setting found	Tìm thấy %1$d cài đặt
@@ -837,7 +835,7 @@ Videos play at the lowest quality Facebook offers for each.	Video phát ở ch�
 Videos play at the best quality up to %1$s that Facebook offers for each, or the closest above.	Video phát ở chất lượng tốt nhất đến %1$s mà Facebook cung cấp cho từng video, hoặc mức gần nhất cao hơn.
 Videos play at the highest quality Facebook offers for each.	Video phát ở chất lượng cao nhất Facebook cung cấp cho từng video.
 Facebook will pick the quality videos play at.	Facebook sẽ chọn chất lượng phát video.
-Playback quality will be set to %1$s.	Chất lượng phát sẽ được đặt thành %1$s.
+Default quality will be set to %1$s.	Chất lượng mặc định sẽ được đặt thành %1$s.
 # context: import preview and toast sentence when a settings file sets the Reels quality to follow the playback quality
 Reels will play at the same quality as other videos.	Reel sẽ phát ở cùng chất lượng với video khác.
 # context: import preview and toast sentence; %1$s is a Reels quality choice such as Up to 720p
@@ -1178,16 +1176,16 @@ With Block Instant Games ads on, a game's rewarded ad counts as watched. No ad p
 Reels quality	Chất lượng reel
 # context: title of the list that picks the quality video stories start at
 Stories quality	Chất lượng tin
-# context: first choice in the Reels and Stories quality lists: follow the Playback quality row; use this language's name for that row
-Same as Playback quality	Giống Chất lượng phát
+# context: first choice in the Reels and Stories quality lists: follow the Default quality row
+Same as default	Giống mặc định
 # context: summary of the Reels quality list when it follows the Playback quality row
-Reels follow the Playback quality row.	Reel theo dòng Chất lượng phát.
+Reels follow the Default quality row.	Reel theo dòng Chất lượng mặc định.
 # context: summary of the Stories quality list when it follows the Playback quality row
-Video stories follow the Playback quality row.	Tin video theo dòng Chất lượng phát.
+Video stories follow the Default quality row.	Tin video theo dòng Chất lượng mặc định.
 # context: summary of the Reels quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for reels, whatever Playback quality is set to.	%1$s cho reel, bất kể Chất lượng phát đặt ở mức nào.
+%1$s for reels, whatever Default quality is set to.	%1$s cho reel, bất kể Chất lượng mặc định đặt ở mức nào.
 # context: summary of the Stories quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for video stories, whatever Playback quality is set to.	%1$s cho tin video, bất kể Chất lượng phát đặt ở mức nào.
+%1$s for video stories, whatever Default quality is set to.	%1$s cho tin video, bất kể Chất lượng mặc định đặt ở mức nào.
 # context: title of the row naming a folder inside the save folder that video saves go in
 Video subfolder	Thư mục con cho video
 # context: title of the row naming a folder inside the save folder that photo saves go in
@@ -1938,3 +1936,43 @@ Saving, playback and anonymous viewing	Lưu, phát và xem ẩn danh
 Sorting, replies and reactions	Sắp xếp, trả lời và cảm xúc
 Expanded	Đã mở rộng
 Collapsed	Đã thu gọn
+Ads and suggestions	Quảng cáo và gợi ý
+Feed layout	Bố cục bảng feed
+Content filters	Bộ lọc nội dung
+Reels tab and ads	Tab Thước phim và quảng cáo
+On reels and videos	Trên thước phim và video
+Video controls	Điều khiển video
+Saving reels	Lưu thước phim
+Autoplay and resume	Tự phát và phát tiếp
+Video quality	Chất lượng video
+Sound	Âm thanh
+Controls and picture-in-picture	Điều khiển và hình trong hình
+Tab bar	Thanh tab
+Top bar	Thanh trên cùng
+Tabs to hide	Tab cần ẩn
+Dots and counts	Chấm và số đếm
+Text and emoji	Chữ và emoji
+Colors and theme	Màu sắc và giao diện
+Screen and motion	Màn hình và chuyển động
+App icon and header	Biểu tượng ứng dụng và tiêu đề
+Backup and restore	Sao lưu và khôi phục
+Troubleshooting	Khắc phục sự cố
+Help and restart	Trợ giúp và khởi động lại
+Support the project	Ủng hộ dự án
+Video and audio	Video và âm thanh
+Comments and writing	Bình luận và viết
+Tabs and navigation	Tab và điều hướng
+Links and sharing	Liên kết và chia sẻ
+Chats and Messenger	Đoạn chat và Messenger
+Built-in changes	Thay đổi tích hợp sẵn
+Autoplay, quality and sound	Tự phát, chất lượng và âm thanh
+Tab bar, top bar, hidden tabs and dots	Thanh tab, thanh trên cùng, tab ẩn và dấu chấm
+Default quality	Chất lượng mặc định
+Tab bar position	Vị trí thanh tab
+Tab bar while scrolling	Thanh tab khi cuộn
+At the bottom	Ở dưới cùng
+At the top	Ở trên cùng
+Hides while scrolling	Ẩn khi cuộn
+Stays on screen	Luôn trên màn hình
+Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook quyết định vị trí thanh tab trên tài khoản của bạn. Hãy khởi động lại Facebook sau khi đổi mục này.
+Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook quyết định thanh tab dưới cùng có trượt đi khi bạn cuộn hay không. Hãy khởi động lại Facebook sau khi đổi mục này.

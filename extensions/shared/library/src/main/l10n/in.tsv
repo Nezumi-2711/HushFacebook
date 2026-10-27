@@ -110,7 +110,7 @@ The top bar with search and Messenger stays put while you scroll down, instead o
 # context: switch title under Appearance, after Keep the top bar on screen; a big screen is a tablet or the inner screen of a folding phone, and the phone layout is the one Facebook shows on a normal phone
 Phone layout on big screens	Tata letak ponsel di layar besar
 # context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
-A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	Tablet atau ponsel lipat yang terbuka mendapat tata letak yang dipakai Facebook di ponsel, jadi pengaturan bilah tab di atas juga berfungsi di layar besar. Tata letak layar besar Facebook yang lebih lebar hilang. Mati secara bawaan, karena belum dicoba di layar besar. Mulai ulang Facebook untuk melihat perubahannya.
+A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar choices above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	Tablet atau ponsel lipat yang terbuka mendapat tata letak yang dipakai Facebook di ponsel, jadi pengaturan bilah tab di atas juga berfungsi di layar besar. Tata letak layar besar Facebook yang lebih lebar hilang. Mati secara bawaan, karena belum dicoba di layar besar. Mulai ulang Facebook untuk melihat perubahannya.
 # context: switch title under Appearance, after Phone layout on big screens; it makes Facebook's top bar (search and Messenger) and its tab bar partly transparent
 See-through bars	Bilah tembus pandang
 # context: description of that switch; the feed is the list of posts on Home, and blurred means frosted like glass
@@ -191,7 +191,7 @@ Reels show up in four places, and each one has its own control.	Reels muncul di 
 Reels in the feed	Reels di Kabar Beranda
 In News feed, Hide Reels in the feed blocks the rows of reels between posts.	Di Kabar Beranda, “Sembunyikan Reels di Kabar Beranda” memblokir deretan Reels di antara postingan.
 Reels that play by themselves	Reels yang diputar sendiri
-In Playback, Tap to play blocks autoplay, so reels and other videos wait for your tap.	Di Pemutaran, “Ketuk untuk memutar” memblokir putar otomatis, jadi Reels dan video lain menunggu ketukan Anda.
+In Video and audio, Tap to play blocks autoplay, so reels and other videos wait for your tap.	Di Video dan audio, “Ketuk untuk memutar” memblokir putar otomatis, jadi Reels dan video lain menunggu ketukan Anda.
 The Reels tab	Tab Reels
 # context: map line without the patch; %1$s is the patch's English name in Morphe Manager
 Facebook's own setting blocks it. Open Settings, Tab bar, Customize the bar and choose Hide next to Reels, which some accounts call Video. If neither is listed, choose the %1$s patch in Morphe Manager and patch again.	Pengaturan Facebook sendiri yang memblokirnya. Buka Pengaturan, Bilah tab, Sesuaikan bilah, lalu pilih Sembunyikan di samping Reels, yang di beberapa akun disebut Video. Jika keduanya tidak tercantum, pilih tambalan %1$s di Morphe Manager lalu tambal ulang.
@@ -464,7 +464,6 @@ Hide Meta AI in search	Sembunyikan Meta AI di pencarian
 # context: summary of that switch; Meta AI and Ask Meta AI are Meta's own names, as Facebook shows them
 Search no longer shows Meta AI answers or Ask Meta AI prompts, or sends your search to Meta AI. Results for people, groups, pages and posts stay.	Pencarian tidak lagi menampilkan jawaban Meta AI atau ajakan Ask Meta AI, dan tidak mengirim pencarianmu ke Meta AI. Hasil untuk orang, grup, halaman, dan postingan tetap ada.
 # context: settings section heading for the Default comment order switch and its list
-Comments	Komentar
 # context: switch title; on, a post's comments open in the order chosen in the list below it
 Default comment order	Urutan komentar bawaan
 # context: summary of that switch; a link to a comment is one from a notification, say
@@ -745,7 +744,6 @@ Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings 
 # context: Settings overview, category navigation and search.
 Ads, suggestions and word filters	Iklan, saran, dan filter kata
 Cleaner reels and video controls	Reels lebih bersih dan kontrol video
-Tap to play, quality and resume	Ketuk untuk memutar, kualitas, dan melanjutkan
 Quality, format and file names	Kualitas, format, dan nama file
 No matching settings	Tidak ada pengaturan yang cocok
 %1$d setting found	%1$d pengaturan ditemukan
@@ -837,7 +835,7 @@ Videos play at the lowest quality Facebook offers for each.	Video diputar dengan
 Videos play at the best quality up to %1$s that Facebook offers for each, or the closest above.	Video diputar dengan kualitas terbaik hingga %1$s yang ditawarkan Facebook untuk masing-masing, atau yang terdekat di atasnya.
 Videos play at the highest quality Facebook offers for each.	Video diputar dengan kualitas tertinggi yang ditawarkan Facebook untuk masing-masing.
 Facebook will pick the quality videos play at.	Facebook akan memilih kualitas pemutaran video.
-Playback quality will be set to %1$s.	Kualitas pemutaran akan diatur ke %1$s.
+Default quality will be set to %1$s.	Kualitas bawaan akan diatur ke %1$s.
 # context: import preview and toast sentence when a settings file sets the Reels quality to follow the playback quality
 Reels will play at the same quality as other videos.	Reel akan diputar dengan kualitas yang sama seperti video lainnya.
 # context: import preview and toast sentence; %1$s is a Reels quality choice such as Up to 720p
@@ -1178,16 +1176,16 @@ With Block Instant Games ads on, a game's rewarded ad counts as watched. No ad p
 Reels quality	Kualitas reel
 # context: title of the list that picks the quality video stories start at
 Stories quality	Kualitas cerita
-# context: first choice in the Reels and Stories quality lists: follow the Playback quality row; use this language's name for that row
-Same as Playback quality	Sama seperti Kualitas pemutaran
+# context: first choice in the Reels and Stories quality lists: follow the Default quality row
+Same as default	Sama dengan bawaan
 # context: summary of the Reels quality list when it follows the Playback quality row
-Reels follow the Playback quality row.	Reel mengikuti baris Kualitas pemutaran.
+Reels follow the Default quality row.	Reel mengikuti baris Kualitas bawaan.
 # context: summary of the Stories quality list when it follows the Playback quality row
-Video stories follow the Playback quality row.	Cerita video mengikuti baris Kualitas pemutaran.
+Video stories follow the Default quality row.	Cerita video mengikuti baris Kualitas bawaan.
 # context: summary of the Reels quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for reels, whatever Playback quality is set to.	%1$s untuk reel, apa pun setelan Kualitas pemutaran.
+%1$s for reels, whatever Default quality is set to.	%1$s untuk reel, apa pun setelan Kualitas bawaan.
 # context: summary of the Stories quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for video stories, whatever Playback quality is set to.	%1$s untuk cerita video, apa pun setelan Kualitas pemutaran.
+%1$s for video stories, whatever Default quality is set to.	%1$s untuk cerita video, apa pun setelan Kualitas bawaan.
 # context: title of the row naming a folder inside the save folder that video saves go in
 Video subfolder	Subfolder video
 # context: title of the row naming a folder inside the save folder that photo saves go in
@@ -1938,3 +1936,43 @@ Saving, playback and anonymous viewing	Menyimpan, memutar, dan menonton secara a
 Sorting, replies and reactions	Urutan, balasan, dan reaksi
 Expanded	Diperluas
 Collapsed	Diciutkan
+Ads and suggestions	Iklan dan saran
+Feed layout	Tata letak feed
+Content filters	Filter konten
+Reels tab and ads	Tab Reels dan iklan
+On reels and videos	Di reel dan video
+Video controls	Kontrol video
+Saving reels	Menyimpan reel
+Autoplay and resume	Putar otomatis dan lanjutkan
+Video quality	Kualitas video
+Sound	Suara
+Controls and picture-in-picture	Kontrol dan gambar-dalam-gambar
+Tab bar	Bilah tab
+Top bar	Bilah atas
+Tabs to hide	Tab yang disembunyikan
+Dots and counts	Titik dan jumlah
+Text and emoji	Teks dan emoji
+Colors and theme	Warna dan tema
+Screen and motion	Layar dan gerakan
+App icon and header	Ikon aplikasi dan header
+Backup and restore	Cadangkan dan pulihkan
+Troubleshooting	Pemecahan masalah
+Help and restart	Bantuan dan mulai ulang
+Support the project	Dukung proyek ini
+Video and audio	Video dan audio
+Comments and writing	Komentar dan menulis
+Tabs and navigation	Tab dan navigasi
+Links and sharing	Tautan dan berbagi
+Chats and Messenger	Chat dan Messenger
+Built-in changes	Perubahan bawaan
+Autoplay, quality and sound	Putar otomatis, kualitas, dan suara
+Tab bar, top bar, hidden tabs and dots	Bilah tab, bilah atas, tab tersembunyi, dan titik
+Default quality	Kualitas bawaan
+Tab bar position	Posisi bilah tab
+Tab bar while scrolling	Bilah tab saat menggulir
+At the bottom	Di bawah
+At the top	Di atas
+Hides while scrolling	Sembunyi saat menggulir
+Stays on screen	Tetap di layar
+Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook menentukan letak bilah tab di akun Anda. Mulai ulang Facebook setelah mengubah ini.
+Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook menentukan apakah bilah tab bawah bergeser hilang saat Anda menggulir. Mulai ulang Facebook setelah mengubah ini.

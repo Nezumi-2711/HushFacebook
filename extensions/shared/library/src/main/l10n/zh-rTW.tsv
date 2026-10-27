@@ -114,7 +114,7 @@ The top bar with search and Messenger stays put while you scroll down, instead o
 # context: switch title under Appearance, after Keep the top bar on screen; a big screen is a tablet or the inner screen of a folding phone, and the phone layout is the one Facebook shows on a normal phone
 Phone layout on big screens	在大螢幕使用手機版面配置
 # context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
-A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	平板或展開的摺疊手機會使用 Facebook 的手機版面配置，讓上方的分頁列開關也能在大螢幕生效，並取代 Facebook 較寬的大螢幕版面配置。預設停用，因為尚未在大螢幕上測試。重新啟動 Facebook 後生效。
+A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar choices above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	平板或展開的摺疊手機會使用 Facebook 的手機版面配置，讓上方的分頁列選項也能在大螢幕生效，並取代 Facebook 較寬的大螢幕版面配置。預設停用，因為尚未在大螢幕上測試。重新啟動 Facebook 後生效。
 # context: switch title under Appearance, after Phone layout on big screens; it makes Facebook's top bar (search and Messenger) and its tab bar partly transparent
 See-through bars	透明列
 # context: description of that switch; the feed is the list of posts on Home, and blurred means frosted like glass
@@ -195,7 +195,7 @@ Reels show up in four places, and each one has its own control.	Reels 會出現�
 Reels in the feed	動態消息中的 Reels
 In News feed, Hide Reels in the feed blocks the rows of reels between posts.	在「動態消息」中，「隱藏動態消息中的 Reels」可封鎖貼文之間成列顯示的 Reels。
 Reels that play by themselves	自動播放的 Reels
-In Playback, Tap to play blocks autoplay, so reels and other videos wait for your tap.	在「播放」中，「點按播放」可阻止自動播放，讓 Reels 與其他影片等你點按後才播放。
+In Video and audio, Tap to play blocks autoplay, so reels and other videos wait for your tap.	在「影片和音訊」中，「點按播放」可阻止自動播放，讓 Reels 與其他影片等你點按後才播放。
 The Reels tab	Reels 分頁
 # context: map line without the patch; %1$s is the patch's English name in Morphe Manager
 Facebook's own setting blocks it. Open Settings, Tab bar, Customize the bar and choose Hide next to Reels, which some accounts call Video. If neither is listed, choose the %1$s patch in Morphe Manager and patch again.	可透過 Facebook 本身的設定隱藏。開啟「設定」，進入「分頁列」與「自訂分頁列」，在 Reels（部分帳號稱為「影片」）旁選擇「隱藏」。若兩者都未列出，請在 Morphe Manager 選取 %1$s 修補項目並重新修補。
@@ -468,7 +468,6 @@ Hide Meta AI in search	隱藏搜尋中的 Meta AI
 # context: summary of that switch; Meta AI and Ask Meta AI are Meta's own names, as Facebook shows them
 Search no longer shows Meta AI answers or Ask Meta AI prompts, or sends your search to Meta AI. Results for people, groups, pages and posts stay.	搜尋不再顯示 Meta AI 回答或「詢問 Meta AI」提示，也不會將搜尋內容傳送給 Meta AI。人物、社團、粉絲專頁與貼文的搜尋結果仍會保留。
 # context: settings section heading for the Default comment order switch and its list
-Comments	留言
 # context: switch title; on, a post's comments open in the order chosen in the list below it
 Default comment order	預設留言排序
 # context: summary of that switch; a link to a comment is one from a notification, say
@@ -749,7 +748,6 @@ Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings 
 # context: Settings overview, category navigation and search.
 Ads, suggestions and word filters	廣告、推薦與字詞篩選
 Cleaner reels and video controls	簡化 Reels 與影片控制項
-Tap to play, quality and resume	點按播放、畫質與接續播放
 Quality, format and file names	畫質、格式與檔名
 No matching settings	找不到符合的設定
 %1$d setting found	找到 %1$d 項設定
@@ -841,7 +839,7 @@ Videos play at the lowest quality Facebook offers for each.	每部影片皆以 F
 Videos play at the best quality up to %1$s that Facebook offers for each, or the closest above.	每部影片皆以 Facebook 提供且不超過 %1$s 的最佳畫質播放，若無則使用最接近且高於此值的畫質。
 Videos play at the highest quality Facebook offers for each.	每部影片皆以 Facebook 提供的最高畫質播放。
 Facebook will pick the quality videos play at.	Facebook 將決定影片播放畫質。
-Playback quality will be set to %1$s.	播放畫質將設為 %1$s。
+Default quality will be set to %1$s.	預設畫質將設為 %1$s。
 # context: import preview and toast sentence when a settings file sets the Reels quality to follow the playback quality
 Reels will play at the same quality as other videos.	Reels 將使用與其他影片相同的播放畫質。
 # context: import preview and toast sentence; %1$s is a Reels quality choice such as Up to 720p
@@ -1180,16 +1178,16 @@ With Block Instant Games ads on, a game's rewarded ad counts as watched. No ad p
 Reels quality	Reels 畫質
 # context: title of the list that picks the quality video stories start at
 Stories quality	限時動態畫質
-# context: first choice in the Reels and Stories quality lists: follow the Playback quality row; use this language's name for that row
-Same as Playback quality	與播放畫質相同
+# context: first choice in the Reels and Stories quality lists: follow the Default quality row
+Same as default	與預設相同
 # context: summary of the Reels quality list when it follows the Playback quality row
-Reels follow the Playback quality row.	Reels 使用「播放畫質」的設定。
+Reels follow the Default quality row.	Reels 使用「預設畫質」的設定。
 # context: summary of the Stories quality list when it follows the Playback quality row
-Video stories follow the Playback quality row.	影片限時動態使用「播放畫質」的設定。
+Video stories follow the Default quality row.	影片限時動態使用「預設畫質」的設定。
 # context: summary of the Reels quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for reels, whatever Playback quality is set to.	Reels 使用 %1$s，不受「播放畫質」設定影響。
+%1$s for reels, whatever Default quality is set to.	Reels 使用 %1$s，不受「預設畫質」設定影響。
 # context: summary of the Stories quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for video stories, whatever Playback quality is set to.	影片限時動態使用 %1$s，不受「播放畫質」設定影響。
+%1$s for video stories, whatever Default quality is set to.	影片限時動態使用 %1$s，不受「預設畫質」設定影響。
 # context: title of the row naming a folder inside the save folder that video saves go in
 Video subfolder	影片子資料夾
 # context: title of the row naming a folder inside the save folder that photo saves go in
@@ -1942,3 +1940,43 @@ Saving, playback and anonymous viewing	儲存、播放與匿名瀏覽
 Sorting, replies and reactions	排序、回覆與心情
 Expanded	已展開
 Collapsed	已收合
+Ads and suggestions	廣告和建議
+Feed layout	動態消息版面
+Content filters	內容篩選
+Reels tab and ads	Reels 分頁和廣告
+On reels and videos	在 Reels 和影片上
+Video controls	影片控制項
+Saving reels	儲存 Reels
+Autoplay and resume	自動播放和繼續播放
+Video quality	影片畫質
+Sound	聲音
+Controls and picture-in-picture	控制項和子母畫面
+Tab bar	分頁列
+Top bar	頂端列
+Tabs to hide	要隱藏的分頁
+Dots and counts	圓點和計數
+Text and emoji	文字和表情符號
+Colors and theme	顏色和主題
+Screen and motion	螢幕和動態效果
+App icon and header	應用程式圖示和標題列
+Backup and restore	備份與還原
+Troubleshooting	疑難排解
+Help and restart	說明和重新啟動
+Support the project	支持這個專案
+Video and audio	影片和音訊
+Comments and writing	留言和撰寫
+Tabs and navigation	分頁和導覽
+Links and sharing	連結和分享
+Chats and Messenger	聊天和 Messenger
+Built-in changes	內建變更
+Autoplay, quality and sound	自動播放、畫質和聲音
+Tab bar, top bar, hidden tabs and dots	分頁列、頂端列、隱藏的分頁和圓點
+Default quality	預設畫質
+Tab bar position	分頁列位置
+Tab bar while scrolling	捲動時的分頁列
+At the bottom	在底部
+At the top	在頂端
+Hides while scrolling	捲動時隱藏
+Stays on screen	一直顯示
+Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	由 Facebook 決定你帳號上分頁列的位置。變更後請重新啟動 Facebook。
+Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	由 Facebook 決定底部分頁列在捲動時是否滑走。變更後請重新啟動 Facebook。

@@ -2132,7 +2132,7 @@ public class SettingsBackupTest {
             deliver(activity, tap(activity, page, IMPORT_ROW), file.toString());
             AlertDialog preview = shownPreview();
             String order = "Comments will open with Newest picked in their sort menu.";
-            String quality = "Playback quality will be set to Up to " + L10n.isolate("720p") + ".";
+            String quality = "Default quality will be set to Up to " + L10n.isolate("720p") + ".";
             assertEquals("1 switch will change.\n\n" + order + "\n\n" + quality,
                     String.valueOf(shadowOf(preview).getMessage()));
             preview.getButton(AlertDialog.BUTTON_POSITIVE).performClick();

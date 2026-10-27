@@ -73,6 +73,7 @@ import app.morphe.extension.facebook.notifications.QuietHour;
 import app.morphe.extension.facebook.settings.SettingsRows.Heading;
 import app.morphe.extension.facebook.settings.SettingsRows.Row;
 import app.morphe.extension.facebook.settings.SettingsRows.SaveRow;
+import app.morphe.extension.facebook.settings.SettingsRows.Subheading;
 import app.morphe.extension.facebook.settings.SettingsRows.Toggle;
 import app.morphe.extension.facebook.settings.ValueRows.CommentOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.LockAfterRow;
@@ -207,6 +208,9 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     void showRequestedSetting() {
         String key = SettingsEntry.takeRequestedSetting();
         Preference target = key == null ? null : findPreference(key);
+        // The tab bar switches have no rows of their own: each pair is one choice row.
+        TabBarChoices.Pair pair = TabBarChoices.Pair.forKey(key);
+        if (target == null && pair != null) target = findPreference(pair.rowKey);
         if (target != null) jumpTo(target);
     }
 
@@ -330,7 +334,6 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         FeedPages.stories(this, screen, context, build);
         VideoPages.reels(this, screen, context, build);
         FeedPages.comments(this, screen, context, build);
-        FeedPages.writing(this, screen, context, build);
         VideoPages.playback(this, screen, context, build);
         downloads = VideoPages.downloads(screen, context, build);
         AppPages.chats(this, screen, context, build);
@@ -341,10 +344,12 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         AppPages.links(this, screen, context, build);
         AppPages.privacy(this, screen, context, build);
         HushfacebookPages.updates(this, screen, context, build);
+        HushfacebookPages.tabs(this, screen, context, build);
         HushfacebookPages.appearance(this, screen, context, build);
         HushfacebookPages.patched(this, screen, context, build);
         HushfacebookPages.pause(this, screen, context, build);
         HushfacebookPages.about(this, screen, context, build);
+        dropEmptySubheadings(screen);
 
         // The overview shows these under the card by key. Last in the model, they move no other row.
         Preference restore = missingRestoreTrustRow(context, build);
@@ -808,7 +813,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     int applyQuickSetup(Map<BooleanSetting, Boolean> values) {
         PreferenceScreen screen = getPreferenceScreen();
         if (screen == null) return 0;
-        int changed = QuickSetups.apply(screen, values);
+        // The tab bar's switches have no rows of their own, so their choice rows take them.
+        int changed = QuickSetups.apply(screen, values) + TabBarChoices.apply(this, values);
         Utils.showToastLong(L10n.quantity(changed, "Changed %1$d setting", "Changed %1$d settings", changed));
         return changed;
     }
@@ -828,7 +834,23 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         showSaveFolder();
         showShareItemsSummary();
         showMenuTilesSummary();
+        for (TabBarChoices.Pair pair : TabBarChoices.Pair.values()) {
+            if (getPreferenceScreen() != null) TabBarChoices.showSaved(findPreference(pair.rowKey), pair);
+        }
         if (refreshWaysIn != null) refreshWaysIn.run();
+    }
+
+    /**
+     * Switches a choice row saved together: each that waits for a restart says so, the way a
+     * flipped switch does, and the restart message shows once for the lot.
+     */
+    void savedTogether(Map<Setting<?>, Object> before) {
+        boolean pending = false;
+        for (Map.Entry<Setting<?>, Object> change : before.entrySet()) {
+            pending |= noteRestartPending(change.getKey(), change.getValue());
+        }
+        updateUIAvailability();
+        if (pending && isAdded()) showRestartDialog(getContext());
     }
 
     /** No setting is behind the Menu tiles row's key, so its summary is redone here after an import. */
@@ -1052,6 +1074,30 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         category.setTitle(title);
         screen.addPreference(category);
         return category;
+    }
+
+    /**
+     * A small heading in [section] over the rows added after it. One left with no row under it,
+     * when this build lacks every patch those rows need, is taken off by {@link #dropEmptySubheadings}.
+     */
+    static void subheading(PreferenceCategory section, String title) {
+        Subheading heading = new Subheading(section.getContext());
+        heading.setTitle(title);
+        section.addPreference(heading);
+    }
+
+    /** Takes off each subheading with no row under it before the next subheading or the section's end. */
+    static void dropEmptySubheadings(PreferenceScreen screen) {
+        for (int i = 0; i < screen.getPreferenceCount(); i++) {
+            if (!(screen.getPreference(i) instanceof PreferenceCategory)) continue;
+            PreferenceCategory section = (PreferenceCategory) screen.getPreference(i);
+            for (int row = section.getPreferenceCount() - 1; row >= 0; row--) {
+                Preference item = section.getPreference(row);
+                boolean empty = row + 1 == section.getPreferenceCount()
+                        || section.getPreference(row + 1) instanceof Subheading;
+                if (item instanceof Subheading && empty) section.removePreference(item);
+            }
+        }
     }
 
     static Toggle toggle(Context context, BooleanSetting setting, String summary) {
@@ -1717,8 +1763,10 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     static PlaybackQualityRow playbackQualityRow(Context context) {
         PlaybackQualityRow row = new PlaybackQualityRow(context);
         row.setKey(Settings.PLAYBACK_QUALITY.key);
-        row.setTitle(L10n.t("Playback quality"));
-        row.setDialogTitle(L10n.t("Playback quality"));
+        // Under the Video quality heading, beside Reels and Stories quality: the one they default to.
+        row.setTitle(L10n.t("Default quality"));
+        row.setDialogTitle(L10n.t("Default quality"));
+        SettingsRows.alias(row, L10n.t("Playback quality"));
         // Android's own Cancel follows the activity's language, as the other lists' did.
         row.setNegativeButtonText(L10n.t("Cancel"));
         PlaybackQuality[] qualities = PlaybackQuality.values();
@@ -1753,7 +1801,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         CharSequence[] values = new CharSequence[choices.length];
         for (int i = 0; i < choices.length; i++) {
             PlaybackQuality quality = choices[i].quality;
-            entries[i] = quality == null ? L10n.t("Same as Playback quality") : playbackQualityLabel(quality);
+            entries[i] = quality == null ? L10n.t("Same as default") : playbackQualityLabel(quality);
             values[i] = choices[i].name();
         }
         row.setEntries(entries);
@@ -1765,16 +1813,16 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
 
     /**
      * What the Reels ([reels]) or Stories quality row says [choice] does. Both kinds say how the
-     * choice relates to Playback quality, which a bare label left unclear (#90).
+     * choice relates to Default quality, which a bare label left unclear (#90).
      */
     static String surfaceQualitySummary(SurfaceQuality choice, boolean reels) {
         if (choice.quality != null) {
             String label = playbackQualityLabel(choice.quality);
-            return reels ? L10n.f("%1$s for reels, whatever Playback quality is set to.", label)
-                    : L10n.f("%1$s for video stories, whatever Playback quality is set to.", label);
+            return reels ? L10n.f("%1$s for reels, whatever Default quality is set to.", label)
+                    : L10n.f("%1$s for video stories, whatever Default quality is set to.", label);
         }
-        return reels ? L10n.t("Reels follow the Playback quality row.")
-                : L10n.t("Video stories follow the Playback quality row.");
+        return reels ? L10n.t("Reels follow the Default quality row.")
+                : L10n.t("Video stories follow the Default quality row.");
     }
 
     /** What the list calls [quality]: Auto, as Facebook's own quality menu calls it, and a ceiling by its label. */

@@ -7,11 +7,13 @@ Changes in each Hushfacebook version, newest first.
 ### Added
 
 * **Facebook:** Facebook 584.0.0.51.56 now works on 32-bit phones too. The armeabi-v7a Android 11+ bundle, build 475817404, is declared next to the arm64 build 475817393, and every patch applies to it. Contributed by toidicakhia (Refs #254).
-* **Facebook:** `Hide the Create button` under Appearance takes the + button for new posts, reels and stories out of the top bar, on both versions of the bar Facebook hands out. It starts off and shows after a restart (Refs #257).
+* **Facebook:** `Hide the Create button` under Tabs and navigation takes the + button for new posts, reels and stories out of the top bar, on both versions of the bar Facebook hands out. It starts off and shows after a restart (Refs #257).
 
 ### Changed
 
 * **Settings:** Every Hush title wears Facebook's blues now, drifting through them with a light sheen passing over. That covers the settings bar and search, Hush dialogs, the screen shown when settings can't open, and the lock cover. Each color stays easy to read on its background in every theme, and the titles keep moving even with Android's animations turned off.
+* **Settings:** Long sections are easier to scan. News feed, Reels and Watch, Video and audio, Appearance and Pause, backup and diagnostics group their rows under small headings like `Content filters`, `Video quality` and `Troubleshooting`, still right on the main page. Where the tab bar sits, what it does while you scroll, which tabs hide and their dots all moved to a new Tabs and navigation section. `Tab bar position` and `Tab bar while scrolling` are each one pick from three now, with Facebook's own behavior first, so the two old switches can't fight each other.
+* **Settings:** A few names got clearer. Playback is Video and audio, Links is Links and sharing, Chats is Chats and Messenger, and Set when you patched is Built-in changes. Writing joined Comments, and the quality row reads `Default quality`. Search still finds everything by its old name. `Save crashes to Downloads` moved from Privacy to Troubleshooting, right above Pause, and Support keeps help and restart apart from supporting the project.
 * **Settings:** The `Only from a reel's More menu` description says which reels get the Picture-in-picture row. Upright reels do, wide ones never did, and the old wording made a missing row look like a bug (Refs #252).
 
 ### Fixed

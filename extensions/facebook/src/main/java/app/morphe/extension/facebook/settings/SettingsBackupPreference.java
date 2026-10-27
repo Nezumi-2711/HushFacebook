@@ -566,7 +566,7 @@ public class SettingsBackupPreference extends Preference {
     /** The sentence that says what quality videos play at after an import. */
     static String playbackQualitySentence(PlaybackQuality quality) {
         if (quality == PlaybackQuality.AUTO) return L10n.t("Facebook will pick the quality videos play at.");
-        return L10n.f("Playback quality will be set to %1$s.", HushfacebookPreferenceFragment.playbackQualityLabel(quality));
+        return L10n.f("Default quality will be set to %1$s.", HushfacebookPreferenceFragment.playbackQualityLabel(quality));
     }
 
     /** The sentence that says how long Facebook may be away before the app lock asks, after an import. */

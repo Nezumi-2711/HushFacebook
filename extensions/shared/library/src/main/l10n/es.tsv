@@ -110,7 +110,7 @@ The top bar with search and Messenger stays put while you scroll down, instead o
 # context: switch title under Appearance, after Keep the top bar on screen; a big screen is a tablet or the inner screen of a folding phone, and the phone layout is the one Facebook shows on a normal phone
 Phone layout on big screens	Diseño de móvil en pantallas grandes
 # context: description of that switch; on a big screen Facebook keeps the tab bar at the top in a wider layout, so the tab bar switches above it do nothing there
-A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar switches above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	Una tablet o un móvil plegable abierto recibe el diseño que Facebook usa en un móvil, así los ajustes de la barra de pestañas de arriba también funcionan en la pantalla grande. Desaparece el diseño más ancho de Facebook para pantallas grandes. Apagado por defecto, porque aún no se ha probado en una pantalla grande. Reinicia Facebook para ver el cambio.
+A tablet or an unfolded phone gets the layout Facebook uses on a phone, so the tab bar choices above work on the big screen too. Facebook's wider big screen layout goes away. Off by default, since it hasn't been tried on a big screen yet. Restart Facebook to see the change.	Una tablet o un móvil plegable abierto recibe el diseño que Facebook usa en un móvil, así los ajustes de la barra de pestañas de arriba también funcionan en la pantalla grande. Desaparece el diseño más ancho de Facebook para pantallas grandes. Apagado por defecto, porque aún no se ha probado en una pantalla grande. Reinicia Facebook para ver el cambio.
 # context: switch title under Appearance, after Phone layout on big screens; it makes Facebook's top bar (search and Messenger) and its tab bar partly transparent
 See-through bars	Barras transparentes
 # context: description of that switch; the feed is the list of posts on Home, and blurred means frosted like glass
@@ -191,7 +191,7 @@ Reels show up in four places, and each one has its own control.	Los reels aparec
 Reels in the feed	Reels en el feed
 In News feed, Hide Reels in the feed blocks the rows of reels between posts.	En Feed, “Ocultar reels en el feed” bloquea las filas de reels entre las publicaciones.
 Reels that play by themselves	Reels que se reproducen solos
-In Playback, Tap to play blocks autoplay, so reels and other videos wait for your tap.	En Reproducción, “Toca para reproducir” bloquea la reproducción automática, así que los reels y otros vídeos esperan a que toques.
+In Video and audio, Tap to play blocks autoplay, so reels and other videos wait for your tap.	En Video y audio, “Toca para reproducir” bloquea la reproducción automática, así que los reels y otros vídeos esperan a que toques.
 The Reels tab	La pestaña Reels
 # context: map line without the patch; %1$s is the patch's English name in Morphe Manager
 Facebook's own setting blocks it. Open Settings, Tab bar, Customize the bar and choose Hide next to Reels, which some accounts call Video. If neither is listed, choose the %1$s patch in Morphe Manager and patch again.	La bloquea el propio ajuste de Facebook. Abre Configuración, Barra de pestañas, Personalizar la barra y elige Ocultar junto a Reels, que en algunas cuentas se llama Video. Si no aparece ninguna de las dos, elige el parche %1$s en Morphe Manager y vuelve a parchear.
@@ -464,7 +464,6 @@ Hide Meta AI in search	Ocultar Meta AI en la búsqueda
 # context: summary of that switch; Meta AI and Ask Meta AI are Meta's own names, as Facebook shows them
 Search no longer shows Meta AI answers or Ask Meta AI prompts, or sends your search to Meta AI. Results for people, groups, pages and posts stay.	La búsqueda ya no muestra respuestas de Meta AI ni avisos de Ask Meta AI, ni envía tu búsqueda a Meta AI. Los resultados de personas, grupos, páginas y publicaciones se quedan.
 # context: settings section heading for the Default comment order switch and its list
-Comments	Comentarios
 # context: switch title; on, a post's comments open in the order chosen in the list below it
 Default comment order	Orden predeterminado de los comentarios
 # context: summary of that switch; a link to a comment is one from a notification, say
@@ -745,7 +744,6 @@ Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings 
 # context: Settings overview, category navigation and search.
 Ads, suggestions and word filters	Anuncios, sugerencias y filtros de palabras
 Cleaner reels and video controls	Reels más limpios y controles de vídeo
-Tap to play, quality and resume	Tocar para reproducir, calidad y reanudar
 Quality, format and file names	Calidad, formato y nombres de archivo
 No matching settings	No hay ajustes coincidentes
 %1$d setting found	%1$d ajuste encontrado
@@ -837,7 +835,7 @@ Videos play at the lowest quality Facebook offers for each.	Los vídeos se repro
 Videos play at the best quality up to %1$s that Facebook offers for each, or the closest above.	Los vídeos se reproducen en la mejor calidad hasta %1$s que Facebook ofrece para cada uno, o en la más cercana por encima.
 Videos play at the highest quality Facebook offers for each.	Los vídeos se reproducen en la calidad más alta que Facebook ofrece para cada uno.
 Facebook will pick the quality videos play at.	Facebook elegirá la calidad de reproducción de los vídeos.
-Playback quality will be set to %1$s.	La calidad de reproducción será %1$s.
+Default quality will be set to %1$s.	La calidad predeterminada será %1$s.
 # context: import preview and toast sentence when a settings file sets the Reels quality to follow the playback quality
 Reels will play at the same quality as other videos.	Los reels se reproducirán con la misma calidad que los demás videos.
 # context: import preview and toast sentence; %1$s is a Reels quality choice such as Up to 720p
@@ -1178,16 +1176,16 @@ With Block Instant Games ads on, a game's rewarded ad counts as watched. No ad p
 Reels quality	Calidad de los reels
 # context: title of the list that picks the quality video stories start at
 Stories quality	Calidad de las historias
-# context: first choice in the Reels and Stories quality lists: follow the Playback quality row; use this language's name for that row
-Same as Playback quality	Igual que Calidad de reproducción
+# context: first choice in the Reels and Stories quality lists: follow the Default quality row
+Same as default	Igual que la predeterminada
 # context: summary of the Reels quality list when it follows the Playback quality row
-Reels follow the Playback quality row.	Los reels siguen la fila Calidad de reproducción.
+Reels follow the Default quality row.	Los reels siguen la fila Calidad predeterminada.
 # context: summary of the Stories quality list when it follows the Playback quality row
-Video stories follow the Playback quality row.	Las historias en video siguen la fila Calidad de reproducción.
+Video stories follow the Default quality row.	Las historias en video siguen la fila Calidad predeterminada.
 # context: summary of the Reels quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for reels, whatever Playback quality is set to.	%1$s para los reels, sin importar la Calidad de reproducción.
+%1$s for reels, whatever Default quality is set to.	%1$s para los reels, sin importar la Calidad predeterminada.
 # context: summary of the Stories quality list when it has a quality of its own; %1$s is that choice, such as Highest or Up to 720p
-%1$s for video stories, whatever Playback quality is set to.	%1$s para las historias en video, sin importar la Calidad de reproducción.
+%1$s for video stories, whatever Default quality is set to.	%1$s para las historias en video, sin importar la Calidad predeterminada.
 # context: title of the row naming a folder inside the save folder that video saves go in
 Video subfolder	Subcarpeta de videos
 # context: title of the row naming a folder inside the save folder that photo saves go in
@@ -1938,3 +1936,43 @@ Saving, playback and anonymous viewing	Guardado, reproducción y visualización 
 Sorting, replies and reactions	Orden, respuestas y reacciones
 Expanded	Expandido
 Collapsed	Contraído
+Ads and suggestions	Anuncios y sugerencias
+Feed layout	Diseño del feed
+Content filters	Filtros de contenido
+Reels tab and ads	Pestaña Reels y anuncios
+On reels and videos	En reels y videos
+Video controls	Controles de video
+Saving reels	Guardar reels
+Autoplay and resume	Reproducción automática y reanudar
+Video quality	Calidad de video
+Sound	Sonido
+Controls and picture-in-picture	Controles e imagen en imagen
+Tab bar	Barra de pestañas
+Top bar	Barra superior
+Tabs to hide	Pestañas que ocultar
+Dots and counts	Puntos y contadores
+Text and emoji	Texto y emoji
+Colors and theme	Colores y tema
+Screen and motion	Pantalla y movimiento
+App icon and header	Icono de la app y encabezado
+Backup and restore	Copia de seguridad y restauración
+Troubleshooting	Solución de problemas
+Help and restart	Ayuda y reinicio
+Support the project	Apoya el proyecto
+Video and audio	Video y audio
+Comments and writing	Comentarios y escritura
+Tabs and navigation	Pestañas y navegación
+Links and sharing	Enlaces y compartir
+Chats and Messenger	Chats y Messenger
+Built-in changes	Cambios integrados
+Autoplay, quality and sound	Reproducción automática, calidad y sonido
+Tab bar, top bar, hidden tabs and dots	Barra de pestañas, barra superior, pestañas ocultas y puntos
+Default quality	Calidad predeterminada
+Tab bar position	Posición de la barra de pestañas
+Tab bar while scrolling	Barra de pestañas al desplazarte
+At the bottom	Abajo
+At the top	Arriba
+Hides while scrolling	Se oculta al desplazarte
+Stays on screen	Se queda en pantalla
+Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook decide dónde va la barra de pestañas en tu cuenta. Reinicia Facebook después de cambiar esto.
+Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook decide si la barra de pestañas inferior se oculta al desplazarte. Reinicia Facebook después de cambiar esto.

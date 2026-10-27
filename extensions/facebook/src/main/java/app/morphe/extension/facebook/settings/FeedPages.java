@@ -13,6 +13,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.reactionCeilingRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.seenKeepRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.startTabRow;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subheading;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.toggle;
 
 import android.content.Context;
@@ -31,7 +32,7 @@ import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Utils;
 
 /**
- * The category pages for the feed: Opening Facebook, News feed, Stories, Comments and Writing. Each method adds its section to the page
+ * The category pages for the feed: Opening Facebook, News feed, Stories, and Comments and writing. Each method adds its section to the page
  * {@link HushfacebookPreferenceFragment#initialize} builds, and leaves it out when the build has none of
  * its patches, but for the sections every build has.
  */
@@ -118,6 +119,7 @@ final class FeedPages {
                 || build.contains(PatchFamily.AUTO_TRANSLATION)
                 || build.contains(PatchFamily.FEEDS_HEADER)) {
             PreferenceCategory feed = category(screen, L10n.t("News feed"));
+            subheading(feed, L10n.t("Ads and suggestions"));
             if (build.contains(PatchFamily.SPONSORED_POSTS)) {
                 feed.addPreference(toggle(context, Settings.HIDE_SPONSORED_POSTS,
                         L10n.t("Hides paid ads in the feed. They're removed before they appear, so no gap is left.")));
@@ -128,12 +130,6 @@ final class FeedPages {
             if (build.contains(PatchFamily.SPONSORED_PROFILE_POSTS)) {
                 feed.addPreference(toggle(context, Settings.HIDE_SPONSORED_PROFILE_POSTS,
                         L10n.t("Hides ads between posts on someone's profile or a Page. Their own posts stay.")));
-            }
-            // Read each time Facebook lays a profile out, so a change shows on the next profile opened.
-            if (build.contains(PatchFamily.PROFILE_NOTES)) {
-                feed.addPreference(toggle(context, Settings.HIDE_PROFILE_NOTES,
-                        L10n.t("Hides the note bubble that sits on profile pictures. Applies the next time you open a "
-                                + "profile.")));
             }
             // One switch covers the cards on reels and in the comment sheet too.
             if (build.contains(PatchFamily.AFFILIATE_LINKS)) {
@@ -182,6 +178,7 @@ final class FeedPages {
                         L10n.t("Hides the \"Want to see more posts from friends?\" card with its Find friends button where "
                                 + "your friends' posts run out.")));
             }
+            subheading(feed, L10n.t("Feed layout"));
             if (build.contains(PatchFamily.STORIES_TRAY)) {
                 // Facebook builds the feed's adapters once, when the feed is set up, and the tray is
                 // one of them. The hook is asked then and not again, so a change waits for a restart.
@@ -215,9 +212,6 @@ final class FeedPages {
                                 + "so a tap where they were still opens the list of reactions. To take the number off the Like "
                                 + "button too, turn on Hide counts on posts.")));
             }
-            if (build.contains(PatchFamily.SEEN_POSTS)) {
-                seenPosts(feed, context);
-            }
             if (build.contains(PatchFamily.META_AI_QUESTIONS)) {
                 feed.addPreference(toggle(context, Settings.HIDE_META_AI_QUESTIONS,
                         L10n.t("Hides the row of Meta AI questions under some posts. The post, its link card and its buttons stay.")));
@@ -239,6 +233,12 @@ final class FeedPages {
                         L10n.t("Shows the Feeds tab straight on its posts, without the title row or the filters. Restart Facebook "
                                 + "to see the change.")));
             }
+            // Read each time Facebook lays a profile out, so a change shows on the next profile opened.
+            if (build.contains(PatchFamily.PROFILE_NOTES)) {
+                feed.addPreference(toggle(context, Settings.HIDE_PROFILE_NOTES,
+                        L10n.t("Hides the note bubble that sits on profile pictures. Applies the next time you open a "
+                                + "profile.")));
+            }
             if (build.contains(PatchFamily.RETURN_REFRESH)) {
                 feed.addPreference(toggle(context, Settings.BLOCK_RETURN_REFRESH,
                         L10n.t("Returning to Facebook within ten minutes, or switching back to Home, keeps your place. "
@@ -246,6 +246,10 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.RETURN_REFRESH_NO_LIMIT,
                         L10n.t("With the switch above on, your place stays however long you're away. Pull to refresh and a fresh start still load new posts."))
                         .needs(Settings.BLOCK_RETURN_REFRESH));
+            }
+            subheading(feed, L10n.t("Content filters"));
+            if (build.contains(PatchFamily.SEEN_POSTS)) {
+                seenPosts(feed, context);
             }
             if (build.contains(PatchFamily.AI_DETECTED_POSTS)) {
                 feed.addPreference(toggle(context, Settings.HIDE_AI_DETECTED_POSTS,
@@ -414,8 +418,9 @@ final class FeedPages {
         boolean options = build.contains(PatchFamily.COMMENT_SHEET_OPTIONS);
         boolean reactions = build.contains(PatchFamily.POST_PROMPTS);
         boolean fullHeight = build.contains(PatchFamily.FULL_HEIGHT_COMMENTS);
-        if (!order && !summaries && !options && !reactions && !fullHeight) return;
-        PreferenceCategory comments = category(screen, L10n.t("Comments"));
+        boolean tags = build.contains(PatchFamily.TAG_SUGGESTIONS);
+        if (!order && !summaries && !options && !reactions && !fullHeight && !tags) return;
+        PreferenceCategory comments = category(screen, L10n.t("Comments and writing"));
         if (order) {
             comments.addPreference(toggle(context, Settings.DEFAULT_COMMENT_ORDER,
                     L10n.t("Use the order below. A choice made on a post lasts until restart. Links to comments keep Facebook's order.")));
@@ -468,6 +473,12 @@ final class FeedPages {
                     L10n.t("Comments open on a sheet that fills the screen instead of stopping part way up. On reels and "
                             + "videos, Comment opens that sheet in place of the split view with the video on top.")));
         }
+        // Writing had a section of its own for this one switch.
+        if (tags) {
+            subheading(comments, L10n.t("Writing"));
+            comments.addPreference(toggle(context, Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT,
+                    L10n.t("Type @ before Facebook suggests someone to tag in posts or comments. Your text stays unchanged.")));
+        }
     }
 
     /**
@@ -490,15 +501,5 @@ final class FeedPages {
         });
         // No icon: it shares a card with switches, which have none, and an icon would push its text in.
         return row;
-    }
-
-    /** Writing: when Facebook suggests someone to tag. */
-    static void writing(HushfacebookPreferenceFragment page, PreferenceScreen screen, Context context,
-            Set<PatchFamily> build) {
-        if (build.contains(PatchFamily.TAG_SUGGESTIONS)) {
-            PreferenceCategory writing = category(screen, L10n.t("Writing"));
-            writing.addPreference(toggle(context, Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT,
-                    L10n.t("Type @ before Facebook suggests someone to tag in posts or comments. Your text stays unchanged.")));
-        }
     }
 }
