@@ -357,7 +357,6 @@ Stops sending Facebook your list of watched reels. It uses the list to rank your
 # context: switch title under Reels and Watch; the Reels tab shows the most recently posted reels before older ones
 Newest reels first	Neueste Reels zuerst
 # context: summary of that switch; "loaded" means the reels the app has already downloaded in the background, "placed" means reels already lined up as the next ones
-The Reels tab plays the newest posted of the reels Facebook has loaded for you first, instead of its own pick. It can't fetch newer ones, and reels already placed stay put. Off by default, since it hasn't been tried on a real account yet.	Der Reels-Tab spielt von den Reels, die Facebook für dich geladen hat, die zuletzt geposteten zuerst ab statt Facebooks eigener Auswahl. Neuere kann er nicht abrufen, und bereits eingereihte Reels bleiben, wo sie sind. Standardmäßig aus, da es noch nicht mit einem echten Konto ausprobiert wurde.
 # context: what stays in while Hushfacebook is paused, shown before the patch's name in brackets; the patch raises the app's version number so Google Play never offers an update
 Meta's apps can install beside this one	Metas Apps lassen sich daneben installieren
 Messenger, Facebook Lite, Business Suite and Workplace can install next to this Facebook. Their shared permissions no longer clash.	Messenger, Facebook Lite, Business Suite und Workplace lassen sich neben diesem Facebook installieren. Ihre gemeinsamen Berechtigungen kommen sich nicht mehr in die Quere.
@@ -2013,3 +2012,12 @@ The SD card you picked isn't in the phone, so videos and photos are saved on the
 Videos and photos are saved on %1$s, in the same folders. Saves you already have stay where they are.	Videos und Fotos werden auf %1$s gespeichert, in denselben Ordnern. Bereits gespeicherte Dateien bleiben, wo sie sind.
 Pause reels while comments are open	Reels anhalten, solange Kommentare offen sind
 A reel stops while you read its comments and plays on from the same spot when you close them.	Ein Reel hält an, während du seine Kommentare liest, und läuft an derselben Stelle weiter, wenn du sie schließt.
+Sort loaded reels	Geladene Reels sortieren
+The Reels tab plays the reels Facebook has loaded for you in the order picked below, instead of its own pick. It can't fetch more, and reels already placed stay put. Off by default, since it hasn't been tried on a real account yet.	Der Reels-Tab spielt die Reels, die Facebook für dich geladen hat, in der unten gewählten Reihenfolge ab statt nach Facebooks eigener Auswahl. Weitere kann er nicht abrufen, und bereits eingereihte Reels bleiben, wo sie sind. Standardmäßig aus, da es noch nicht mit einem echten Konto ausprobiert wurde.
+Reels order	Reihenfolge der Reels
+Most liked	Meiste Reaktionen
+Most played	Meiste Aufrufe
+Of the reels Facebook has loaded, the ones with the most reactions play first.	Von den Reels, die Facebook geladen hat, laufen die mit den meisten Reaktionen zuerst.
+Of the reels Facebook has loaded, the ones played the most play first.	Von den Reels, die Facebook geladen hat, laufen die am häufigsten abgespielten zuerst.
+Of the reels Facebook has loaded, the newest posted play first.	Von den Reels, die Facebook geladen hat, laufen die zuletzt geposteten zuerst.
+Reels order will be set to %1$s.	Die Reihenfolge der Reels wird auf %1$s gesetzt.

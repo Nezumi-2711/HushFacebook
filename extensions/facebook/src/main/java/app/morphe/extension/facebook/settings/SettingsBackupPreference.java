@@ -46,6 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import app.morphe.extension.facebook.comments.CommentOrder;
+import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.download.DownloadQuality;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
@@ -399,6 +400,7 @@ public class SettingsBackupPreference extends Preference {
             if (snapshot.shareItemsChange() != null) parts.add(shareItemsSentence(snapshot.shareItemsChange()));
             if (snapshot.menuTilesChange() != null) parts.add(menuTilesSentence(snapshot.menuTilesChange()));
             if (snapshot.homeFeedChange() != null) parts.add(homeFeedSentence(snapshot.homeFeedChange()));
+            if (snapshot.reelsOrderChange() != null) parts.add(reelsOrderSentence(snapshot.reelsOrderChange()));
             if (snapshot.backgroundChange() != null) parts.add(backgroundSentence(snapshot.backgroundChange()));
             if (snapshot.lightBackgroundChange() != null) parts.add(lightBackgroundSentence(snapshot.lightBackgroundChange()));
             if (snapshot.headerTextChange() != null) parts.add(headerTextSentence(snapshot.headerTextChange()));
@@ -554,6 +556,11 @@ public class SettingsBackupPreference extends Preference {
         return L10n.f("With %1$s on, Home will show the same posts as %2$s in the Feeds tab.",
                 L10n.isolate(SwitchLabels.title(Settings.FOLLOWING_FEED_HOME)),
                 HushfacebookPreferenceFragment.feedsSubtabLabel(feed));
+    }
+
+    /** The sentence that says what Sort loaded reels sorts by after an import. */
+    static String reelsOrderSentence(ReelsOrder order) {
+        return L10n.f("Reels order will be set to %1$s.", HushfacebookPreferenceFragment.reelsOrderLabel(order));
     }
 
     /** The sentence that says in what order comments open after an import. */
@@ -922,6 +929,7 @@ public class SettingsBackupPreference extends Preference {
                     + (snapshot.shareItemsChange() == null ? "" : " " + shareItemsSentence(snapshot.shareItemsChange()))
                     + (snapshot.menuTilesChange() == null ? "" : " " + menuTilesSentence(snapshot.menuTilesChange()))
                     + (snapshot.homeFeedChange() == null ? "" : " " + homeFeedSentence(snapshot.homeFeedChange()))
+                    + (snapshot.reelsOrderChange() == null ? "" : " " + reelsOrderSentence(snapshot.reelsOrderChange()))
                     + (snapshot.backgroundChange() == null ? "" : " " + backgroundSentence(snapshot.backgroundChange()))
                     + (snapshot.lightBackgroundChange() == null ? "" : " " + lightBackgroundSentence(snapshot.lightBackgroundChange()))
                     + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()));

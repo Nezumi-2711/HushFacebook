@@ -14,6 +14,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.photoNameRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.playbackQualityRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.qualityRow;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.reelsOrderRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveStorageRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.saveToRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.sendAppRow;
@@ -169,10 +170,14 @@ final class VideoPages {
                             + "you've watched may come back.")));
         }
         if (build.contains(PatchFamily.NEWEST_REELS_FIRST)) {
-            reels.addPreference(toggle(context, Settings.NEWEST_REELS_FIRST,
-                    L10n.t("The Reels tab plays the newest posted of the reels Facebook has loaded for you first, instead "
-                            + "of its own pick. It can't fetch newer ones, and reels already placed stay put. Off by "
-                            + "default, since it hasn't been tried on a real account yet.")));
+            Preference sort = toggle(context, Settings.NEWEST_REELS_FIRST,
+                    L10n.t("The Reels tab plays the reels Facebook has loaded for you in the order picked below, instead "
+                            + "of its own pick. It can't fetch more, and reels already placed stay put. Off by default, "
+                            + "since it hasn't been tried on a real account yet."));
+            // Its title was Newest reels first until it sorted by likes and plays too (#134).
+            SettingsRows.alias(sort, L10n.t("Newest reels first"));
+            reels.addPreference(sort);
+            reels.addPreference(reelsOrderRow(context));
         }
         subheading(reels, L10n.t("Video controls"));
         if (build.contains(PatchFamily.DOUBLE_TAP_LIKE)) {

@@ -915,6 +915,9 @@ final class SettingsNavigation extends BaseAdapter {
         if (Settings.DEFAULT_COMMENT_ORDER.key.equals(key) || Settings.COMMENT_ORDER.key.equals(key)) {
             return Settings.COMMENT_ORDER;
         }
+        if (Settings.NEWEST_REELS_FIRST.key.equals(key) || Settings.REELS_ORDER.key.equals(key)) {
+            return Settings.REELS_ORDER;
+        }
         // Guide destinations form one list; independent selectors keep their own surfaces.
         if (key != null && key.startsWith("action_show_")) return guideLinks;
         if (Settings.OPEN_ON_CHOSEN_TAB.key.equals(key) || Settings.START_TAB.key.equals(key)

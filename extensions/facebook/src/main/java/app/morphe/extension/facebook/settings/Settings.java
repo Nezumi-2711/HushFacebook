@@ -20,6 +20,7 @@ import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.reels.FeedVideoControls;
+import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
@@ -571,10 +572,19 @@ public class Settings extends BaseSettings {
     /**
      * The Reels tab's next reel, picked from what Facebook has loaded ({@link
      * app.morphe.extension.facebook.reels.NewestReels}): the newest posted first instead of
-     * Facebook's ranking. Starts off. Reels already placed stay where they are.
+     * Facebook's ranking, or what {@link #REELS_ORDER} picks. Starts off. Reels already placed stay
+     * where they are.
      */
     public static final BooleanSetting NEWEST_REELS_FIRST =
             new BooleanSetting("hushfacebook_newest_reels_first", FALSE);
+
+    /**
+     * What {@link #NEWEST_REELS_FIRST} sorts the loaded reels by: newest posted until someone picks
+     * Most liked or Most played (#134), so the switch keeps doing what it did. It isn't a switch, and
+     * a paused Facebook keeps its own ranking.
+     */
+    public static final EnumSetting<ReelsOrder> REELS_ORDER =
+            new EnumSetting<>("hushfacebook_reels_order", ReelsOrder.NEWEST);
 
     /**
      * Facebook's own analytics uploads ({@link app.morphe.extension.facebook.misc.AnalyticsUploads}):

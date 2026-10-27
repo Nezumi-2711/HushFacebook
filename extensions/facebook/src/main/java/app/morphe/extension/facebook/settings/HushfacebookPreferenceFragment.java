@@ -43,6 +43,7 @@ import java.util.Set;
 
 import app.morphe.extension.facebook.coexist.FamilySignatureTrust;
 import app.morphe.extension.facebook.comments.CommentOrder;
+import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.download.DownloadQuality;
 import app.morphe.extension.facebook.download.FileNameTemplate;
 import app.morphe.extension.facebook.download.SaveControl;
@@ -77,6 +78,7 @@ import app.morphe.extension.facebook.settings.SettingsRows.SaveRow;
 import app.morphe.extension.facebook.settings.SettingsRows.Subheading;
 import app.morphe.extension.facebook.settings.SettingsRows.Toggle;
 import app.morphe.extension.facebook.settings.ValueRows.CommentOrderRow;
+import app.morphe.extension.facebook.settings.ValueRows.ReelsOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.LockAfterRow;
 import app.morphe.extension.facebook.settings.ValueRows.SeenKeepRow;
 import app.morphe.extension.facebook.settings.ValueRows.AccentRow;
@@ -1395,6 +1397,59 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     }
 
     /**
+     * What Sort loaded reels sorts by (#134). Like the comment order row, its values are the
+     * setting's own names and its summary says what the choice does. Newest is the default, so any
+     * other pick turns the switch on.
+     */
+    static ReelsOrderRow reelsOrderRow(Context context) {
+        ReelsOrderRow row = new ReelsOrderRow(context);
+        row.setKey(Settings.REELS_ORDER.key);
+        row.setTitle(L10n.t("Reels order"));
+        row.setDialogTitle(L10n.t("Reels order"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        ReelsOrder[] orders = ReelsOrder.values();
+        CharSequence[] entries = new CharSequence[orders.length];
+        CharSequence[] values = new CharSequence[orders.length];
+        for (int i = 0; i < orders.length; i++) {
+            entries[i] = reelsOrderLabel(orders[i]);
+            values[i] = orders[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.REELS_ORDER.savedValue().name());
+        pickTurnsOn(row, Settings.REELS_ORDER, Settings.NEWEST_REELS_FIRST);
+        return row;
+    }
+
+    /** What the list and its summary call [order]. */
+    static String reelsOrderLabel(ReelsOrder order) {
+        switch (order) {
+            case MOST_LIKED:
+                return L10n.t("Most liked");
+            case MOST_PLAYED:
+                return L10n.t("Most played");
+            default:
+                return L10n.t("Newest");
+        }
+    }
+
+    /**
+     * What the Reels tab does with [order], for the row's summary. Only loaded reels move, and a
+     * reel whose count Facebook didn't send keeps its place, so the summary says so rather than
+     * promise a sort of all of Facebook.
+     */
+    static String reelsOrderSummary(ReelsOrder order) {
+        switch (order) {
+            case MOST_LIKED:
+                return L10n.t("Of the reels Facebook has loaded, the ones with the most reactions play first.");
+            case MOST_PLAYED:
+                return L10n.t("Of the reels Facebook has loaded, the ones played the most play first.");
+            default:
+                return L10n.t("Of the reels Facebook has loaded, the newest posted play first.");
+        }
+    }
+
+    /**
      * How long Facebook may be away before Lock Facebook asks again. Like the comment order row,
      * its values are the setting's own names and its summary says what the choice does.
      */
@@ -1916,6 +1971,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             ((HomeFeedRow) listPreference).showSummary();
         } else if (listPreference instanceof CommentOrderRow) {
             ((CommentOrderRow) listPreference).showSummary();
+        } else if (listPreference instanceof ReelsOrderRow) {
+            ((ReelsOrderRow) listPreference).showSummary();
         } else if (listPreference instanceof LockAfterRow) {
             ((LockAfterRow) listPreference).showSummary();
         } else if (listPreference instanceof SeenKeepRow) {

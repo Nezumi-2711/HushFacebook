@@ -18,6 +18,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.lightBackgroundSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.lockAfterSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.photoNameSummary;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.reelsOrderSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.seenKeepSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.playbackQualitySummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.qualitySummary;
@@ -61,6 +62,7 @@ import androidx.annotation.Nullable;
 import java.util.function.Consumer;
 
 import app.morphe.extension.facebook.comments.CommentOrder;
+import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.download.DownloadQuality;
 import app.morphe.extension.facebook.download.FileNameTemplate;
 import app.morphe.extension.facebook.download.PostDetails;
@@ -1047,6 +1049,41 @@ final class ValueRows {
         }
 
         /** Its list takes the screen's colours, as the other rows' dialogs do. */
+        @Override
+        protected void showDialog(Bundle state) {
+            super.showDialog(state);
+            if (getDialog() instanceof AlertDialog) ScreenColors.dialog((AlertDialog) getDialog());
+        }
+    }
+
+    /** The Reels order row, built like the comment order's: its summary follows its value. */
+    static final class ReelsOrderRow extends PlainSummaryList {
+        ReelsOrderRow(Context context) {
+            super(context);
+        }
+
+        @Override
+        public void setValue(String value) {
+            super.setValue(value);
+            showSummary();
+        }
+
+        void showSummary() {
+            ReelsOrder order = ReelsOrder.NEWEST;
+            for (ReelsOrder candidate : ReelsOrder.values()) {
+                if (candidate.name().equals(getValue())) order = candidate;
+            }
+            setSummary(reelsOrderSummary(order));
+        }
+
+        @Override
+        protected void onBindView(View view) {
+            super.onBindView(view);
+            showAllText(view);
+            ScreenColors.row(view, this);
+            view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+        }
+
         @Override
         protected void showDialog(Bundle state) {
             super.showDialog(state);
