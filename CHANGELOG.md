@@ -18,6 +18,7 @@ Changes in each Hushfacebook version, newest first.
 
 * **Facebook:** `Hide posts with words you choose` now reads a shared link's headline and the line under it too, so a news post whose only mention of a word is in its link preview hides. A keep word on the preview still keeps the post (Refs #255).
 * **Facebook:** With `Picture-in-picture` off, reels no longer shrink into a floating window when you leave Facebook. Some accounts get Facebook's own version of that window, switched on from Facebook's side or from its Media settings, and it used to slip past the switch (Refs #252, #256).
+* **Facebook:** With `Tap to play` on, a video you open from a comment plays in Facebook's full screen player again. It used to sit paused there until you left Facebook and came back (Refs #242).
 * **Tooling:** Device audits read their settings snapshots in Windows PowerShell too, so the push check no longer fails every restore case where git can't find pwsh.
 
 ## 0.18.1 (2026-10-26)
