@@ -909,6 +909,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_post_comment_previews", FALSE);
 
     /**
+     * Comments lose the thumbs-down Facebook draws next to Like
+     * ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}, #241). Like, Reply and
+     * the rest stay. Off by default. A change shows on comments drawn after it.
+     */
+    public static final BooleanSetting HIDE_COMMENT_DOWNVOTE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_comment_downvote_button", FALSE);
+
+    /**
      * Comments whose words link to an online shop, like the Shopee links pasted under reels, are
      * left out with their replies ({@link app.morphe.extension.facebook.comments.CommentSheetOptions},
      * #118). Off by default. A change shows on the next comments drawn.

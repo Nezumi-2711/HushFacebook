@@ -475,6 +475,8 @@ Hides Meta AI's summary at the top of comments and the comment summary under a p
 Hide comments under posts	Kommentare unter Beiträgen ausblenden
 # context: summary of that switch; Comment is the post's Comment button
 Feed posts stop showing a few comments under their buttons. Tap Comment to read them all.	Beiträge im Feed zeigen unter ihren Schaltflächen keine Kommentare mehr. Tippe auf Kommentieren, um alle zu lesen.
+Hide dislike on comments	Daumen runter bei Kommentaren ausblenden
+Takes the thumbs-down off comments. Like and Reply stay.	Entfernt den Daumen nach unten bei Kommentaren. Gefällt mir und Antworten bleiben.
 # context: switch title under Comments; Like is the button under a post or a comment
 Like only	Nur „Gefällt mir“
 # context: summary of that switch; the reactions are the row of Love, Haha, Wow and the rest that a long press on Like opens
