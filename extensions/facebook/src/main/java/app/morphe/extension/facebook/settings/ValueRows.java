@@ -1328,19 +1328,12 @@ final class ValueRows {
      * page syncing it from the setting, or an import.
      */
     static final class AccentRow extends PlainSummaryList {
-        /** Whether the Material You theme is in the build, so it picks the colors and this row does nothing. */
+        /** Whether the Material You theme is in the build, so the pick takes the wallpaper accent's place (#272). */
         private final boolean materialYou;
 
         AccentRow(Context context, boolean materialYou) {
             super(context);
             this.materialYou = materialYou;
-            setEnabled(!materialYou);
-        }
-
-        /** The shared page enables every row it syncs from a setting; with Material You this one stays off. */
-        @Override
-        public void setEnabled(boolean enabled) {
-            super.setEnabled(enabled && !materialYou);
         }
 
         @Override
@@ -1350,15 +1343,11 @@ final class ValueRows {
         }
 
         void showSummary() {
-            if (materialYou) {
-                setSummary(L10n.t("Material You theme is in this build and picks Facebook's colors, so this has no effect."));
-                return;
-            }
             AccentColor.Preset accent = AccentColor.Preset.FACEBOOK;
             for (AccentColor.Preset candidate : AccentColor.Preset.values()) {
                 if (candidate.name().equals(getValue())) accent = candidate;
             }
-            setSummary(accentSummary(accent));
+            setSummary(accentSummary(accent, materialYou));
         }
 
         @Override

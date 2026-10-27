@@ -1376,12 +1376,16 @@ Red	红色
 Indigo	靛蓝
 # context: Accent color choice, a yellow-orange
 Amber	琥珀色
-# context: summary of the Accent color row, greyed out because the Material You theme patch is in the build
-Material You theme is in this build and picks Facebook's colors, so this has no effect.	此版本包含 Material You 主题，由它选择 Facebook 的颜色，所以此项不起作用。
+# context: summary of the Accent color row at Facebook blue while the Material You theme patch is in the build
+Material You uses your wallpaper's accent. Pick a color to use it instead.	Material You 使用壁纸的强调色。选择一种颜色即可改用它。
+# context: summary of the Accent color row while the Material You theme patch is in the build; %1$s is a color name such as Teal
+Material You uses %1$s in place of your wallpaper's accent. Restart Facebook to see the change.	Material You 使用%1$s代替壁纸的强调色。重启 Facebook 后可看到更改。
+# context: the Accent color list's first choice while the Material You theme patch is in the build: keep the phone's own wallpaper color
+Wallpaper accent	壁纸强调色
 # context: summary of the Accent color row at its default
 Links, buttons, switches and the selected tab keep Facebook's blue.	链接、按钮、开关和选中的标签页保持 Facebook 蓝。
 # context: summary of the Accent color row; %1$s is a color name such as Teal
-Links, buttons, switches and the selected tab use %1$s instead of Facebook's blue. Restart Facebook to see the change. If the Material You theme is added, it takes over.	链接、按钮、开关和选中的标签页使用%1$s，而不是 Facebook 蓝。重启 Facebook 后可看到更改。如果加入了 Material You 主题，则以它为准。
+Links, buttons, switches and the selected tab use %1$s instead of Facebook's blue. Restart Facebook to see the change.	链接、按钮、开关和选中的标签页使用%1$s，而不是 Facebook 蓝。重启 Facebook 后可看到更改。
 # context: what a settings import changes: Facebook goes back to its own blue
 Facebook will keep its own blue.	Facebook 将保持它自己的蓝色。
 # context: what a settings import changes; %1$s is a color name such as Teal

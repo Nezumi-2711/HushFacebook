@@ -260,17 +260,17 @@ public class HushfacebookPreferenceFragmentTest {
     }
 
     /**
-     * With Material You theme in the build the Accent color row stays greyed out, even after the
-     * shared page enables every row it syncs from its setting.
+     * With Material You theme in the build the Accent color row still takes taps: its pick stands in
+     * for the wallpaper's accent (#272).
      */
     @Test
-    public void theAccentRowStaysGreyedOutWhenMaterialYouIsInTheBuild() {
+    public void theAccentRowTakesTapsWithMaterialYouInTheBuild() {
         PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.ACCENT_COLOR, PatchFamily.MATERIAL_YOU_THEME);
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             List<Preference> rows = rowsOf(controller);
             int at = indexOfKey(rows, Settings.ACCENT_COLOR.key);
             assertTrue("no Accent color row with its patch in the build", at >= 0);
-            assertFalse("the row still takes taps", rows.get(at).isEnabled());
+            assertTrue("the row is greyed out", rows.get(at).isEnabled());
         }
 
         PatchFamily.inBuildForTests = EnumSet.of(PatchFamily.ACCENT_COLOR);

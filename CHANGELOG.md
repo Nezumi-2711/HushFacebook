@@ -31,6 +31,7 @@ Changes in each Hushfacebook version, newest first.
 * **Settings:** The `Only from a reel's More menu` description says which reels get the Picture-in-picture row. Upright reels do, wide ones never did, and the old wording made a missing row look like a bug (Refs #252).
 * **Facebook:** Patching with `Material You theme` on is faster. Its scans now skip the parts of Facebook they can't change, and the patched app comes out the same as before (Refs #236).
 * **Docs:** The README explains how to go back to an earlier release that lists your Facebook version: add its bundle as a local source in Manager, patch with the same key and install over your copy. Sign-in and settings stay, and what `Export settings` leaves out is listed. The steps follow Manager 2.2's own screens, and they say what to do when Manager reports a Package conflict instead of installing.
+* **Facebook:** `Accent color` works with the Material You theme now. It used to sit greyed out whenever Material You was patched in. Now the color you pick replaces your wallpaper's accent and the wallpaper's greys stay, while the first choice, `Wallpaper accent`, keeps the phone's own. It's picked in Hushfacebook's settings under Appearance with no repatch, and Facebook picks it up after a restart (Refs #272).
 
 ### Fixed
 

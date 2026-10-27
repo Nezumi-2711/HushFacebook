@@ -596,7 +596,7 @@ public class SettingsBackupPreference extends Preference {
     static String accentSentence(AccentColor.Preset accent) {
         if (accent == AccentColor.Preset.FACEBOOK) return L10n.t("Facebook will keep its own blue.");
         return L10n.f("If your patched Facebook includes Accent color, Facebook's blue will be %1$s.",
-                HushfacebookPreferenceFragment.accentLabel(accent));
+                HushfacebookPreferenceFragment.accentLabel(accent, false));
     }
 
     /** The sentence that says which color dark mode's backgrounds will take after an import, [background] blank or a code. */

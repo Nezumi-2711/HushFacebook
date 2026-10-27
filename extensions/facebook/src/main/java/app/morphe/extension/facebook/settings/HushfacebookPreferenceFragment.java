@@ -1632,7 +1632,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         CharSequence[] entries = new CharSequence[choices.length];
         CharSequence[] values = new CharSequence[choices.length];
         for (int i = 0; i < choices.length; i++) {
-            entries[i] = accentLabel(choices[i]);
+            entries[i] = accentLabel(choices[i], materialYou);
             values[i] = choices[i].name();
         }
         row.setEntries(entries);
@@ -1641,8 +1641,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         return row;
     }
 
-    /** What the list and the sentences about it call [accent]. */
-    static String accentLabel(AccentColor.Preset accent) {
+    /** What the list and the sentences about it call [accent]: Facebook blue is the wallpaper's under Material You. */
+    static String accentLabel(AccentColor.Preset accent, boolean materialYou) {
         switch (accent) {
             case TEAL:
                 return L10n.t("Teal");
@@ -1661,18 +1661,28 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             case AMBER:
                 return L10n.t("Amber");
             default:
-                return L10n.t("Facebook blue");
+                return materialYou ? L10n.t("Wallpaper accent") : L10n.t("Facebook blue");
         }
     }
 
-    /** What a choice does, for the row's summary. */
-    static String accentSummary(AccentColor.Preset accent) {
+    /**
+     * What a choice does, for the row's summary. With the Material You theme in the build the pick
+     * stands in for the wallpaper's accent, and Facebook blue leaves the wallpaper's (#272).
+     */
+    static String accentSummary(AccentColor.Preset accent, boolean materialYou) {
+        if (materialYou) {
+            if (accent == AccentColor.Preset.FACEBOOK) {
+                return L10n.t("Material You uses your wallpaper's accent. Pick a color to use it instead.");
+            }
+            return L10n.f("Material You uses %1$s in place of your wallpaper's accent. Restart Facebook to see the change.",
+                    accentLabel(accent, true));
+        }
         if (accent == AccentColor.Preset.FACEBOOK) {
             return L10n.t("Links, buttons, switches and the selected tab keep Facebook's blue.");
         }
         return L10n.f("Links, buttons, switches and the selected tab use %1$s instead of Facebook's blue. Restart Facebook "
-                + "to see the change. If the Material You theme is added, it takes over.",
-                accentLabel(accent));
+                + "to see the change.",
+                accentLabel(accent, false));
     }
 
     /**
