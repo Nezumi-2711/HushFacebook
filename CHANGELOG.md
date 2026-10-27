@@ -20,6 +20,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Facebook:** With `See-through bars` on, a blurred strip no longer hangs above the bottom tab bar while it slides away or comes back. The blur used to spread past the bar's edge whenever the bar was partly faded (Refs #250, #124).
 * **Facebook:** `Hide posts with words you choose` now reads a shared link's headline and the line under it too, so a news post whose only mention of a word is in its link preview hides. A keep word on the preview still keeps the post (Refs #255).
 * **Facebook:** With `Picture-in-picture` off, reels no longer shrink into a floating window when you leave Facebook. Some accounts get Facebook's own version of that window, switched on from Facebook's side or from its Media settings, and it used to slip past the switch (Refs #252, #256).
 * **Facebook:** With `Open feed videos on their own` on, a regular video post in your feed (one that isn't a reel) starts as fast as it does with the switch off. Its full screen viewer used to sit on a blank loading screen for up to a second first. Reels you open from the feed still play alone with nothing after them (Refs #237).
