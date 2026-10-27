@@ -97,6 +97,8 @@ public enum PatchFamily {
             Settings.HIDE_SPONSORED_PROFILE_POSTS),
     PROFILE_NOTES(FamilyNames.PROFILE_NOTES, "profileNotes", null,
             Settings.HIDE_PROFILE_NOTES),
+    POST_ACTION_BUTTONS(FamilyNames.POST_ACTION_BUTTONS, "postActionButtons", null,
+            Settings.POST_SAVE_BUTTON, Settings.POST_DOWNLOAD_BUTTON),
     SPONSORED_MARKETPLACE(FamilyNames.SPONSORED_MARKETPLACE, "sponsoredMarketplace", null,
             Settings.HIDE_SPONSORED_MARKETPLACE_LISTINGS),
     GAME_ADS(FamilyNames.GAME_ADS, "gameAds", null,

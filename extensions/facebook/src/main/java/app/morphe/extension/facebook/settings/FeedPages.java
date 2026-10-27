@@ -110,6 +110,7 @@ final class FeedPages {
                 || build.contains(PatchFamily.AI_DETECTED_POSTS)
                 || build.contains(PatchFamily.SPONSORED_PROFILE_POSTS)
                 || build.contains(PatchFamily.PROFILE_NOTES)
+                || build.contains(PatchFamily.POST_ACTION_BUTTONS)
                 || build.contains(PatchFamily.AFFILIATE_LINKS)
                 || build.contains(PatchFamily.POST_WORDS)
                 || build.contains(PatchFamily.POST_PROMPTS)
@@ -215,6 +216,17 @@ final class FeedPages {
             if (build.contains(PatchFamily.META_AI_QUESTIONS)) {
                 feed.addPreference(toggle(context, Settings.HIDE_META_AI_QUESTIONS,
                         L10n.t("Hides the row of Meta AI questions under some posts. The post, its link card and its buttons stay.")));
+            }
+            // Each post's row reads them as it's built, so a change shows on the posts drawn after it.
+            if (build.contains(PatchFamily.POST_ACTION_BUTTONS)) {
+                feed.addPreference(toggle(context, Settings.POST_SAVE_BUTTON,
+                        L10n.t("Adds Facebook's own Save button next to Like, Comment and Share under posts. A saved post "
+                                + "shows its bookmark filled in.")));
+                if (build.contains(PatchFamily.VIDEO_DOWNLOAD) || build.contains(PatchFamily.PHOTO_DOWNLOAD)) {
+                    feed.addPreference(toggle(context, Settings.POST_DOWNLOAD_BUTTON,
+                            L10n.t("Adds a Download button under posts with a video or photos. It saves the video, the "
+                                    + "photo, or every photo of an album, using the Downloads settings.")));
+                }
             }
             if (build.contains(PatchFamily.POST_DATES)) {
                 feed.addPreference(toggle(context, Settings.KEEP_POST_DATES,

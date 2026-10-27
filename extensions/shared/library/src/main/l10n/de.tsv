@@ -536,6 +536,14 @@ Hides ads between posts on someone's profile or a Page. Their own posts stay.	Bl
 Hide profile notes	Profilnotizen ausblenden
 # context: summary of that switch
 Hides the note bubble that sits on profile pictures. Applies the next time you open a profile.	Blendet die Notizblase auf Profilbildern aus. Gilt ab dem nächsten Öffnen eines Profils.
+# context: switch title under News feed; Save is Facebook's own button that keeps a post in your saved items
+Save button under posts	Speichern-Button unter Beiträgen
+# context: summary of that switch; Like, Comment and Share are the buttons under a post
+Adds Facebook's own Save button next to Like, Comment and Share under posts. A saved post shows its bookmark filled in.	Fügt Facebooks eigenen Speichern-Button neben Gefällt mir, Kommentieren und Teilen unter Beiträgen hinzu. Bei einem gespeicherten Beitrag ist das Lesezeichen ausgefüllt.
+# context: switch title under News feed; a button that saves a post's video or photos to the phone
+Download button under posts	Download-Button unter Beiträgen
+# context: summary of that switch; Downloads is the name of Hushfacebook's settings page for saving media
+Adds a Download button under posts with a video or photos. It saves the video, the photo, or every photo of an album, using the Downloads settings.	Fügt unter Beiträgen mit einem Video oder Fotos einen Download-Button hinzu. Er speichert das Video, das Foto oder jedes Foto eines Albums mit den Download-Einstellungen.
 # context: what stays in while Hushfacebook is paused, followed by the patch name in brackets; the row in Facebook's own Menu that opens Hushfacebook settings
 # context: a short message when the Hushfacebook row in Facebook's Menu couldn't open the settings
 Hushfacebook settings can't open here. Long-press the Facebook logo instead.	Die Hushfacebook-Einstellungen lassen sich hier nicht öffnen. Halte stattdessen das Facebook-Logo gedrückt.

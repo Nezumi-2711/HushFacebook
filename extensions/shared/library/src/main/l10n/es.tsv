@@ -536,6 +536,14 @@ Hides ads between posts on someone's profile or a Page. Their own posts stay.	Oc
 Hide profile notes	Ocultar notas del perfil
 # context: summary of that switch
 Hides the note bubble that sits on profile pictures. Applies the next time you open a profile.	Oculta la burbuja de nota que aparece sobre las fotos de perfil. Se aplica la próxima vez que abras un perfil.
+# context: switch title under News feed; Save is Facebook's own button that keeps a post in your saved items
+Save button under posts	Botón Guardar debajo de las publicaciones
+# context: summary of that switch; Like, Comment and Share are the buttons under a post
+Adds Facebook's own Save button next to Like, Comment and Share under posts. A saved post shows its bookmark filled in.	Añade el botón Guardar de Facebook junto a Me gusta, Comentar y Compartir debajo de las publicaciones. Una publicación guardada muestra su marcador relleno.
+# context: switch title under News feed; a button that saves a post's video or photos to the phone
+Download button under posts	Botón Descargar debajo de las publicaciones
+# context: summary of that switch; Downloads is the name of Hushfacebook's settings page for saving media
+Adds a Download button under posts with a video or photos. It saves the video, the photo, or every photo of an album, using the Downloads settings.	Añade un botón Descargar debajo de las publicaciones con un video o fotos. Guarda el video, la foto o todas las fotos de un álbum con los ajustes de Descargas.
 # context: what stays in while Hushfacebook is paused, followed by the patch name in brackets; the row in Facebook's own Menu that opens Hushfacebook settings
 # context: a short message when the Hushfacebook row in Facebook's Menu couldn't open the settings
 Hushfacebook settings can't open here. Long-press the Facebook logo instead.	La configuración de Hushfacebook no se puede abrir aquí. Mantén pulsado el logotipo de Facebook.

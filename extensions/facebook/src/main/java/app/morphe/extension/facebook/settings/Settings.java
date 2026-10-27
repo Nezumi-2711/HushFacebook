@@ -389,6 +389,22 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_profile_notes", FALSE);
 
     /**
+     * Facebook's own Save button in the row under a post, beside Like, Comment and Share (issue
+     * #265, {@link app.morphe.extension.facebook.feed.PostSaveButton}). Starts off. Read each time
+     * a post's row is built, so a change shows on posts drawn after it.
+     */
+    public static final BooleanSetting POST_SAVE_BUTTON =
+            new BooleanSetting("hushfacebook_post_save_button", FALSE);
+
+    /**
+     * A Download button in the row under a post holding a video or photos (issue #151, {@link
+     * app.morphe.extension.facebook.download.PostDownloadButton}). It saves through Download feed
+     * and Watch videos and Save any photo, so it needs those on. Starts off.
+     */
+    public static final BooleanSetting POST_DOWNLOAD_BUTTON =
+            new BooleanSetting("hushfacebook_post_download_button", FALSE);
+
+    /**
      * The ads and boosted listings of Marketplace's feed: its query asks the server to skip them,
      * and its ads-only queries aren't sent.
      */

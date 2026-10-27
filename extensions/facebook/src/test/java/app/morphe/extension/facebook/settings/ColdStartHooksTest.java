@@ -53,6 +53,7 @@ import app.morphe.extension.facebook.download.CommentGifForTests;
 import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
 import app.morphe.extension.facebook.download.PlayerSourcesForTests;
+import app.morphe.extension.facebook.download.PostActionButtonsForTests;
 import app.morphe.extension.facebook.download.ReelCaptionForTests;
 import app.morphe.extension.facebook.download.ReelDownload;
 import app.morphe.extension.facebook.download.VideoMenuItemForTests;
@@ -238,6 +239,8 @@ public class ColdStartHooksTest {
         assertFalse("a search page built before the context lost its ad", SearchAdFilterForTests.dropsAnAd());
         assertFalse("a profile row drawn before the context was left out", ProfileAdFilterForTests.hidesASponsoredStory());
         assertFalse("a note bubble laid out before the context was left out", ProfileNotesForTests.hidesANote());
+        assertFalse("a post row built before the context got Save", PostActionButtonsForTests.addsSave());
+        assertFalse("a post row built before the context got Download", PostActionButtonsForTests.addsDownload());
         assertFalse("a Marketplace feed query sent before the context skipped its ads",
                 MarketplaceAdFilterForTests.asksTheFeedToSkipAds());
         assertFalse("a Marketplace ads query sent before the context was held back",

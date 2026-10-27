@@ -67,6 +67,7 @@ import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
 import app.morphe.extension.facebook.download.PhotoSave;
 import app.morphe.extension.facebook.download.PlayerSourcesForTests;
+import app.morphe.extension.facebook.download.PostActionButtonsForTests;
 import app.morphe.extension.facebook.download.ReelCaptionForTests;
 import app.morphe.extension.facebook.download.ReelDownload;
 import app.morphe.extension.facebook.download.SaveRulesForTests;
@@ -528,6 +529,10 @@ public class PausedHooksTest {
                 Collections.singletonList(ProfileAdFilterForTests::hidesASponsoredStory));
         // The note bubble over a profile picture is left out of its Bloks children.
         probes.put(PatchFamily.PROFILE_NOTES, Collections.singletonList(ProfileNotesForTests::hidesANote));
+        // A post's row gets Save, and a video post's row gets Download.
+        probes.put(PatchFamily.POST_ACTION_BUTTONS, Arrays.asList(
+                PostActionButtonsForTests::addsSave,
+                PostActionButtonsForTests::addsDownload));
         // Marketplace's feed query asks to skip its ads, an ads-only query isn't sent, and a search
         // answer loses its ad.
         probes.put(PatchFamily.SPONSORED_MARKETPLACE, Arrays.asList(
