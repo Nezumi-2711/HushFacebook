@@ -287,12 +287,16 @@ public final class FeedVideoAlone {
 
     /**
      * Whether [origin], a player origin as text, is an ordinary video posted in a feed rather than a
-     * reel: "user_timeline::feed_story" for a page's video post, where a feed reel reads
-     * "newsfeed::fb_shorts_native_in_feed_unit" or "group::fb_shorts_reshare_feed_unit".
+     * reel: "user_timeline::feed_story" for a page's video post and "group::multimedia_post" for a
+     * group's (584 emulator 2026-10-27, the viewer stood empty 1.4-2.3 s with the yes against 0.1-0.7
+     * s without), where a feed reel reads "newsfeed::fb_shorts_native_in_feed_unit" or
+     * "group::fb_shorts_reshare_feed_unit".
      */
     static boolean plainVideo(String origin) {
         int cut = origin.indexOf("::");
-        return cut >= 0 && origin.substring(cut + 2).equals("feed_story");
+        if (cut < 0) return false;
+        String sub = origin.substring(cut + 2);
+        return sub.equals("feed_story") || sub.equals("multimedia_post");
     }
 
     /**
