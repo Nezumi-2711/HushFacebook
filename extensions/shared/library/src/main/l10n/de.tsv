@@ -1986,3 +1986,21 @@ Hides while scrolling	Verschwindet beim Scrollen
 Stays on screen	Bleibt sichtbar
 Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook entscheidet, wo die Tab-Leiste in deinem Konto sitzt. Starte Facebook neu, nachdem du das geändert hast.
 Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook entscheidet, ob die untere Tab-Leiste beim Scrollen verschwindet. Starte Facebook neu, nachdem du das geändert hast.
+# context: heading above a text field under a word list being edited, where a person types text to test the lists on
+Try the lists on some text	Die Listen an einem Text ausprobieren
+# context: hint inside that test field
+Text of a post	Text eines Beitrags
+# context: line under the test field when the Words to hide list is empty
+The hide list is empty, so no post would be hidden.	„Wörter zum Ausblenden“ ist leer, also würde kein Beitrag ausgeblendet.
+# context: line under the test field before anything is typed in it
+Type or paste a post's text to see what these lists would do with it. It isn't saved.	Tippe oder füge den Text eines Beitrags ein, um zu sehen, was diese Listen damit machen würden. Er wird nicht gespeichert.
+# context: line under the test field: the lists would hide a post with the typed text
+A post with this text would be hidden.	Ein Beitrag mit diesem Text würde ausgeblendet.
+# context: line under the test field: the Words that keep a post list matches the typed text
+A post with this text would stay, because the keep list matches it.	Ein Beitrag mit diesem Text würde bleiben, weil „Wörter, bei denen ein Beitrag bleibt“ passt.
+# context: line under the test field: the lists' patterns (regular expressions) ran out of time on the typed text, and such a post stays
+A post with this text would stay, because the patterns took too long on it.	Ein Beitrag mit diesem Text würde bleiben, weil die Muster dafür zu lange gebraucht haben.
+# context: line under the test field: no word, phrase or pattern of either list matches the typed text
+A post with this text would stay. Nothing on either list matches it.	Ein Beitrag mit diesem Text würde bleiben. Nichts aus beiden Listen passt.
+# context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
+Only the first %1$d characters were checked.	Nur die ersten %1$d Zeichen wurden geprüft.

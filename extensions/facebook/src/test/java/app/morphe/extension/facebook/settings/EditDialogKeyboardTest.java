@@ -13,6 +13,7 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.preference.EditTextPreference;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
@@ -306,6 +307,68 @@ public class EditDialogKeyboardTest {
             assertEquals("the words are ordinary saved lines", typed, Settings.HIDDEN_WORDS.savedValue());
         }
         Settings.HIDDEN_WORDS.resetToDefault();
+    }
+
+    /**
+     * The sample under a word list is judged against the list as typed, before Save, and against
+     * the other list as saved. The sample isn't saved anywhere, and Cancel keeps the saved list.
+     */
+    @Test
+    public void aSampleIsJudgedAgainstTheTypedListAndSavesNothing() {
+        Settings.KEPT_WORDS.save("trailer");
+        PatchFamily.inBuildForTests = EnumSet.allOf(PatchFamily.class);
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            ValueRows.WordsRow row = (ValueRows.WordsRow) shown(controller, Settings.HIDDEN_WORDS.key);
+            AlertDialog dialog = (AlertDialog) row.getDialog();
+            assertTrue("the dialog doesn't offer a sample", dialogSays(dialog, "Try the lists on some text"));
+            EditText sample = sampleField(dialog, row.getEditText());
+            assertFalse("the sample is kept across a restore", sample.isSaveEnabled());
+            assertTrue(dialogSays(dialog, "Type or paste a post's text to see what these lists would do with it. It isn't saved."));
+            sample.setText("Big SPOILER inside");
+            ShadowLooper.idleMainLooper(300, TimeUnit.MILLISECONDS);
+            assertTrue(dialogSays(dialog, "The hide list is empty, so no post would be hidden."));
+
+            row.getEditText().setText("spoiler");
+            sample.setText("Big SPOILER inside");
+            ShadowLooper.idleMainLooper(300, TimeUnit.MILLISECONDS);
+            assertTrue("the typed list didn't hide the sample", dialogSays(dialog, "A post with this text would be hidden."));
+
+            sample.setText("Spoiler in the trailer");
+            ShadowLooper.idleMainLooper(300, TimeUnit.MILLISECONDS);
+            assertTrue("the saved keep list didn't keep the sample",
+                    dialogSays(dialog, "A post with this text would stay, because the keep list matches it."));
+
+            sample.setText("Nothing here");
+            ShadowLooper.idleMainLooper(300, TimeUnit.MILLISECONDS);
+            assertTrue(dialogSays(dialog, "A post with this text would stay. Nothing on either list matches it."));
+
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+            ShadowLooper.idleMainLooper();
+            assertEquals("Cancel saved the list", "", Settings.HIDDEN_WORDS.savedValue());
+            assertEquals("trailer", Settings.KEPT_WORDS.savedValue());
+        }
+    }
+
+    /** The dialog's one edit field that isn't [list]. */
+    private static EditText sampleField(AlertDialog dialog, EditText list) {
+        ArrayList<View> all = new ArrayList<>();
+        collect(dialog.getWindow().getDecorView(), all);
+        EditText found = null;
+        for (View view : all) {
+            if (!(view instanceof EditText) || view == list || !view.isShown()) continue;
+            assertNull("two sample fields", found);
+            found = (EditText) view;
+        }
+        assertNotNull("no sample field", found);
+        assertEquals("Text of a post", String.valueOf(found.getHint()));
+        return found;
+    }
+
+    private static void collect(View view, ArrayList<View> into) {
+        into.add(view);
+        if (!(view instanceof ViewGroup)) return;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = 0; i < group.getChildCount(); i++) collect(group.getChildAt(i), into);
     }
 
     private static boolean dialogSays(AlertDialog dialog, String text) {

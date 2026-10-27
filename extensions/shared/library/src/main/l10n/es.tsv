@@ -1986,3 +1986,21 @@ Hides while scrolling	Se oculta al desplazarte
 Stays on screen	Se queda en pantalla
 Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook decide dónde va la barra de pestañas en tu cuenta. Reinicia Facebook después de cambiar esto.
 Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook decide si la barra de pestañas inferior se oculta al desplazarte. Reinicia Facebook después de cambiar esto.
+# context: heading above a text field under a word list being edited, where a person types text to test the lists on
+Try the lists on some text	Prueba las listas con un texto
+# context: hint inside that test field
+Text of a post	Texto de una publicación
+# context: line under the test field when the Words to hide list is empty
+The hide list is empty, so no post would be hidden.	«Palabras para ocultar» está vacía, así que no se ocultaría ninguna publicación.
+# context: line under the test field before anything is typed in it
+Type or paste a post's text to see what these lists would do with it. It isn't saved.	Escribe o pega el texto de una publicación para ver qué harían estas listas con ella. No se guarda.
+# context: line under the test field: the lists would hide a post with the typed text
+A post with this text would be hidden.	Una publicación con este texto se ocultaría.
+# context: line under the test field: the Words that keep a post list matches the typed text
+A post with this text would stay, because the keep list matches it.	Una publicación con este texto se quedaría, porque coincide con «Palabras que mantienen una publicación».
+# context: line under the test field: the lists' patterns (regular expressions) ran out of time on the typed text, and such a post stays
+A post with this text would stay, because the patterns took too long on it.	Una publicación con este texto se quedaría, porque los patrones tardaron demasiado con ella.
+# context: line under the test field: no word, phrase or pattern of either list matches the typed text
+A post with this text would stay. Nothing on either list matches it.	Una publicación con este texto se quedaría. Nada de ninguna lista coincide.
+# context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
+Only the first %1$d characters were checked.	Solo se revisaron los primeros %1$d caracteres.

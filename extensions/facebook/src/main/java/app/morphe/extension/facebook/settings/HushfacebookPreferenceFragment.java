@@ -2400,6 +2400,37 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 : L10n.f("Both lists together fill %1$d%% of the room they share.", size.percent()));
     }
 
+    /**
+     * What a word list's dialog says about its sample: what the lists as typed would do with a post
+     * that says it, or how to use the field when it's [empty] or there's no result yet.
+     */
+    static String wordsPreviewLine(@Nullable PostWords.PreviewResult result, boolean empty) {
+        if (result != null && result.verdict == PostWords.Preview.NOTHING_TO_HIDE) {
+            return L10n.t("The hide list is empty, so no post would be hidden.");
+        }
+        if (result == null || empty) {
+            return L10n.t("Type or paste a post's text to see what these lists would do with it. It isn't saved.");
+        }
+        String line;
+        switch (result.verdict) {
+            case HIDDEN:
+                line = L10n.t("A post with this text would be hidden.");
+                break;
+            case KEPT:
+                line = L10n.t("A post with this text would stay, because the keep list matches it.");
+                break;
+            case TOO_SLOW:
+                line = L10n.t("A post with this text would stay, because the patterns took too long on it.");
+                break;
+            default:
+                line = L10n.t("A post with this text would stay. Nothing on either list matches it.");
+        }
+        if (result.cut) {
+            line += " " + L10n.f("Only the first %1$d characters were checked.", PostWords.PREVIEW_MAX_CODE_POINTS);
+        }
+        return line;
+    }
+
     /** What the topic pack list calls [pack]. */
     static String packLabel(TopicPacks.Pack pack) {
         switch (pack) {

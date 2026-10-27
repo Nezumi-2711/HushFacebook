@@ -1986,3 +1986,21 @@ Hides while scrolling	Sembunyi saat menggulir
 Stays on screen	Tetap di layar
 Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook menentukan letak bilah tab di akun Anda. Mulai ulang Facebook setelah mengubah ini.
 Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook menentukan apakah bilah tab bawah bergeser hilang saat Anda menggulir. Mulai ulang Facebook setelah mengubah ini.
+# context: heading above a text field under a word list being edited, where a person types text to test the lists on
+Try the lists on some text	Coba daftar pada sebuah teks
+# context: hint inside that test field
+Text of a post	Teks postingan
+# context: line under the test field when the Words to hide list is empty
+The hide list is empty, so no post would be hidden.	"Kata untuk disembunyikan" kosong, jadi tidak ada postingan yang akan disembunyikan.
+# context: line under the test field before anything is typed in it
+Type or paste a post's text to see what these lists would do with it. It isn't saved.	Ketik atau tempel teks postingan untuk melihat apa yang akan dilakukan daftar ini. Teks tidak disimpan.
+# context: line under the test field: the lists would hide a post with the typed text
+A post with this text would be hidden.	Postingan dengan teks ini akan disembunyikan.
+# context: line under the test field: the Words that keep a post list matches the typed text
+A post with this text would stay, because the keep list matches it.	Postingan dengan teks ini akan tetap tampil, karena cocok dengan "Kata yang mempertahankan postingan".
+# context: line under the test field: the lists' patterns (regular expressions) ran out of time on the typed text, and such a post stays
+A post with this text would stay, because the patterns took too long on it.	Postingan dengan teks ini akan tetap tampil, karena pola terlalu lama memprosesnya.
+# context: line under the test field: no word, phrase or pattern of either list matches the typed text
+A post with this text would stay. Nothing on either list matches it.	Postingan dengan teks ini akan tetap tampil. Tidak ada yang cocok dari kedua daftar.
+# context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
+Only the first %1$d characters were checked.	Hanya %1$d karakter pertama yang diperiksa.

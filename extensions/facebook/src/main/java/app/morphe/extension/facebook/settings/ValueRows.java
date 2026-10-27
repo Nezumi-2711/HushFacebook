@@ -36,6 +36,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.ceilingSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.packResult;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.wordsEditorLine;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.wordsPreviewLine;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.wordsRefusal;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.wordsSummary;
 
@@ -49,6 +50,7 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -208,6 +210,15 @@ final class ValueRows {
          * pack adds go into the open dialog's text as ordinary lines, and nothing is saved until Save.
          */
         @Nullable Runnable choosePack;
+        /**
+         * Text to try the lists on, under the list. It's never saved, kept across a rotation or
+         * logged, and judging it touches none of the feed's counts.
+         */
+        @Nullable private EditText sample;
+        /** What the lists as typed, with the other list as saved, would make of a post saying [sample]. */
+        @Nullable private TextView verdict;
+        private final Handler previewTimer = new Handler(Looper.getMainLooper());
+        private final Runnable preview = this::showPreview;
 
         WordsRow(Context context, boolean hides) {
             super(context);
@@ -216,9 +227,27 @@ final class ValueRows {
                 @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
                 @Override public void onTextChanged(CharSequence text, int start, int before, int after) {
                     if (count != null) count.setText(wordsEditorLine(PostWords.size(text.toString(), otherBytes)));
+                    previewSoon();
                 }
                 @Override public void afterTextChanged(android.text.Editable text) { }
             });
+        }
+
+        /** Judges the sample once typing pauses, so a long list isn't folded again on every key. */
+        private void previewSoon() {
+            previewTimer.removeCallbacks(preview);
+            if (verdict != null) previewTimer.postDelayed(preview, 250);
+        }
+
+        private void showPreview() {
+            if (sample == null || verdict == null) return;
+            String typed = getEditText().getText().toString();
+            String other = (hides ? Settings.KEPT_WORDS : Settings.HIDDEN_WORDS).savedValue();
+            String text = sample.getText().toString();
+            // Saved values, not what a paused Facebook reads, so the preview shows what the lists do once unpaused.
+            PostWords.PreviewResult result = PostWords.preview(text, hides ? typed : other, hides ? other : typed,
+                    Settings.POST_WORDS_WHOLE_WORDS.savedValue());
+            verdict.setText(wordsPreviewLine(result, text.trim().isEmpty()));
         }
 
         int otherListBytes() {
@@ -270,7 +299,8 @@ final class ValueRows {
             count.setTextSize(14);
             count.setTextColor(colors.summary);
             count.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-            if (choosePack == null) return scrollingBody(context, help, count, getEditText());
+            View[] tryIt = sampleParts(context, colors);
+            if (choosePack == null) return scrollingBody(context, help, count, getEditText(), tryIt[0], tryIt[1], tryIt[2]);
             Button packs = new Button(context);
             packs.setText(L10n.t("Add a topic pack"));
             packs.setAllCaps(false);
@@ -283,7 +313,42 @@ final class ValueRows {
             packs.setPadding(0, 0, 0, 0);
             packs.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
             packs.setOnClickListener(ignored -> choosePack.run());
-            return scrollingBody(context, help, count, packs, getEditText());
+            return scrollingBody(context, help, count, packs, getEditText(), tryIt[0], tryIt[1], tryIt[2]);
+        }
+
+        /** The sample's heading, its field and the line that says what the lists make of it. */
+        private View[] sampleParts(Context context, ScreenColors colors) {
+            float density = context.getResources().getDisplayMetrics().density;
+            TextView heading = new TextView(context);
+            heading.setText(L10n.t("Try the lists on some text"));
+            heading.setTextSize(14);
+            heading.setTextColor(colors.heading);
+            heading.setPadding(0, Math.round(18 * density), 0, Math.round(6 * density));
+            heading.setAccessibilityHeading(true);
+            EditText field = new EditText(context);
+            field.setHint(L10n.t("Text of a post"));
+            field.setMinLines(2);
+            field.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            field.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(PostWords.PREVIEW_MAX_CODE_POINTS * 2)});
+            // Nothing typed here outlives the dialog, not even in the saved state a rotation keeps.
+            field.setSaveEnabled(false);
+            colors.paintField(field);
+            field.addTextChangedListener(new android.text.TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) { }
+                @Override public void onTextChanged(CharSequence text, int start, int before, int after) {
+                    previewSoon();
+                }
+                @Override public void afterTextChanged(android.text.Editable text) { }
+            });
+            TextView said = new TextView(context);
+            said.setTextSize(14);
+            said.setTextColor(colors.summary);
+            said.setPadding(0, Math.round(6 * density), 0, 0);
+            said.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+            sample = field;
+            verdict = said;
+            said.setText(wordsPreviewLine(null, true));
+            return new View[]{heading, field, said};
         }
 
         /**
@@ -315,6 +380,9 @@ final class ValueRows {
         @Override protected void onDialogClosed(boolean positive) {
             super.onDialogClosed(positive);
             count = null;
+            previewTimer.removeCallbacks(preview);
+            sample = null;
+            verdict = null;
         }
 
         /** Its edit dialog takes the screen's colours, as the folder's does. */

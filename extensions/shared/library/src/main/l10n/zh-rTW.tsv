@@ -1990,3 +1990,21 @@ Hides while scrolling	捲動時隱藏
 Stays on screen	一直顯示
 Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	由 Facebook 決定你帳號上分頁列的位置。變更後請重新啟動 Facebook。
 Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	由 Facebook 決定底部分頁列在捲動時是否滑走。變更後請重新啟動 Facebook。
+# context: heading above a text field under a word list being edited, where a person types text to test the lists on
+Try the lists on some text	用一段文字試試這兩個清單
+# context: hint inside that test field
+Text of a post	貼文的文字
+# context: line under the test field when the Words to hide list is empty
+The hide list is empty, so no post would be hidden.	「要隱藏的字詞」是空的，所以不會隱藏任何貼文。
+# context: line under the test field before anything is typed in it
+Type or paste a post's text to see what these lists would do with it. It isn't saved.	輸入或貼上一則貼文的文字，看看這兩個清單會怎麼處理它。文字不會被儲存。
+# context: line under the test field: the lists would hide a post with the typed text
+A post with this text would be hidden.	含這段文字的貼文會被隱藏。
+# context: line under the test field: the Words that keep a post list matches the typed text
+A post with this text would stay, because the keep list matches it.	含這段文字的貼文會保留，因為「保留貼文的字詞」與它相符。
+# context: line under the test field: the lists' patterns (regular expressions) ran out of time on the typed text, and such a post stays
+A post with this text would stay, because the patterns took too long on it.	含這段文字的貼文會保留，因為模式處理它花了太久。
+# context: line under the test field: no word, phrase or pattern of either list matches the typed text
+A post with this text would stay. Nothing on either list matches it.	含這段文字的貼文會保留。兩個清單都沒有相符的項目。
+# context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
+Only the first %1$d characters were checked.	只檢查了前 %1$d 個字元。

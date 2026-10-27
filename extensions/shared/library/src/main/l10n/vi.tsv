@@ -1986,3 +1986,21 @@ Hides while scrolling	Ẩn khi cuộn
 Stays on screen	Luôn trên màn hình
 Facebook decides where the tab bar goes on your account. Restart Facebook after you change this.	Facebook quyết định vị trí thanh tab trên tài khoản của bạn. Hãy khởi động lại Facebook sau khi đổi mục này.
 Facebook decides whether the bottom tab bar slides away as you scroll. Restart Facebook after you change this.	Facebook quyết định thanh tab dưới cùng có trượt đi khi bạn cuộn hay không. Hãy khởi động lại Facebook sau khi đổi mục này.
+# context: heading above a text field under a word list being edited, where a person types text to test the lists on
+Try the lists on some text	Thử các danh sách trên một đoạn văn bản
+# context: hint inside that test field
+Text of a post	Nội dung một bài viết
+# context: line under the test field when the Words to hide list is empty
+The hide list is empty, so no post would be hidden.	"Từ cần ẩn" đang trống, nên không bài viết nào bị ẩn.
+# context: line under the test field before anything is typed in it
+Type or paste a post's text to see what these lists would do with it. It isn't saved.	Gõ hoặc dán nội dung một bài viết để xem các danh sách này sẽ làm gì với nó. Nội dung không được lưu.
+# context: line under the test field: the lists would hide a post with the typed text
+A post with this text would be hidden.	Bài viết có nội dung này sẽ bị ẩn.
+# context: line under the test field: the Words that keep a post list matches the typed text
+A post with this text would stay, because the keep list matches it.	Bài viết có nội dung này sẽ được giữ lại, vì "Từ giữ lại bài viết" khớp với nó.
+# context: line under the test field: the lists' patterns (regular expressions) ran out of time on the typed text, and such a post stays
+A post with this text would stay, because the patterns took too long on it.	Bài viết có nội dung này sẽ được giữ lại, vì các mẫu xử lý nó quá lâu.
+# context: line under the test field: no word, phrase or pattern of either list matches the typed text
+A post with this text would stay. Nothing on either list matches it.	Bài viết có nội dung này sẽ được giữ lại. Không có gì trong hai danh sách khớp.
+# context: added after one of those lines when the typed text was too long; %1$d is how many characters were read
+Only the first %1$d characters were checked.	Chỉ %1$d ký tự đầu tiên được kiểm tra.
