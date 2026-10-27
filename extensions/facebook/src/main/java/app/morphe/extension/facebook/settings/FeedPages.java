@@ -306,6 +306,9 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.HIDE_REPOSTS,
                         L10n.t("Hides posts that share another post, with or without a caption. Original posts stay. Off "
                                 + "by default, since it hasn't been tried on a real feed yet.")));
+                feed.addPreference(toggle(context, Settings.HIDE_PAGE_POSTS,
+                        L10n.t("Hides posts written by Pages, the ones you follow too. Posts from friends and groups "
+                                + "stay, and so does a friend's share of a Page's post.")));
                 feed.addPreference(reactionCeilingRow(context));
             }
         }

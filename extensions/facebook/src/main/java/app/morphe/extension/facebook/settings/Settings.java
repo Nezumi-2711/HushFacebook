@@ -289,6 +289,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_reposts", FALSE);
 
     /**
+     * Feed posts every author of which is a Page (#262), read from the story's own authors
+     * ({@link app.morphe.extension.facebook.feed.PostSources#authorKind}). Friends' posts, group
+     * posts and a friend's share of a Page's post stay. Off by default.
+     */
+    public static final BooleanSetting HIDE_PAGE_POSTS =
+            new BooleanSetting("hushfacebook_hide_page_posts", FALSE);
+
+    /**
      * The reaction count above which feed posts are hidden, read from the feed unit's own feedback
      * ({@link app.morphe.extension.facebook.feed.PostReactions}). Off hides nothing. Not a switch:
      * a list picks the count, and a paused Facebook reads Off.

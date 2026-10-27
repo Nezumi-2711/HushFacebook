@@ -1301,6 +1301,8 @@ Hides short posts shown as big text on a colored background.	隐藏以彩色背�
 Hide reposts	隐藏转发的帖子
 # context: summary of the Hide reposts switch; a caption is what the sharer wrote above the shared post
 Hides posts that share another post, with or without a caption. Original posts stay. Off by default, since it hasn't been tried on a real feed yet.	隐藏分享了另一条帖子的帖子，无论有无附言。原创帖子保留。默认关闭，因为尚未在真实动态上试过。
+Hide posts from Pages	隐藏公共主页的帖子
+Hides posts written by Pages, the ones you follow too. Posts from friends and groups stay, and so does a friend's share of a Page's post.	隐藏公共主页发布的帖子，包括你关注的主页。好友和小组的帖子会保留，好友分享的公共主页帖子也会保留。
 # context: switch title in Privacy: asks for the phone's own screen lock before Facebook shows
 Lock Facebook	锁定 Facebook
 Save crashes to Downloads	将崩溃记录保存到“下载”
