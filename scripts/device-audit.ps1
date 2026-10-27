@@ -431,6 +431,25 @@ function Get-AuditReelProof {
     return Test-AuditReelViewer $top $activity
 }
 
+# Opens a walk route's link and proves the page it reached. A sheet an earlier step left open can
+# cover the page the link opened (the comment sheet the hold on a reel left on the S22, 2026-10-27,
+# failing the notifications step on two walks in a row), so a page that isn't proved gets one Back,
+# which closes what covers it, and the link goes again. A reel's proof reads its activity, which a
+# sheet can't hide, so a reel route gets no second try.
+function Open-AuditRoute([string]$Route, [bool]$Reel) {
+    $script:auditRouteRetried = $false
+    for ($attempt = 1; ; $attempt++) {
+        $launch = (Invoke-Adb shell am start -W -a android.intent.action.VIEW -d $Route -p $Package) -join "`n"
+        Start-Sleep -Seconds $SettleSeconds
+        $proved = $launch -cmatch '(?m)^Status: ok\r?$' -and
+            $(if ($Reel) { Get-AuditReelProof } else { Test-AuditDestination $Route @(Get-UiNodes) })
+        if ($proved -or $Reel -or $attempt -ge 2) { return [bool]$proved }
+        Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
+        Start-Sleep -Seconds 1
+        $script:auditRouteRetried = $true
+    }
+}
+
 # The one node a "tap:<label>" step may tap, or $null. A row can repeat its label on a child that
 # isn't clickable (the menu's Settings and privacy row on the S22), so several matches still
 # name one target when exactly one is clickable and every other match sits inside it.
@@ -1044,10 +1063,10 @@ try {
                 $routeReel = $false
                 $routeStep = $null
                 $reel = $ReelRoutes -ccontains $step
-                $launch = (Invoke-Adb shell am start -W -a android.intent.action.VIEW -d $step -p $Package) -join "`n"
-                Start-Sleep -Seconds $SettleSeconds
-                $routeVerified = $launch -cmatch '(?m)^Status: ok\r?$' -and
-                    $(if ($reel) { Get-AuditReelProof } else { Test-AuditDestination $step @(Get-UiNodes) })
+                $routeVerified = Open-AuditRoute $step $reel
+                if ($script:auditRouteRetried) {
+                    $summary.Add("Walk: step $stepNumber ($step) $(if ($routeVerified) { 'was proved' } else { 'was still not proved' }) after one Back and a second try.")
+                }
                 if (-not $routeVerified) {
                     $summary.Add("Walk: destination not proved at step $stepNumber ($step). No input sent.")
                     if ($OptionalVisit -cnotcontains $step) { $problems.Add("Required destination not reached at step ${stepNumber}: $step") }

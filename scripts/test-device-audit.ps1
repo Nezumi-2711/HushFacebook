@@ -8,7 +8,7 @@ if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
     'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Get-SettingsPages', 'Test-AuditSectionShown', 'Get-AuditLocaleTable', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Find-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
-    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'ConvertFrom-AuditJsonTable', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
+    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Open-AuditRoute', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'ConvertFrom-AuditJsonTable', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -966,6 +966,33 @@ try {
     }
     $script:screenText = @()
     Assert-Throws { Save-SettingsPages 'dark-de' } 'Empty UI nodes passed.'
+
+    # A sheet an earlier step left over the page a link opened (the S22 walk, 2026-10-27) gets one
+    # Back, then the link goes again. A reel route, proved by its activity, never gets the Back.
+    & {
+        $SettleSeconds = 0
+        function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
+        function Invoke-Adb { $script:routeCalls.Add($args -join ' '); if ($args -ccontains 'start') { 'Status: ok' } }
+        function Get-UiNodes { return @('node') }
+        function Test-AuditDestination([string]$Route, [object[]]$Nodes) { $script:pageAnswers.Dequeue() }
+        function Get-AuditReelProof { $script:pageAnswers.Dequeue() }
+        $cases = @(
+            @{ Reel = $false; Answers = @($true); Proved = $true; Backs = 0; Starts = 1; Retried = $false; Name = 'a page proved at once' },
+            @{ Reel = $false; Answers = @($false, $true); Proved = $true; Backs = 1; Starts = 2; Retried = $true; Name = 'a covered page' },
+            @{ Reel = $false; Answers = @($false, $false); Proved = $false; Backs = 1; Starts = 2; Retried = $true; Name = 'a page never reached' },
+            @{ Reel = $true; Answers = @($false); Proved = $false; Backs = 0; Starts = 1; Retried = $false; Name = 'a reel not proved' })
+        foreach ($case in $cases) {
+            $script:routeCalls = [Collections.Generic.List[string]]::new()
+            $script:pageAnswers = [Collections.Generic.Queue[bool]]::new([bool[]]$case.Answers)
+            $proved = Open-AuditRoute 'fb://notifications' $case.Reel
+            $backs = @($script:routeCalls | Where-Object { $_ -ceq 'shell input keyevent KEYCODE_BACK' }).Count
+            $starts = @($script:routeCalls | Where-Object { $_ -like 'shell am start *-d fb://notifications *' }).Count
+            Assert-That ($proved -eq $case.Proved) "Open-AuditRoute gave the wrong answer for $($case.Name)."
+            Assert-That ($backs -eq $case.Backs -and $starts -eq $case.Starts) "Open-AuditRoute sent $backs Back and $starts links for $($case.Name)."
+            Assert-That ($script:auditRouteRetried -eq $case.Retried) "Open-AuditRoute misreported its second try for $($case.Name)."
+            Assert-That ($script:pageAnswers.Count -eq 0) "Open-AuditRoute skipped a proof for $($case.Name)."
+        }
+    }
 } finally {
     # Only the exact uniquely-created test directory is removed.
     if ([IO.Path]::GetDirectoryName($testRoot.TrimEnd('\')) -ne [IO.Path]::GetTempPath().TrimEnd('\')) {
