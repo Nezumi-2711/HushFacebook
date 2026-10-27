@@ -246,6 +246,7 @@ public final class SettingsBackup {
             Settings.TAP_TO_PLAY,
             Settings.TAP_TO_PLAY_REELS_AFTER_FIRST,
             Settings.INLINE_FEED_VIDEO_CONTROLS,
+            Settings.FEED_VIDEO_CAST_BUTTON,
             Settings.RESUME_LONG_VIDEOS,
             Settings.RECENTLY_WATCHED,
             Settings.FRAME_STEP,

@@ -955,6 +955,19 @@ public class Settings extends BaseSettings {
             };
 
     /**
+     * A cast button on a feed video's own surface, beside the play/pause one (#182). Facebook's
+     * build has no cast code left, so a tap hands that video's file to a casting app, the way
+     * {@link #OPEN_IN_ANOTHER_APP} does from the menu. Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_CAST_BUTTON =
+            new BooleanSetting("hushfacebook_feed_video_cast_button", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
      * A video longer than two minutes that was left partway picks up where it was left, once, the
      * next time a player starts it ({@link app.morphe.extension.facebook.media.ResumePlayback}).
      * Starts off. Off or paused, nothing is saved or looked up and videos start as Facebook starts

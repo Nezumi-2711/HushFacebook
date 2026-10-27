@@ -259,6 +259,11 @@ final class VideoPages {
                                 + "feed, Watch and stories always wait.")));
                 playback.addPreference(toggle(context, Settings.INLINE_FEED_VIDEO_CONTROLS,
                         L10n.t("Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.")));
+                // The tap hands over the file the video patch's player record found.
+                if (build.contains(PatchFamily.VIDEO_DOWNLOAD)) {
+                    playback.addPreference(toggle(context, Settings.FEED_VIDEO_CAST_BUTTON,
+                            L10n.t("Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.")));
+                }
             }
             if (build.contains(PatchFamily.RESUME_LONG_VIDEOS)) {
                 playback.addPreference(toggle(context, Settings.RESUME_LONG_VIDEOS,
