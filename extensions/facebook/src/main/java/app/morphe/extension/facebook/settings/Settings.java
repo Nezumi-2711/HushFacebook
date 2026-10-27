@@ -547,6 +547,18 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_reel_whatsapp_button", FALSE);
 
     /**
+     * Like, Comment or Share down a reel's right side isn't built, and the buttons above it move
+     * down ({@link app.morphe.extension.facebook.reels.ReelDeclutter#hideSidebarButton}, #265). Each
+     * off by default. A change shows from the next reel.
+     */
+    public static final BooleanSetting HIDE_REEL_LIKE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_reel_like_button", FALSE);
+    public static final BooleanSetting HIDE_REEL_COMMENT_BUTTON =
+            new BooleanSetting("hushfacebook_hide_reel_comment_button", FALSE);
+    public static final BooleanSetting HIDE_REEL_SHARE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_reel_share_button", FALSE);
+
+    /**
      * The speaker button at the bottom of a reel's right side isn't built
      * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#showsSoundButton}, #190). Off by
      * default. A change shows from the next reel.
