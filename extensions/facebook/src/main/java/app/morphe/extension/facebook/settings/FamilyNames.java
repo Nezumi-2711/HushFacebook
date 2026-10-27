@@ -32,6 +32,7 @@ public final class FamilyNames {
     public static final String SEEN_POSTS = "Hide seen posts";
     public static final String META_AI_QUESTIONS = "Hide Meta AI questions under posts";
     public static final String POST_DATES = "Keep post dates";
+    public static final String FULL_POST_TEXT = "Show full post text";
     public static final String AUTO_TRANSLATION = "Turn off auto-translation";
     public static final String FEEDS_HEADER = "Hide the Feeds header";
     public static final String STORIES_TRAY = "Hide Stories tray";
@@ -47,6 +48,7 @@ public final class FamilyNames {
     public static final String SPONSORED_SEARCH = "Hide sponsored search results";
     public static final String SPONSORED_PROFILE_POSTS = "Hide sponsored profile posts";
     public static final String PROFILE_NOTES = "Hide profile notes";
+    public static final String POST_ACTION_BUTTONS = "Post action buttons";
     public static final String SPONSORED_MARKETPLACE = "Hide sponsored Marketplace listings";
     public static final String AFFILIATE_LINKS = "Hide affiliate product links";
     public static final String REEL_DECLUTTER = "Clean up Reels";

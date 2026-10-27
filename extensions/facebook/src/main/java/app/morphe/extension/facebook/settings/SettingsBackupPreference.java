@@ -46,6 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import app.morphe.extension.facebook.comments.CommentOrder;
+import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.download.DownloadQuality;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
@@ -399,6 +400,7 @@ public class SettingsBackupPreference extends Preference {
             if (snapshot.shareItemsChange() != null) parts.add(shareItemsSentence(snapshot.shareItemsChange()));
             if (snapshot.menuTilesChange() != null) parts.add(menuTilesSentence(snapshot.menuTilesChange()));
             if (snapshot.homeFeedChange() != null) parts.add(homeFeedSentence(snapshot.homeFeedChange()));
+            if (snapshot.reelsOrderChange() != null) parts.add(reelsOrderSentence(snapshot.reelsOrderChange()));
             if (snapshot.backgroundChange() != null) parts.add(backgroundSentence(snapshot.backgroundChange()));
             if (snapshot.lightBackgroundChange() != null) parts.add(lightBackgroundSentence(snapshot.lightBackgroundChange()));
             if (snapshot.headerTextChange() != null) parts.add(headerTextSentence(snapshot.headerTextChange()));
@@ -556,6 +558,11 @@ public class SettingsBackupPreference extends Preference {
                 HushfacebookPreferenceFragment.feedsSubtabLabel(feed));
     }
 
+    /** The sentence that says what Sort loaded reels sorts by after an import. */
+    static String reelsOrderSentence(ReelsOrder order) {
+        return L10n.f("Reels order will be set to %1$s.", HushfacebookPreferenceFragment.reelsOrderLabel(order));
+    }
+
     /** The sentence that says in what order comments open after an import. */
     static String commentOrderSentence(CommentOrder order) {
         if (order == CommentOrder.FACEBOOK) return L10n.t("Comments will open in the order Facebook picks.");
@@ -566,7 +573,7 @@ public class SettingsBackupPreference extends Preference {
     /** The sentence that says what quality videos play at after an import. */
     static String playbackQualitySentence(PlaybackQuality quality) {
         if (quality == PlaybackQuality.AUTO) return L10n.t("Facebook will pick the quality videos play at.");
-        return L10n.f("Playback quality will be set to %1$s.", HushfacebookPreferenceFragment.playbackQualityLabel(quality));
+        return L10n.f("Default quality will be set to %1$s.", HushfacebookPreferenceFragment.playbackQualityLabel(quality));
     }
 
     /** The sentence that says how long Facebook may be away before the app lock asks, after an import. */
@@ -922,6 +929,7 @@ public class SettingsBackupPreference extends Preference {
                     + (snapshot.shareItemsChange() == null ? "" : " " + shareItemsSentence(snapshot.shareItemsChange()))
                     + (snapshot.menuTilesChange() == null ? "" : " " + menuTilesSentence(snapshot.menuTilesChange()))
                     + (snapshot.homeFeedChange() == null ? "" : " " + homeFeedSentence(snapshot.homeFeedChange()))
+                    + (snapshot.reelsOrderChange() == null ? "" : " " + reelsOrderSentence(snapshot.reelsOrderChange()))
                     + (snapshot.backgroundChange() == null ? "" : " " + backgroundSentence(snapshot.backgroundChange()))
                     + (snapshot.lightBackgroundChange() == null ? "" : " " + lightBackgroundSentence(snapshot.lightBackgroundChange()))
                     + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()));

@@ -54,7 +54,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  *   <li>A link another app handed Facebook opened a screen no more than {@link #LINK_WINDOW_MS}
  *       ago, the trigger is BY_USER, and nothing else has let a start through or moved on since
  *       ({@link #activityCreated}). Facebook's video player opens a shared video from a browser
- *       with BY_USER and no tap, and it has no play button of its own to tap.</li>
+ *       with BY_USER and no tap, and it has no play button of its own to tap. Its fullscreen player
+ *       opening fresh counts as such a link: a video in a comment opens there from a sheet whose taps
+ *       never reach {@link TapClock} (#242).</li>
  *   <li>The start is a reel's (BY_SHORT_FORM_VIDEO_FULLY_VISIBLE, or BY_AUTOPLAY on a reel's
  *       player), it's the first one on a Facebook screen a tap opened no more than
  *       {@link #TAPPED_SCREEN_WINDOW_MS} ago, that screen is in front, and nothing has been swiped
@@ -114,6 +116,12 @@ public final class TapToPlay {
 
     /** No window closed back into Facebook since the last start it let through. */
     private static final long NOT_BACK = Long.MIN_VALUE;
+
+    /**
+     * The screen Facebook plays a video full screen in, opened by a tap on a video, a comment's
+     * included, or by a link. It starts the video with BY_USER and draws no play button to tap.
+     */
+    static final String FULLSCREEN_PLAYER = "FullscreenVideoPlayerActivity";
 
     /** The trigger Facebook's player gets when it opens a video a link asked for. */
     private static final String BY_USER = "BY_USER";
@@ -190,7 +198,9 @@ public final class TapToPlay {
 
     /** The hook, first thing in FbGrootPlayer's play. False, and the play returns at once. */
     public static boolean allowStart(Object player, Object trigger) {
-        boolean allowed = allow(player, trigger, "player start", "", true);
+        // A reel waits while its comments are open, whatever this switch says (#266).
+        boolean allowed = !PauseUnderComments.holdsStart(player, trigger)
+                && allow(player, trigger, "player start", "", true);
         FeedVideoControls.changed(player);
         return allowed;
     }
@@ -287,12 +297,21 @@ public final class TapToPlay {
      * sent records that link, so the first BY_USER start within {@link #LINK_WINDOW_MS} that would
      * otherwise be held plays. One link plays one start, and only before anything else happens: a
      * start a tap or a control let through, or a swipe, drops it, so a link the opened video didn't
-     * need can't reach the next one.
+     * need can't reach the next one. Facebook's fullscreen player made fresh counts the same way,
+     * whoever opened it: it opens only for a video someone asked for.
      */
     public static void activityCreated(Activity activity, @Nullable Bundle state) {
         try {
             if (state != null || !on()) return;
             screenCreated(activity, SystemClock.uptimeMillis());
+            if (FULLSCREEN_PLAYER.equals(activity.getClass().getSimpleName())) {
+                // Only a video someone asked for opens it, often from a comment sheet whose taps
+                // the tap clock never hears, and it starts that video with BY_USER (#242).
+                linkOpened(SystemClock.uptimeMillis());
+                Logger.diagnosticDebug(DiagnosticCategory.OTHER, SOURCE, () -> "Tap to play: Facebook's fullscreen player"
+                        + " opened, so its first BY_USER start in the next " + LINK_WINDOW_MS / 1000 + " s plays");
+                return;
+            }
             Intent intent = activity.getIntent();
             if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction()) || intent.getData() == null) return;
             Uri referrer = activity.getReferrer();
@@ -663,6 +682,14 @@ public final class TapToPlay {
 
     static boolean armed(Object player) {
         return ARMED.armed(player);
+    }
+
+    /**
+     * Arms [player] for the start Pause reels while comments are open sends when the sheet closes.
+     * The reel was playing before the sheet paused it, so it plays on with no tap.
+     */
+    static void armForResume(Object player) {
+        ARMED.arm(player, SystemClock.uptimeMillis());
     }
 
     static int armedCount() {

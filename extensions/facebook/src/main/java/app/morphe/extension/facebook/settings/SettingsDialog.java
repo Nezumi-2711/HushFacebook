@@ -209,7 +209,8 @@ public final class SettingsDialog extends DialogFragment {
         pageTitle = title;
         title.setText("Hushfacebook");
         title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        title.setTextColor(foreground());
+        // The bar, every page opened from it and search all show their name here, in Facebook's blues.
+        ShimmerTitle.wear(title, background());
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         title.setIncludeFontPadding(false);
         title.setPaddingRelative(dp(8), dp(8), dp(8), dp(8));

@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import app.morphe.extension.facebook.comments.CommentOrder;
+import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.download.DownloadQuality;
 import app.morphe.extension.facebook.download.FileNameTemplate;
 import app.morphe.extension.facebook.download.SaveFolder;
@@ -150,6 +151,7 @@ public final class SettingsBackup {
             Settings.HIDE_LINK_POSTS,
             Settings.HIDE_BACKGROUND_POSTS,
             Settings.HIDE_REPOSTS,
+            Settings.HIDE_PAGE_POSTS,
             Settings.HIDE_POST_PROMPTS,
             Settings.HIDE_POST_FOLLOW_LINK,
             Settings.HIDE_POST_COUNTS,
@@ -158,6 +160,7 @@ public final class SettingsBackup {
             Settings.HIDE_SEEN_POSTS,
             Settings.HIDE_META_AI_QUESTIONS,
             Settings.KEEP_POST_DATES,
+            Settings.SHOW_FULL_POST_TEXT,
             Settings.TURN_OFF_AUTO_TRANSLATION,
             Settings.HIDE_FEEDS_HEADER,
             Settings.HIDE_SPONSORED_STORIES,
@@ -177,6 +180,12 @@ public final class SettingsBackup {
             Settings.HIDE_SPONSORED_SEARCH_RESULTS,
             Settings.HIDE_SPONSORED_PROFILE_POSTS,
             Settings.HIDE_PROFILE_NOTES,
+            Settings.POST_SAVE_BUTTON,
+            Settings.POST_DOWNLOAD_BUTTON,
+            Settings.HIDE_POST_LIKE_BUTTON,
+            Settings.HIDE_POST_COMMENT_BUTTON,
+            Settings.HIDE_POST_SHARE_BUTTON,
+            Settings.HIDE_POST_SEND_BUTTON,
             Settings.HIDE_SPONSORED_MARKETPLACE_LISTINGS,
             Settings.SHOW_SELLER_VIEW_PROFILE,
             Settings.BLOCK_GAME_ADS,
@@ -193,6 +202,9 @@ public final class SettingsBackup {
             Settings.HIDE_REEL_COUNTS,
             Settings.HIDE_REEL_SAVE_BUTTON,
             Settings.HIDE_REEL_WHATSAPP_BUTTON,
+            Settings.HIDE_REEL_LIKE_BUTTON,
+            Settings.HIDE_REEL_COMMENT_BUTTON,
+            Settings.HIDE_REEL_SHARE_BUTTON,
             Settings.HIDE_REEL_SOUND_BUTTON,
             Settings.HIDE_REEL_AUDIO_LINE,
             Settings.HIDE_SLOW_CONNECTION_MESSAGE,
@@ -233,6 +245,7 @@ public final class SettingsBackup {
             Settings.LOAD_WHOLE_REPLY_THREADS,
             Settings.TAP_ANYWHERE_ON_VIEW_MORE_REPLIES,
             Settings.HIDE_POST_COMMENT_PREVIEWS,
+            Settings.HIDE_COMMENT_DOWNVOTE_BUTTON,
             Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS,
             Settings.HIDE_SHOP_LINK_COMMENTS,
             Settings.HIDE_COMMENTS_WITH_WORDS,
@@ -240,10 +253,12 @@ public final class SettingsBackup {
             Settings.HIDE_NEW_COMMENTS_PILL,
             Settings.HIDE_VIDEO_COMMENT_COMPOSER,
             Settings.OPEN_COMMENTS_FULL_HEIGHT,
+            Settings.PAUSE_REELS_UNDER_COMMENTS,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT,
             Settings.TAP_TO_PLAY,
             Settings.TAP_TO_PLAY_REELS_AFTER_FIRST,
             Settings.INLINE_FEED_VIDEO_CONTROLS,
+            Settings.FEED_VIDEO_CAST_BUTTON,
             Settings.RESUME_LONG_VIDEOS,
             Settings.RECENTLY_WATCHED,
             Settings.FRAME_STEP,
@@ -271,6 +286,7 @@ public final class SettingsBackup {
             Settings.SAVE_STORY_PHOTOS,
             Settings.DOWNLOAD_REELS,
             Settings.SHOW_REEL_DOWNLOAD_BUTTON,
+            Settings.COPY_REEL_CAPTION,
             Settings.DOWNLOAD_VIDEOS,
             Settings.CLIPBOARD_DOWNLOAD,
             Settings.DOWNLOAD_PHOTOS,
@@ -329,6 +345,7 @@ public final class SettingsBackup {
             Settings.HIDE_MESSENGER_BUTTON,
             Settings.HIDE_MESSENGER_COUNT,
             Settings.HIDE_FACEBOOK_LOGO,
+            Settings.HIDE_CREATE_BUTTON,
             Settings.FORCE_DARK_MODE,
             Settings.AMOLED_FLAT_CARDS,
             Settings.AMOLED_FEED_GAPS,
@@ -494,6 +511,12 @@ public final class SettingsBackup {
     static final EnumSetting<SurfaceQuality> STORIES_QUALITY = Settings.STORIES_PLAYBACK_QUALITY;
 
     /**
+     * What Sort loaded reels sorts by, held in a file as its {@link ReelsOrder#fileValue}. Anything
+     * else refuses the whole file, as a comment order does.
+     */
+    static final EnumSetting<ReelsOrder> REELS_ORDER = Settings.REELS_ORDER;
+
+    /**
      * The hours notification quiet hours start and end, each held in a file as its
      * {@link QuietHour#fileValue}, a 24-hour time on the hour. Anything else refuses the whole file,
      * as a playback quality does.
@@ -550,7 +573,7 @@ public final class SettingsBackup {
 
     /** The settings a file carries that aren't switches, in the order Settings declares them. */
     static final List<Setting<?>> VALUES = Collections.unmodifiableList(
-            Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, CEILING, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
+            Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, CEILING, REELS_ORDER, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
                     FILE_NAME, PHOTO_NAME, ACTION, APP, START, SUBTAB, ORDER, PLAYBACK, REELS_QUALITY, STORIES_QUALITY,
                     QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, TEXT_SIZE, ACCENT));
 
@@ -663,6 +686,7 @@ public final class SettingsBackup {
         private static final String BACKGROUND_NAME = "amoled_background";
         private static final String LIGHT_BACKGROUND_NAME = "amoled_light_background";
         private static final String HEADER_TEXT_NAME = "header_text";
+        private static final String REELS_ORDER_NAME = "reels_order";
 
         /** In {@link #ALLOWLIST} order, and only the switches the file named. */
         final Map<BooleanSetting, Boolean> values;
@@ -759,6 +783,9 @@ public final class SettingsBackup {
         /** The Home header text the file holds, the same way. */
         @Nullable
         String headerText;
+        /** What the file says Sort loaded reels sorts by, or null when it names none. Set once, as it's read. */
+        @Nullable
+        ReelsOrder reelsOrder;
         /** Names the file holds that aren't settings this build knows. They're left out. */
         final int unknown;
 
@@ -981,6 +1008,8 @@ public final class SettingsBackup {
             if (lightBackgroundChange != null) changes.put(LIGHT_BACKGROUND, lightBackgroundChange);
             String headerTextChange = headerTextChange();
             if (headerTextChange != null) changes.put(HEADER_TEXT, headerTextChange);
+            ReelsOrder reelsOrderChange = reelsOrderChange();
+            if (reelsOrderChange != null) changes.put(REELS_ORDER, reelsOrderChange);
             SendLink.Action actionChange = actionChange();
             if (actionChange != null) changes.put(ACTION, actionChange);
             String appChange = appChange();
@@ -1208,6 +1237,12 @@ public final class SettingsBackup {
             return homeFeed == null || homeFeed == HOME_FEED.savedValue() ? null : homeFeed;
         }
 
+        /** What Sort loaded reels sorts by after this file, or null when it names none or the one already set. */
+        @Nullable
+        ReelsOrder reelsOrderChange() {
+            return reelsOrder == null || reelsOrder == REELS_ORDER.savedValue() ? null : reelsOrder;
+        }
+
         @Nullable
         private static String listChange(@Nullable String list, StringSetting setting) {
             if (list == null) return null;
@@ -1253,6 +1288,7 @@ public final class SettingsBackup {
             if (background != null) state.putString(BACKGROUND_NAME, background);
             if (lightBackground != null) state.putString(LIGHT_BACKGROUND_NAME, lightBackground);
             if (headerText != null) state.putString(HEADER_TEXT_NAME, headerText);
+            if (reelsOrder != null) state.putString(REELS_ORDER_NAME, reelsOrder.fileValue);
             state.putInt(UNKNOWN, unknown);
             return state;
         }
@@ -1313,6 +1349,7 @@ public final class SettingsBackup {
             read.menuTiles = menuTiles instanceof String && MenuTiles.isClean((String) menuTiles)
                     ? (String) menuTiles : null;
             read.homeFeed = FeedsSubtab.fromFile(state.get(HOME_FEED_NAME));
+            read.reelsOrder = ReelsOrder.fromFile(state.get(REELS_ORDER_NAME));
             Object background = state.get(BACKGROUND_NAME);
             read.background = isBackground(background) ? (String) background : null;
             Object lightBackground = state.get(LIGHT_BACKGROUND_NAME);
@@ -1371,6 +1408,7 @@ public final class SettingsBackup {
             switches.put(PLAYBACK.key, of(PLAYBACK).fileValue);
             switches.put(REELS_QUALITY.key, of(REELS_QUALITY).fileValue);
             switches.put(STORIES_QUALITY.key, of(STORIES_QUALITY).fileValue);
+            switches.put(REELS_ORDER.key, of(REELS_ORDER).fileValue);
             switches.put(QUIET_FROM.key, of(QUIET_FROM).fileValue());
             switches.put(QUIET_UNTIL.key, of(QUIET_UNTIL).fileValue());
             switches.put(LOCK_AFTER.key, of(LOCK_AFTER).fileValue);
@@ -1520,6 +1558,7 @@ public final class SettingsBackup {
         String background = null;
         String lightBackground = null;
         String headerText = null;
+        ReelsOrder reelsOrder = null;
         JSONObject values = (JSONObject) settings;
         for (Iterator<String> names = values.keys(); names.hasNext(); ) {
             String name = names.next();
@@ -1624,6 +1663,11 @@ public final class SettingsBackup {
                 if (choice == null) throw new Rejected(Reason.VALUE, "Not a playback quality: " + name);
                 if (REELS_QUALITY.key.equals(name)) reelsQuality = choice;
                 else storiesQuality = choice;
+                continue;
+            }
+            if (REELS_ORDER.key.equals(name)) {
+                reelsOrder = ReelsOrder.fromFile(values.opt(name));
+                if (reelsOrder == null) throw new Rejected(Reason.VALUE, "Not a reels order: " + name);
                 continue;
             }
             if (QUIET_FROM.key.equals(name) || QUIET_UNTIL.key.equals(name)) {
@@ -1752,6 +1796,7 @@ public final class SettingsBackup {
         read.background = background;
         read.lightBackground = lightBackground;
         read.headerText = headerText;
+        read.reelsOrder = reelsOrder;
         return read;
     }
 
