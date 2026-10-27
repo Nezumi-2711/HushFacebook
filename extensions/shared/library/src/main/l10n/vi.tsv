@@ -544,6 +544,16 @@ Adds Facebook's own Save button next to Like, Comment and Share under posts. A s
 Download button under posts	Nút Tải xuống dưới bài viết
 # context: summary of that switch; Downloads is the name of Hushfacebook's settings page for saving media
 Adds a Download button under posts with a video or photos. It saves the video, the photo, or every photo of an album, using the Downloads settings.	Thêm nút Tải xuống dưới các bài viết có video hoặc ảnh. Nút này lưu video, ảnh hoặc mọi ảnh trong album theo cài đặt Tải xuống.
+# context: switch title under News feed; Like is Facebook's own button under a post
+Hide Like under posts	Ẩn Thích dưới bài viết
+# context: switch title under News feed; Comment is Facebook's own button under a post
+Hide Comment under posts	Ẩn Bình luận dưới bài viết
+# context: switch title under News feed; Share is Facebook's own button under a post
+Hide Share under posts	Ẩn Chia sẻ dưới bài viết
+# context: switch title under News feed; Send is Facebook's own button under a post that sends it in a chat
+Hide Send under posts	Ẩn Gửi dưới bài viết
+# context: summary shared by those four switches
+Takes this button out of the row under posts in the feed. The other buttons stay, and a post with all of its buttons hidden shows no row.	Bỏ nút này khỏi hàng dưới bài viết trong bảng tin. Các nút khác vẫn còn, và bài viết bị ẩn hết nút sẽ không hiện hàng nút.
 # context: what stays in while Hushfacebook is paused, followed by the patch name in brackets; the row in Facebook's own Menu that opens Hushfacebook settings
 # context: a short message when the Hushfacebook row in Facebook's Menu couldn't open the settings
 Hushfacebook settings can't open here. Long-press the Facebook logo instead.	Không thể mở cài đặt Hushfacebook ở đây. Hãy nhấn giữ logo Facebook.

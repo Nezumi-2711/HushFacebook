@@ -405,6 +405,19 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_post_download_button", FALSE);
 
     /**
+     * Each takes one button out of the row under a post (issue #265, {@link
+     * app.morphe.extension.facebook.feed.PostSaveButton}): Like, Comment, Share or Send. Start off.
+     */
+    public static final BooleanSetting HIDE_POST_LIKE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_post_like_button", FALSE);
+    public static final BooleanSetting HIDE_POST_COMMENT_BUTTON =
+            new BooleanSetting("hushfacebook_hide_post_comment_button", FALSE);
+    public static final BooleanSetting HIDE_POST_SHARE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_post_share_button", FALSE);
+    public static final BooleanSetting HIDE_POST_SEND_BUTTON =
+            new BooleanSetting("hushfacebook_hide_post_send_button", FALSE);
+
+    /**
      * The ads and boosted listings of Marketplace's feed: its query asks the server to skip them,
      * and its ads-only queries aren't sent.
      */

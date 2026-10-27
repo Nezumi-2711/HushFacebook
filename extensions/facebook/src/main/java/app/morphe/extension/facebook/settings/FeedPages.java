@@ -227,6 +227,12 @@ final class FeedPages {
                             L10n.t("Adds a Download button under posts with a video or photos. It saves the video, the "
                                     + "photo, or every photo of an album, using the Downloads settings.")));
                 }
+                String hides = L10n.t("Takes this button out of the row under posts in the feed. The other buttons stay, and "
+                        + "a post with all of its buttons hidden shows no row.");
+                feed.addPreference(toggle(context, Settings.HIDE_POST_LIKE_BUTTON, hides));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_COMMENT_BUTTON, hides));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_SHARE_BUTTON, hides));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_SEND_BUTTON, hides));
             }
             if (build.contains(PatchFamily.POST_DATES)) {
                 feed.addPreference(toggle(context, Settings.KEEP_POST_DATES,

@@ -490,6 +490,16 @@ Adds Facebook's own Save button next to Like, Comment and Share under posts. A s
 Download button under posts	Botão Baixar abaixo das publicações
 # context: summary of that switch; Downloads is the name of Hushfacebook's settings page for saving media
 Adds a Download button under posts with a video or photos. It saves the video, the photo, or every photo of an album, using the Downloads settings.	Adiciona um botão Baixar abaixo das publicações com vídeo ou fotos. Ele salva o vídeo, a foto ou todas as fotos de um álbum usando as configurações de Downloads.
+# context: switch title under News feed; Like is Facebook's own button under a post
+Hide Like under posts	Ocultar Curtir abaixo das publicações
+# context: switch title under News feed; Comment is Facebook's own button under a post
+Hide Comment under posts	Ocultar Comentar abaixo das publicações
+# context: switch title under News feed; Share is Facebook's own button under a post
+Hide Share under posts	Ocultar Compartilhar abaixo das publicações
+# context: switch title under News feed; Send is Facebook's own button under a post that sends it in a chat
+Hide Send under posts	Ocultar Enviar abaixo das publicações
+# context: summary shared by those four switches
+Takes this button out of the row under posts in the feed. The other buttons stay, and a post with all of its buttons hidden shows no row.	Tira este botão da linha abaixo das publicações no feed. Os outros botões ficam, e uma publicação com todos os botões ocultos não mostra a linha.
 Hushfacebook settings can't open here. Long-press the Facebook logo instead.	As configurações do Hushfacebook não podem ser abertas aqui. Toque e segure o logotipo do Facebook.
 Hide suggested groups	Ocultar grupos sugeridos
 Hides the row of groups to join between posts. Posts from groups you're in stay.	Oculta a fileira de grupos para participar entre as publicações. As publicações dos grupos dos quais você participa continuam.

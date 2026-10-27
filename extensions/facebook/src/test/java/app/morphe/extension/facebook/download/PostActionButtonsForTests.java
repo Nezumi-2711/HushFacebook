@@ -26,6 +26,11 @@ public final class PostActionButtonsForTests {
         return PostSaveButton.types(Arrays.asList("LIKE", "COMMENT", "SHARE"), SAVE).contains(SAVE);
     }
 
+    /** True when a row of Like (Facebook's REACT), Comment and Share loses Like. */
+    public static boolean hidesLike() {
+        return !PostSaveButton.types(Arrays.asList("REACT", "COMMENT", "SHARE"), SAVE).contains("REACT");
+    }
+
     /** True when a video post's row gets a Download button, with Download any video in the build. */
     public static boolean addsDownload() {
         Boolean before = PostDownloadButton.videoInBuildForTests;

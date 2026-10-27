@@ -544,6 +544,16 @@ Adds Facebook's own Save button next to Like, Comment and Share under posts. A s
 Download button under posts	Gönderilerin altında İndir düğmesi
 # context: summary of that switch; Downloads is the name of Hushfacebook's settings page for saving media
 Adds a Download button under posts with a video or photos. It saves the video, the photo, or every photo of an album, using the Downloads settings.	Video veya fotoğraf içeren gönderilerin altına bir İndir düğmesi ekler. Videoyu, fotoğrafı ya da bir albümün tüm fotoğraflarını İndirme ayarlarıyla kaydeder.
+# context: switch title under News feed; Like is Facebook's own button under a post
+Hide Like under posts	Gönderilerin altında Beğen'i gizle
+# context: switch title under News feed; Comment is Facebook's own button under a post
+Hide Comment under posts	Gönderilerin altında Yorum Yap'ı gizle
+# context: switch title under News feed; Share is Facebook's own button under a post
+Hide Share under posts	Gönderilerin altında Paylaş'ı gizle
+# context: switch title under News feed; Send is Facebook's own button under a post that sends it in a chat
+Hide Send under posts	Gönderilerin altında Gönder'i gizle
+# context: summary shared by those four switches
+Takes this button out of the row under posts in the feed. The other buttons stay, and a post with all of its buttons hidden shows no row.	Bu düğmeyi akıştaki gönderilerin altındaki satırdan kaldırır. Diğer düğmeler kalır ve tüm düğmeleri gizlenen bir gönderi satır göstermez.
 # context: what stays in while Hushfacebook is paused, followed by the patch name in brackets; the row in Facebook's own Menu that opens Hushfacebook settings
 # context: a short message when the Hushfacebook row in Facebook's Menu couldn't open the settings
 Hushfacebook settings can't open here. Long-press the Facebook logo instead.	Hushfacebook ayarları burada açılamıyor. Bunun yerine Facebook logosuna basılı tut.

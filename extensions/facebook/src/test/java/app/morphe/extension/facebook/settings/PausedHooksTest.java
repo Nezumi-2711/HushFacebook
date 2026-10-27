@@ -529,9 +529,10 @@ public class PausedHooksTest {
                 Collections.singletonList(ProfileAdFilterForTests::hidesASponsoredStory));
         // The note bubble over a profile picture is left out of its Bloks children.
         probes.put(PatchFamily.PROFILE_NOTES, Collections.singletonList(ProfileNotesForTests::hidesANote));
-        // A post's row gets Save, and a video post's row gets Download.
+        // A post's row gets Save and loses Like, and a video post's row gets Download.
         probes.put(PatchFamily.POST_ACTION_BUTTONS, Arrays.asList(
                 PostActionButtonsForTests::addsSave,
+                PostActionButtonsForTests::hidesLike,
                 PostActionButtonsForTests::addsDownload));
         // Marketplace's feed query asks to skip its ads, an ads-only query isn't sent, and a search
         // answer loses its ad.

@@ -44,8 +44,9 @@ internal const val DOWNLOAD_HELPER = "hushfacebookDownloadButton"
 val postActionButtonsPatch = bytecodePatch(
     name = "Post action buttons",
     description = "Adds Facebook's own Save button next to Like, Comment and Share under posts, and a Download " +
-        "button on posts with a video or photos that saves them the way the post's menu does. Each has its own " +
-        "switch, and both start off. Turn them on in Hushfacebook settings > News feed.",
+        "button on posts with a video or photos that saves them the way the post's menu does. It can also take " +
+        "Like, Comment, Share or Send out of that row. Each has its own switch, and they all start off. Find them " +
+        "in Hushfacebook settings > News feed.",
 ) {
     category("Feed")
     dependsOn(settingsPatch, facebookExtensionPatch)
@@ -61,8 +62,8 @@ val postActionButtonsPatch = bytecodePatch(
 }
 
 /**
- * Save: the list of the row's button types goes through the extension on its way out, which adds
- * SAVE when the switch is on. The item builder already has a Save case (the one under a post's
+ * Save and the hide switches: the list of the row's button types goes through the extension on its
+ * way out, which drops the types of hidden buttons and adds SAVE when its switch is on. The item builder already has a Save case (the one under a post's
  * menu), so the button looks and acts exactly like Facebook's, filled bookmark included.
  */
 internal fun BytecodePatchContext.hookTypes(row: ActionRow) {

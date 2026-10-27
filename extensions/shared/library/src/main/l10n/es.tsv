@@ -544,6 +544,16 @@ Adds Facebook's own Save button next to Like, Comment and Share under posts. A s
 Download button under posts	Botón Descargar debajo de las publicaciones
 # context: summary of that switch; Downloads is the name of Hushfacebook's settings page for saving media
 Adds a Download button under posts with a video or photos. It saves the video, the photo, or every photo of an album, using the Downloads settings.	Añade un botón Descargar debajo de las publicaciones con un video o fotos. Guarda el video, la foto o todas las fotos de un álbum con los ajustes de Descargas.
+# context: switch title under News feed; Like is Facebook's own button under a post
+Hide Like under posts	Ocultar Me gusta debajo de las publicaciones
+# context: switch title under News feed; Comment is Facebook's own button under a post
+Hide Comment under posts	Ocultar Comentar debajo de las publicaciones
+# context: switch title under News feed; Share is Facebook's own button under a post
+Hide Share under posts	Ocultar Compartir debajo de las publicaciones
+# context: switch title under News feed; Send is Facebook's own button under a post that sends it in a chat
+Hide Send under posts	Ocultar Enviar debajo de las publicaciones
+# context: summary shared by those four switches
+Takes this button out of the row under posts in the feed. The other buttons stay, and a post with all of its buttons hidden shows no row.	Quita este botón de la fila debajo de las publicaciones del feed. Los demás botones se quedan, y una publicación con todos sus botones ocultos no muestra la fila.
 # context: what stays in while Hushfacebook is paused, followed by the patch name in brackets; the row in Facebook's own Menu that opens Hushfacebook settings
 # context: a short message when the Hushfacebook row in Facebook's Menu couldn't open the settings
 Hushfacebook settings can't open here. Long-press the Facebook logo instead.	La configuración de Hushfacebook no se puede abrir aquí. Mantén pulsado el logotipo de Facebook.
