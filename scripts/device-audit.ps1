@@ -431,6 +431,25 @@ function Get-AuditReelProof {
     return Test-AuditReelViewer $top $activity
 }
 
+# What a hold on a reel opened (the comment sheet Open comments with a gesture opens, or the share
+# sheet Facebook's own hold opens) stays over the reel, and the next link's page opens under it in the
+# same activity, where a Back pops that page instead of the sheet: the fourth S22 walk, 2026-10-27,
+# failed the notifications step after two Backs that way. So the hold step closes it there and then,
+# a Back at a time, up to three (a focused composer takes one), until the reel's own controls are on
+# screen again. An empty dump is a playing reel, which can't be dumped, with nothing over it.
+function Close-AuditHoldCover {
+    $backs = 0
+    while ($backs -lt 3) {
+        $nodes = @(Get-UiNodes)
+        if ($nodes.Count -eq 0 -or @($nodes | Where-Object {
+                    $_.'content-desc' -ceq 'Tap to show video controls' -or $_.text -ceq 'Tap to show video controls' }).Count -gt 0) { break }
+        Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
+        Start-Sleep -Seconds 1
+        $backs++
+    }
+    return $backs
+}
+
 # Opens a walk route's link and proves the page it reached. A sheet an earlier step left open can
 # cover the page the link opened (the comment sheet the hold on a reel left on the S22, 2026-10-27,
 # failing the notifications step on two walks in a row), so a page that isn't proved gets a Back,
@@ -1037,6 +1056,10 @@ try {
                 try { Invoke-Adb shell input swipe $swipeX ([int]($height / 2)) $swipeX ([int]($height / 2)) 2500 | Out-Null }
                 finally { $inputReel = $false; $inputWindow = $null }
                 Start-Sleep -Seconds 1
+                $inputReel = $routeReel
+                try { $holdBacks = Close-AuditHoldCover }
+                finally { $inputReel = $false }
+                if ($holdBacks) { $summary.Add("Walk: the hold at step $stepNumber opened something over the reel, closed with $holdBacks Back(s).") }
             } elseif ($step -eq 'back') {
                 if ($skipBack) { $skipBack = $false; continue }
                 $inputReel = $routeReel

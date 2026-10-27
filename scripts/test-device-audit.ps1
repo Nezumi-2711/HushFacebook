@@ -8,7 +8,7 @@ if ($parseErrors.Count) { throw ($parseErrors -join "`n") }
 $testFunctions = @('Assert-AuditLease', 'Assert-AuditSteps', 'Assert-AuditForeground', 'Invoke-Adb',
     'Get-AuditLocales', 'Get-AuditNightMode', 'Restore-AuditState', 'Format-Shell',
     'New-AuditBaseline', 'Compare-AuditWalk', 'Test-AuditBaseline', 'Publish-AuditBaseline', 'Save-SettingsPages', 'Get-SettingsPages', 'Test-AuditSectionShown', 'Get-AuditLocaleTable', 'Write-Step', 'Test-AuditDestination', 'Select-AuditTapNode', 'Find-AuditTapNode', 'Get-UiNodes', 'Send-Profile', 'Test-AuditLocaleList', 'Get-AuditLauncher', 'Get-Report',
-    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Open-AuditRoute', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'ConvertFrom-AuditJsonTable', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
+    'Test-AuditReelViewer', 'Get-AuditReelProof', 'Close-AuditHoldCover', 'Open-AuditRoute', 'Test-AuditKeyboard', 'Test-AuditSettingsRestored', 'ConvertFrom-AuditJsonTable', 'Resolve-AuditStateBefore', 'Get-AuditCrashes')
 foreach ($functionName in $testFunctions) {
     $definition = $auditAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -993,6 +993,32 @@ try {
             Assert-That ($backs -eq $case.Backs -and $starts -eq $case.Starts) "Open-AuditRoute sent $backs Back and $starts links for $($case.Name)."
             Assert-That ($script:auditRouteBacks -eq $case.Backs) "Open-AuditRoute reported $($script:auditRouteBacks) Backs for $($case.Name)."
             Assert-That ($script:pageAnswers.Count -eq 0) "Open-AuditRoute skipped a proof for $($case.Name)."
+        }
+    }
+
+    # What a hold on a reel opened is closed at the hold, a Back at a time, until the reel's controls
+    # show again, and never more than three Backs. An empty dump is a playing reel left alone.
+    & {
+        function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
+        function Invoke-Adb { $script:holdCalls.Add($args -join ' ') }
+        function Get-UiNodes { $script:holdScreens.Dequeue() }
+        $reel = [pscustomobject]@{ text = ''; 'content-desc' = 'Tap to show video controls' }
+        $sheet = [pscustomobject]@{ text = 'Newest'; 'content-desc' = '' }
+        $cases = @(
+            @{ Screens = @(, @($reel)); Backs = 0; Name = 'a hold that opened nothing' },
+            @{ Screens = @(, @()); Backs = 0; Name = 'a playing reel' },
+            @{ Screens = @(@($sheet), @($reel)); Backs = 1; Name = 'the share sheet' },
+            @{ Screens = @(@($sheet), @($sheet), @($reel)); Backs = 2; Name = 'a comment sheet with a focused composer' },
+            @{ Screens = @(@($sheet), @($sheet), @($sheet)); Backs = 3; Name = 'a sheet that never closes' })
+        foreach ($case in $cases) {
+            $script:holdCalls = [Collections.Generic.List[string]]::new()
+            $script:holdScreens = [Collections.Generic.Queue[object]]::new()
+            foreach ($screen in $case.Screens) { $script:holdScreens.Enqueue($screen) }
+            $backs = Close-AuditHoldCover
+            $sent = @($script:holdCalls | Where-Object { $_ -ceq 'shell input keyevent KEYCODE_BACK' }).Count
+            Assert-That ($backs -eq $case.Backs -and $sent -eq $case.Backs) "Close-AuditHoldCover sent $sent Back(s) and said $backs for $($case.Name)."
+            Assert-That ($script:holdCalls.Count -eq $sent) "Close-AuditHoldCover sent something other than Back for $($case.Name)."
+            Assert-That ($script:holdScreens.Count -eq 0) "Close-AuditHoldCover skipped a look for $($case.Name)."
         }
     }
 } finally {
