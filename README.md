@@ -22,7 +22,7 @@ Each row in the [patch table](#patches) says how its switch starts. The ad filte
 
 This project has no connection to Meta or to the Morphe project. Neither endorses it, and neither wrote it.
 
-The latest release is [v0.18.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.18.0), with 102 patches. It includes all changes since v0.17.0, among them faster patching with the recommended selection, a 10 second double tap skip on reels, pinch to zoom on stories and profile photos, and your own background colors and Home header, as the [changelog](CHANGELOG.md) describes. Source changes for v0.18.1 are under Unreleased in the changelog.
+The latest release is [v0.18.1](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.18.1), with 102 patches. It includes all changes since v0.18.0, among them settings that open every section right on the main page, a play button for feed videos, Traditional Chinese, and a fix for the startup crash with `Newest reels first` on, as the [changelog](CHANGELOG.md) describes.
 
 [Add to Morphe](https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook) | [Download a release](https://github.com/SysAdminDoc/Hushfacebook/releases/latest) | [Browse the patches](#patches)
 
@@ -47,15 +47,15 @@ On a new phone, import the key in the same place before you patch anything. Rein
 
 ## Settings
 
-<p><img src="assets/settings-overview.png" width="320" alt="Hushfacebook overview with search, Pause and category pages"><img src="assets/settings-downloads.png" width="320" alt="Downloads settings with quality, folder and file name controls"></p>
+<p><img src="assets/settings-overview.png" width="320" alt="Hushfacebook settings with search, Pause and expandable sections"><img src="assets/settings-downloads.png" width="320" alt="Downloads expanded beneath its heading on the main settings page"></p>
 
 There are three ways in. Long-press the Facebook logo at the top of your feed. Long-press Facebook's icon on your home screen and tap **Hushfacebook** (if it isn't there, open Facebook once and try again, and check **Settings shortcut on the app icon** under Menu is on). Or open Facebook's Menu, expand **Settings and privacy** and tap **Hushfacebook settings** at the end. Each has a switch under Menu in the settings (**Open settings from the logo**, **Settings shortcut on the app icon** and **Settings row in Menu**), and the last one still on stays on, so you can always get back in.
 
-The overview groups the main pages in one list, with search and **Pause** above it. **More settings** holds the rest. Search reaches every setting, and you can flip a switch right in the results.
+Every section is on the main settings page. Tap a heading to open its controls underneath, then tap it again to collapse them. Several sections can stay open. Search is below the title, and **Pause** is in the top bar. **Support** expands to show Report a problem and Restart Facebook. Search reaches every setting, and you can flip a switch right in the results. Clearing search returns to your open sections and position.
 
 Switches act straight away, with no restart and no new patching, but what's already on screen stays as it was until Facebook draws it again. A reel keeps the buttons it was built with, and rows already in the feed stay until it loads fresh posts. The Stories tray switch shows the next time you pull the feed down to refresh. A row that tells you to restart Facebook, such as the font and tab switches, waits for that restart.
 
-Changing one of those brings up a **Restart Facebook** row at the top of the page, and a tap reopens Facebook on the same page. The end of the home page has a Restart Facebook row of its own for whenever Facebook needs a fresh start. **Quick setups** turns on a ready-made set of switches at once, and **Report a problem** opens a GitHub bug report with your versions and switches filled in.
+Changing one of those brings up a **Restart Facebook** row at the top of the page. A tap reopens settings with your sections and position restored. You can also restart from **Support** whenever Facebook needs a fresh start. **Report a problem** opens a GitHub bug report with your versions and switches filled in.
 
 **Pause Hushfacebook** turns every switch off from the next start without forgetting your choices. A few things stay in, Lock Facebook among them, and the screen lists them. If Facebook crashes or freezes within a minute of starting three times in a row, Hushfacebook pauses itself and the screen says so.
 
@@ -85,7 +85,7 @@ Reels turn up in several places, and no one switch covers them all. Searching th
 
 ## Patches
 
-Each row says what the patch does, how its switch starts and which settings page it's on. A row that says "with no switch" works as soon as you patch it in.
+Each row says what the patch does, how its switch starts and which settings section it's in. A row that says "with no switch" works as soon as you patch it in.
 
 | Patch | What it does |
 |---|---|
@@ -122,7 +122,7 @@ Each row says what the patch does, how its switch starts and which settings page
 | `Hide seen posts` | Keeps posts you've already scrolled past out of the feed when it loads again, for 1, 3, 7 or 30 days, so you see something new. The list stays on your phone. Starts off. Turn it on in Hushfacebook settings > News feed. |
 | `Hide Meta AI questions under posts` | Removes the row of Meta AI questions Facebook adds under some posts, for a cleaner feed. The post and its buttons stay. On by default. Turn it off in Hushfacebook settings > News feed. |
 | `Hide Meta AI comment summaries` | Removes Meta AI's summary of the comments from the top of the comment sheet and from under posts, so you read what people actually wrote. Starts off. Turn it on in Hushfacebook settings > Comments. |
-| `Comment sheet options` | Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and sticker buttons, show every reply without tapping View replies, load a whole reply thread as you scroll, open more replies with a tap anywhere on their row, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in Hushfacebook settings > Comments. |
+| `Comment sheet options` | Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and sticker buttons, show every reply without tapping View replies, load a whole reply thread as you scroll, open more replies with a tap anywhere on their row, hide the comments under feed posts, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in Hushfacebook settings > Comments. |
 | `Open comments at full height` | Opens the comment sheet at the full height of the screen instead of part way up, on posts, videos, reels and stories. On reels and videos, Comment opens that sheet instead of the split view. Starts off. Turn it on in Hushfacebook settings > Comments. |
 | `Hide the Feeds header` | Takes the title row and the All, Favorites, Friends, Groups and Pages filters off the top of the Feeds tab, so it opens straight on posts. Starts off. Turn it on in Hushfacebook settings > News feed, then restart Facebook. |
 | `Keep post dates` | Keeps the date under the poster's name, so you can always tell how old a post is. Facebook's newer header can swap it for rotating details, and on some phones the line goes blank. On by default. Turn it off in Hushfacebook settings > News feed. |

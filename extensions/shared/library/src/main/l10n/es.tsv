@@ -473,6 +473,10 @@ Use the order below. A choice made on a post lasts until restart. Links to comme
 Hide Meta AI comment summaries	Ocultar los resúmenes de comentarios de Meta AI
 # context: summary of that switch; the buttons are a post's Like, Comment and Share row
 Hides Meta AI's summary at the top of comments and the comment summary under a post's buttons. The comments themselves stay.	Oculta el resumen de Meta AI en la parte superior de los comentarios y el resumen de comentarios bajo los botones de una publicación. Los comentarios en sí se quedan.
+# context: switch title under Comments; the few comments Facebook shows under a post in the feed, below its Like, Comment and Share row
+Hide comments under posts	Ocultar los comentarios bajo las publicaciones
+# context: summary of that switch; Comment is the post's Comment button
+Feed posts stop showing a few comments under their buttons. Tap Comment to read them all.	Las publicaciones del feed dejan de mostrar comentarios bajo sus botones. Toca Comentar para leerlos todos.
 # context: switch title under Comments; Like is the button under a post or a comment
 Like only	Solo Me gusta
 # context: summary of that switch; the reactions are the row of Love, Haha, Wow and the rest that a long press on Like opens
@@ -739,16 +743,10 @@ Active. Marketplace, Notifications and Profile/Menu stay. Find Hushfacebook sett
 Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	Activo. Se conservan Eventos, Notificaciones y Perfil/Menú. Los ajustes de Hushfacebook están en Menú, en Configuración y privacidad.
 
 # context: Settings overview, category navigation and search.
-Marketplace only, Events only and your start tab	Modo Marketplace, modo Eventos y pestaña de inicio
 Ads, suggestions and word filters	Anuncios, sugerencias y filtros de palabras
-Suggestions, saving, auto-advance and viewing anonymously	Sugerencias, guardado, avance automático y visualización anónima
 Cleaner reels and video controls	Reels más limpios y controles de vídeo
 Tap to play, quality and resume	Tocar para reproducir, calidad y reanudar
 Quality, format and file names	Calidad, formato y nombres de archivo
-Settings	Ajustes
-Browse settings	Explorar ajustes
-More settings	Más ajustes
-Additional Facebook preferences	Otras preferencias de Facebook
 No matching settings	No hay ajustes coincidentes
 %1$d setting found	%1$d ajuste encontrado
 %1$d settings found	%1$d ajustes encontrados
@@ -1571,13 +1569,8 @@ Report a problem	Informar de un problema
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Abre un informe en GitHub con tus versiones y ajustes ya rellenados. Añade lo que pasó.
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	Ajustes rápidos
-Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Activa un grupo de interruptores con un toque o devuelve cada interruptor a como estaba al principio. Mantén pulsado para ocultar esta fila.
 # context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
-Quick setups hidden. Bring it back from %1$s.	Ajustes rápidos ocultos. Puedes recuperarlos en %1$s.
 # context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
-Quick setups on the home page	Ajustes rápidos en Inicio
-Shown. Tap to hide it.	Visible. Toca para ocultarlo.
-Hidden. Tap to show it again.	Oculto. Toca para mostrarlo de nuevo.
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	Tranquilo
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Oculta anuncios, sugerencias, promociones y avisos, y detiene las notificaciones insistentes.
@@ -1936,3 +1929,10 @@ Inline feed video controls	Controles de video en el feed
 Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Añade un botón de reproducción y pausa a los videos del feed. Toca el video para abrirlo a pantalla completa. Los videos en directo y los anuncios conservan sus propios controles.
 Play feed video	Reproducir video del feed
 Pause feed video	Pausar video del feed
+Support	Ayuda
+Reports, restart and app information	Informes, reinicio e información de la app
+Your start tab and launch settings	Pestaña inicial y opciones de inicio
+Saving, playback and anonymous viewing	Guardado, reproducción y visualización anónima
+Sorting, replies and reactions	Orden, respuestas y reacciones
+Expanded	Expandido
+Collapsed	Contraído

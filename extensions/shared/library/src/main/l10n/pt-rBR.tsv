@@ -434,6 +434,10 @@ Use the order below. A choice made on a post lasts until restart. Links to comme
 Hide Meta AI comment summaries	Ocultar os resumos de comentários da Meta AI
 # context: summary of that switch; the buttons are a post's Like, Comment and Share row
 Hides Meta AI's summary at the top of comments and the comment summary under a post's buttons. The comments themselves stay.	Oculta o resumo da Meta AI no topo dos comentários e o resumo de comentários embaixo dos botões de uma publicação. Os comentários em si continuam.
+# context: switch title under Comments; the few comments Facebook shows under a post in the feed, below its Like, Comment and Share row
+Hide comments under posts	Ocultar os comentários embaixo das publicações
+# context: summary of that switch; Comment is the post's Comment button
+Feed posts stop showing a few comments under their buttons. Tap Comment to read them all.	As publicações do feed deixam de mostrar comentários embaixo dos botões. Toque em Comentar para ler todos.
 # context: switch title under Comments; Like is the button under a post or a comment
 Like only	Só Curtir
 # context: summary of that switch; the reactions are the row of Love, Haha, Wow and the rest that a long press on Like opens
@@ -629,16 +633,10 @@ While Marketplace only is on, loads less of the feed in the background. Some loa
 Active. Marketplace, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	Ativo. Marketplace, Notificações e Perfil/Menu são mantidos. As configurações do Hushfacebook ficam no Menu, em Configurações e privacidade.
 # context: status line under the Events only switch; Menu is Facebook's tab
 Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	Ativo. Eventos, Notificações e Perfil/Menu são mantidos. As configurações do Hushfacebook ficam no Menu, em Configurações e privacidade.
-Marketplace only, Events only and your start tab	Modo Marketplace, modo Eventos e aba inicial
 Ads, suggestions and word filters	Anúncios, sugestões e filtros de palavras
-Suggestions, saving, auto-advance and viewing anonymously	Sugestões, salvamento, avanço automático e visualização anônima
 Cleaner reels and video controls	Reels mais limpos e controles de vídeo
 Tap to play, quality and resume	Tocar para reproduzir, qualidade e retomar
 Quality, format and file names	Qualidade, formato e nomes de arquivos
-Settings	Configurações
-Browse settings	Explorar configurações
-More settings	Mais configurações
-Additional Facebook preferences	Outras preferências do Facebook
 No matching settings	Nenhuma configuração encontrada
 %1$d setting found	%1$d configuração encontrada
 %1$d settings found	%1$d configurações encontradas
@@ -1457,13 +1455,8 @@ Report a problem	Relatar um problema
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Abre um relatório no GitHub com suas versões e configurações já preenchidas. Conte o que aconteceu.
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	Configurações rápidas
-Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Ative um conjunto de opções com um toque ou volte cada opção para como estava no início. Mantenha pressionado para ocultar esta linha.
 # context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
-Quick setups hidden. Bring it back from %1$s.	Configurações rápidas ocultadas. Para trazê-las de volta, vá em %1$s.
 # context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
-Quick setups on the home page	Configurações rápidas na página inicial
-Shown. Tap to hide it.	Visível. Toque para ocultar.
-Hidden. Tap to show it again.	Oculto. Toque para mostrar de novo.
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	Tranquilo
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Oculta anúncios, sugestões, promoções e convites, e para as notificações insistentes.
@@ -1822,3 +1815,10 @@ Inline feed video controls	Controles de vídeo no feed
 Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Adiciona um botão de reprodução e pausa aos vídeos do feed. Toque no vídeo para abri-lo em tela cheia. Vídeos ao vivo e anúncios mantêm seus próprios controles.
 Play feed video	Reproduzir vídeo do feed
 Pause feed video	Pausar vídeo do feed
+Support	Suporte
+Reports, restart and app information	Relatórios, reinicialização e informações do app
+Your start tab and launch settings	Aba inicial e opções de abertura
+Saving, playback and anonymous viewing	Salvamento, reprodução e visualização anônima
+Sorting, replies and reactions	Ordem, respostas e reações
+Expanded	Expandido
+Collapsed	Recolhido

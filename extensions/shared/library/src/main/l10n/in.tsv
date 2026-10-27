@@ -473,6 +473,10 @@ Use the order below. A choice made on a post lasts until restart. Links to comme
 Hide Meta AI comment summaries	Sembunyikan ringkasan komentar Meta AI
 # context: summary of that switch; the buttons are a post's Like, Comment and Share row
 Hides Meta AI's summary at the top of comments and the comment summary under a post's buttons. The comments themselves stay.	Menyembunyikan ringkasan Meta AI di bagian atas komentar dan ringkasan komentar di bawah tombol postingan. Komentarnya sendiri tetap ada.
+# context: switch title under Comments; the few comments Facebook shows under a post in the feed, below its Like, Comment and Share row
+Hide comments under posts	Sembunyikan komentar di bawah postingan
+# context: summary of that switch; Comment is the post's Comment button
+Feed posts stop showing a few comments under their buttons. Tap Comment to read them all.	Postingan di feed tidak lagi menampilkan komentar di bawah tombolnya. Ketuk Komentari untuk membaca semuanya.
 # context: switch title under Comments; Like is the button under a post or a comment
 Like only	Hanya Suka
 # context: summary of that switch; the reactions are the row of Love, Haha, Wow and the rest that a long press on Like opens
@@ -739,16 +743,10 @@ Active. Marketplace, Notifications and Profile/Menu stay. Find Hushfacebook sett
 Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	Aktif. Acara, Notifikasi, dan Profil/Menu tetap ada. Setelan Hushfacebook ada di Menu, pada Pengaturan dan privasi.
 
 # context: Settings overview, category navigation and search.
-Marketplace only, Events only and your start tab	Mode Marketplace, mode Acara, dan tab awal
 Ads, suggestions and word filters	Iklan, saran, dan filter kata
-Suggestions, saving, auto-advance and viewing anonymously	Saran, penyimpanan, perpindahan otomatis, dan melihat secara anonim
 Cleaner reels and video controls	Reels lebih bersih dan kontrol video
 Tap to play, quality and resume	Ketuk untuk memutar, kualitas, dan melanjutkan
 Quality, format and file names	Kualitas, format, dan nama file
-Settings	Pengaturan
-Browse settings	Jelajahi pengaturan
-More settings	Pengaturan lainnya
-Additional Facebook preferences	Preferensi Facebook tambahan
 No matching settings	Tidak ada pengaturan yang cocok
 %1$d setting found	%1$d pengaturan ditemukan
 %1$d settings found	%1$d pengaturan ditemukan
@@ -1571,13 +1569,8 @@ Report a problem	Laporkan masalah
 Opens a GitHub report with your versions and settings filled in. Add what happened.	Membuka laporan GitHub dengan versi dan pengaturan Anda yang sudah terisi. Tambahkan apa yang terjadi.
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	Pengaturan cepat
-Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	Nyalakan sekumpulan sakelar dengan sekali ketuk, atau kembalikan setiap sakelar seperti semula. Tekan dan tahan untuk menyembunyikan baris ini.
 # context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
-Quick setups hidden. Bring it back from %1$s.	Pengaturan cepat disembunyikan. Tampilkan lagi lewat %1$s.
 # context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
-Quick setups on the home page	Pengaturan cepat di Beranda
-Shown. Tap to hide it.	Ditampilkan. Ketuk untuk menyembunyikan.
-Hidden. Tap to show it again.	Disembunyikan. Ketuk untuk menampilkannya lagi.
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	Tenang
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	Menyembunyikan iklan, saran, promosi, dan ajakan, serta menghentikan notifikasi yang mengganggu.
@@ -1936,3 +1929,10 @@ Inline feed video controls	Kontrol video di beranda
 Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Menambahkan tombol putar/jeda pada video di beranda. Ketuk video untuk membukanya dalam layar penuh. Video siaran langsung dan iklan tetap memakai kontrolnya sendiri.
 Play feed video	Putar video beranda
 Pause feed video	Jeda video beranda
+Support	Bantuan
+Reports, restart and app information	Laporan, mulai ulang, dan informasi aplikasi
+Your start tab and launch settings	Tab awal dan pengaturan saat dibuka
+Saving, playback and anonymous viewing	Menyimpan, memutar, dan menonton secara anonim
+Sorting, replies and reactions	Urutan, balasan, dan reaksi
+Expanded	Diperluas
+Collapsed	Diciutkan

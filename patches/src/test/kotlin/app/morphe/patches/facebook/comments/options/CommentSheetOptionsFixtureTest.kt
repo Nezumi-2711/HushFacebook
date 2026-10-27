@@ -6,7 +6,12 @@ package app.morphe.patches.facebook.comments.options
 
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
+import app.morphe.patches.facebook.comments.summaries.HOLDS
+import app.morphe.patches.facebook.comments.summaries.POST_SOCKET
+import app.morphe.patches.facebook.comments.summaries.POST_SUMMARY
 import app.morphe.patches.facebook.comments.summaries.descriptor
+import app.morphe.patches.facebook.comments.summaries.holdSummaries
+import app.morphe.patches.facebook.comments.summaries.nameTable
 import app.morphe.patches.facebook.comments.summaries.switchKeys
 import app.morphe.patches.facebook.feed.FixtureDex
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
@@ -159,6 +164,46 @@ class CommentSheetOptionsFixtureTest {
         assertEquals("$where: a yes answers no", listOf(Opcode.CONST_4, Opcode.RETURN), patched.subList(5, 7).map { it.opcode })
         assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(7).map { it.opcode })
         assertEquals("$where: a no lands on Facebook's first instruction", setOf(5, 7), ControlFlow.of(method).normal[4].toSet())
+    }
+
+    private fun post(bundle: File) {
+        val name = bundle.name
+        val sockets = holders(bundle, POST_SOCKET).flatMap { methodsHolding(it, POST_SOCKET) }
+        assertTrue("$name: nothing names \"$POST_SOCKET\"", sockets.isNotEmpty())
+        val found = postSocket(holders(bundle, INLINE_COMMENTS), sockets) { types -> FixtureDex.classes(bundle, types) }
+        val bottom = bottomSocket(
+            holders(bundle, RELATED_GROUPS),
+            holders(bundle, BOTTOM_SOCKET).flatMap { methodsHolding(it, BOTTOM_SOCKET) },
+        ) { types -> FixtureDex.classes(bundle, types) }
+        val table = found.table
+        val check = found.check
+        val where = "$name: ${check.descriptor()}"
+        assertNotEquals("$where is the check under a post's comments", bottom.check.descriptor(), check.descriptor())
+        for (plugin in listOf(INLINE_COMMENTS_DWELL_TIME, INLINE_COMMENTS_CLIENT_RANKING, POST_SUMMARY)) {
+            assertTrue("$where: ${table.descriptor()} doesn't name $plugin", holdsString(table, plugin))
+        }
+        assertEquals("$where: Meta AI's inline summary isn't in the same name table",
+            nameTable(holders(bundle, POST_SUMMARY), POST_SUMMARY).descriptor(), table.descriptor())
+
+        val owner = FixtureDex.classes(bundle, setOf(check.definingClass)).values.single()
+        val context = PatchContexts.of(listOf(owner))
+        val method = context.mutableClassDefBy(owner.type).methods.single { it.descriptor() == check.descriptor() }
+        val original = method.implementation!!.instructions.toList()
+        val number = method.implementation!!.registerCount - 1
+        // Hide Meta AI comment summaries hooks the same check first when both patches are selected.
+        method.holdSummaries(table)
+        method.holdButtons(table, HOLDS_POST_COMMENTS)
+        val patched = method.implementation!!.instructions.toList()
+        assertEquals("$where gains seven instructions per hook", original.size + 14, patched.size)
+        val range = patched[0] as RegisterRangeInstruction
+        assertEquals("$where: with the check's own number, its last register", listOf(number, 1),
+            listOf(range.startRegister, range.registerCount))
+        assertEquals("$where: the plugin's name comes from the table", table.descriptor(), patched[0].reference())
+        assertEquals("$where: its own extension method is asked", HOLDS_POST_COMMENTS, patched[2].reference())
+        assertEquals("$where: a yes answers no", listOf(Opcode.CONST_4, Opcode.RETURN), patched.subList(5, 7).map { it.opcode })
+        assertEquals("$where: a no goes on to the Meta AI summary hook", setOf(5, 7), ControlFlow.of(method).normal[4].toSet())
+        assertEquals("$where: the Meta AI summary hook is next", HOLDS, patched[9].reference())
+        assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(14).map { it.opcode })
     }
 
     private fun picker(bundle: File) {
@@ -413,6 +458,11 @@ class CommentSheetOptionsFixtureTest {
         assertEquals("$where: a yes returns nothing", listOf(Opcode.CONST_4, Opcode.RETURN_OBJECT),
             patched.subList(3, 5).map { it.opcode })
         assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(5).map { it.opcode })
+    }
+
+    @Test
+    fun `each declared build keeps a feed post's inline comments out from under its buttons`() = bundles { bundle ->
+        post(bundle)
     }
 
     @Test

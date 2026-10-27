@@ -473,6 +473,10 @@ Use the order below. A choice made on a post lasts until restart. Links to comme
 Hide Meta AI comment summaries	隐藏 Meta AI 评论摘要
 # context: summary of that switch; the buttons are a post's Like, Comment and Share row
 Hides Meta AI's summary at the top of comments and the comment summary under a post's buttons. The comments themselves stay.	隐藏评论顶部的 Meta AI 摘要，以及帖子按钮下方的评论摘要。评论本身保留。
+# context: switch title under Comments; the few comments Facebook shows under a post in the feed, below its Like, Comment and Share row
+Hide comments under posts	隐藏帖子下方的评论
+# context: summary of that switch; Comment is the post's Comment button
+Feed posts stop showing a few comments under their buttons. Tap Comment to read them all.	动态中的帖子不再在按钮下方显示评论。点按“评论”即可查看全部。
 # context: switch title under Comments; Like is the button under a post or a comment
 Like only	仅“赞”
 # context: summary of that switch; the reactions are the row of Love, Haha, Wow and the rest that a long press on Like opens
@@ -738,16 +742,10 @@ Active. Marketplace, Notifications and Profile/Menu stay. Find Hushfacebook sett
 # context: status line under the Events only switch; Menu is Facebook's tab
 Active. Events, Notifications and Profile/Menu stay. Find Hushfacebook settings in Menu, under Settings and privacy.	已启用。活动、通知和个人主页/菜单保留。Hushfacebook 设置位于菜单的“设置和隐私”下。
 # context: Settings overview, category navigation and search.
-Marketplace only, Events only and your start tab	仅 Marketplace、仅活动和起始标签页
 Ads, suggestions and word filters	广告、推荐和字词筛选
-Suggestions, saving, auto-advance and viewing anonymously	推荐、保存、自动切换和匿名查看
 Cleaner reels and video controls	更清爽的 Reels 和视频控制
 Tap to play, quality and resume	点按播放、画质和继续播放
 Quality, format and file names	画质、格式和文件名
-Settings	设置
-Browse settings	浏览设置
-More settings	更多设置
-Additional Facebook preferences	其他 Facebook 偏好设置
 No matching settings	没有匹配的设置
 %1$d setting found	找到 %1$d 项设置
 %1$d settings found	找到 %1$d 项设置
@@ -1566,13 +1564,8 @@ Report a problem	报告问题
 Opens a GitHub report with your versions and settings filled in. Add what happened.	打开一份已填好你的版本和设置的 GitHub 报告。请补充发生了什么。
 # context: row near the top of the settings home page; a list of ready-made sets of switches
 Quick setups	快速设置
-Turn on a set of switches in one tap, or put every switch back the way it started. Press and hold to hide this row.	一键开启一组开关，或将所有开关恢复到初始状态。长按可隐藏此行。
 # context: toast after a long press hides the Quick setups row from the settings home page; the page name is the one holding the row that brings it back
-Quick setups hidden. Bring it back from %1$s.	快速设置已隐藏。可从“%1$s”中恢复。
 # context: row on the Pause, backup and diagnostics page; shows or hides the Quick setups row on the settings home page
-Quick setups on the home page	主页上的快速设置
-Shown. Tap to hide it.	已显示。点按可隐藏。
-Hidden. Tap to show it again.	已隐藏。点按可重新显示。
 # context: name of a Quick setups choice that hides ads and nags; an adjective, as in a quiet feed
 Quiet	安静
 Hides ads, suggestions, promos and prompts, and stops nagging notifications.	隐藏广告、推荐、推广和提示，并停止烦人的通知。
@@ -1931,3 +1924,10 @@ Inline feed video controls	动态消息视频控件
 Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	为动态消息视频添加播放或暂停按钮。点按视频本身仍会全屏打开。直播视频和广告保留原有控件。
 Play feed video	播放动态消息视频
 Pause feed video	暂停动态消息视频
+Support	帮助与支持
+Reports, restart and app information	报告问题、重启和应用信息
+Your start tab and launch settings	启动标签页和启动设置
+Saving, playback and anonymous viewing	保存、播放和匿名浏览
+Sorting, replies and reactions	排序、回复和心情
+Expanded	已展开
+Collapsed	已折叠
