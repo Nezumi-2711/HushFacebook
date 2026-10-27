@@ -494,7 +494,7 @@ final class ScreenColors {
             fillWidth(title);
             title.setGravity(android.view.Gravity.CENTER);
             title.setTextSize(22);
-            title.setTextColor(palette.title);
+            ShimmerTitle.wear(title, palette.background);
             title.setTypeface(Typeface.create("sans-serif-medium", 0));
             Drawable icon = SettingsIcons.icon(row.getContext(), SettingsIcons.ABOUT, palette.heading);
             icon.setBounds(0, 0, dp(row, 56), dp(row, 56));
@@ -544,7 +544,7 @@ final class ScreenColors {
         int titleId = dialog.getContext().getResources().getIdentifier("alertTitle", "id", "android");
         TextView title = titleId == 0 ? null : dialog.findViewById(titleId);
         if (title != null) {
-            title.setTextColor(this.title);
+            ShimmerTitle.wear(title, this.dialog);
             title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
             title.setSingleLine(false);
             title.setMaxLines(Integer.MAX_VALUE);

@@ -4,6 +4,10 @@ Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Changed
+
+* **Settings:** Every Hush title wears Facebook's blues now, drifting through them with a light sheen passing over. That covers the settings bar and search, Hush dialogs, the screen shown when settings can't open, and the lock cover. Each color stays easy to read on its background in every theme, and the titles keep moving even with Android's animations turned off.
+
 ### Fixed
 
 * **Facebook:** `Hide posts with words you choose` now reads a shared link's headline and the line under it too, so a news post whose only mention of a word is in its link preview hides. A keep word on the preview still keeps the post (Refs #255).
