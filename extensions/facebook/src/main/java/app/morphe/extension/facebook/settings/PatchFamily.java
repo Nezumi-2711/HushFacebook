@@ -139,7 +139,7 @@ public enum PatchFamily {
             Settings.HIDE_VIDEO_COMMENT_COMPOSER, Settings.TAP_ANYWHERE_ON_VIEW_MORE_REPLIES,
             Settings.HIDE_POST_COMMENT_PREVIEWS),
     FULL_HEIGHT_COMMENTS(FamilyNames.FULL_HEIGHT_COMMENTS, "fullHeightComments", null,
-            Settings.OPEN_COMMENTS_FULL_HEIGHT),
+            Settings.OPEN_COMMENTS_FULL_HEIGHT, Settings.PAUSE_REELS_UNDER_COMMENTS),
     TAG_SUGGESTIONS(FamilyNames.TAG_SUGGESTIONS, "tagSuggestions", null,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT),
     TAP_TO_PLAY(FamilyNames.TAP_TO_PLAY, "tapToPlay", null,

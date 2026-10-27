@@ -96,6 +96,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_INCOMING_COMMENT_TYPING) return L10n.t("Hide who is typing in comments");
         if (setting == Settings.HIDE_NEW_COMMENTS_PILL) return L10n.t("Hide the new comments pop-up");
         if (setting == Settings.OPEN_COMMENTS_FULL_HEIGHT) return L10n.t("Open comments at full height");
+        if (setting == Settings.PAUSE_REELS_UNDER_COMMENTS) return L10n.t("Pause reels while comments are open");
         if (setting == Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT) return L10n.t("Tag suggestions only after @");
         if (setting == Settings.HIDE_REELS_TAB) return L10n.t("Hide the Reels tab");
         if (setting == Settings.HIDE_REELS_TAB_DOT) return L10n.t("Hide the Reels tab dot");

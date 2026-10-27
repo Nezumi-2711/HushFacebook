@@ -1103,6 +1103,15 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/media/PauseUnderComments.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook for issue #266: pauses the reel playing on screen when a comment sheet opens, through Tap to play's player bridge, holds the reel's own restarts while the sheet is up, and plays it on once the sheet's views leave the window."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/HeaderPicture.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/HeaderText.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/headertext/HomeHeaderTextPatch.kt"

@@ -472,6 +472,12 @@ final class FeedPages {
             comments.addPreference(toggle(context, Settings.OPEN_COMMENTS_FULL_HEIGHT,
                     L10n.t("Comments open on a sheet that fills the screen instead of stopping part way up. On reels and "
                             + "videos, Comment opens that sheet in place of the split view with the video on top.")));
+            // The pause goes through Tap to play's player bridge (#266).
+            if (build.contains(PatchFamily.TAP_TO_PLAY)) {
+                comments.addPreference(toggle(context, Settings.PAUSE_REELS_UNDER_COMMENTS,
+                        L10n.t("A reel stops while you read its comments and plays on from the same spot when you close "
+                                + "them.")));
+            }
         }
         // Writing had a section of its own for this one switch.
         if (tags) {

@@ -901,6 +901,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_open_comments_full_height", FALSE);
 
     /**
+     * The reel playing on screen pauses when its comment sheet opens and plays on from there when
+     * the sheet closes ({@link app.morphe.extension.facebook.media.PauseUnderComments}, #266). Needs
+     * Open comments at full height's sheet hook and Tap to play's player bridge. Off by default.
+     */
+    public static final BooleanSetting PAUSE_REELS_UNDER_COMMENTS =
+            new BooleanSetting("hushfacebook_pause_reels_under_comments", FALSE);
+
+    /**
      * Facebook's text boxes (posts, comments, captions, a story's text) look people up to tag only
      * for a word that starts with @. Off, they also look them up for a plain word Facebook takes for
      * a name, what its code calls an implicit mention

@@ -395,6 +395,15 @@ public final class FeedVideoControls {
         }
     }
 
+    /** Every player that has attached a video and not been dropped yet, for Pause reels while comments are open. */
+    public static List<Object> knownPlayers() {
+        List<Object> found = new ArrayList<>();
+        synchronized (players) {
+            for (Object player : players.keySet()) if (player != null) found.add(player);
+        }
+        return found;
+    }
+
     @Nullable static View showing(Object player) {
         synchronized (players) {
             Control control = players.get(player);
