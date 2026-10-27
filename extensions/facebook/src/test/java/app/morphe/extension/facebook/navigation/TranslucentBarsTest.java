@@ -43,7 +43,7 @@ import app.morphe.extension.shared.settings.PauseForTests;
  * touch ripples keep theirs, Facebook setting a fill again is scaled again, and off, paused or a
  * hidden bar gives Facebook's own alpha back. With the tab bar at the top both stacked rows count
  * (#171). Android 11 here, so no frost: where it may go is checked on its own, and its nodes on
- * Android 13 (#250).
+ * Android 14 (#250).
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -153,7 +153,7 @@ public class TranslucentBarsTest {
     }
 
     @Test
-    @Config(sdk = 33)
+    @Config(sdk = 34) // not 33: ColdStartHooksTest needs that sandbox to itself
     public void aFadingFrostIsClippedToItsBoxOutsideTheBlur() {
         // #250: a blurred node drawn half faded spread its clamped edge above a tab bar sliding away.
         TranslucentBarsForTests screen = new TranslucentBarsForTests();
