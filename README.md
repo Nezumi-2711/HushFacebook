@@ -269,6 +269,14 @@ That one has been seen working on Android 16. It hasn't been tried on Android 11
 
 A pause only changes what the switches answer and every patch's code stays in place. So if Facebook keeps closing, or the file can't be made, patch again without the patch you suspect, signed with the same key, and install it over your copy. Your sign-in and settings stay. The next diagnostic report you export shows the error that closed Facebook.
 
+### Going back to an earlier release
+
+If a new Hushfacebook release misbehaves, you can patch the same Facebook build with an earlier release, as long as that release lists your Facebook version. Download its `.mpp` file from the [releases page](https://github.com/SysAdminDoc/Hushfacebook/releases) and add it in Manager under **Sources**, then **+** and **Local** ([Morphe's guide](https://github.com/MorpheApp/morphe-manager/blob/main/docs/patch-sources.md)). Patch with the same signing key, pick `Disable Play Store updates` again if you used it before, and install over your copy without uninstalling. On Android 16 that kept the sign-in and every setting. Switches the older release doesn't have are gone while it runs and come back with their old values once you update again.
+
+An older release that doesn't list your Facebook version won't patch it. Moving Facebook itself to an older version counts as a downgrade, and Android won't install that over the top.
+
+`Export settings` doesn't carry the signing key (Manager backs that up on its own), the Home header picture or a font file you picked, so keep those in mind before any reinstall.
+
 ## Your Facebook account
 
 **Can Meta tell?** Assume it can. A patched Facebook carries your signing key instead of Meta's, and some of what Facebook normally sends home goes quiet, like the ad reports `Block ad telemetry` turns off.
