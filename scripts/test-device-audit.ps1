@@ -16,6 +16,9 @@ foreach ($functionName in $testFunctions) {
     if (-not $definition) { throw "Missing audit function $functionName" }
     . ([scriptblock]::Create($definition.Extent.Text.Replace('$PSScriptRoot', '$testScriptRoot')))
 }
+$commonAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'common.ps1'), [ref]$null, [ref]$null)
+. ([scriptblock]::Create($commonAst.Find({ param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Use-Utf8ConsoleOutput' }, $true).Extent.Text))
 
 . (Join-Path $PSScriptRoot 'device-install.ps1')
 $failures = [Collections.Generic.List[string]]::new()
@@ -192,6 +195,28 @@ try {
     } catch { $briefReadStopped = $true }
     finally { if ($script:briefReader) { $script:briefReader.Dispose() } }
     Assert-That (-not $briefReadStopped -and $script:adbCalls.Count -eq 1) 'A lease another process read for a moment stopped the audit.'
+
+    # adb writes UTF-8 whatever the console's code page. Under 437 (pwsh started from Git Bash) the
+    # notification row's curly apostrophe came back as three other characters, and the S22 walks
+    # failed the notifications step on a page that was there (2026-10-27). A real native command here.
+    $rowLabel = "Manage the notification$([char]0x2019)s settings"
+    $utf8Dump = Join-Path $testRoot 'utf8-dump.txt'
+    [IO.File]::WriteAllText($utf8Dump, "<?xml version=`"1.0`"?><hierarchy><node package=`"$Package`" text=`"`" content-desc=`"$rowLabel`" /></hierarchy>", [Text.UTF8Encoding]::new($false))
+    $nativeAdb = Join-Path $testRoot 'utf8-adb.cmd'
+    [IO.File]::WriteAllText($nativeAdb, "@type `"$utf8Dump`"`r`n")
+    $fakeAdb = $adb
+    $consoleBefore = [Console]::OutputEncoding
+    try {
+        [Console]::OutputEncoding = [Text.Encoding]::GetEncoding(437)
+        $adb = $nativeAdb
+        $read = (Invoke-Adb shell cat /sdcard/hushfacebook-audit.xml) -join "`n"
+        $nodes = @(([xml]$read.Substring($read.IndexOf('<?xml'))).SelectNodes('//node'))
+        Assert-That (Test-AuditDestination 'fb://notifications' $nodes) "adb's UTF-8 was misread under code page 437: $read"
+        Assert-That ([Console]::OutputEncoding.CodePage -eq 437) 'Reading adb left the console on another code page.'
+    } finally {
+        $adb = $fakeAdb
+        [Console]::OutputEncoding = $consoleBefore
+    }
 
     foreach ($unsafe in @('tap:Like', 'tap:Follow', 'tap:Add friend', 'tap:Send', 'tap:Alice', 'fb://friends', 'fb://messaging_thread', 'fb://feed; input tap 1 1')) {
         $Visit = @($unsafe)

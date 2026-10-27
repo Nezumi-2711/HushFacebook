@@ -90,6 +90,11 @@ $smokeAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path
 $smokeReader = $smokeAst.Find({ param($node)
         $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Read-SmokeReport' }, $true)
 . ([scriptblock]::Create($smokeReader.Extent.Text))
+# Use-Utf8ConsoleOutput alone, the same way: adb writes UTF-8, and Invoke-Adb reads it through this.
+$commonAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'common.ps1'), [ref]$null, [ref]$null)
+$utf8Reader = $commonAst.Find({ param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Use-Utf8ConsoleOutput' }, $true)
+. ([scriptblock]::Create($utf8Reader.Extent.Text))
 . (Join-Path $PSScriptRoot 'device-install.ps1')
 . (Join-Path $PSScriptRoot 'walk-receipt.ps1')
 
@@ -268,7 +273,10 @@ function Invoke-Adb {
     $preference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        $output = @(& $adb -s $Serial @arguments 2>&1 | ForEach-Object { [string]$_ })
+        # Read as UTF-8: under the console's code page 437 (a pwsh started from Git Bash) the curly
+        # apostrophe in a notification row's settings button came back as three other characters, so no label with one
+        # ever matched (the S22 walks' notifications step, 2026-10-27).
+        $output = @(Use-Utf8ConsoleOutput { & $adb -s $Serial @arguments 2>&1 | ForEach-Object { [string]$_ } })
         $code = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $preference
