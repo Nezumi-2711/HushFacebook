@@ -295,19 +295,18 @@ public class NewestReelsTest {
         assertEquals(0, NewestReels.postedSeconds(new Object()));
     }
 
-    /** Each stand-in edge's like and play counts, -1 for one its story doesn't carry. */
-    private final Map<Object, long[]> counts = new HashMap<>();
+    /** Each stand-in edge's like count, -1 for one its story doesn't carry. */
+    private final Map<Object, Long> counts = new HashMap<>();
 
-    /** A Reels tab signal for an edge with [likes] and [plays], as Facebook makes it. */
-    private Object counted(long likes, long plays) {
+    /** A Reels tab signal for an edge with [likes], as Facebook makes it. */
+    private Object counted(long likes) {
         NewestReels.countForTests = (order, edge) -> {
-            long[] pair = counts.get(edge);
-            if (pair == null) return -1;
-            return order == ReelsOrder.MOST_LIKED ? pair[0] : pair[1];
+            Long count = counts.get(edge);
+            return count == null ? -1 : count;
         };
         Object edge = new Object();
         Object signal = new Object();
-        counts.put(edge, new long[]{likes, plays});
+        counts.put(edge, likes);
         if (NewestReels.records(REELS_TAB)) NewestReels.posted(REELS_TAB, edge, signal);
         return signal;
     }
@@ -317,6 +316,8 @@ public class NewestReelsTest {
         assertEquals(ReelsOrder.NEWEST, Settings.REELS_ORDER.defaultValue);
         for (ReelsOrder order : ReelsOrder.values()) assertEquals(order, ReelsOrder.fromFile(order.fileValue));
         assertEquals(null, ReelsOrder.fromFile("MOST_LIKED"));
+        assertEquals("the Reels tab loads no play counts, so there's no such order",
+                null, ReelsOrder.fromFile("most_played"));
         assertEquals(null, ReelsOrder.fromFile(3));
     }
 
@@ -324,10 +325,10 @@ public class NewestReelsTest {
     public void mostLikedPutsTheReelsWithTheMostReactionsFirstAndTiesKeepFacebooksOrder() {
         Settings.NEWEST_REELS_FIRST.save(true);
         Settings.REELS_ORDER.save(ReelsOrder.MOST_LIKED);
-        Object few = counted(3, 900);
-        Object many = counted(5000, 10);
-        Object none = counted(0, 50);
-        Object alsoFew = counted(3, 1);
+        Object few = counted(3);
+        Object many = counted(5000);
+        Object none = counted(0);
+        Object alsoFew = counted(3);
         List<Object> list = ranked(few, many, none, alsoFew);
         NewestReels.sort(list);
         assertEquals(Arrays.asList(many, few, alsoFew, none), list);
@@ -337,33 +338,16 @@ public class NewestReelsTest {
     }
 
     @Test
-    public void mostPlayedPutsTheMostPlayedReelsFirst() {
-        Settings.NEWEST_REELS_FIRST.save(true);
-        Settings.REELS_ORDER.save(ReelsOrder.MOST_PLAYED);
-        Object low = counted(9000, 20);
-        Object high = counted(1, 2_000_000);
-        Object middle = counted(50, 4000);
-        List<Object> list = ranked(low, high, middle);
-        NewestReels.sort(list);
-        assertEquals(Arrays.asList(high, middle, low), list);
-        assertTrue(statusLine(), statusLine().contains(NewestReels.SORTED_PLAYED + " 1"));
-    }
-
-    @Test
     public void aReelWithoutTheCountKeepsItsSlotAndIsCounted() {
         Settings.NEWEST_REELS_FIRST.save(true);
         Settings.REELS_ORDER.save(ReelsOrder.MOST_LIKED);
-        Object fewer = counted(10, 0);
-        Object missing = counted(-1, 500);
-        Object more = counted(20, 0);
+        Object fewer = counted(10);
+        Object missing = counted(-1);
+        Object more = counted(20);
         List<Object> list = ranked(fewer, missing, more);
         NewestReels.sort(list);
         assertEquals(Arrays.asList(more, missing, fewer), list);
         assertTrue(statusLine(), statusLine().contains(NewestReels.NO_LIKES + " 1"));
-
-        Settings.REELS_ORDER.save(ReelsOrder.MOST_PLAYED);
-        counted(5, -1);
-        assertTrue(statusLine(), statusLine().contains(NewestReels.NO_PLAYS + " 1"));
     }
 
     /** A value read for one order never sorts by another: those reels keep their places until remade. */
@@ -373,8 +357,8 @@ public class NewestReelsTest {
         Object older = signal(REELS_TAB, 100);
         Object newer = signal(REELS_TAB, 200);
         Settings.REELS_ORDER.save(ReelsOrder.MOST_LIKED);
-        Object liked = counted(50, 0);
-        Object moreLiked = counted(80, 0);
+        Object liked = counted(50);
+        Object moreLiked = counted(80);
         List<Object> list = ranked(older, liked, newer, moreLiked);
         NewestReels.sort(list);
         assertEquals(Arrays.asList(older, moreLiked, newer, liked), list);
@@ -385,15 +369,15 @@ public class NewestReelsTest {
 
     @Test
     public void offOrPausedACountOrderKeepsFacebooksOrder() {
-        Settings.REELS_ORDER.save(ReelsOrder.MOST_PLAYED);
-        Object low = counted(0, 1);
-        Object high = counted(0, 9);
+        Settings.REELS_ORDER.save(ReelsOrder.MOST_LIKED);
+        Object low = counted(1);
+        Object high = counted(9);
         List<Object> list = ranked(low, high);
         NewestReels.sort(list);
         assertEquals("off, nothing was kept or moved", Arrays.asList(low, high), list);
         Settings.NEWEST_REELS_FIRST.save(true);
-        Object lowOn = counted(0, 1);
-        Object highOn = counted(0, 9);
+        Object lowOn = counted(1);
+        Object highOn = counted(9);
         List<Object> on = ranked(lowOn, highOn);
         PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
         NewestReels.sort(on);
@@ -424,6 +408,5 @@ public class NewestReelsTest {
     @Test
     public void aPlainObjectHasNoCounts() {
         assertEquals(-1, NewestReels.likes(new Object()));
-        assertEquals(-1, NewestReels.plays(new Object()));
     }
 }

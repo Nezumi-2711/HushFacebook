@@ -2016,8 +2016,6 @@ Sort loaded reels	Ordenar los reels cargados
 The Reels tab plays the reels Facebook has loaded for you in the order picked below, instead of its own pick. It can't fetch more, and reels already placed stay put. Off by default, since it hasn't been tried on a real account yet.	La pestaña Reels reproduce los reels que Facebook ya cargó para ti en el orden elegido abajo, en lugar de su propia elección. No puede traer más, y los que ya están en cola se quedan donde están. Desactivado por defecto, porque todavía no se probó en una cuenta real.
 Reels order	Orden de los reels
 Most liked	Más reacciones
-Most played	Más reproducidos
 Of the reels Facebook has loaded, the ones with the most reactions play first.	De los reels que Facebook ya cargó, primero se reproducen los que tienen más reacciones.
-Of the reels Facebook has loaded, the ones played the most play first.	De los reels que Facebook ya cargó, primero se reproducen los más vistos.
 Of the reels Facebook has loaded, the newest posted play first.	De los reels que Facebook ya cargó, primero se reproducen los más recientes.
 Reels order will be set to %1$s.	El orden de los reels será %1$s.

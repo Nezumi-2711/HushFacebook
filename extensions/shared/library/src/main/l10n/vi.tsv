@@ -2016,8 +2016,6 @@ Sort loaded reels	Sắp xếp reel đã tải
 The Reels tab plays the reels Facebook has loaded for you in the order picked below, instead of its own pick. It can't fetch more, and reels already placed stay put. Off by default, since it hasn't been tried on a real account yet.	Tab Reels phát các reel Facebook đã tải sẵn cho bạn theo thứ tự chọn bên dưới, thay vì theo lựa chọn của Facebook. Tính năng này không tải thêm được reel, và những reel đã xếp hàng sẽ giữ nguyên chỗ. Mặc định tắt vì chưa được thử trên tài khoản thật.
 Reels order	Thứ tự reel
 Most liked	Nhiều cảm xúc nhất
-Most played	Nhiều lượt phát nhất
 Of the reels Facebook has loaded, the ones with the most reactions play first.	Trong số reel Facebook đã tải, những reel có nhiều cảm xúc nhất được phát trước.
-Of the reels Facebook has loaded, the ones played the most play first.	Trong số reel Facebook đã tải, những reel được phát nhiều nhất được phát trước.
 Of the reels Facebook has loaded, the newest posted play first.	Trong số reel Facebook đã tải, những reel đăng gần đây nhất được phát trước.
 Reels order will be set to %1$s.	Thứ tự reel sẽ được đặt thành %1$s.

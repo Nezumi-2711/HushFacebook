@@ -580,7 +580,7 @@ public class Settings extends BaseSettings {
 
     /**
      * What {@link #NEWEST_REELS_FIRST} sorts the loaded reels by: newest posted until someone picks
-     * Most liked or Most played (#134), so the switch keeps doing what it did. It isn't a switch, and
+     * Most liked (#134), so the switch keeps doing what it did. It isn't a switch, and
      * a paused Facebook keeps its own ranking.
      */
     public static final EnumSetting<ReelsOrder> REELS_ORDER =

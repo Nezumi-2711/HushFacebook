@@ -1426,8 +1426,6 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         switch (order) {
             case MOST_LIKED:
                 return L10n.t("Most liked");
-            case MOST_PLAYED:
-                return L10n.t("Most played");
             default:
                 return L10n.t("Newest");
         }
@@ -1442,8 +1440,6 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         switch (order) {
             case MOST_LIKED:
                 return L10n.t("Of the reels Facebook has loaded, the ones with the most reactions play first.");
-            case MOST_PLAYED:
-                return L10n.t("Of the reels Facebook has loaded, the ones played the most play first.");
             default:
                 return L10n.t("Of the reels Facebook has loaded, the newest posted play first.");
         }

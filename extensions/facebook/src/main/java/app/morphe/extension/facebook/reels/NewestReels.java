@@ -23,15 +23,15 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
 
 /**
  * Sorts the reels Facebook has loaded in the Reels tab, for Newest reels first (#134): newest
- * posted first, or most liked or most played first when the Reels order row says so.
+ * posted first, or most liked first when the Reels order row says so.
  *
  * <p>The Reels tab is ranked on the phone. Facebook loads a pool of reels, and each time it places
  * the next one it reranks what's left of the pool and takes the first. The ranking signal it builds
  * for each reel carries none of these values, but the reel's own model does: the edge's {@code node}
- * is the reel's story. Its {@code creation_time} is when it was posted, in seconds, its
- * {@code feedback.unified_reactors.count} is its reaction count, and its
- * {@code short_form_video_context} holds its {@code play_count} one tree down, the same paths
- * Facebook's own reel buttons read. So the patch hands each new signal here with its model's feed
+ * is the reel's story. Its {@code creation_time} is when it was posted, in seconds, and its
+ * {@code feedback.unified_reactors.count} is its reaction count, the path Facebook's own reel
+ * buttons read. Play counts aren't offered: on 584 the Reels tab's stories don't carry
+ * {@code short_form_video_context}'s {@code play_count} (none of 111 reels did on a phone). So the patch hands each new signal here with its model's feed
  * type and edge, and a reel from one of the Reels feeds has the chosen value kept by its signal. At
  * the end of every rerank the list comes here, and the reels with a value are put in their own slots
  * highest first. Anything without one, such as an item Facebook drops in for what you just did or a
@@ -45,14 +45,12 @@ public final class NewestReels {
     /** Counted under the patch's name each time a rerank's order changed here, by order. */
     static final String SORTED = "Reels put newest first";
     static final String SORTED_LIKED = "Reels put most liked first";
-    static final String SORTED_PLAYED = "Reels put most played first";
 
     /** Counted for a reel whose edge Facebook hadn't loaded, which keeps Facebook's place. */
     static final String UNLOADED = "Reels with no loaded edge";
 
-    /** Counted for a reel whose story didn't carry the count picked, which keeps Facebook's place. */
+    /** Counted for a reel whose story didn't carry its like count, which keeps Facebook's place. */
     static final String NO_LIKES = "Reels with no like count";
-    static final String NO_PLAYS = "Reels with no play count";
 
     /** Facebook's own message when a model's lazy edge isn't there yet. */
     private static final String EDGE_NOT_LOADED = "Inflated edge is null";
@@ -67,14 +65,6 @@ public final class NewestReels {
     private static final int FEEDBACK = "feedback".hashCode();
     private static final int UNIFIED_REACTORS = "unified_reactors".hashCode();
     private static final int COUNT = "count".hashCode();
-    private static final int SHORT_FORM_VIDEO_CONTEXT = "short_form_video_context".hashCode();
-    private static final int PLAY_COUNT = "play_count".hashCode();
-
-    /**
-     * The tree in {@code short_form_video_context} that holds {@code play_count}. Its GraphQL name
-     * isn't in the app, only this hash, which 584's own play count reader passes.
-     */
-    private static final int PLAY_COUNT_HOLDER = 0x71412969;
 
     /** Past this many kept values the oldest go, since a long session keeps making signals. */
     private static final int MOST = 4000;
@@ -86,7 +76,7 @@ public final class NewestReels {
     @Nullable
     static volatile ToLongFunction<Object> timeForTests;
 
-    /** Stands in for the like and play count reads when a test sets it, -1 for none. */
+    /** Stands in for the like count read when a test sets it, -1 for none. */
     @Nullable
     static volatile ToLongBiFunction<ReelsOrder, Object> countForTests;
 
@@ -155,11 +145,10 @@ public final class NewestReels {
             ReelsOrder order = Settings.REELS_ORDER.get();
             long value = valueOf(order, edge);
             if (order == ReelsOrder.NEWEST ? value <= 0 : value < 0) {
-                if (order != ReelsOrder.NEWEST) HookStatus.counted(FAMILY, order == ReelsOrder.MOST_LIKED ? NO_LIKES : NO_PLAYS);
+                if (order != ReelsOrder.NEWEST) HookStatus.counted(FAMILY, NO_LIKES);
                 return;
             }
-            HookStatus.bound(FAMILY, order == ReelsOrder.NEWEST ? "reel posting time"
-                    : order == ReelsOrder.MOST_LIKED ? "reel like count" : "reel play count");
+            HookStatus.bound(FAMILY, order == ReelsOrder.NEWEST ? "reel posting time" : "reel like count");
             synchronized (kept) {
                 if (kept.size() >= MOST) kept.clear();
                 // An equal signal made again for the same reel becomes the one kept.
@@ -212,8 +201,7 @@ public final class NewestReels {
             }
             if (!moved) return;
             for (int at = 0; at < sorted.size(); at++) candidates.set(slots.get(at), reels.get(sorted.get(at)));
-            HookStatus.counted(FAMILY, order == ReelsOrder.NEWEST ? SORTED
-                    : order == ReelsOrder.MOST_LIKED ? SORTED_LIKED : SORTED_PLAYED);
+            HookStatus.counted(FAMILY, order == ReelsOrder.NEWEST ? SORTED : SORTED_LIKED);
             logOnce(order, size, reels.size());
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reels sort", failure);
@@ -232,7 +220,7 @@ public final class NewestReels {
         }
         ToLongBiFunction<ReelsOrder, Object> forced = countForTests;
         if (forced != null) return forced.applyAsLong(order, edge);
-        return order == ReelsOrder.MOST_LIKED ? likes(edge) : plays(edge);
+        return likes(edge);
     }
 
     /** When the story [edge] holds as its node was posted, in seconds, or 0 when it doesn't say. */
@@ -244,12 +232,6 @@ public final class NewestReels {
     static long likes(Object edge) {
         Object feedback = PostDetails.tree(PostDetails.tree(edge, NODE), FEEDBACK);
         return PostDetails.count(PostDetails.tree(feedback, UNIFIED_REACTORS), COUNT);
-    }
-
-    /** How many times the reel [edge] holds was played, or -1 when it doesn't say. */
-    static long plays(Object edge) {
-        Object context = PostDetails.tree(PostDetails.tree(edge, NODE), SHORT_FORM_VIDEO_CONTEXT);
-        return PostDetails.count(PostDetails.tree(context, PLAY_COUNT_HOLDER), PLAY_COUNT);
     }
 
     private static void logOnce(ReelsOrder order, int size, int sorted) {

@@ -2016,8 +2016,6 @@ Sort loaded reels	Yüklenen reels videolarını sırala
 The Reels tab plays the reels Facebook has loaded for you in the order picked below, instead of its own pick. It can't fetch more, and reels already placed stay put. Off by default, since it hasn't been tried on a real account yet.	Reels sekmesi, Facebook'un senin için yüklediği reels videolarını kendi seçimi yerine aşağıda seçilen sırayla oynatır. Daha fazlasını getiremez ve sıraya girmiş reels videoları yerinde kalır. Henüz gerçek bir hesapta denenmediği için varsayılan olarak kapalı.
 Reels order	Reels sırası
 Most liked	En çok tepki alan
-Most played	En çok oynatılan
 Of the reels Facebook has loaded, the ones with the most reactions play first.	Facebook'un yüklediği reels videoları arasından en çok tepki alanlar önce oynatılır.
-Of the reels Facebook has loaded, the ones played the most play first.	Facebook'un yüklediği reels videoları arasından en çok oynatılanlar önce oynatılır.
 Of the reels Facebook has loaded, the newest posted play first.	Facebook'un yüklediği reels videoları arasından en son paylaşılanlar önce oynatılır.
 Reels order will be set to %1$s.	Reels sırası %1$s olarak ayarlanacak.

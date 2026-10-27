@@ -2011,8 +2011,6 @@ Sort loaded reels	排序已加载的 Reels
 The Reels tab plays the reels Facebook has loaded for you in the order picked below, instead of its own pick. It can't fetch more, and reels already placed stay put. Off by default, since it hasn't been tried on a real account yet.	Reels 标签页会按下方选择的顺序播放 Facebook 已为你加载的 Reels，而不是 Facebook 自己挑选的顺序。它无法获取更多 Reels，已排好的 Reels 保持原位。默认关闭，因为还没有在真实账号上试过。
 Reels order	Reels 排序
 Most liked	最多心情
-Most played	最多播放
 Of the reels Facebook has loaded, the ones with the most reactions play first.	在 Facebook 已加载的 Reels 中，心情最多的优先播放。
-Of the reels Facebook has loaded, the ones played the most play first.	在 Facebook 已加载的 Reels 中，播放次数最多的优先播放。
 Of the reels Facebook has loaded, the newest posted play first.	在 Facebook 已加载的 Reels 中，最新发布的优先播放。
 Reels order will be set to %1$s.	Reels 排序将设为 %1$s。

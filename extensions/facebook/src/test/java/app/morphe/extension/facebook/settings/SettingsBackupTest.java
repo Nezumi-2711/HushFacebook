@@ -2000,7 +2000,7 @@ public class SettingsBackupTest {
             Settings.REELS_ORDER.save(order);
             String file = SettingsBackup.create();
             assertEquals(order.fileValue, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.REELS_ORDER.key));
-            Settings.REELS_ORDER.save(order == ReelsOrder.NEWEST ? ReelsOrder.MOST_PLAYED : ReelsOrder.NEWEST);
+            Settings.REELS_ORDER.save(order == ReelsOrder.NEWEST ? ReelsOrder.MOST_LIKED : ReelsOrder.NEWEST);
 
             SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
             assertEquals(order, snapshot.reelsOrder);
@@ -2040,8 +2040,8 @@ public class SettingsBackupTest {
         state.putString("reels_order", "MOST_LIKED");
         assertNull(SettingsBackup.Snapshot.fromBundle(state).reelsOrder);
 
-        assertEquals(L10n.f("Reels order will be set to %1$s.", L10n.t("Most played")),
-                SettingsBackupPreference.reelsOrderSentence(ReelsOrder.MOST_PLAYED));
+        assertEquals(L10n.f("Reels order will be set to %1$s.", L10n.t("Most liked")),
+                SettingsBackupPreference.reelsOrderSentence(ReelsOrder.MOST_LIKED));
     }
 
     /**
