@@ -310,7 +310,9 @@ function Test-AuditKeyboard {
 function Get-UiNodes {
     Assert-AuditForeground
     $windowBefore = $script:auditWindowIdentity
-    for ($try = 1; $try -le 4; $try++) {
+    # The settings title's gradient moves every frame, and on an emulator uiautomator then loses the
+    # window's root ("null root node returned") up to two dumps in five, so a screen gets ten tries.
+    for ($try = 1; $try -le 10; $try++) {
         $dump = (Invoke-Adb shell 'rm -f /sdcard/hushfacebook-audit.xml; uiautomator dump /sdcard/hushfacebook-audit.xml >/dev/null 2>&1; cat /sdcard/hushfacebook-audit.xml; rm -f /sdcard/hushfacebook-audit.xml') -join "`n"
         $start = $dump.IndexOf('<?xml')
         if ($start -ge 0) {

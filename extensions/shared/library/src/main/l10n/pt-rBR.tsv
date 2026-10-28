@@ -1266,12 +1266,16 @@ Red	Vermelho
 Indigo	Índigo
 # context: Accent color choice, a yellow-orange
 Amber	Âmbar
-# context: summary of the Accent color row, greyed out because the Material You theme patch is in the build
-Material You theme is in this build and picks Facebook's colors, so this has no effect.	O tema Material You faz parte desta versão e escolhe as cores do Facebook, então isso não tem efeito.
+# context: summary of the Accent color row at Facebook blue while the Material You theme patch is in the build
+Material You uses your wallpaper's accent. Pick a color to use it instead.	O Material You usa o destaque do seu papel de parede. Escolha uma cor para usá-la no lugar.
+# context: summary of the Accent color row while the Material You theme patch is in the build; %1$s is a color name such as Teal
+Material You uses %1$s in place of your wallpaper's accent. Restart Facebook to see the change.	O Material You usa %1$s no lugar do destaque do seu papel de parede. Reinicie o Facebook para ver a mudança.
+# context: the Accent color list's first choice while the Material You theme patch is in the build: keep the phone's own wallpaper color
+Wallpaper accent	Destaque do papel de parede
 # context: summary of the Accent color row at its default
 Links, buttons, switches and the selected tab keep Facebook's blue.	Links, botões, chaves e a aba selecionada mantêm o azul do Facebook.
 # context: summary of the Accent color row; %1$s is a color name such as Teal
-Links, buttons, switches and the selected tab use %1$s instead of Facebook's blue. Restart Facebook to see the change. If the Material You theme is added, it takes over.	Links, botões, chaves e a aba selecionada usam %1$s em vez do azul do Facebook. Reinicie o Facebook para ver a mudança. Se o tema Material You estiver incluído, ele tem prioridade.
+Links, buttons, switches and the selected tab use %1$s instead of Facebook's blue. Restart Facebook to see the change.	Links, botões, chaves e a aba selecionada usam %1$s em vez do azul do Facebook. Reinicie o Facebook para ver a mudança.
 # context: what a settings import changes: Facebook goes back to its own blue
 Facebook will keep its own blue.	O Facebook vai manter o próprio azul.
 # context: what a settings import changes; %1$s is a color name such as Teal
@@ -1940,3 +1944,31 @@ Reels order will be set to %1$s.	A ordem dos reels será %1$s.
 Cast button on feed videos	Botão de transmitir nos vídeos do feed
 Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.	Adiciona um botão de transmitir aos vídeos do feed. Ele entrega o vídeo a um app de transmissão que você tenha, como o Web Video Caster, que o envia para sua TV. O Facebook não tem mais transmissão própria.
 Cast this video	Transmitir este vídeo
+# context: title of the row that holds a color code for the count badges on the tabs
+Badge color	Cor dos selos
+# context: title of the row that holds a color code for the Facebook logo at the top of Home
+Logo color	Cor do logo
+# context: dialog message of the Logo color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the Facebook logo at the top of Home, like #2ECC71. Leave it blank for Facebook's blue.	Um código de cor (#RRGGBB) para o logo do Facebook no topo do Início, como #2ECC71. Deixe em branco para o azul do Facebook.
+# context: dialog message of the Badge color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the count badges on the tabs, like #2ECC71. Leave it blank for Facebook's red.	Um código de cor (#RRGGBB) para os selos de contagem nas abas, como #2ECC71. Deixe em branco para o vermelho do Facebook.
+# context: summary of the Logo color row while it's blank
+The Facebook logo keeps its blue. Type a color code to change it.	O logo do Facebook mantém o azul. Digite um código de cor para mudar.
+# context: summary of the Badge color row while it's blank
+Badges keep Facebook's red. Type a color code to change it.	Os selos mantêm o vermelho do Facebook. Digite um código de cor para mudar.
+# context: summary of the Logo color row; %1$s is a color code like #2ECC71
+The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.	O logo do Facebook no topo do Início está %1$s. Reinicie o Facebook para ver a mudança.
+# context: summary of the Badge color row; %1$s is a color code like #2ECC71
+Count badges on the tabs are %1$s. Restart Facebook to see the change.	Os selos de contagem nas abas estão %1$s. Reinicie o Facebook para ver a mudança.
+# context: shown when Save is tapped on the Badge or Logo color row with text that isn't a color code; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+"%1$s" isn't a color. Type a six-digit color code (#RRGGBB), like #2ECC71, or leave it blank for Facebook's own.	“%1$s” não é uma cor. Digite um código de cor de seis dígitos (#RRGGBB), como #2ECC71, ou deixe em branco para a cor do Facebook.
+# context: shown when Save is tapped on the Badge or Logo color row with a see-through color; %1$s is what was typed; keep #RRGGBB and #2ECC71 as they are
+%1$s is see-through. Type a solid six-digit color code (#RRGGBB), like #2ECC71.	%1$s é transparente. Digite um código de cor sólida de seis dígitos (#RRGGBB), como #2ECC71.
+# context: import preview sentence: the file sets the Badge color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be Facebook's red.	Se o seu Facebook com patches incluir Cores dos selos e do logo, os selos ficarão no vermelho do Facebook.
+# context: import preview sentence: the file sets the Logo color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be Facebook's blue.	Se o seu Facebook com patches incluir Cores dos selos e do logo, o logo ficará no azul do Facebook.
+# context: import preview sentence: the file sets the Badge color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Se o seu Facebook com patches incluir Cores dos selos e do logo, os selos ficarão %1$s.
+# context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Se o seu Facebook com patches incluir Cores dos selos e do logo, o logo ficará %1$s.

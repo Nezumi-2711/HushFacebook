@@ -176,6 +176,11 @@ final class HushfacebookPages {
             // Colours Facebook asks for as each screen builds, so a change shows fully after a restart.
             appearance.addPreference(accentRow(context, build.contains(PatchFamily.MATERIAL_YOU_THEME)));
         }
+        if (build.contains(PatchFamily.MARK_COLORS)) {
+            // Colours Facebook asks for as each screen builds, so a change shows fully after a restart.
+            appearance.addPreference(page.markColorRow(context, false));
+            appearance.addPreference(page.markColorRow(context, true));
+        }
         if (build.contains(PatchFamily.FORCE_DARK_MODE)) {
             // Facebook asks for dark mode as each screen applies its theme, so a change shows fully after a restart.
             appearance.addPreference(toggle(context, Settings.FORCE_DARK_MODE,

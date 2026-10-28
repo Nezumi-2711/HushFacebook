@@ -101,6 +101,10 @@ function Invoke-FakeAdb {
         return $script:focusedWindow
     }
     if ($command -like '*uiautomator dump*') {
+        if ($script:nullRootDumps -gt 0) {
+            $script:nullRootDumps--
+            return 'ERROR: null root node returned by UiTestAutomationBridge.'
+        }
         if ($script:takeFocusOnDump) { $script:focusedWindow = 'mCurrentFocus=Window{2 u0 NotificationShade}' }
         if ($script:changeOwnWindowAfterDump) { $script:postDumpFocusReads = 0 }
         return $script:uiDump
@@ -713,6 +717,16 @@ try {
     Assert-That (@($declaredPages | Select-Object -Unique).Count -eq 23) 'The settings sweep included a route more than once.'
     Assert-That ($declaredPages -cnotcontains 'more' -and $declaredPages[-1] -ceq 'support') 'The settings sweep still uses More or omits Support.'
     function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
+    # The settings title moves every frame, and an emulator's uiautomator then loses the window's
+    # root now and then: a run of misses still reads the screen, and a screen that never dumps doesn't.
+    $savedDump = $script:uiDump
+    $script:uiDump = "<?xml version=`"1.0`"?><hierarchy><node package=`"$Package`" text=`"Comment`" content-desc=`"Comment`" bounds=`"[0,0][20,20]`" /></hierarchy>"
+    $script:nullRootDumps = 6
+    Assert-That (@(Get-UiNodes).Count -eq 1) 'Six null-root dumps in a row lost the screen.'
+    $script:nullRootDumps = 50
+    Assert-That (@(Get-UiNodes).Count -eq 0) 'A screen that never dumped returned nodes.'
+    $script:nullRootDumps = 0
+    $script:uiDump = $savedDump
     $script:settingsPage = 'News feed'
     function Get-SettingsPages { return $script:settingsPage }
     function Close-Settings { }

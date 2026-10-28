@@ -67,6 +67,7 @@ import app.morphe.extension.facebook.theme.AccentColor;
 import app.morphe.extension.facebook.theme.AmoledBackground;
 import app.morphe.extension.facebook.theme.AmoledLightBackground;
 import app.morphe.extension.facebook.theme.AmoledTheme;
+import app.morphe.extension.facebook.theme.MarkColors;
 import app.morphe.extension.facebook.navigation.HiddenTabs;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
 import app.morphe.extension.facebook.navigation.StartTab;
@@ -84,6 +85,7 @@ import app.morphe.extension.facebook.settings.ValueRows.SeenKeepRow;
 import app.morphe.extension.facebook.settings.ValueRows.AccentRow;
 import app.morphe.extension.facebook.settings.ValueRows.BackgroundRow;
 import app.morphe.extension.facebook.settings.ValueRows.HeaderTextRow;
+import app.morphe.extension.facebook.settings.ValueRows.MarkColorRow;
 import app.morphe.extension.facebook.settings.ValueRows.ReactionCeilingRow;
 import app.morphe.extension.facebook.settings.ValueRows.TextSizeRow;
 import app.morphe.extension.facebook.settings.ValueRows.DownloadActionRow;
@@ -1630,7 +1632,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         CharSequence[] entries = new CharSequence[choices.length];
         CharSequence[] values = new CharSequence[choices.length];
         for (int i = 0; i < choices.length; i++) {
-            entries[i] = accentLabel(choices[i]);
+            entries[i] = accentLabel(choices[i], materialYou);
             values[i] = choices[i].name();
         }
         row.setEntries(entries);
@@ -1639,8 +1641,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         return row;
     }
 
-    /** What the list and the sentences about it call [accent]. */
-    static String accentLabel(AccentColor.Preset accent) {
+    /** What the list and the sentences about it call [accent]: Facebook blue is the wallpaper's under Material You. */
+    static String accentLabel(AccentColor.Preset accent, boolean materialYou) {
         switch (accent) {
             case TEAL:
                 return L10n.t("Teal");
@@ -1659,18 +1661,28 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             case AMBER:
                 return L10n.t("Amber");
             default:
-                return L10n.t("Facebook blue");
+                return materialYou ? L10n.t("Wallpaper accent") : L10n.t("Facebook blue");
         }
     }
 
-    /** What a choice does, for the row's summary. */
-    static String accentSummary(AccentColor.Preset accent) {
+    /**
+     * What a choice does, for the row's summary. With the Material You theme in the build the pick
+     * stands in for the wallpaper's accent, and Facebook blue leaves the wallpaper's (#272).
+     */
+    static String accentSummary(AccentColor.Preset accent, boolean materialYou) {
+        if (materialYou) {
+            if (accent == AccentColor.Preset.FACEBOOK) {
+                return L10n.t("Material You uses your wallpaper's accent. Pick a color to use it instead.");
+            }
+            return L10n.f("Material You uses %1$s in place of your wallpaper's accent. Restart Facebook to see the change.",
+                    accentLabel(accent, true));
+        }
         if (accent == AccentColor.Preset.FACEBOOK) {
             return L10n.t("Links, buttons, switches and the selected tab keep Facebook's blue.");
         }
         return L10n.f("Links, buttons, switches and the selected tab use %1$s instead of Facebook's blue. Restart Facebook "
-                + "to see the change. If the Material You theme is added, it takes over.",
-                accentLabel(accent));
+                + "to see the change.",
+                accentLabel(accent, false));
     }
 
     /**
@@ -1759,6 +1771,57 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             return false;
         });
         return row;
+    }
+
+    /**
+     * Badge and logo colors (#263): a color code the count badges on the tabs take, or with [logo]
+     * the Facebook logo at the top of Home. What's saved is the code in capitals, blank for
+     * Facebook's own.
+     */
+    MarkColorRow markColorRow(Context context, boolean logo) {
+        StringSetting setting = logo ? Settings.LOGO_COLOR : Settings.BADGE_COLOR;
+        MarkColorRow row = new MarkColorRow(context, logo);
+        row.setKey(setting.key);
+        String title = logo ? L10n.t("Logo color") : L10n.t("Badge color");
+        row.setTitle(title);
+        row.setDialogTitle(title);
+        row.setDialogMessage(logo
+                ? L10n.t("A color code (#RRGGBB) for the Facebook logo at the top of Home, like #2ECC71. Leave it "
+                        + "blank for Facebook's blue.")
+                : L10n.t("A color code (#RRGGBB) for the count badges on the tabs, like #2ECC71. Leave it blank for "
+                        + "Facebook's red."));
+        row.setPositiveButtonText(L10n.t("Save"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        EditText field = row.getEditText();
+        keepEditorInDialog(field, false);
+        field.setHint("#2ECC71");
+        row.setText(setting.savedValue());
+        row.refused = why -> show(new AlertDialog.Builder(row.getContext())
+                .setTitle(title)
+                .setMessage(why)
+                .setPositiveButton(L10n.t("OK"), null));
+        row.setOnPreferenceChangeListener((preference, typed) -> {
+            String raw = typed == null ? "" : typed.toString();
+            String clean = MarkColors.stored(raw);
+            if (clean == null) return false;
+            if (clean.equals(raw)) return true;
+            // Keeps the code as it's saved in place of what was typed, as the Background color row does.
+            ((MarkColorRow) preference).setText(clean);
+            return false;
+        });
+        return row;
+    }
+
+    /** What a Badge and logo colors row says for [text], the code typed there. One it refuses keeps Facebook's own. */
+    static String markColorSummary(boolean logo, String text) {
+        String stored = MarkColors.stored(text);
+        if (stored == null || stored.isEmpty()) {
+            return logo ? L10n.t("The Facebook logo keeps its blue. Type a color code to change it.")
+                    : L10n.t("Badges keep Facebook's red. Type a color code to change it.");
+        }
+        return logo ? L10n.f("The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.",
+                L10n.isolate(stored))
+                : L10n.f("Count badges on the tabs are %1$s. Restart Facebook to see the change.", L10n.isolate(stored));
     }
 
     /**

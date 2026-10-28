@@ -1,5 +1,5 @@
 {
-  "version": "v0.18.1",
+  "version": "v0.19.0",
   "appNames": {
     "com.facebook.katana": "Facebook"
   },
@@ -96,6 +96,44 @@
       "name": "Allow screenshots",
       "description": "Lets you take screenshots and screen recordings on the pages where Facebook blocks them, so you can keep a copy of what's on screen. Starts off. Turn it on in Hushfacebook settings > Privacy.",
       "category": "Privacy",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "Hushfacebook settings"
+      ],
+      "compatiblePackages": {
+        "com.facebook.katana": [
+          "584.0.0.51.56"
+        ]
+      },
+      "compatibility": [
+        {
+          "name": "Facebook",
+          "packageName": "com.facebook.katana",
+          "description": null,
+          "appIconColor": 550655,
+          "signatures": [
+            "911d604446084ca7f4760b775bfc160fa8702441240a7258645d7a72c4312d27",
+            "e3f9e1e0cf99d0e56a055ba65e241b3399f7cea524326b0cdd6ec1327ed0fdc1"
+          ],
+          "targets": [
+            {
+              "version": "584.0.0.51.56",
+              "experimental": false,
+              "versionCodes": {
+                "ARM64_V8A": 475817393,
+                "ARMEABI_V7A": 475817404
+              }
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Badge and logo colors",
+      "description": "Paints the count badges on the tabs and the Facebook logo at the top of Home in colors you pick. Nothing changes until you type a color. Set them in Hushfacebook settings > Appearance.",
+      "category": "Theme",
       "use": true,
       "dependencies": [
         "BytecodePatch",

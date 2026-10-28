@@ -858,6 +858,60 @@ final class ValueRows {
     }
 
     /**
+     * A Badge and logo colors row (#263): a color code. Save turns down one
+     * {@link app.morphe.extension.facebook.theme.MarkColors} refuses with the dialog still open, as
+     * the Background color row does, and its summary follows the code.
+     */
+    static final class MarkColorRow extends EditTextPreference {
+        /** Says why Save was refused. The page sets it, since its dialogs close with it. */
+        @Nullable Consumer<String> refused;
+
+        /** Whether it's the logo's row rather than the badges'. */
+        final boolean logo;
+
+        MarkColorRow(Context context, boolean logo) {
+            super(context);
+            this.logo = logo;
+        }
+
+        @Override
+        public void setText(String text) {
+            super.setText(text);
+            setSummary(HushfacebookPreferenceFragment.markColorSummary(logo, text));
+        }
+
+        @Override
+        protected void onBindView(View view) {
+            super.onBindView(view);
+            showAllText(view);
+            ScreenColors.row(view, this);
+            view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+        }
+
+        /** Its edit dialog takes the screen's colours, as the Background color row's does. */
+        @Override
+        protected void showDialog(Bundle state) {
+            super.showDialog(state);
+            if (getDialog() instanceof AlertDialog) {
+                AlertDialog dialog = (AlertDialog) getDialog();
+                ScreenColors.dialog(dialog);
+                dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(button -> {
+                    String why = app.morphe.extension.facebook.theme.MarkColors.problem(
+                            getEditText().getText().toString());
+                    if (why != null) {
+                        if (refused != null) refused.accept(why);
+                        return;
+                    }
+                    Handler main = new Handler(Looper.getMainLooper());
+                    main.post(() -> onClick(dialog, DialogInterface.BUTTON_POSITIVE));
+                    main.post(dialog::dismiss);
+                });
+            }
+            fitAboveKeyboard(getDialog());
+        }
+    }
+
+    /**
      * Home header text's row (#230). Its summary follows its text, whoever sets it, and says what
      * the top of Home shows.
      */
@@ -1274,19 +1328,12 @@ final class ValueRows {
      * page syncing it from the setting, or an import.
      */
     static final class AccentRow extends PlainSummaryList {
-        /** Whether the Material You theme is in the build, so it picks the colors and this row does nothing. */
+        /** Whether the Material You theme is in the build, so the pick takes the wallpaper accent's place (#272). */
         private final boolean materialYou;
 
         AccentRow(Context context, boolean materialYou) {
             super(context);
             this.materialYou = materialYou;
-            setEnabled(!materialYou);
-        }
-
-        /** The shared page enables every row it syncs from a setting; with Material You this one stays off. */
-        @Override
-        public void setEnabled(boolean enabled) {
-            super.setEnabled(enabled && !materialYou);
         }
 
         @Override
@@ -1296,15 +1343,11 @@ final class ValueRows {
         }
 
         void showSummary() {
-            if (materialYou) {
-                setSummary(L10n.t("Material You theme is in this build and picks Facebook's colors, so this has no effect."));
-                return;
-            }
             AccentColor.Preset accent = AccentColor.Preset.FACEBOOK;
             for (AccentColor.Preset candidate : AccentColor.Preset.values()) {
                 if (candidate.name().equals(getValue())) accent = candidate;
             }
-            setSummary(accentSummary(accent));
+            setSummary(accentSummary(accent, materialYou));
         }
 
         @Override

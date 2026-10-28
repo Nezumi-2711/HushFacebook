@@ -445,7 +445,7 @@ public class PatchFamilyTest {
                         + "Don't save search history, Hold back analytics uploads, Allow screenshots, Block screenshot detection, Hide typing indicator, "
                         + "Hide read receipts, Send chat photos and videos at original quality, Block promotional "
                         + "notifications, Block ad telemetry, Disable Audience Network, AMOLED black theme, Material "
-                        + "You theme, Accent color, Restore screens on re-signed builds, Start on x86 devices, "
+                        + "You theme, Accent color, Badge and logo colors, Restore screens on re-signed builds, Start on x86 devices, "
                         + "Install beside Meta's apps, Disable Play Store updates, Hushfacebook in the Menu",
                 "left out of Manager's default selection: Hide suggested and promoted posts, Hide Stories tray, Hide "
                         + "Reels in the feed, Block background-return feed refresh, Hide AI-detected posts, Hide "
@@ -468,7 +468,7 @@ public class PatchFamilyTest {
                         + "Meta AI in search, Don't save search history, Hold back analytics uploads, Allow screenshots, Block screenshot detection, Hide "
                         + "typing indicator, Hide read receipts, Send chat photos and videos at original quality, "
                         + "Block promotional notifications, Block ad telemetry, Disable Audience Network, Accent "
-                        + "color, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
+                        + "color, Badge and logo colors, Restore screens on re-signed builds, Start on x86 devices, Install beside Meta's "
                         + "apps, Hushfacebook in the Menu"),
                 running);
         // Clean up Reels' switches all start off, and the report names each one.

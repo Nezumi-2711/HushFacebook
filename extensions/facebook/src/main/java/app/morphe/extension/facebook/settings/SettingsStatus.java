@@ -298,6 +298,10 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean markColors() {
+        return false;
+    }
+
     public static boolean storyDownload() {
         return false;
     }
