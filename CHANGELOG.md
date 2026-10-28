@@ -2,7 +2,9 @@
 
 Changes in each Hushfacebook version, newest first.
 
-## Unreleased
+## 0.19.0 (2026-10-27)
+
+* **Facebook:** This one needs Morphe Manager 2.2.0 or newer, so update Manager before you patch. Posts can get Save and Download buttons under them, and new switches take Like, Comment, Share or Send off posts and reels, hide posts from Pages or drop the dislike on comments. Feed videos can get a cast button, downloads can go to an SD card, and 32-bit phones work now. You can also pick your own badge and logo colors, sort reels by most liked and copy a reel's whole caption.
 
 ### Added
 
