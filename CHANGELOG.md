@@ -44,6 +44,7 @@ Changes in each Hushfacebook version, newest first.
 * **Tooling:** The device walk reads the phone's screen text as UTF-8. Started from Git Bash, it read it in the console's old code page, so the curly apostrophe in a notification's settings button never matched and the Notifications step failed on a page that was right there. Checked in the audit's tests.
 * **Facebook:** With `Tap to play` on, a video you open from a comment plays in Facebook's full screen player again. It used to sit paused there until you left Facebook and came back (Refs #242).
 * **Tooling:** Device audits read their settings snapshots in Windows PowerShell too, so the push check no longer fails every restore case where git can't find pwsh.
+* **Tooling:** The source audit reads the Morphe Patch Tracker in Windows PowerShell too. The tracker now lists two bundles whose names differ only by capital letters, and when git couldn't find pwsh the push check stopped on it.
 
 ## 0.18.1 (2026-10-26)
 
