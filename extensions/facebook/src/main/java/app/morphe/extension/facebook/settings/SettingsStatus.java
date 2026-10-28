@@ -378,10 +378,6 @@ public final class SettingsStatus {
         return false;
     }
 
-    public static boolean whoShared() {
-        return false;
-    }
-
     public static boolean autoTranslation() {
         return false;
     }
