@@ -33,8 +33,10 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * {@link #holdsViewerButtons} once they're built; a yes drops both. What comes after a post's comments is drawn
  * through another socket of the same kind, and the patch asks {@link #holdsBottomContent} first in
  * its check. The few comments under a feed post's buttons come through a third, and the patch asks
- * {@link #holdsPostComments} first in its check. The buttons under each comment come through a
- * fourth, and the patch asks {@link #holdsCommentButton} first in its check. A long press on Like opens the reaction
+ * {@link #holdsPostComments} first in its check. The Dislike button under a comment is built by its
+ * own plugin, and the patch asks {@link #holdsCommentDislike} first in that builder; a yes builds
+ * nothing, and the socket of a comment's buttons draws the rest of the row as it would without a
+ * Dislike. A long press on Like opens the reaction
  * picker through one method, and the patch asks {@link #skipReactionPicker} first there; a yes
  * returns before anything opens. A comment keeps whether its reply thread is open in its state,
  * which starts closed until a tap on View replies opens it. The patch hands
@@ -73,15 +75,11 @@ public final class CommentSheetOptions {
     public static final String INLINE_COMMENTS_CLIENT_RANKING =
             "com.facebook.feed.plugins.belowufifooter.impl.inlinecommentwithclientranking.InlineCommentWithClientRankingPlugin";
 
-    /** The Dislike button under a comment, next to Like, as the comment buttons' name table gives it (#241). */
-    public static final String DOWNVOTE =
-            "com.facebook.feedback.comments.plugins.commentufi.commentsdownvote.CommentsUFIInlineDownvotePlugin";
-
-    /** Counted each time a comment's Dislike button is kept out. */
+    /** Counted each time a comment's Dislike button is kept out (#241). */
     static final String DOWNVOTE_HIDDEN = "Comment Dislike button kept out";
 
-    /** The member the report names once the socket of a comment's buttons has asked about Dislike. */
-    static final String COMMENT_BUTTONS = "comment buttons";
+    /** The member the report names once the Dislike plugin's builder has asked. */
+    static final String COMMENT_DISLIKE = "comment dislike";
 
     /** Counted each time a feed post's inline comments are kept out from under its buttons. */
     static final String POST_COMMENTS_HIDDEN = "Comments under a post kept out";
@@ -322,20 +320,21 @@ public final class CommentSheetOptions {
     }
 
     /**
-     * The hook, first thing in the check of which buttons a comment gets under it, handed the
-     * plugin's name. True answers no for the Dislike button while Hide Dislike on comments is on;
-     * false leaves the check to Facebook, for Like, Reply and every other button, and otherwise.
+     * The hook, first thing where the Dislike plugin builds a comment's Dislike button. True builds
+     * nothing while Hide Dislike on comments is on, so the row keeps Like, Reply, the reaction icons
+     * and their count as Facebook lays them out next to a Dislike; false leaves the button to
+     * Facebook, and otherwise. Answering no for the plugin in the socket's own check instead took
+     * the reaction icons with it (#241).
      */
-    public static boolean holdsCommentButton(@Nullable String plugin) {
+    public static boolean holdsCommentDislike() {
         try {
             HookStatus.invoked(FAMILY);
-            if (!DOWNVOTE.equals(plugin)) return false;
-            HookStatus.bound(FAMILY, COMMENT_BUTTONS);
+            HookStatus.bound(FAMILY, COMMENT_DISLIKE);
             if (!Utils.settingsReady() || !Settings.HIDE_COMMENT_DOWNVOTE_BUTTON.get()) return false;
             HookStatus.counted(FAMILY, DOWNVOTE_HIDDEN);
             return true;
         } catch (Throwable failure) {
-            HookStatus.threw(FAMILY, "comment buttons check", failure);
+            HookStatus.threw(FAMILY, "comment dislike", failure);
             return false;
         }
     }

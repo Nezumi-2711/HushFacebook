@@ -298,33 +298,25 @@ public class CommentSheetOptionsTest {
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS));
     }
 
-    private static final String COMMENT_LIKE = "com.facebook.feedback.comments.plugins.commentufi.like.LikePlugin";
-
-    private static final String COMMENT_REPLY = "com.facebook.feedback.comments.plugins.commentufi.reply.ReplyPlugin";
-
     @Test
-    public void onACommentsDislikeIsHeldAndCountedWhileLikeAndReplyStay() {
+    public void onACommentsDislikeIsHeldAndCountedWhileTheOtherSocketsStay() {
         Settings.HIDE_COMMENT_DOWNVOTE_BUTTON.save(true);
-        assertFalse("a comment's Like was held", CommentSheetOptions.holdsCommentButton(COMMENT_LIKE));
-        assertFalse("a comment's Reply was held", CommentSheetOptions.holdsCommentButton(COMMENT_REPLY));
-        assertFalse("a plugin with no name was held", CommentSheetOptions.holdsCommentButton(null));
-        assertFalse("the inline comments were held by the dislike switch",
-                CommentSheetOptions.holdsCommentButton(CommentSheetOptions.INLINE_COMMENTS));
-        assertTrue("the dislike stayed", CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE));
-        assertTrue("the dislike stayed on the next comment", CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE));
+        assertTrue("the dislike stayed", CommentSheetOptions.holdsCommentDislike());
+        assertTrue("the dislike stayed on the next comment", CommentSheetOptions.holdsCommentDislike());
         assertFalse("the dislike switch held the inline comments under a post",
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS));
-        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 7, 2 found, 0 missing. Counted: "
+        assertFalse("the dislike switch held Related groups",
+                CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS));
+        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 4, 3 found, 0 missing. Counted: "
                 + CommentSheetOptions.DOWNVOTE_HIDDEN + " 2", statusLine());
     }
 
     @Test
     public void offPausedOrColdACommentsDislikeIsFacebooks() {
         assertFalse("Hide dislike on comments doesn't start off", Settings.HIDE_COMMENT_DOWNVOTE_BUTTON.get());
-        assertFalse("off, the dislike was held", CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE));
+        assertFalse("off, the dislike was held", CommentSheetOptions.holdsCommentDislike());
         Settings.HIDE_POST_COMMENT_PREVIEWS.save(true);
-        assertFalse("Hide comments under posts held the dislike",
-                CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE));
+        assertFalse("Hide comments under posts held the dislike", CommentSheetOptions.holdsCommentDislike());
 
         Settings.HIDE_COMMENT_DOWNVOTE_BUTTON.save(true);
         for (HushfacebookPause.Reason reason : new HushfacebookPause.Reason[] {
@@ -332,16 +324,15 @@ public class CommentSheetOptionsTest {
                 HushfacebookPause.Reason.MARKER_FILE}) {
             PauseForTests.pause(reason);
             assertFalse("a Hushfacebook paused by " + reason + " held the dislike",
-                    CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE));
+                    CommentSheetOptions.holdsCommentDislike());
             PauseForTests.resume();
         }
         SettingsContextRule.withoutContext(() -> assertFalse("the dislike was held before the settings were ready",
-                CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE)));
+                CommentSheetOptions.holdsCommentDislike()));
 
         String line = statusLine();
         assertFalse("a plugin left to Facebook was counted: " + line, line != null && line.contains("Counted"));
-        assertTrue("on again after the pause, the dislike stayed",
-                CommentSheetOptions.holdsCommentButton(CommentSheetOptions.DOWNVOTE));
+        assertTrue("on again after the pause, the dislike stayed", CommentSheetOptions.holdsCommentDislike());
     }
 
     @Test

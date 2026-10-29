@@ -93,15 +93,9 @@ internal const val INLINE_COMMENTS_DWELL_TIME =
 internal const val INLINE_COMMENTS_CLIENT_RANKING =
     "com.facebook.feed.plugins.belowufifooter.impl.inlinecommentwithclientranking.InlineCommentWithClientRankingPlugin"
 
-/** The name the socket of the buttons under each comment gives itself, in the methods that go through its plugins. */
-internal const val COMMENT_UFI_SOCKET = "CommentUfiSocket"
-
-/** The thumbs-down under a comment, next to Like, a kept class name that socket's name table loads (#241). */
+/** The plugin that builds the thumbs-down under a comment, next to Like, a kept class (#241). */
 internal const val COMMENT_DOWNVOTE =
-    "com.facebook.feedback.comments.plugins.commentufi.commentsdownvote.CommentsUFIInlineDownvotePlugin"
-
-/** A comment's Like button, in the same name table. */
-internal const val COMMENT_LIKE = "com.facebook.feedback.comments.plugins.commentufi.like.LikePlugin"
+    "Lcom/facebook/feedback/comments/plugins/commentufi/commentsdownvote/CommentsUFIInlineDownvotePlugin;"
 
 /** The name the reaction picker's popup logs itself under, in the method that opens it. */
 internal const val DOCK_NAME = "reactions_dock"
@@ -146,7 +140,7 @@ internal const val HOLDS_VIEWER_BUTTONS = "$COMMENT_SHEET_OPTIONS->holdsViewerBu
 internal const val HIDES_VIDEO_COMMENT_COMPOSER = "$COMMENT_SHEET_OPTIONS->hidesVideoCommentComposer()Z"
 internal const val HOLDS_BOTTOM_CONTENT = "$COMMENT_SHEET_OPTIONS->holdsBottomContent(Ljava/lang/String;)Z"
 internal const val HOLDS_POST_COMMENTS = "$COMMENT_SHEET_OPTIONS->holdsPostComments(Ljava/lang/String;)Z"
-internal const val HOLDS_COMMENT_BUTTON = "$COMMENT_SHEET_OPTIONS->holdsCommentButton(Ljava/lang/String;)Z"
+internal const val HOLDS_COMMENT_DISLIKE = "$COMMENT_SHEET_OPTIONS->holdsCommentDislike()Z"
 internal const val SKIP_PICKER = "$COMMENT_SHEET_OPTIONS->skipReactionPicker()Z"
 internal const val OPEN_REPLY_THREADS = "$COMMENT_SHEET_OPTIONS->openReplyThreads(Z)Z"
 internal const val HIDES_COMMENT = "$COMMENT_SHEET_OPTIONS->hidesComment(Ljava/lang/Object;)Z"
@@ -196,12 +190,14 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * while the switch is on the three get a no, and the socket goes on to its next plugin, so the
  * comment box under a post, Meta AI's summary switch and the post's Comment button stay as they were.
  *
- * Hide dislike on comments (#241): the buttons under each comment, Like, Reply and the thumbs-down
- * among them, come through the socket that names itself [COMMENT_UFI_SOCKET] (584 `LX/4Fu;->A03`
- * and `LX/5yK;->render`). Its name table (584 `LX/228;->A0t`) names [COMMENT_DOWNVOTE] next to
- * [COMMENT_LIKE], and its check (584 `LX/228;->A2C`) sits in the table's class. It's found and hooked
- * the same way as the other sockets: while the switch is on the thumbs-down gets a no, so Like,
- * Reply and the comment's other buttons stay.
+ * Hide dislike on comments (#241): the thumbs-down under a comment is built by its own plugin,
+ * [COMMENT_DOWNVOTE], a kept class with one static builder that takes the comment's context and
+ * props and returns the button's component, or nothing when Facebook has none to show (584
+ * `A00(LX/6u7;LX/4Fk;)LX/97H;`). The extension goes first in it, and while the switch is on the
+ * builder returns nothing, so the socket of a comment's buttons (584 `LX/4Fu;->A03`) still counts
+ * the plugin as present and draws Like, Reply, the reaction icons and their count as it does next
+ * to a thumbs-down. 0.19.0 answered no for the plugin in that socket's check instead (584
+ * `LX/228;->A2C`), and the reaction icons and count went with the thumbs-down.
  *
  * Like only: a long press on Like opens the reaction picker through one method that builds
  * [UFI_DOCK] in a popup and logs [DOCK_NAME] (581 `LX/3FO;->A06`, each an instance (View, View)V
@@ -296,13 +292,7 @@ val commentSheetOptionsPatch = bytecodePatch(
         if (post.check.descriptor() == buttons.check.descriptor() || post.check.descriptor() == bottom.check.descriptor()) {
             refuse("the socket under a post's buttons leads to another socket's check, ${post.check.descriptor()}")
         }
-        val ufi = commentUfiSocket(
-            holders(COMMENT_DOWNVOTE),
-            holders(COMMENT_UFI_SOCKET).flatMap { methodsHolding(it, COMMENT_UFI_SOCKET) },
-        ) { types -> types.mapNotNull { classDefByOrNull(it) }.associateBy { it.type } }
-        if (ufi.check.descriptor() in listOf(buttons, bottom, post).map { it.check.descriptor() }) {
-            refuse("the socket of a comment's buttons leads to another socket's check, ${ufi.check.descriptor()}")
-        }
+        val dislike = dislikeBuilder(classDefByOrNull(COMMENT_DOWNVOTE))
         val dock = reactionPicker(holders(DOCK_NAME))
         val threads = replyThreads(
             holders(COMMENT_SECTION),
@@ -324,8 +314,8 @@ val commentSheetOptionsPatch = bytecodePatch(
             .holdButtons(bottom.table, HOLDS_BOTTOM_CONTENT)
         mutableClassDefBy(post.check.definingClass).methods.single { it.descriptor() == post.check.descriptor() }
             .holdButtons(post.table, HOLDS_POST_COMMENTS)
-        mutableClassDefBy(ufi.check.definingClass).methods.single { it.descriptor() == ufi.check.descriptor() }
-            .holdButtons(ufi.table, HOLDS_COMMENT_BUTTON)
+        mutableClassDefBy(dislike.definingClass).methods.single { it.descriptor() == dislike.descriptor() }
+            .holdDislike()
         mutableClassDefBy(dock.definingClass).methods.single { it.descriptor() == dock.descriptor() }
             .skipPicker()
         mutableClassDefBy(threads.initialState.definingClass).methods
@@ -397,15 +387,26 @@ internal fun postSocket(
 ): PluginSocket = pluginCheck(holders, sockets, classes, POST_SOCKET, INLINE_COMMENTS, INLINE_COMMENTS_CLIENT_RANKING)
 
 /**
- * The socket of the buttons under each comment, from [holders], the classes loading
- * [COMMENT_DOWNVOTE], and [sockets], the methods loading [COMMENT_UFI_SOCKET]. The table is the one
- * name table naming the thumbs-down and Like; see [pluginCheck] for the check.
+ * The builder of the thumbs-down under a comment: the one static method of [plugin], the class
+ * [COMMENT_DOWNVOTE], that takes two objects, the comment's context and props, and returns an
+ * object, the button's component, with a local register for the hook. Refuses without the class
+ * or with any other number of such methods.
  */
-internal fun commentUfiSocket(
-    holders: List<ClassDef>,
-    sockets: List<Method>,
-    classes: (Set<String>) -> Map<String, ClassDef>,
-): PluginSocket = pluginCheck(holders, sockets, classes, COMMENT_UFI_SOCKET, COMMENT_DOWNVOTE, COMMENT_LIKE)
+internal fun dislikeBuilder(plugin: ClassDef?): Method {
+    if (plugin == null) refuse("no class $COMMENT_DOWNVOTE")
+    val builders = plugin.methods.filter { method ->
+        AccessFlags.STATIC.isSet(method.accessFlags) &&
+            method.returnType.startsWith("L") &&
+            method.parameterTypes.size == 2 &&
+            method.parameterTypes.all { it.startsWith("L") }
+    }
+    val builder = builders.singleOrNull() ?: refuse(
+        "expected one static builder of two objects in $COMMENT_DOWNVOTE, found ${builders.size}: " +
+            builders.joinToString { it.descriptor() },
+    )
+    if (builder.localRegisterCount() < 1) refuse("${builder.descriptor()} has no local register for the hook")
+    return builder
+}
 
 /**
  * A socket named [socket] whose name table names [plugin], and [alsoNamed] when it's given. The
@@ -485,6 +486,21 @@ internal fun MutableMethod.holdButtons(table: Method, hook: String = HOLDS_BUTTO
             return v0
         """,
         ExternalLabel("check", getInstruction(0)),
+    )
+}
+
+/** First thing where the thumbs-down under a comment is built: while the extension says so, return nothing. */
+internal fun MutableMethod.holdDislike() {
+    addInstructionsWithLabels(
+        0,
+        """
+            invoke-static {}, $HOLDS_COMMENT_DISLIKE
+            move-result v0
+            if-eqz v0, :build
+            const/4 v0, 0x0
+            return-object v0
+        """,
+        ExternalLabel("build", getInstruction(0)),
     )
 }
 
