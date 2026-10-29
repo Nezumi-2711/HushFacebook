@@ -89,8 +89,9 @@ public class Settings extends BaseSettings {
 
     /**
      * Posts from groups you aren't in, such as a friend's post in a public group, found by the join
-     * state Facebook's own Join button reads off the group the story was posted to (#195). Posts from
-     * groups you're in and a friend's share of a group post stay. Off until picked.
+     * state Facebook's own Join button reads off the group the story was posted to (#195), or off
+     * the group of the post it wraps when a friend commented on or shared a group post. Posts from
+     * groups you're in stay. Off until picked.
      */
     public static final BooleanSetting HIDE_GROUP_POSTS_NOT_JOINED =
             new BooleanSetting("hushfacebook_hide_group_posts_not_joined", FALSE);

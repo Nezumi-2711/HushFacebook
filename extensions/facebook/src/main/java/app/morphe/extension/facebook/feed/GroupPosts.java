@@ -22,8 +22,14 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * The group's {@code viewer_join_state} is the enum Facebook's Join button reads: it shows the
  * button for CAN_JOIN and CAN_REQUEST, the two {@link #NOT_JOINED} names. MEMBER, REQUESTED,
  * CANNOT_JOIN_OR_REQUEST and the unset default all keep the post, and so does a story whose state
- * Home didn't fetch, which reads as the default. A friend's share of a group post has no {@code to}
- * of its own, so it stays.
+ * Home didn't fetch, which reads as the default.
+ *
+ * <p>A group post a friend commented on or shared reaches Home wrapped in the friend's activity
+ * ("Tasha replied to a comment."), a story posted to no profile of its own: the group, and the
+ * Join button Facebook draws, are on the post it wraps ({@code attached_story}), so that post's
+ * group decides, through the accessor Hide posts with words fills. A build without that patch
+ * can't read the wrapped post and keeps it. The second report on #195 (2026-10-29) showed one of
+ * those getting through while every post posted straight to a joinable group was hidden.
  *
  * <p>The story's accessor of {@code to} and the profile's accessor of its join state are Redex
  * names, so the patch fills in {@link #storyTarget} and {@link #joinState}. The enum's constant
@@ -55,6 +61,10 @@ public final class GroupPosts {
     static final String NO_STATE = "no join state";
     static final String NOT_AN_ENUM = "join state not an enum";
     static final String READ_FAILED = "read failed";
+    /** The read went through the post the story wraps: what it found, under this, for the report. */
+    static final String WRAPPED = "wrapped ";
+    /** A story posted to no profile whose wrapped post can't be read: Hide posts with words isn't in the build. */
+    static final String NO_WRAPPED_READER = "wrapped post not readable";
 
     private static final String FAMILY = FamilyNames.SUGGESTED_POSTS;
 
@@ -63,14 +73,23 @@ public final class GroupPosts {
 
     private static final String QUERY_HOOK = "group join state query";
 
-    /** The two accessors a read goes through: the stubs the patch filled, or stand-ins in a test. */
+    /**
+     * The accessors a read goes through: the two stubs the patch filled, and the story's
+     * {@code attached_story} that Hide posts with words fills, or stand-ins in a test.
+     */
     static final class Readers {
         final StoryFlag.Accessor target;
         final StoryFlag.Accessor joinState;
+        final StoryFlag.Accessor attached;
 
         Readers(StoryFlag.Accessor target, StoryFlag.Accessor joinState) {
+            this(target, joinState, PostText.ATTACHED);
+        }
+
+        Readers(StoryFlag.Accessor target, StoryFlag.Accessor joinState, StoryFlag.Accessor attached) {
             this.target = target;
             this.joinState = joinState;
+            this.attached = attached;
         }
     }
 
@@ -121,9 +140,10 @@ public final class GroupPosts {
     }
 
     /**
-     * The join state's constant name for a post in a group, or why there is none. Never throws: an
-     * accessor that throws is recorded in Hook status and the post reads as {@link #READ_FAILED},
-     * which keeps it.
+     * The join state's constant name for a post in a group, or why there is none. A story posted to
+     * no profile is read again through the post it wraps, and what that found comes back under
+     * {@link #WRAPPED}. Never throws: an accessor that throws is recorded in Hook status and the
+     * post reads as {@link #READ_FAILED}, which keeps it.
      */
     static String read(@Nullable Object feedUnit, Readers readers) {
         Class<?> story = StoryFlag.members().story;
@@ -135,29 +155,48 @@ public final class GroupPosts {
                 HookStatus.missingMember(FAMILY, "method", StoryFlag.STORY_CLASS, "the " + TARGET_FIELD + " accessor");
                 return NOT_PATCHED;
             }
-            if (target == null) return NO_TARGET;
-            if (FeedFilter.released(target)) return RELEASED;
-            if (!GROUP_TYPE.equals(FeedFilter.typeName(target))) return NOT_A_GROUP;
-            Object state = readers.joinState.model(target);
-            if (state == StoryFlag.NOT_PATCHED) {
-                HookStatus.missingMember(FAMILY, "method", GROUP_TYPE, "the " + JOIN_STATE_FIELD + " accessor");
-                return NOT_PATCHED;
-            }
-            if (state == null) return NO_STATE;
-            if (!(state instanceof Enum)) return NOT_AN_ENUM;
-            HookStatus.bound(FAMILY, GROUP_TYPE + "#" + JOIN_STATE_FIELD);
-            return ((Enum<?>) state).name();
+            if (target != null) return stateOf(target, readers, "");
+            // Posted to no profile: a post a friend commented on or shared wraps the group's post.
+            Object wrapped = readers.attached.model(feedUnit);
+            if (wrapped == StoryFlag.NOT_PATCHED) return NO_WRAPPED_READER;
+            if (wrapped == null || !story.isInstance(wrapped)) return NO_TARGET;
+            if (FeedFilter.released(wrapped)) return RELEASED;
+            Object wrappedTarget = readers.target.model(wrapped);
+            if (wrappedTarget == null || wrappedTarget == StoryFlag.NOT_PATCHED) return NO_TARGET;
+            return stateOf(wrappedTarget, readers, WRAPPED);
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "group join state reader", failure);
             return READ_FAILED;
         }
     }
 
-    /** Whether what a read found is a group the person could join, so isn't in. */
+    /**
+     * The join state's constant name of [target], the profile a story was posted to, or why there
+     * is none, each under [prefix] for the report. Throws what an accessor throws.
+     */
+    private static String stateOf(Object target, Readers readers, String prefix) {
+        if (FeedFilter.released(target)) return RELEASED;
+        if (!GROUP_TYPE.equals(FeedFilter.typeName(target))) return prefix + NOT_A_GROUP;
+        Object state = readers.joinState.model(target);
+        if (state == StoryFlag.NOT_PATCHED) {
+            HookStatus.missingMember(FAMILY, "method", GROUP_TYPE, "the " + JOIN_STATE_FIELD + " accessor");
+            return NOT_PATCHED;
+        }
+        if (state == null) return prefix + NO_STATE;
+        if (!(state instanceof Enum)) return prefix + NOT_AN_ENUM;
+        HookStatus.bound(FAMILY, GROUP_TYPE + "#" + JOIN_STATE_FIELD);
+        return prefix + ((Enum<?>) state).name();
+    }
+
+    /**
+     * Whether what a read found is a group the person could join, so isn't in, the post posted to
+     * it straight or wrapped in a friend's activity.
+     */
     static boolean notJoined(@Nullable String kind) {
         if (kind == null) return false;
-        for (String state : NOT_JOINED) {
-            if (state.equals(kind)) return true;
+        String state = kind.startsWith(WRAPPED) ? kind.substring(WRAPPED.length()) : kind;
+        for (String joinable : NOT_JOINED) {
+            if (joinable.equals(state)) return true;
         }
         return false;
     }

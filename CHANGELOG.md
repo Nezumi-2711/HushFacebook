@@ -7,6 +7,7 @@ Changes in each Hushfacebook version, newest first.
 ### Fixed
 
 * **Facebook:** `See-through bars` works on a tab bar that's set to stay on screen now. Before, the bar stayed but the feed stopped above it, so the see-through showed black. Facebook builds that layout as it starts, so flipping `See-through bars` with the bar kept brings up the restart row, and the change shows after the restart (Refs #250).
+* **Facebook:** `Hide posts from groups you're not in` now also hides a group post that reaches your feed because a friend commented on it or shared it. Those come wrapped in the friend's activity, so the switch couldn't see the group before (Refs #195).
 
 ## 0.19.0 (2026-10-27)
 

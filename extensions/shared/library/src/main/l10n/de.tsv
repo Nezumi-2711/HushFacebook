@@ -1860,8 +1860,8 @@ Silent parts play in this video	Stille Stellen werden in diesem Video abgespielt
 Skipping silent parts again	Stille Stellen werden wieder übersprungen
 # context: switch title under News feed; posts Facebook shows from groups the user hasn't joined, which come with a Join button next to the group's name
 Hide posts from groups you're not in	Beiträge aus Gruppen ausblenden, in denen du nicht bist
-# context: summary of that switch; a friend's share of a group post is a post on the friend's own profile that shares a group post, and it stays
-Hides posts from groups you haven't joined, like a friend's post in a public group. Posts from your groups and a friend's share of a group post stay.	Blendet Beiträge aus Gruppen aus, denen du nicht beigetreten bist, etwa den Beitrag eines Freundes in einer öffentlichen Gruppe. Beiträge aus deinen Gruppen und das Teilen eines Gruppenbeitrags durch einen Freund bleiben.
+# context: summary of that switch; a group post a friend commented on or shared reaches the feed wrapped in the friend's activity, and the switch hides it too
+Hides posts from groups you haven't joined, like a friend's post in a public group, and a group post a friend commented on or shared. Posts from your groups stay.	Blendet Beiträge aus Gruppen aus, denen du nicht beigetreten bist, etwa den Beitrag eines Freundes in einer öffentlichen Gruppe, und Gruppenbeiträge, die ein Freund kommentiert oder geteilt hat. Beiträge aus deinen Gruppen bleiben.
 # context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
 Hide For you in search	Für dich in der Suche ausblenden
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing

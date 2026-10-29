@@ -822,8 +822,9 @@ public final class FeedFilter {
     /**
      * Hide posts from groups you're not in: the group type and the join state, such as
      * {@code Group:CAN_JOIN}, when the post was posted in a group Facebook would show a Join button
-     * for, otherwise null. Nothing is read while the switch is off, and a post that can't be read
-     * stays. Each post it reads is counted on its route by what the read found.
+     * for, or wraps one a friend commented on or shared ({@code Group:wrapped CAN_JOIN}), otherwise
+     * null. Nothing is read while the switch is off, and a post that can't be read stays. Each post
+     * it reads is counted on its route by what the read found.
      */
     static String groupReason(Object feedUnit, GroupPosts.Readers readers) {
         String kind = GroupPosts.read(feedUnit, readers);

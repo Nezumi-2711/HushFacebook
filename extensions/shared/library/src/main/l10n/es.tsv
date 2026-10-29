@@ -1860,8 +1860,8 @@ Silent parts play in this video	Las partes en silencio se reproducen en este vid
 Skipping silent parts again	Se vuelven a saltar las partes en silencio
 # context: switch title under News feed; posts Facebook shows from groups the user hasn't joined, which come with a Join button next to the group's name
 Hide posts from groups you're not in	Ocultar publicaciones de grupos en los que no estás
-# context: summary of that switch; a friend's share of a group post is a post on the friend's own profile that shares a group post, and it stays
-Hides posts from groups you haven't joined, like a friend's post in a public group. Posts from your groups and a friend's share of a group post stay.	Oculta las publicaciones de grupos a los que no te has unido, como la publicación de un amigo en un grupo público. Las publicaciones de tus grupos y las que un amigo comparte de un grupo se mantienen.
+# context: summary of that switch; a group post a friend commented on or shared reaches the feed wrapped in the friend's activity, and the switch hides it too
+Hides posts from groups you haven't joined, like a friend's post in a public group, and a group post a friend commented on or shared. Posts from your groups stay.	Oculta las publicaciones de grupos a los que no te has unido, como la publicación de un amigo en un grupo público, y las publicaciones de grupo que un amigo comentó o compartió. Las publicaciones de tus grupos se mantienen.
 # context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
 Hide For you in search	Ocultar Para ti en la búsqueda
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
