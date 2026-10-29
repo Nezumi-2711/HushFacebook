@@ -156,6 +156,12 @@ public final class CommentSheetOptions {
     static final String VIEWER_COMPOSER = "video viewer comment composer";
     static final String COMPOSER_HIDDEN = "Video comment composer hidden";
 
+    /** The member the report names once the socket over the comment box has asked about the emoji row (#290). */
+    static final String EMOJI_ROW = "emoji row over the comment box";
+
+    /** Counted each time the emoji row is kept out from over the comment box. */
+    static final String EMOJI_ROW_HIDDEN = "Comment emoji row kept out";
+
     /** The member the report names once the socket under a post's comments has asked about Related groups. */
     static final String BOTTOM = "related groups under comments";
 
@@ -273,6 +279,24 @@ public final class CommentSheetOptions {
             return true;
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "video viewer comment bar", failure);
+            return false;
+        }
+    }
+
+    /**
+     * The hook, first thing in the check of whether the socket over the comment box shows its emoji
+     * row (#290). True answers no while the switch is on, and the box draws without the row; false
+     * leaves the check to Facebook. Meta AI's pills, the socket's other plugin, never reach it.
+     */
+    public static boolean holdsEmojiRow() {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, EMOJI_ROW);
+            if (!Utils.settingsReady() || !Settings.HIDE_COMMENT_EMOJI_ROW.get()) return false;
+            HookStatus.counted(FAMILY, EMOJI_ROW_HIDDEN);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "comment emoji row", failure);
             return false;
         }
     }

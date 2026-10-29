@@ -878,6 +878,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_comment_gif_sticker_buttons", FALSE);
 
     /**
+     * The comment box comes without the row of emoji over it (#290,
+     * {@link app.morphe.extension.facebook.comments.CommentSheetOptions}). Typing and the box's
+     * buttons stay. Off by default. A change shows on the next comment box drawn.
+     */
+    public static final BooleanSetting HIDE_COMMENT_EMOJI_ROW =
+            new BooleanSetting("hushfacebook_hide_comment_emoji_row", FALSE);
+
+    /**
      * The comment composer at the bottom of Facebook's full-screen video viewer is omitted from
      * the viewer's render method ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}).
      * Comment boxes on ordinary posts are unchanged. Off by default.

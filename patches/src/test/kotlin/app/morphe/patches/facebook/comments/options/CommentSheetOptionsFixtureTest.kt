@@ -497,6 +497,35 @@ class CommentSheetOptionsFixtureTest {
         assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(5).map { it.opcode })
     }
 
+    private fun emojiRow(bundle: File) {
+        val check = emojiRowCheck(holders(bundle, EMOJI_ROW))
+        assertNotNull("${bundle.name}: the pre-input socket's applies check wasn't found", check)
+        val where = "${bundle.name}: ${check!!.descriptor()}"
+        val owner = FixtureDex.classes(bundle, setOf(check.definingClass)).values.single()
+        val context = PatchContexts.of(listOf(owner))
+        val method = context.mutableClassDefBy(owner.type).methods.single { it.descriptor() == check.descriptor() }
+        val original = method.implementation!!.instructions.toList()
+        val number = method.implementation!!.registerCount - 1
+
+        method.holdEmojiRow()
+        val patched = method.implementation!!.instructions.toList()
+        assertEquals("$where gains six instructions", original.size + 6, patched.size)
+        assertEquals("$where: Meta AI's pills skip the hook", Opcode.IF_NEZ, patched[0].opcode)
+        assertEquals("$where: on the plugin's number", number, (patched[0] as OneRegisterInstruction).registerA)
+        assertEquals("$where: and land on Facebook's first instruction", 6,
+            (patched[0] as BuilderOffsetInstruction).target.location.index)
+        assertEquals("$where: the emoji row asks the extension", HOLDS_EMOJI_ROW, patched[1].reference())
+        assertEquals("$where: its answer", 0, (patched[2] as OneRegisterInstruction).registerA)
+        assertEquals("$where: a no goes on to Facebook", 6, (patched[3] as BuilderOffsetInstruction).target.location.index)
+        assertEquals("$where: a yes answers no", listOf(Opcode.CONST_4, Opcode.RETURN), patched.subList(4, 6).map { it.opcode })
+        assertEquals("$where: Facebook's code stays", original.map { it.opcode }, patched.drop(6).map { it.opcode })
+    }
+
+    @Test
+    fun `each declared build can keep the emoji row out from over the comment box`() = bundles { bundle ->
+        emojiRow(bundle)
+    }
+
     @Test
     fun `each declared build keeps the thumbs-down out from under a comment`() = bundles { bundle ->
         dislike(bundle)

@@ -243,6 +243,7 @@ public final class SettingsBackup {
             Settings.HIDE_META_AI_SUMMARIES,
             Settings.LIKE_ONLY,
             Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS,
+            Settings.HIDE_COMMENT_EMOJI_ROW,
             Settings.OPEN_REPLY_THREADS,
             Settings.LOAD_WHOLE_REPLY_THREADS,
             Settings.TAP_ANYWHERE_ON_VIEW_MORE_REPLIES,

@@ -69,6 +69,7 @@ public class CommentSheetOptionsTest {
         PauseForTests.resume();
         Settings.LIKE_ONLY.resetToDefault();
         Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.resetToDefault();
+        Settings.HIDE_COMMENT_EMOJI_ROW.resetToDefault();
         Settings.HIDE_VIDEO_COMMENT_COMPOSER.resetToDefault();
         Settings.OPEN_REPLY_THREADS.resetToDefault();
         Settings.LOAD_WHOLE_REPLY_THREADS.resetToDefault();
@@ -107,6 +108,21 @@ public class CommentSheetOptionsTest {
         assertTrue("the viewer bar kept its GIF and sticker buttons", CommentSheetOptions.holdsViewerButtons());
         assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 2, 1 found, 0 missing. Counted: "
                 + CommentSheetOptions.BUTTON_HIDDEN + " 1", statusLine());
+    }
+
+    @Test
+    public void theEmojiRowGoesOnlyUnderItsOwnSwitch() {
+        Settings.HIDE_COMMENT_GIF_STICKER_BUTTONS.save(true);
+        assertFalse("the button switch dropped the emoji row", CommentSheetOptions.holdsEmojiRow());
+        Settings.HIDE_COMMENT_EMOJI_ROW.save(true);
+        assertTrue("the emoji row stayed", CommentSheetOptions.holdsEmojiRow());
+        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 2, 1 found, 0 missing. Counted: "
+                + CommentSheetOptions.EMOJI_ROW_HIDDEN + " 1", statusLine());
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertFalse("a paused Hushfacebook dropped the emoji row", CommentSheetOptions.holdsEmojiRow());
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertFalse("the emoji row went before the settings were ready",
+                CommentSheetOptions.holdsEmojiRow()));
     }
 
     @Test
@@ -439,7 +455,7 @@ public class CommentSheetOptionsTest {
                 Settings.LOAD_WHOLE_REPLY_THREADS, Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS, Settings.HIDE_SHOP_LINK_COMMENTS,
                 Settings.HIDE_COMMENTS_WITH_WORDS, Settings.HIDE_INCOMING_COMMENT_TYPING, Settings.HIDE_NEW_COMMENTS_PILL,
                 Settings.TAP_ANYWHERE_ON_VIEW_MORE_REPLIES, Settings.HIDE_POST_COMMENT_PREVIEWS,
-                Settings.HIDE_COMMENT_DOWNVOTE_BUTTON}) {
+                Settings.HIDE_COMMENT_DOWNVOTE_BUTTON, Settings.HIDE_COMMENT_EMOJI_ROW}) {
             assertFalse(setting.key + " asks for a restart, but each hook reads it again", setting.rebootApp);
             assertNull(setting.key + " asks before it changes", setting.userDialogMessage);
             assertTrue("Pause and the report don't know " + setting.key,

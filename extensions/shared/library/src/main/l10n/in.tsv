@@ -2089,3 +2089,5 @@ If your patched Facebook includes Badge and logo colors, the logo will be Facebo
 If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Jika Facebook yang ditambal menyertakan Warna lencana dan logo, lencana akan berwarna %1$s.
 # context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
 If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Jika Facebook yang ditambal menyertakan Warna lencana dan logo, logo akan berwarna %1$s.
+Hide the emoji row on comments	Sembunyikan baris emoji di komentar
+The row of emoji over the comment box goes away. You can still type emoji from your keyboard.	Baris emoji di atas kotak komentar hilang. Kamu tetap bisa mengetik emoji dari keyboard.

@@ -25,6 +25,8 @@ import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.facebookExtensionPatch
 import app.morphe.patches.facebook.misc.extension.localRegisterCount
+import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
+import app.morphe.patches.facebook.misc.extension.patchLog
 import app.morphe.patches.facebook.misc.extension.requireStatusMethod
 import app.morphe.patches.facebook.misc.settings.settingsPatch
 import app.morphe.patches.shared.compat.AppCompatibilities
@@ -61,6 +63,17 @@ internal const val GIF_BUTTON =
 /** The comment box's sticker button, in the same name table. */
 internal const val STICKER_BUTTON =
     "com.facebook.feedback.comments.plugins.commentcomposer.attachmentbutton.sticker.StickerAttachmentButtonPlugin"
+
+/** The name the socket over the comment box's text field gives itself, in its render (#290). */
+internal const val PRE_INPUT_SOCKET = "CommentComposerPreInputContentSocket"
+
+/** The row of emoji over the comment box, a kept class name the same render loads. */
+internal const val EMOJI_ROW =
+    "com.facebook.feedback.comments.plugins.commentcomposerpreinput.conversationguide.ConversationGuidePlugin"
+
+/** Meta AI's suggestion pills, the socket's other plugin, a kept class its applies check calls. */
+internal const val META_AI_PILLS =
+    "Lcom/facebook/feedback/comments/plugins/commentcomposerpreinput/metaaisuggestionpills/MetaAISuggestionPillsPlugin;"
 
 /** The name the comment bar under a video in the full-screen viewer gives its sticker button, where it builds it. */
 internal const val VIEWER_STICKER = "FbShortsComposerAttachmentComponentSpec_STICKER"
@@ -136,6 +149,7 @@ private const val OBJECTS = "[Ljava/lang/Object;"
 
 internal const val COMMENT_SHEET_OPTIONS = "$EXTENSION_PACKAGE/comments/CommentSheetOptions;"
 internal const val HOLDS_BUTTON = "$COMMENT_SHEET_OPTIONS->holdsButton(Ljava/lang/String;)Z"
+internal const val HOLDS_EMOJI_ROW = "$COMMENT_SHEET_OPTIONS->holdsEmojiRow()Z"
 internal const val HOLDS_VIEWER_BUTTONS = "$COMMENT_SHEET_OPTIONS->holdsViewerButtons()Z"
 internal const val HIDES_VIDEO_COMMENT_COMPOSER = "$COMMENT_SHEET_OPTIONS->hidesVideoCommentComposer()Z"
 internal const val HOLDS_BOTTOM_CONTENT = "$COMMENT_SHEET_OPTIONS->holdsBottomContent(Ljava/lang/String;)Z"
@@ -267,7 +281,7 @@ val commentSheetOptionsPatch = bytecodePatch(
     name = "Comment sheet options",
     description = "Small fixes for comments. Stop a long press on Like from opening reactions, hide the GIF and " +
         "sticker buttons, show every reply without tapping View replies, load a whole reply thread as you " +
-        "scroll, open more replies with a tap anywhere on their row, hide the comments under feed posts or the thumbs-down on comments, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in " +
+        "scroll, open more replies with a tap anywhere on their row, hide the comments under feed posts or the thumbs-down on comments, hide Related groups under group posts, hide comments with shop links or your words, hide who is typing and the new comments pop-up, hide the emoji row over the comment box, and hide the comment box under full-screen videos. Starts off. Turn on the parts you want in " +
         "Hushfacebook settings > Comments and writing.",
 ) {
     category("Comments")
@@ -340,8 +354,66 @@ val commentSheetOptionsPatch = bytecodePatch(
             .holdViewerButtons(viewer)
         mutableClassDefBy(videoBar.definingClass).methods.single { it.descriptor() == videoBar.descriptor() }
             .hideVideoCommentComposer()
+        emojiRowCheck(holders(EMOJI_ROW))?.let { check ->
+            mutableClassDefBy(check.definingClass).methods.single { it.descriptor() == check.descriptor() }.holdEmojiRow()
+        }
         enableStatus("commentSheetOptions")
     }
+}
+
+/**
+ * The pre-input socket's check of whether a plugin applies, from [holders], the classes loading
+ * [EMOJI_ROW]: the one static (object, int) boolean method of the class whose render names
+ * [PRE_INPUT_SOCKET] and [EMOJI_ROW] and calls it. The socket numbers its two plugins, 1 for Meta
+ * AI's pills and 0 for the emoji row, and the check opens on that number: not zero runs on to Meta
+ * AI's own check, zero jumps to the emoji row's (584: LX/9eB;->A03). A build where the socket moved
+ * keeps the rest of the patch, with Hide the emoji row on comments left doing nothing and a warning
+ * saying why.
+ */
+internal fun emojiRowCheck(holders: List<ClassDef>): Method? {
+    fun skip(why: String): Method? {
+        patchLog.warning("$PATCH: $why. Hide the emoji row on comments does nothing in this build")
+        return null
+    }
+    val renders = holders.flatMap { methodsHolding(it, EMOJI_ROW) }.filter { holdsString(it, PRE_INPUT_SOCKET) }
+    val render = renders.singleOrNull() ?: return skip("expected one render naming $PRE_INPUT_SOCKET and the emoji row, found ${renders.size}")
+    val owner = holders.single { it.type == render.definingClass }
+    val checks = calls(render).filter { call ->
+        call.definingClass == owner.type && call.returnType == "Z" &&
+            call.parameterTypes.size == 2 && call.parameterTypes.last().toString() == "I"
+    }.map { it.descriptor() }.distinct().mapNotNull { called -> owner.methods.singleOrNull { it.descriptor() == called } }
+        .filter { AccessFlags.STATIC.isSet(it.accessFlags) }
+    val check = checks.singleOrNull() ?: return skip("expected one applies check in ${render.descriptor()}, found ${checks.size}")
+    if (check.localRegisterCount() < 1) return skip("${check.descriptor()} has no local register for the hook")
+    val code = check.implementation!!.instructions.toList()
+    val opening = code.firstOrNull()
+    if (opening?.opcode != Opcode.IF_EQZ || (opening as OneRegisterInstruction).registerA != check.parameterRegisterNumber(1)) {
+        return skip("${check.descriptor()} doesn't open on the plugin's number")
+    }
+    // The opening branch sits at code unit 0, so its offset is where plugin 0's check starts.
+    val zero = (opening as OffsetInstruction).codeOffset
+    var unit = 0
+    val pills = code.takeWhile { instruction -> (unit < zero).also { unit += instruction.codeUnits } }.any {
+        ((it as? ReferenceInstruction)?.reference as? MethodReference)?.definingClass == META_AI_PILLS
+    }
+    if (!pills) return skip("${check.descriptor()}'s non-zero path doesn't ask $META_AI_PILLS")
+    return check
+}
+
+/** First thing in the pre-input socket's applies check: for plugin 0, the emoji row, answer no while the extension says so. */
+internal fun MutableMethod.holdEmojiRow() {
+    addInstructionsWithLabels(
+        0,
+        """
+            if-nez p1, :check
+            invoke-static {}, $HOLDS_EMOJI_ROW
+            move-result v0
+            if-eqz v0, :check
+            const/4 v0, 0x0
+            return v0
+        """,
+        ExternalLabel("check", getInstruction(0)),
+    )
 }
 
 private fun refuse(detail: String): Nothing = throw PatchException("$PATCH: $detail")

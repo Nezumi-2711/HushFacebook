@@ -7,6 +7,7 @@ Changes in each Hushfacebook version, newest first.
 ### Added
 
 * **Facebook:** New `Hide the pull down to lock hint` under Reels and Watch. Holding a reel or a video for 2x then shows the plain 2x pill without the "Pull down to lock 2x speed" line, and pulling down still locks the speed. It needs no restart (Refs #289).
+* **Facebook:** New `Hide the emoji row on comments` under Comments and writing takes away the row of emoji Facebook puts over the comment box. Typing and the box's buttons stay, and you can still type emoji from your keyboard (Refs #290).
 
 ### Changed
 

@@ -1975,3 +1975,5 @@ If your patched Facebook includes Badge and logo colors, the logo will be Facebo
 If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Se o seu Facebook com patches incluir Cores dos selos e do logo, os selos ficarão %1$s.
 # context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
 If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Se o seu Facebook com patches incluir Cores dos selos e do logo, o logo ficará %1$s.
+Hide the emoji row on comments	Ocultar a fileira de emojis nos comentários
+The row of emoji over the comment box goes away. You can still type emoji from your keyboard.	A fileira de emojis acima da caixa de comentário some. Você ainda pode digitar emojis pelo teclado.

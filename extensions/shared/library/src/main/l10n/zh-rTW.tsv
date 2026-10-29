@@ -2093,3 +2093,5 @@ If your patched Facebook includes Badge and logo colors, the logo will be Facebo
 If your patched Facebook includes Badge and logo colors, badges will be %1$s.	如果你修補的 Facebook 包含「徽章和標誌顏色」，徽章將為 %1$s。
 # context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
 If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	如果你修補的 Facebook 包含「徽章和標誌顏色」，標誌將為 %1$s。
+Hide the emoji row on comments	隱藏留言的表情符號列
+The row of emoji over the comment box goes away. You can still type emoji from your keyboard.	留言框上方的表情符號列不再顯示。你仍然可以用鍵盤輸入表情符號。
