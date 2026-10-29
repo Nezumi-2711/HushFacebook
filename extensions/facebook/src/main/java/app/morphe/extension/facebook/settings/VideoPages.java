@@ -234,6 +234,9 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.HOLD_FEED_VIDEO_FOR_2X,
                     L10n.t("Holding a video in the feed or in Watch plays it at double speed until you let go. It works "
                             + "without the switches above.")));
+            reels.addPreference(toggle(context, Settings.HIDE_2X_LOCK_HINT,
+                    L10n.t("Holding a video for 2x shows the plain 2x pill, without the \"Pull down to lock 2x speed\" "
+                            + "hint. Pulling down still locks it. It works without the switches above.")));
         }
         if (build.contains(PatchFamily.REEL_DOWNLOAD)) {
             subheading(reels, L10n.t("Saving reels"));

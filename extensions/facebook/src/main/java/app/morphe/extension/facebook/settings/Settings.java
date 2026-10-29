@@ -89,8 +89,9 @@ public class Settings extends BaseSettings {
 
     /**
      * Posts from groups you aren't in, such as a friend's post in a public group, found by the join
-     * state Facebook's own Join button reads off the group the story was posted to (#195). Posts from
-     * groups you're in and a friend's share of a group post stay. Off until picked.
+     * state Facebook's own Join button reads off the group the story was posted to (#195), or off
+     * the group of the post it wraps when a friend commented on or shared a group post. Posts from
+     * groups you're in stay. Off until picked.
      */
     public static final BooleanSetting HIDE_GROUP_POSTS_NOT_JOINED =
             new BooleanSetting("hushfacebook_hide_group_posts_not_joined", FALSE);
@@ -833,6 +834,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hold_feed_video_for_2x", FALSE);
 
     /**
+     * The 2x pill a held video shows stays the plain 2x pill, without Facebook's "Pull down to lock
+     * 2x speed" hint and its unlock and first-time versions
+     * ({@link app.morphe.extension.facebook.reels.LockHint}). Pulling down still locks 2x. Works
+     * without {@link #HOLD_REEL_FOR_2X}. Starts off.
+     */
+    public static final BooleanSetting HIDE_2X_LOCK_HINT =
+            new BooleanSetting("hushfacebook_hide_2x_lock_hint", FALSE);
+
+    /**
      * Comment sheets ask for the order in {@link #COMMENT_ORDER} where Facebook's servers would
      * choose one, and an order picked in a post's comments stays for that post until Facebook
      * restarts ({@link app.morphe.extension.facebook.comments.DefaultCommentOrder}). A request that
@@ -866,6 +876,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_COMMENT_GIF_STICKER_BUTTONS =
             new BooleanSetting("hushfacebook_hide_comment_gif_sticker_buttons", FALSE);
+
+    /**
+     * The comment box comes without the row of emoji over it (#290,
+     * {@link app.morphe.extension.facebook.comments.CommentSheetOptions}). Typing and the box's
+     * buttons stay. Off by default. A change shows on the next comment box drawn.
+     */
+    public static final BooleanSetting HIDE_COMMENT_EMOJI_ROW =
+            new BooleanSetting("hushfacebook_hide_comment_emoji_row", FALSE);
 
     /**
      * The comment composer at the bottom of Facebook's full-screen video viewer is omitted from
@@ -1879,7 +1897,10 @@ public class Settings extends BaseSettings {
     /**
      * The top bar and the tab bar let the feed show through, with a blur of it behind them on
      * Android 12 and newer (#124, {@link app.morphe.extension.facebook.navigation.TranslucentBars}).
-     * Asked as each frame of the main screen draws, so a change shows right away.
+     * Asked as each frame of the main screen draws, so a change shows right away. A kept tab bar is
+     * the exception (#250): with it on, Facebook builds the layout that runs the pages under the bar
+     * as the main screen starts, so there the change waits for a restart, and the settings page
+     * shows its restart row ({@link app.morphe.extension.facebook.navigation.TabBarScrollAway#seeThroughRestartOwed}).
      */
     public static final BooleanSetting TRANSLUCENT_BARS =
             new BooleanSetting("hushfacebook_translucent_bars", FALSE);

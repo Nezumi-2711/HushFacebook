@@ -72,6 +72,7 @@ import app.morphe.extension.facebook.navigation.HiddenTabs;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
 import app.morphe.extension.facebook.navigation.StartTab;
 import app.morphe.extension.facebook.navigation.MarketplaceOnly;
+import app.morphe.extension.facebook.navigation.TabBarScrollAway;
 import app.morphe.extension.facebook.notifications.QuietHour;
 import app.morphe.extension.facebook.settings.SettingsRows.Heading;
 import app.morphe.extension.facebook.settings.SettingsRows.Row;
@@ -830,7 +831,21 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         super.updateUIAvailability();
         showMarketplaceSettings();
         showSaveFolder();
+        noteSeeThroughRestart();
         if (refreshWaysIn != null) refreshWaysIn.run();
+    }
+
+    /**
+     * See-through bars shows right away, except on a kept tab bar, whose layout Facebook builds as
+     * the main screen starts (#250). That change waits for a restart, and the restart row says so
+     * under the switch's own key, the way a restart-gated switch does; put back, it owes nothing.
+     * Asked after every change on the page, since the switch itself isn't restart-gated.
+     */
+    private void noteSeeThroughRestart() {
+        String key = Settings.TRANSLUCENT_BARS.key;
+        boolean changed = TabBarScrollAway.seeThroughRestartOwed()
+                ? restartPending.add(key) : restartPending.remove(key);
+        if (changed) onRestartPendingChanged();
     }
 
     @Override
