@@ -6,6 +6,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Facebook:** `Hide comments under posts` now also hides a pinned comment shown under a post in the feed, along with the Write a comment box it comes with. Facebook draws that comment as part of the comment box, not with the other comment previews, so the switch missed it under friends' posts and group posts. The Comment button still opens the comments as before (Refs #305, #253).
 * **Facebook:** `See-through bars` works on a tab bar that's set to stay on screen now. Before, the bar stayed but the feed stopped above it, so the see-through showed black. Facebook builds that layout as it starts, so flipping `See-through bars` with the bar kept brings up the restart row, and the change shows after the restart (Refs #250).
 * **Facebook:** `Hide posts from groups you're not in` now also hides a group post that reaches your feed because a friend commented on it or shared it. Those come wrapped in the friend's activity, so the switch couldn't see the group before (Refs #195).
 * **Facebook:** A patched Facebook without `Material You theme` no longer shows a toast about the theme's colors at every start on Android 11. The theme only asks the phone for its palette when it's in the build, and the Accent color presets are set up before the theme reads them (Refs #300).

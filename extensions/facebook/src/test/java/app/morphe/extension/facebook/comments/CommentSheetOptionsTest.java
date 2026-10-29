@@ -53,9 +53,9 @@ public class CommentSheetOptionsTest {
     private static final String RELATED_CONTENT =
             "com.facebook.feedback.comments.plugins.bottomcontent.impl.relatedcontent.RelatedContentPlugin";
 
-    /** The comment box under a feed post, which the socket under its buttons also asks about and which always stays. */
-    private static final String INLINE_COMPOSER =
-            "com.facebook.feed.plugins.belowufifooter.impl.inlinecommentcomposer.InlineCommentComposerPlugin";
+    /** Another plugin the socket under a post's buttons asks about, which always stays. */
+    private static final String STORY_CONTEXTUAL_TRAY =
+            "com.facebook.feed.plugins.belowufifooter.impl.storycontextualtray.StoryContextualTrayPlugin";
 
     @Rule public final SettingsContextRule settingsContext = new SettingsContextRule();
 
@@ -254,7 +254,7 @@ public class CommentSheetOptionsTest {
     @Test
     public void onAPostsInlineCommentsAreHeldUnderItsButtonsAndCounted() {
         Settings.HIDE_POST_COMMENT_PREVIEWS.save(true);
-        assertFalse("the comment box under a post was held", CommentSheetOptions.holdsPostComments(INLINE_COMPOSER));
+        assertFalse("the story tray under a post was held", CommentSheetOptions.holdsPostComments(STORY_CONTEXTUAL_TRAY));
         assertFalse("Meta AI's summary was held by the comments switch", CommentSheetOptions.holdsPostComments(
                 MetaAiSummaries.POST_SUMMARY));
         assertFalse("a plugin with no name was held", CommentSheetOptions.holdsPostComments(null));
@@ -265,10 +265,17 @@ public class CommentSheetOptionsTest {
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS_DWELL_TIME));
         assertTrue("the client ranked comments stayed",
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS_CLIENT_RANKING));
+        // The comment box draws the post's pinned comment above itself, so it goes with them (#305).
+        assertTrue("the comment box with its pinned comment stayed",
+                CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENT_COMPOSER));
+        assertTrue("the comment box with its lifted comment stayed",
+                CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENT_COMPOSER_HOISTED));
+        assertTrue("the anonymous comment box stayed",
+                CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENT_COMPOSER_ANONYMOUS));
         assertFalse("the comments switch held Related groups under the comments",
                 CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS));
-        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 8, 2 found, 0 missing. Counted: "
-                + CommentSheetOptions.POST_COMMENTS_HIDDEN + " 3", statusLine());
+        assertEquals(FamilyNames.COMMENT_SHEET_OPTIONS + ": invoked 11, 2 found, 0 missing. Counted: "
+                + CommentSheetOptions.POST_COMMENTS_HIDDEN + " 6", statusLine());
     }
 
     @Test
@@ -276,6 +283,8 @@ public class CommentSheetOptionsTest {
         assertFalse("Hide comments under posts doesn't start off", Settings.HIDE_POST_COMMENT_PREVIEWS.get());
         assertFalse("off, the inline comments were held",
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS));
+        assertFalse("off, the comment box was held",
+                CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENT_COMPOSER));
         Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS.save(true);
         assertFalse("Hide related groups held the inline comments",
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS));

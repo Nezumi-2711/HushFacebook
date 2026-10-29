@@ -187,8 +187,11 @@ internal const val GRAPHQL_COMMENT = "Lcom/facebook/graphql/model/GraphQLComment
  * about its inline summary. Its name table (584 `LX/228;->A0k`) names three variants of them,
  * [INLINE_COMMENTS], [INLINE_COMMENTS_DWELL_TIME] and [INLINE_COMMENTS_CLIENT_RANKING], and its
  * check sits in the table's class. It's found and hooked the same way as the other two sockets:
- * while the switch is on the three get a no, and the socket goes on to its next plugin, so the
- * comment box under a post, Meta AI's summary switch and the post's Comment button stay as they were.
+ * while the switch is on the three get a no, and the socket goes on to its next plugin, so Meta
+ * AI's summary switch and the post's Comment button stay as they were. The same table names three
+ * comment boxes (584 `InlineCommentComposerPlugin`, its hoisted and its anonymous variants), and
+ * in 584 they draw the post's pinned comment above the box (#305), so the extension gives them the
+ * same no; the list of what it holds lives there, not here.
  *
  * Hide dislike on comments (#241): the thumbs-down under a comment is built by its own plugin,
  * [COMMENT_DOWNVOTE], a kept class with one static builder that takes the comment's context and

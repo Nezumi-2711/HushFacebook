@@ -75,6 +75,27 @@ public final class CommentSheetOptions {
     public static final String INLINE_COMMENTS_CLIENT_RANKING =
             "com.facebook.feed.plugins.belowufifooter.impl.inlinecommentwithclientranking.InlineCommentWithClientRankingPlugin";
 
+    /**
+     * The comment box under a feed post, which in 584 draws the post's pinned comment above itself
+     * (#305, #253), as the same name table gives it.
+     */
+    public static final String INLINE_COMMENT_COMPOSER =
+            "com.facebook.feed.plugins.belowufifooter.impl.inlinecommentcomposer.InlineCommentComposerPlugin";
+
+    /** The same comment box with the comment a post was opened for lifted above it. */
+    public static final String INLINE_COMMENT_COMPOSER_HOISTED =
+            "com.facebook.feed.plugins.belowufifooter.impl.hoiststoryinlinecommentcomposer.HoistStoryInlineCommentComposerPlugin";
+
+    /** The same comment box for a group that takes anonymous comments, its identity picker included. */
+    public static final String INLINE_COMMENT_COMPOSER_ANONYMOUS =
+            "com.facebook.feed.plugins.belowufifooter.impl.anoninlinecommentcomposer.AnonInlineCommentComposerPlugin";
+
+    /** Every plugin that draws comments, or a comment box with comments above it, under a feed post's buttons. */
+    private static final String[] POST_COMMENT_PLUGINS = {
+            INLINE_COMMENTS, INLINE_COMMENTS_DWELL_TIME, INLINE_COMMENTS_CLIENT_RANKING,
+            INLINE_COMMENT_COMPOSER, INLINE_COMMENT_COMPOSER_HOISTED, INLINE_COMMENT_COMPOSER_ANONYMOUS,
+    };
+
     /** Counted each time a comment's Dislike button is kept out (#241). */
     static final String DOWNVOTE_HIDDEN = "Comment Dislike button kept out";
 
@@ -295,9 +316,10 @@ public final class CommentSheetOptions {
 
     /**
      * The hook, first thing in the check of what shows under a feed post's buttons, handed the
-     * plugin's name. True answers no for the post's inline comments while Hide comments under posts
-     * is on; false leaves the check to Facebook, for the comment box, Meta AI's summary and every
-     * other plugin, and otherwise.
+     * plugin's name. True answers no for the post's inline comments, and for the comment boxes
+     * that draw a pinned or lifted comment above themselves (#305), while Hide comments under
+     * posts is on; false leaves the check to Facebook, for Meta AI's summary and every other
+     * plugin, and otherwise.
      */
     public static boolean holdsPostComments(@Nullable String plugin) {
         try {
@@ -307,8 +329,7 @@ public final class CommentSheetOptions {
             if (Utils.settingsReady() && Settings.HIDE_POST_COMMENT_PREVIEWS.get()) {
                 Logger.printDebug(() -> "Under post buttons: " + plugin);
             }
-            if (!INLINE_COMMENTS.equals(plugin) && !INLINE_COMMENTS_DWELL_TIME.equals(plugin)
-                    && !INLINE_COMMENTS_CLIENT_RANKING.equals(plugin)) return false;
+            if (!drawsPostComments(plugin)) return false;
             HookStatus.bound(FAMILY, POST_COMMENTS);
             if (!Utils.settingsReady() || !Settings.HIDE_POST_COMMENT_PREVIEWS.get()) return false;
             HookStatus.counted(FAMILY, POST_COMMENTS_HIDDEN);
@@ -317,6 +338,15 @@ public final class CommentSheetOptions {
             HookStatus.threw(FAMILY, "under post buttons check", failure);
             return false;
         }
+    }
+
+    /** True for a plugin that draws comments under a feed post's buttons, one of [POST_COMMENT_PLUGINS]. */
+    static boolean drawsPostComments(@Nullable String plugin) {
+        if (plugin == null) return false;
+        for (String held : POST_COMMENT_PLUGINS) {
+            if (held.equals(plugin)) return true;
+        }
+        return false;
     }
 
     /**
