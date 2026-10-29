@@ -2208,7 +2208,7 @@
     },
     {
       "name": "Hold a reel for 2x",
-      "description": "Hold a reel to play it at double speed, and let go to go back to normal. Handy for skimming. The reel's more button still opens Facebook's long-press menu. A second switch does the same for videos playing in the feed and in Watch. Both start off. Turn them on in Hushfacebook settings > Reels and Watch.",
+      "description": "Hold a reel to play it at double speed, and let go to go back to normal. Handy for skimming. The reel's more button still opens Facebook's long-press menu. A second switch does the same for videos playing in the feed and in Watch, and a third keeps the plain 2x pill without Facebook's \"Pull down to lock 2x speed\" hint. All start off. Turn them on in Hushfacebook settings > Reels and Watch.",
       "category": "Playback",
       "use": true,
       "dependencies": [

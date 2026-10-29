@@ -4,6 +4,10 @@ Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Added
+
+* **Facebook:** New `Hide the pull down to lock hint` under Reels and Watch. Holding a reel or a video for 2x then shows the plain 2x pill without the "Pull down to lock 2x speed" line, and pulling down still locks the speed. It needs no restart (Refs #289).
+
 ### Changed
 
 * **Facebook:** With `Debug logging` on, a kept post that wasn't posted to a profile or group now says what it's made of (the kinds of things in its title, share and attachments, never names or text). That's what's needed to find group posts `Hide posts from groups you're not in` still lets through (Refs #195).

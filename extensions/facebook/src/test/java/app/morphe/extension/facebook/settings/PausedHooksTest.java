@@ -650,7 +650,9 @@ public class PausedHooksTest {
                 }),
                 ReelHoldForTests::putsBackTheSpeedBeforeAHold,
                 // With Hold a feed video for 2x on, a finger down starts timing a hold.
-                FeedVideoHoldForTests::startsTiming));
+                FeedVideoHoldForTests::startsTiming,
+                // With Hide the pull down to lock hint on, the 2x pill's hint is drawn as the plain pill.
+                ReelHoldForTests::hidesTheLockHint));
         // A speed picked on a reel is set on the next reel the viewer starts, and one picked on a
         // feed video on the next feed video.
         probes.put(PatchFamily.KEEP_REEL_SPEED, Arrays.asList(ReelSpeedForTests::keepsAPickedSpeed,

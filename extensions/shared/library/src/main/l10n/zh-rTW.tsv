@@ -846,6 +846,9 @@ With the switch above on, only a hold on the right third of a reel plays it at d
 Hold a feed video for 2x	長按動態消息影片以 2 倍速播放
 # context: summary of that switch; Watch is Facebook's video tab, keep its name; the switches above are Hold a reel for 2x and Only on the right edge
 Holding a video in the feed or in Watch plays it at double speed until you let go. It works without the switches above.	長按動態消息或 Watch 中的影片時，會以兩倍速度播放，放開後恢復。不必啟用上方的開關即可使用。
+Hide the pull down to lock hint	隱藏「下拉鎖定」提示
+# context: summary of that switch; the quoted hint is Facebook's own text on the pill over a video held for 2x, translate it the way Facebook would; the switches above are Hold a reel for 2x's
+Holding a video for 2x shows the plain 2x pill, without the "Pull down to lock 2x speed" hint. Pulling down still locks it. It works without the switches above.	長按影片以 2 倍速播放時只顯示一般的 2x 標籤，不顯示「下拉鎖定 2 倍速」提示。下拉仍可鎖定。不必啟用上方的開關即可使用。
 Default playback quality	預設播放畫質
 Play videos, reels and stories at the quality below. A quality picked in a video's own menu still wins.	以指定畫質播放影片、Reels 與限時動態。在影片本身選單選擇的畫質仍優先使用。
 Playback quality	播放畫質
