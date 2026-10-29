@@ -4,6 +4,10 @@ Changes in each Hushfacebook version, newest first.
 
 ## Unreleased
 
+### Changed
+
+* **Facebook:** With `Debug logging` on, a kept post that wasn't posted to a profile or group now says what it's made of (the kinds of things in its title, share and attachments, never names or text). That's what's needed to find group posts `Hide posts from groups you're not in` still lets through (Refs #195).
+
 ### Fixed
 
 * **Facebook:** `Hide comments under posts` now also hides a pinned comment shown under a post in the feed, along with the Write a comment box it comes with. Facebook draws that comment as part of the comment box, not with the other comment previews, so the switch missed it under friends' posts and group posts. The Comment button still opens the comments as before (Refs #305, #253).

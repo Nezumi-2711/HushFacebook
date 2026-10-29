@@ -20,6 +20,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -302,6 +304,75 @@ public class GroupPostsTest {
             BaseSettings.DEBUG.resetToDefault();
             LogBufferManager.clearLogBuffer();
         }
+    }
+
+    /**
+     * A story posted to no profile and wrapping no story (the third report on #195) gets its shape on
+     * the debug line: the type names its title's ranges point at, its shareable, and each attachment's
+     * target, a group's with its join state. At most {@link GroupPosts#SHAPE_LIMIT} a list, and a post
+     * in a group gets no shape.
+     */
+    @Test
+    public void theDebugLineSaysWhereAStoryPostedToNoProfileNamesAGroup() {
+        BaseSettings.DEBUG.save(true);
+        LogBufferManager.clearLogBuffer();
+        try {
+            Stand stand = new Stand();
+            BaseModelWithTree group = FeedGuardForTests.group();
+            stand.states.put(group, JoinState.CAN_JOIN);
+            BaseModelWithTree user = new BaseModelWithTree("User") { };
+            BaseModelWithTree video = new BaseModelWithTree("Video") { };
+            Object userRange = new Object();
+            Object groupRange = new Object();
+            Map<Object, Object> entities = new IdentityHashMap<>();
+            entities.put(userRange, user);
+            entities.put(groupRange, group);
+            Object toGroup = new Object();
+            Object toVideo = new Object();
+            Map<Object, Object> targets = new IdentityHashMap<>();
+            targets.put(toGroup, group);
+            targets.put(toVideo, video);
+            GraphQLStory story = new GraphQLStory();
+            GraphQLStory longTitle = new GraphQLStory();
+            Object title = new Object();
+            Object manyRanges = new Object();
+            GroupPosts.ShapeReaders shape = new GroupPosts.ShapeReaders(
+                    s -> s == story ? title : s == longTitle ? manyRanges : null,
+                    s -> null,
+                    t -> t == title ? Arrays.asList(userRange, groupRange)
+                            : t == manyRanges ? Collections.nCopies(GroupPosts.SHAPE_LIMIT + 2, userRange) : null,
+                    entities::get,
+                    s -> s == story ? Arrays.asList(toGroup, toVideo) : null,
+                    targets::get,
+                    target -> stand.states.get(target));
+            GroupPosts.Readers readers = new GroupPosts.Readers(stand.targets::get, stand.states::get, s -> null, shape);
+
+            guard(story, readers);
+            guard(longTitle, readers);
+            guard(stand.inGroup(JoinState.MEMBER), readers);
+            String log = LogBufferManager.buildExportText();
+            assertTrue(log, log.contains(" group=" + GroupPosts.NO_TARGET
+                    + " shape=title:User+Group;shareable:-;attachments:Group/CAN_JOIN+Video"));
+            assertTrue(log, log.contains(" shape=title:User+User+User+User+more;shareable:-;attachments:-"));
+            assertTrue(log, log.contains(" group=MEMBER"));
+            assertFalse(log, log.contains(" group=MEMBER shape="));
+            assertNull("the debug line counted as a read of the rule", line(GroupPosts.ROUTE));
+        } finally {
+            BaseSettings.DEBUG.resetToDefault();
+            LogBufferManager.clearLogBuffer();
+        }
+    }
+
+    /** A build whose patch filled none of the shape's accessors says so with a "?" each, and nothing throws. */
+    @Test
+    public void theShapeOfAnUnpatchedBuildSaysSo() {
+        assertEquals("title:?;shareable:?;attachments:?",
+                GroupPosts.shape(new GraphQLStory(), GroupPosts.SHAPE_PATCHED));
+        assertEquals(GroupPosts.RELEASED, GroupPosts.shape(new GraphQLStory().released(), GroupPosts.SHAPE_PATCHED));
+        GroupPosts.ShapeReaders throwing = new GroupPosts.ShapeReaders(s -> {
+            throw new IllegalStateException("tree gone");
+        }, s -> null, t -> null, r -> null, s -> null, a -> null, g -> null);
+        assertEquals(GroupPosts.READ_FAILED, GroupPosts.shape(new GraphQLStory(), throwing));
     }
 
     /** The guard without the readers, as the overloads before this rule call it, leaves the rule out. */

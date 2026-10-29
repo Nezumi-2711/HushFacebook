@@ -81,17 +81,30 @@ public final class GroupPosts {
         final StoryFlag.Accessor target;
         final StoryFlag.Accessor joinState;
         final StoryFlag.Accessor attached;
+        /** What Debug logging reads a story posted to no profile through ({@link #describe}). */
+        final ShapeReaders shape;
 
         Readers(StoryFlag.Accessor target, StoryFlag.Accessor joinState) {
             this(target, joinState, PostText.ATTACHED);
         }
 
         Readers(StoryFlag.Accessor target, StoryFlag.Accessor joinState, StoryFlag.Accessor attached) {
+            this(target, joinState, attached, SHAPE_PATCHED);
+        }
+
+        Readers(StoryFlag.Accessor target, StoryFlag.Accessor joinState, StoryFlag.Accessor attached,
+                ShapeReaders shape) {
             this.target = target;
             this.joinState = joinState;
             this.attached = attached;
+            this.shape = shape;
         }
     }
+
+    // Before PATCHED, which takes it as its default: static fields are set in the order they're written.
+    static final ShapeReaders SHAPE_PATCHED = new ShapeReaders(GroupPosts::storyTitle, GroupPosts::storyShareable,
+            GroupPosts::titleRanges, GroupPosts::rangeEntity, PostSources.ATTACHMENTS, GroupPosts::attachmentTarget,
+            GroupPosts::joinState);
 
     static final Readers PATCHED = new Readers(GroupPosts::storyTarget, GroupPosts::joinState);
 
@@ -112,6 +125,146 @@ public final class GroupPosts {
      */
     public static Object joinState(Object profile) {
         return StoryFlag.NOT_PATCHED;
+    }
+
+    /**
+     * Injection points for Debug logging's {@link #shape}, filled in by the patch. The story's
+     * {@code title} (a GraphQLTextWithEntities), and its {@code shareable}; only a GraphQLStory may
+     * be passed to either.
+     */
+    public static Object storyTitle(Object story) {
+        return StoryFlag.NOT_PATCHED;
+    }
+
+    public static Object storyShareable(Object story) {
+        return StoryFlag.NOT_PATCHED;
+    }
+
+    /** The title's {@code ranges}, a list of models. Only what {@link #storyTitle} answers may be passed. */
+    public static Object titleRanges(Object title) {
+        return StoryFlag.NOT_PATCHED;
+    }
+
+    /** A range's {@code entity}. Only an element of what {@link #titleRanges} answers may be passed. */
+    public static Object rangeEntity(Object range) {
+        return StoryFlag.NOT_PATCHED;
+    }
+
+    /**
+     * An attachment's {@code target}, of the same class as a story's {@code to}, so a target that
+     * is a group can be handed to {@link #joinState}. Only a GraphQLStoryAttachment may be passed.
+     */
+    public static Object attachmentTarget(Object attachment) {
+        return StoryFlag.NOT_PATCHED;
+    }
+
+    /** The accessors {@link #shape} reads through: the stubs above, or stand-ins in a test. */
+    static final class ShapeReaders {
+        final StoryFlag.Accessor title;
+        final StoryFlag.Accessor shareable;
+        final StoryFlag.Accessor ranges;
+        final StoryFlag.Accessor entity;
+        final StoryFlag.Accessor attachments;
+        final StoryFlag.Accessor target;
+        final StoryFlag.Accessor joinState;
+
+        ShapeReaders(StoryFlag.Accessor title, StoryFlag.Accessor shareable, StoryFlag.Accessor ranges,
+                StoryFlag.Accessor entity, StoryFlag.Accessor attachments, StoryFlag.Accessor target,
+                StoryFlag.Accessor joinState) {
+            this.title = title;
+            this.shareable = shareable;
+            this.ranges = ranges;
+            this.entity = entity;
+            this.attachments = attachments;
+            this.target = target;
+            this.joinState = joinState;
+        }
+    }
+
+    /** How many of a list's models {@link #shape} names, so a long title doesn't flood the log. */
+    static final int SHAPE_LIMIT = 4;
+    /** What {@link #shape} writes for a piece whose accessor the patch didn't fill, and for none. */
+    static final String SHAPE_NOT_PATCHED = "?";
+    static final String SHAPE_NONE = "-";
+
+    /**
+     * For Debug logging only: what a story posted to no profile carries that could name a group, as
+     * GraphQL type names and nothing else, never its text or an id. The entities its title's ranges
+     * point at, its {@code shareable}, and each attachment's target, a target that's a group with its
+     * join state: {@code title:User+Group;shareable:-;attachments:Group/CAN_JOIN}. The third report
+     * on #195 (2026-10-29) kept three group posts whose {@code to} and wrapped post were both empty.
+     * Never throws.
+     */
+    static String shape(@Nullable Object story, ShapeReaders readers) {
+        try {
+            if (story == null || FeedFilter.released(story)) return RELEASED;
+            Object title = readers.title.model(story);
+            String titles;
+            if (title == StoryFlag.NOT_PATCHED) {
+                titles = SHAPE_NOT_PATCHED;
+            } else if (title == null || FeedFilter.released(title)) {
+                titles = SHAPE_NONE;
+            } else {
+                titles = typesOf(readers.ranges.model(title), readers.entity, null);
+            }
+            Object shareable = readers.shareable.model(story);
+            String shared = shareable == StoryFlag.NOT_PATCHED ? SHAPE_NOT_PATCHED : typeOf(shareable);
+            String attached = typesOf(readers.attachments.model(story), readers.target, readers.joinState);
+            return "title:" + titles + ";shareable:" + shared + ";attachments:" + attached;
+        } catch (Throwable failure) {
+            return READ_FAILED;
+        }
+    }
+
+    /**
+     * The type names of what [via] answers for each of [list]'s first models, joined with "+", a
+     * group's join state after a "/" when [joinState] is given.
+     */
+    private static String typesOf(@Nullable Object list, StoryFlag.Accessor via,
+            @Nullable StoryFlag.Accessor joinState) {
+        if (list == StoryFlag.NOT_PATCHED) return SHAPE_NOT_PATCHED;
+        if (!(list instanceof java.util.List) || ((java.util.List<?>) list).isEmpty()) return SHAPE_NONE;
+        StringBuilder names = new StringBuilder();
+        int seen = 0;
+        for (Object item : (java.util.List<?>) list) {
+            if (seen++ == SHAPE_LIMIT) {
+                names.append("+more");
+                break;
+            }
+            if (names.length() > 0) names.append('+');
+            if (item == null || FeedFilter.released(item)) {
+                names.append(SHAPE_NONE);
+                continue;
+            }
+            Object model = via.model(item);
+            if (model == StoryFlag.NOT_PATCHED) {
+                names.append(SHAPE_NOT_PATCHED);
+                continue;
+            }
+            String type = typeOf(model);
+            names.append(type);
+            if (joinState != null && GROUP_TYPE.equals(type)) {
+                Object state = joinState.model(model);
+                if (state instanceof Enum) names.append('/').append(((Enum<?>) state).name());
+            }
+        }
+        return names.toString();
+    }
+
+    /** A model's GraphQL type name, or {@link #SHAPE_NONE} for none or one whose tree is gone. */
+    private static String typeOf(@Nullable Object model) {
+        if (model == null || FeedFilter.released(model)) return SHAPE_NONE;
+        String type = FeedFilter.typeName(model);
+        return type == null ? SHAPE_NONE : type;
+    }
+
+    /**
+     * What Debug logging's feed edge line says for the group rule: what {@link #read} found, and for a
+     * story posted to no profile also its {@link #shape}. Not a read of the rule: nothing is counted.
+     */
+    static String describe(@Nullable Object feedUnit, Readers readers) {
+        String found = read(feedUnit, readers);
+        return NO_TARGET.equals(found) ? found + " shape=" + shape(feedUnit, readers.shape) : found;
     }
 
     /**

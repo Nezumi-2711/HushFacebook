@@ -477,7 +477,7 @@ public final class FeedFilter {
                         + (suggestedPatched && DISCOVER_UNIT_TYPE.equals(type)
                                 ? " stories=" + unconnectedStories(feedUnit) : "")
                         + (suggestedPatched && groupReaders != null
-                                ? " group=" + GroupPosts.read(feedUnit, groupReaders) : "")
+                                ? " group=" + GroupPosts.describe(feedUnit, groupReaders) : "")
                         + (aiPatched ? " genai=" + flagValue(GenAiLabel.FLAG, feedUnit, aiAccessor)
                                 + " ailabel=" + flagValue(GenAiLabel.SELF_LABEL, feedUnit, aiLabelAccessor) : "")
                         + (ENGAGEMENT_PROMO.equals(categoryName) ? " qp=" + promotionId(feedUnit) : "")
