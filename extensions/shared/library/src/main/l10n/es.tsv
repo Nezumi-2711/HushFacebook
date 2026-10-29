@@ -2089,5 +2089,17 @@ If your patched Facebook includes Badge and logo colors, the logo will be Facebo
 If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Si tu Facebook parcheado incluye Colores de insignias y logo, las insignias serán %1$s.
 # context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
 If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Si tu Facebook parcheado incluye Colores de insignias y logo, el logo será %1$s.
+# context: title of the row that holds a color code for the selected tab's icon and the line over it in the tab bar
+Selected tab color	Color de la pestaña seleccionada
+# context: dialog message of the Selected tab color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the selected tab's icon and the line over it in the tab bar, like #2ECC71. Leave it blank for Facebook's own.	Un código de color (#RRGGBB) para el icono de la pestaña seleccionada y la línea encima en la barra de pestañas, como #2ECC71. Déjalo vacío para el color de Facebook.
+# context: summary of the Selected tab color row while it's blank
+The selected tab keeps Facebook's color. Type a color code to change it.	La pestaña seleccionada conserva el color de Facebook. Escribe un código de color para cambiarlo.
+# context: summary of the Selected tab color row; %1$s is a color code like #2ECC71
+The selected tab in the tab bar is %1$s. Restart Facebook to see the change.	La pestaña seleccionada en la barra de pestañas es %1$s. Reinicia Facebook para ver el cambio.
+# context: import preview sentence: the file sets the Selected tab color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the selected tab will be Facebook's color.	Si tu Facebook parcheado incluye Colores de insignias y logo, la pestaña seleccionada tendrá el color de Facebook.
+# context: import preview sentence: the file sets the Selected tab color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the selected tab will be %1$s.	Si tu Facebook parcheado incluye Colores de insignias y logo, la pestaña seleccionada será %1$s.
 Hide the emoji row on comments	Ocultar la fila de emojis en los comentarios
 The row of emoji over the comment box goes away. You can still type emoji from your keyboard.	La fila de emojis sobre el cuadro de comentarios desaparece. Puedes seguir escribiendo emojis desde tu teclado.

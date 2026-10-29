@@ -2089,5 +2089,17 @@ If your patched Facebook includes Badge and logo colors, the logo will be Facebo
 If your patched Facebook includes Badge and logo colors, badges will be %1$s.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, sind Badges %1$s.
 # context: import preview sentence: the file sets the Logo color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
 If your patched Facebook includes Badge and logo colors, the logo will be %1$s.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, ist das Logo %1$s.
+# context: title of the row that holds a color code for the selected tab's icon and the line over it in the tab bar
+Selected tab color	Farbe des gewählten Tabs
+# context: dialog message of the Selected tab color row; keep #RRGGBB and #2ECC71 as they are
+A color code (#RRGGBB) for the selected tab's icon and the line over it in the tab bar, like #2ECC71. Leave it blank for Facebook's own.	Ein Farbcode (#RRGGBB) für das Symbol des gewählten Tabs und die Linie darüber in der Tableiste, etwa #2ECC71. Lass das Feld leer für die Farbe von Facebook.
+# context: summary of the Selected tab color row while it's blank
+The selected tab keeps Facebook's color. Type a color code to change it.	Der gewählte Tab behält die Farbe von Facebook. Gib einen Farbcode ein, um das zu ändern.
+# context: summary of the Selected tab color row; %1$s is a color code like #2ECC71
+The selected tab in the tab bar is %1$s. Restart Facebook to see the change.	Der gewählte Tab in der Tableiste ist %1$s. Starte Facebook neu, um die Änderung zu sehen.
+# context: import preview sentence: the file sets the Selected tab color row back to blank; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the selected tab will be Facebook's color.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, hat der gewählte Tab die Farbe von Facebook.
+# context: import preview sentence: the file sets the Selected tab color row; %1$s is a color code like #2ECC71; "Badge and logo colors" is the patch's name, keep it as translated for that patch
+If your patched Facebook includes Badge and logo colors, the selected tab will be %1$s.	Wenn dein gepatchtes Facebook Badge- und Logofarben enthält, ist der gewählte Tab %1$s.
 Hide the emoji row on comments	Emoji-Leiste bei Kommentaren ausblenden
 The row of emoji over the comment box goes away. You can still type emoji from your keyboard.	Die Emoji-Leiste über dem Kommentarfeld verschwindet. Emojis kannst du weiter über deine Tastatur eingeben.

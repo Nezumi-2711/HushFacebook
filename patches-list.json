@@ -132,7 +132,7 @@
     },
     {
       "name": "Badge and logo colors",
-      "description": "Paints the count badges on the tabs and the Facebook logo at the top of Home in colors you pick. Nothing changes until you type a color. Set them in Hushfacebook settings > Appearance.",
+      "description": "Paints the count badges on the tabs, the Facebook logo at the top of Home and the selected tab in colors you pick. Nothing changes until you type a color. Set them in Hushfacebook settings > Appearance.",
       "category": "Theme",
       "use": true,
       "dependencies": [
