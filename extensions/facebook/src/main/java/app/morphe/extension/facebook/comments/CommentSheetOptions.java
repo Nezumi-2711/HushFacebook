@@ -304,6 +304,11 @@ public final class CommentSheetOptions {
     public static boolean holdsPostComments(@Nullable String plugin) {
         try {
             HookStatus.invoked(FAMILY);
+            // Every plugin asked while the switch is on, so a Debug report names the one that drew
+            // a preview the switch missed (#253, #305).
+            if (Utils.settingsReady() && Settings.HIDE_POST_COMMENT_PREVIEWS.get()) {
+                Logger.printDebug(() -> "Under post buttons: " + plugin);
+            }
             if (!INLINE_COMMENTS.equals(plugin) && !INLINE_COMMENTS_DWELL_TIME.equals(plugin)
                     && !INLINE_COMMENTS_CLIENT_RANKING.equals(plugin)) return false;
             HookStatus.bound(FAMILY, POST_COMMENTS);
