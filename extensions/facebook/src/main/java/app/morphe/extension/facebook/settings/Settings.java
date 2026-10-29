@@ -1879,7 +1879,10 @@ public class Settings extends BaseSettings {
     /**
      * The top bar and the tab bar let the feed show through, with a blur of it behind them on
      * Android 12 and newer (#124, {@link app.morphe.extension.facebook.navigation.TranslucentBars}).
-     * Asked as each frame of the main screen draws, so a change shows right away.
+     * Asked as each frame of the main screen draws, so a change shows right away. A kept tab bar is
+     * the exception (#250): with it on, Facebook builds the layout that runs the pages under the bar
+     * as the main screen starts, so there the change waits for a restart, and the settings page
+     * shows its restart row ({@link app.morphe.extension.facebook.navigation.TabBarScrollAway#seeThroughRestartOwed}).
      */
     public static final BooleanSetting TRANSLUCENT_BARS =
             new BooleanSetting("hushfacebook_translucent_bars", FALSE);
