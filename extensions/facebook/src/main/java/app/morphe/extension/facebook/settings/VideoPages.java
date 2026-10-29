@@ -149,6 +149,9 @@ final class VideoPages {
                         L10n.t("Takes this button off the side of reels. The buttons above it move down. "
                                 + "A change shows from the next reel.")));
             }
+            reels.addPreference(toggle(context, Settings.SHOW_REEL_COMMENT_BUTTON,
+                    L10n.t("Keeps the Comment button on reels whose comments are turned off, so you can still read "
+                            + "the ones already there. A change shows from the next reel.")));
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SOUND_BUTTON,
                     L10n.t("Takes the speaker button off the bottom of the side of reels. "
                             + "A change shows from the next reel.")));

@@ -585,6 +585,8 @@ public class PausedHooksTest {
                 () -> ReelDeclutter.hideSidebarButton(SidebarIcon.BOOKMARK),
                 // The direct WhatsApp button has its own switch in the same type walk.
                 () -> ReelDeclutter.hideSidebarButton(SidebarIcon.APP_WHATSAPP),
+                // A reel with comments off gets its Comment button only while the patch runs.
+                () -> ReelDeclutter.showsCommentButton(false),
                 // So is the speaker button under it.
                 () -> !ReelDeclutter.showsSoundButton(true),
                 // And the footer's speaker, when the footer builds it.

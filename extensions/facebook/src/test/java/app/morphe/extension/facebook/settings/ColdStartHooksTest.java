@@ -261,6 +261,8 @@ public class ColdStartHooksTest {
                 ReelDeclutter.hideSlowConnectionMessage());
         assertTrue("a feed Reels row tile lost its clip before the context came off", ReelDeclutter.allowsPreviewClip(true));
         assertEquals("a feed Reels row tile lost its end before the context came off", 1000, ReelDeclutter.previewClipEnd(1000));
+        assertFalse("a reel with comments off got its Comment button before the context came off",
+                ReelDeclutter.showsCommentButton(false));
         Object searchBar = new Object();
         assertSame("a reel's search bar built before the context came off", searchBar,
                 ReelDeclutter.searchBarPart(searchBar));
