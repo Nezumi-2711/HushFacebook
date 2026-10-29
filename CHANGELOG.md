@@ -11,6 +11,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Changed
 
+* **Facebook:** The play/pause and cast buttons on feed videos are smaller now and look like Facebook's own speaker icon, a white symbol on a see-through round background instead of a big dark square. They sit closer to the video's corners and still take a tap as easily (Refs #301).
 * **Facebook:** With `Debug logging` on, a kept post that wasn't posted to a profile or group now says what it's made of (the kinds of things in its title, share and attachments, never names or text). That's what's needed to find group posts `Hide posts from groups you're not in` still lets through (Refs #195).
 
 ### Fixed
