@@ -871,6 +871,17 @@ public final class SettingsEntry {
     }
 
     /**
+     * The same, at [key]'s row, or at the top when this build has no such row. An open that can't
+     * show leaves no row behind for a later one.
+     */
+    public static boolean open(Activity activity, String key) {
+        requestedSetting = key;
+        if (open(activity)) return true;
+        requestedSetting = null;
+        return false;
+    }
+
+    /**
      * After the app lock lets Facebook in: a request the lock held back, from the launcher shortcut
      * or a notification, opens over [activity] now rather than at the next screen.
      */

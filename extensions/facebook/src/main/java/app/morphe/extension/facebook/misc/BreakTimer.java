@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -81,6 +82,12 @@ public final class BreakTimer {
             LEFT = "left_ms", WALL_ENDS_AT = "wall_ends_at", BOOT = "boot";
 
     private static final long NEVER = -1;
+
+    /** Facebook's link for the Menu. */
+    static final String MENU_LINK = "fb://bookmarks";
+
+    /** Facebook's own handler for the links it opens, a manifest component that keeps its name. */
+    static final String URI_HANDLER = "com.facebook.katana.IntentUriHandler";
 
     /** The tabs whose screen is browsing. */
     static final Set<String> BROWSING_TABS = Set.of(FacebookTabs.HOME_CLASS, FacebookTabs.FEEDS_CLASS,
@@ -534,7 +541,7 @@ public final class BreakTimer {
             Button settings = new Button(getContext());
             settings.setText(L10n.t("Break settings"));
             settings.setMinHeight(target);
-            settings.setOnClickListener(view -> SettingsEntry.open(activity));
+            settings.setOnClickListener(view -> SettingsEntry.open(activity, Settings.TAKE_BREAKS.key));
             column.addView(settings);
 
             setContentView(column, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -582,12 +589,16 @@ public final class BreakTimer {
         }
     }
 
-    /** The main screen on its Menu tab, the way Facebook's own tab shortcuts open it. */
+    /**
+     * The Menu, through Facebook's own link for it: its link helper switches the main screen to the
+     * Menu tab where the bar has one, and opens the Menu as a page of its own where it doesn't. On
+     * 585 an account can keep the Menu behind a button at the top with a profile tab in its place on
+     * the bar, and a start of the main screen asking for the Menu tab then stayed on Home, covered.
+     */
     static void toMenu(Activity activity) {
         try {
-            Intent menu = new Intent().setClassName(activity, FacebookTabs.MAIN_TAB_ACTIVITY)
-                    .putExtra(FacebookTabs.TARGET_TAB_ID, FacebookTabs.MENU_ID)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            Intent menu = new Intent(Intent.ACTION_VIEW, Uri.parse(MENU_LINK))
+                    .setClassName(activity.getPackageName(), URI_HANDLER);
             activity.startActivity(menu);
             if (!FacebookTabs.MAIN_TAB_ACTIVITY.equals(activity.getClass().getName())) activity.finish();
         } catch (RuntimeException failure) {

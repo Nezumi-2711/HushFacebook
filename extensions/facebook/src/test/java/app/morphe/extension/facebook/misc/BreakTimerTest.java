@@ -377,13 +377,15 @@ public class BreakTimerTest {
     }
 
     @Test
-    public void goToTheMenuOpensTheMenuTab() {
+    public void goToTheMenuOpensFacebooksMenuLink() {
         Feed feed = onABreak();
         button("Go to the Menu").performClick();
         Intent menu = shadowOf(feed).getNextStartedActivity();
         assertNotNull(menu);
-        assertEquals(FacebookTabs.MAIN_TAB_ACTIVITY, menu.getComponent().getClassName());
-        assertEquals(FacebookTabs.MENU_ID, menu.getLongExtra(FacebookTabs.TARGET_TAB_ID, 0));
+        assertEquals(Intent.ACTION_VIEW, menu.getAction());
+        assertEquals("fb://bookmarks", String.valueOf(menu.getData()));
+        assertEquals("com.facebook.katana.IntentUriHandler", menu.getComponent().getClassName());
+        assertFalse("asked the main screen for a tab its bar may not have", menu.hasExtra(FacebookTabs.TARGET_TAB_ID));
         assertTrue("a page under the main screen was left open", feed.isFinishing());
     }
 
