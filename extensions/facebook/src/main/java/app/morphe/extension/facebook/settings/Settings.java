@@ -22,6 +22,7 @@ import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.reels.FeedVideoControls;
 import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
 import app.morphe.extension.facebook.feed.ReactionCeiling;
@@ -1643,6 +1644,14 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting CLOSE_WHEN_LEFT =
             new BooleanSetting("hushfacebook_close_when_left", FALSE);
 
+    /**
+     * Opening Facebook from its icon puts a cover that counts down {@link #OPENING_PAUSE_LENGTH}
+     * over its first screen ({@link app.morphe.extension.facebook.misc.OpeningPause}). The settings
+     * entry's own switch, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off by default.
+     */
+    public static final BooleanSetting OPENING_PAUSE =
+            new BooleanSetting("hushfacebook_opening_pause", FALSE);
+
     static {
         // The crash handler is the shared library's, which can't name this class.
         CrashFile.useSwitch(SAVE_CRASH_FILE);
@@ -2314,6 +2323,11 @@ public class Settings extends BaseSettings {
      */
     public static final EnumSetting<AppLock.After> APP_LOCK_AFTER =
             new EnumSetting<>("hushfacebook_app_lock_after", AppLock.After.ONE_MINUTE, Setting.parent(APP_LOCK));
+
+    /** How long {@link #OPENING_PAUSE}'s cover counts down before Open now works. It isn't a switch. */
+    public static final EnumSetting<OpeningPause.Length> OPENING_PAUSE_LENGTH =
+            new EnumSetting<>("hushfacebook_opening_pause_length", OpeningPause.Length.FIVE_SECONDS,
+                    Setting.parent(OPENING_PAUSE));
 
     static {
         // The lock guards the phone's owner rather than changing Facebook, so no pause opens it: not

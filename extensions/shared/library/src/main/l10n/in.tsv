@@ -2158,3 +2158,29 @@ Your list of feed types to hide will be empty.	Daftar jenis feed yang disembunyi
 Your list of feed types to hide will hold %1$d type.	Daftar jenis feed yang disembunyikan akan berisi %1$d jenis.
 # context: import preview and toast, several feed types will be in that list after the import
 Your list of feed types to hide will hold %1$d types.	Daftar jenis feed yang disembunyikan akan berisi %1$d jenis.
+# context: title of the full screen cover the Opening pause puts over Facebook's first screen when it's opened from its icon
+Still want to open Facebook?	Masih mau membuka Facebook?
+# context: line under that title while it counts down, one second left before the Open now button works
+You can open it in %1$d second.	Kamu bisa membukanya dalam %1$d detik.
+# context: line under that title while it counts down, several seconds left before the Open now button works
+You can open it in %1$d seconds.	Kamu bisa membukanya dalam %1$d detik.
+# context: line under that title once the countdown is over and both buttons work
+Open it, or close it and do something else.	Buka, atau tutup lalu lakukan hal lain.
+# context: button on that cover that shows Facebook, working only once the countdown is over
+Open now	Buka sekarang
+# context: button on that cover that sends Facebook to the background
+Close	Tutup
+# context: switch title in the Opening Facebook settings: a short countdown before Facebook shows when it's opened from its icon
+Opening pause	Jeda saat membuka
+# context: that switch's summary
+Opening Facebook from its icon shows a short countdown first, so you can change your mind. Links, notifications and shares open it straight away, and so does coming back within a minute.	Membuka Facebook dari ikonnya menampilkan hitung mundur singkat dulu, supaya kamu bisa berubah pikiran. Tautan, notifikasi, dan berbagi langsung membukanya, begitu juga kembali dalam satu menit.
+# context: row title and list title under that switch: how long the countdown lasts
+Pause length	Lama jeda
+# context: a choice in that list
+5 seconds	5 detik
+# context: a choice in that list
+10 seconds	10 detik
+# context: that row's summary; Open now is the cover's button and %1$s is the chosen length, such as 5 seconds
+Open now works after %1$s.	Buka sekarang bisa dipakai setelah %1$s.
+# context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
+With Opening pause on, Facebook will wait %1$s before it opens.	Dengan Jeda saat membuka aktif, Facebook akan menunggu %1$s sebelum terbuka.

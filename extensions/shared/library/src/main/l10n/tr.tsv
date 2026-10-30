@@ -2158,3 +2158,29 @@ Your list of feed types to hide will be empty.	Gizlenecek akış türleri listen
 Your list of feed types to hide will hold %1$d type.	Gizlenecek akış türleri listen %1$d tür içerecek.
 # context: import preview and toast, several feed types will be in that list after the import
 Your list of feed types to hide will hold %1$d types.	Gizlenecek akış türleri listen %1$d tür içerecek.
+# context: title of the full screen cover the Opening pause puts over Facebook's first screen when it's opened from its icon
+Still want to open Facebook?	Facebook'u yine de açmak istiyor musun?
+# context: line under that title while it counts down, one second left before the Open now button works
+You can open it in %1$d second.	%1$d saniye sonra açabilirsin.
+# context: line under that title while it counts down, several seconds left before the Open now button works
+You can open it in %1$d seconds.	%1$d saniye sonra açabilirsin.
+# context: line under that title once the countdown is over and both buttons work
+Open it, or close it and do something else.	Aç ya da kapatıp başka bir şey yap.
+# context: button on that cover that shows Facebook, working only once the countdown is over
+Open now	Şimdi aç
+# context: button on that cover that sends Facebook to the background
+Close	Kapat
+# context: switch title in the Opening Facebook settings: a short countdown before Facebook shows when it's opened from its icon
+Opening pause	Açılış molası
+# context: that switch's summary
+Opening Facebook from its icon shows a short countdown first, so you can change your mind. Links, notifications and shares open it straight away, and so does coming back within a minute.	Facebook'u simgesinden açınca önce kısa bir geri sayım çıkar, böylece fikrini değiştirebilirsin. Bağlantılar, bildirimler ve paylaşımlar onu hemen açar, bir dakika içinde geri dönmek de öyle.
+# context: row title and list title under that switch: how long the countdown lasts
+Pause length	Mola süresi
+# context: a choice in that list
+5 seconds	5 saniye
+# context: a choice in that list
+10 seconds	10 saniye
+# context: that row's summary; Open now is the cover's button and %1$s is the chosen length, such as 5 seconds
+Open now works after %1$s.	Şimdi aç düğmesi %1$s sonra çalışır.
+# context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
+With Opening pause on, Facebook will wait %1$s before it opens.	Açılış molası açıkken Facebook açılmadan önce %1$s bekler.

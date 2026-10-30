@@ -306,6 +306,8 @@ public class PausedHooksTest {
         probes.put(Settings.SAVE_CRASH_FILE, app.morphe.extension.shared.settings.preference.CrashFileForTests::aCrashWritesAFile);
         // Leaving Facebook ends its processes a few seconds later.
         probes.put(Settings.CLOSE_WHEN_LEFT, app.morphe.extension.facebook.misc.CloseWhenLeftForTests::aLeaveCloses);
+        // A start from Facebook's icon puts the countdown cover over its first screen.
+        probes.put(Settings.OPENING_PAUSE, app.morphe.extension.facebook.misc.OpeningPauseForTests::aLaunchCovers);
         return probes;
     }
 

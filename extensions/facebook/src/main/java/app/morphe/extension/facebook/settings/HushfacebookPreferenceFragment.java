@@ -61,6 +61,7 @@ import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.HeaderText;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.menu.MenuTiles;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
@@ -85,6 +86,7 @@ import app.morphe.extension.facebook.settings.ValueRows.CommentOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.ReelsOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.LockAfterRow;
 import app.morphe.extension.facebook.settings.ValueRows.SeenKeepRow;
+import app.morphe.extension.facebook.settings.ValueRows.PauseLengthRow;
 import app.morphe.extension.facebook.settings.ValueRows.AccentRow;
 import app.morphe.extension.facebook.settings.ValueRows.BackgroundRow;
 import app.morphe.extension.facebook.settings.ValueRows.HeaderTextRow;
@@ -1571,6 +1573,40 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     }
 
     /**
+     * How long the opening pause counts down. Like the lock row, its values are the setting's own
+     * names and its summary says what the choice does.
+     */
+    static PauseLengthRow pauseLengthRow(Context context) {
+        PauseLengthRow row = new PauseLengthRow(context);
+        row.setKey(Settings.OPENING_PAUSE_LENGTH.key);
+        row.setTitle(L10n.t("Pause length"));
+        row.setDialogTitle(L10n.t("Pause length"));
+        // Android's own Cancel follows the activity's language, as the other lists' did.
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        OpeningPause.Length[] choices = OpeningPause.Length.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = pauseLengthLabel(choices[i]);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.OPENING_PAUSE_LENGTH.savedValue().name());
+        return row;
+    }
+
+    /** What the list and the sentences about it call [length]. */
+    static String pauseLengthLabel(OpeningPause.Length length) {
+        return length == OpeningPause.Length.TEN_SECONDS ? L10n.t("10 seconds") : L10n.t("5 seconds");
+    }
+
+    /** What the choice does, for the row's summary. */
+    static String pauseLengthSummary(OpeningPause.Length length) {
+        return L10n.f("Open now works after %1$s.", pauseLengthLabel(length));
+    }
+
+    /**
      * How large Facebook's text is. Like the comment order row, its values are the setting's own
      * names and its summary says what the choice does.
      */
@@ -2092,6 +2128,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             ((LockAfterRow) listPreference).showSummary();
         } else if (listPreference instanceof SeenKeepRow) {
             ((SeenKeepRow) listPreference).showSummary();
+        } else if (listPreference instanceof PauseLengthRow) {
+            ((PauseLengthRow) listPreference).showSummary();
         } else if (listPreference instanceof TextSizeRow) {
             ((TextSizeRow) listPreference).showSummary();
         } else if (listPreference instanceof AccentRow) {

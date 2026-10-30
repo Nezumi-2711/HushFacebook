@@ -1209,13 +1209,17 @@ public class HushfacebookPreferenceFragmentTest {
             controller.get().getFragmentManager().beginTransaction().add(android.R.id.content, page).commitNow();
             List<Preference> rows = new ArrayList<>();
             collect(page.getPreferenceScreen(), rows);
-            // Right under the status card and the section jump: the heading, the switch, then the list.
+            // Right under the status card and the section jump: the heading, the opening pause and
+            // its length, the switch, then the list.
             assertEquals("Jump to a section", String.valueOf(page.getPreferenceScreen().getPreference(1).getTitle()));
             assertEquals("Opening Facebook", String.valueOf(page.getPreferenceScreen().getPreference(2).getTitle()));
-            assertEquals(Settings.OPEN_ON_CHOSEN_TAB.key, rows.get(2).getKey());
-            assertEquals("Open on a chosen tab", String.valueOf(rows.get(2).getTitle()));
-            assertTrue(rows.get(3) instanceof ValueRows.StartTabRow);
-            ValueRows.StartTabRow start = (ValueRows.StartTabRow) rows.get(3);
+            assertEquals(Settings.OPENING_PAUSE.key, rows.get(2).getKey());
+            assertTrue(rows.get(3) instanceof ValueRows.PauseLengthRow);
+            assertFalse("the length works with the pause off", rows.get(3).isEnabled());
+            assertEquals(Settings.OPEN_ON_CHOSEN_TAB.key, rows.get(4).getKey());
+            assertEquals("Open on a chosen tab", String.valueOf(rows.get(4).getTitle()));
+            assertTrue(rows.get(5) instanceof ValueRows.StartTabRow);
+            ValueRows.StartTabRow start = (ValueRows.StartTabRow) rows.get(5);
             assertEquals(Settings.START_TAB.key, start.getKey());
             assertEquals("Tab to open on", String.valueOf(start.getTitle()));
 
@@ -1274,9 +1278,9 @@ public class HushfacebookPreferenceFragmentTest {
             controller.get().getFragmentManager().beginTransaction().add(android.R.id.content, page).commitNow();
             List<Preference> rows = new ArrayList<>();
             collect(page.getPreferenceScreen(), rows);
-            assertTrue(rows.get(3) instanceof ValueRows.StartTabRow);
-            assertTrue(rows.get(4) instanceof ValueRows.FeedsSubtabRow);
-            ValueRows.FeedsSubtabRow subtab = (ValueRows.FeedsSubtabRow) rows.get(4);
+            assertTrue(rows.get(5) instanceof ValueRows.StartTabRow);
+            assertTrue(rows.get(6) instanceof ValueRows.FeedsSubtabRow);
+            ValueRows.FeedsSubtabRow subtab = (ValueRows.FeedsSubtabRow) rows.get(6);
             assertEquals(Settings.FEEDS_SUBTAB.key, subtab.getKey());
             assertEquals("Feeds opens on", String.valueOf(subtab.getTitle()));
 

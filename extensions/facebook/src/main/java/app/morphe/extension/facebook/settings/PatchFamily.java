@@ -323,7 +323,8 @@ public enum PatchFamily {
     /**
      * The switches of the settings entry itself, which no family owns: every build with this screen
      * carries them. These are the release check, the Saved, Watch history, Free stuff and settings
-     * shortcuts, the logo press and Menu row that open the settings, and Lock Facebook. Pause turns them
+     * shortcuts, the logo press and Menu row that open the settings, Lock Facebook, the crash file,
+     * Close Facebook when you leave it and the Opening pause. Pause turns them
      * off like a family's switches, so the screen draws them above the Pause row with the rest, but for
      * Lock Facebook and the three ways into the settings, which a pause leaves as they are.
      */
@@ -332,7 +333,7 @@ public enum PatchFamily {
                     Settings.WATCH_HISTORY_SHORTCUT, Settings.FREE_STUFF_SHORTCUT, Settings.SETTINGS_SHORTCUT,
                     Settings.SETTINGS_LOGO_PRESS,
                     Settings.SETTINGS_MENU_ROW, Settings.APP_LOCK,
-                    Settings.SAVE_CRASH_FILE, Settings.CLOSE_WHEN_LEFT));
+                    Settings.SAVE_CRASH_FILE, Settings.CLOSE_WHEN_LEFT, Settings.OPENING_PAUSE));
 
     /**
      * The switches the download patches share and none of them owns: each shapes what every

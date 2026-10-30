@@ -58,6 +58,7 @@ import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.notifications.QuietHour;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.feed.ReactionCeiling;
@@ -414,6 +415,9 @@ public class SettingsBackupPreference extends Preference {
                 parts.add(L10n.f("Posts you've seen will stay hidden for %1$s.",
                         HushfacebookPreferenceFragment.seenKeepLabel(snapshot.seenKeep)));
             }
+            if (snapshot.pauseLength != null && snapshot.changes().containsKey(SettingsBackup.PAUSE_LENGTH)) {
+                parts.add(pauseLengthSentence(snapshot.pauseLength));
+            }
             message = String.join("\n\n", parts);
         }
         if (snapshot.unknown > 0) {
@@ -588,6 +592,12 @@ public class SettingsBackupPreference extends Preference {
         if (after == AppLock.After.IMMEDIATELY) return L10n.t("With Lock Facebook on, it will lock as soon as you leave it.");
         return L10n.f("With Lock Facebook on, it will lock once you've been away for %1$s.",
                 HushfacebookPreferenceFragment.lockAfterLabel(after));
+    }
+
+    /** The sentence that says how long the opening pause counts down, after an import. */
+    static String pauseLengthSentence(OpeningPause.Length length) {
+        return L10n.f("With Opening pause on, Facebook will wait %1$s before it opens.",
+                HushfacebookPreferenceFragment.pauseLengthLabel(length));
     }
 
     /** The sentence that says what the feed will do about a post's reaction count after an import. */
@@ -971,7 +981,9 @@ public class SettingsBackupPreference extends Preference {
                     + (snapshot.badgeChange() == null ? "" : " " + markColorSentence(Mark.BADGE, snapshot.badgeChange()))
                     + (snapshot.logoChange() == null ? "" : " " + markColorSentence(Mark.LOGO, snapshot.logoChange()))
                     + (snapshot.tabChange() == null ? "" : " " + markColorSentence(Mark.TAB, snapshot.tabChange()))
-                    + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()));
+                    + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()))
+                    + (snapshot.pauseLength == null || !snapshot.changes().containsKey(SettingsBackup.PAUSE_LENGTH) ? ""
+                            : " " + pauseLengthSentence(snapshot.pauseLength));
             accepted = Utils.runOnBackgroundThread(() -> {
                 try {
                     SettingsBackup.apply(snapshot);

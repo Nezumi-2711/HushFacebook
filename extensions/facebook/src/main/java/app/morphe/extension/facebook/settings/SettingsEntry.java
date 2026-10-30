@@ -59,6 +59,7 @@ import app.morphe.extension.facebook.media.TapToPlay;
 import app.morphe.extension.facebook.misc.AppIcons;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.CloseWhenLeft;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ScreenTransitions;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.navigation.HiddenStatusBar;
@@ -160,6 +161,8 @@ public final class SettingsEntry {
             AppLock.watch(context);
             // Close Facebook when you leave it (#202): when the last screen goes to the background.
             CloseWhenLeft.watch(context);
+            // The opening pause, after the lock's, so on a resume it knows whether the lock covers.
+            OpeningPause.watch(context);
             ReturnRefresh.register(context);
             watchLauncherChanges(context);
             TextSize.application(context);
@@ -179,7 +182,8 @@ public final class SettingsEntry {
             // An Audience Network component an earlier install turned on goes back off (#168).
             if (SettingsStatus.audienceNetwork()) AudienceNetwork.keepOff(context);
             // Last, so nothing above waits on it. The open itself waits for the first screen to resume.
-            ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn);
+            // A settings restart starts like a tap on the icon, and opens without the opening pause.
+            if (ReopenSettingsAfterRestart.reopenIfPending(SettingsEntry::reopenOn)) OpeningPause.restarted();
         } catch (Throwable ex) {
             // Throwable, as in every hook: an Error here, from a class that fails to load or set
             // itself up, would end Facebook at every start, paused or not.
@@ -479,6 +483,7 @@ public final class SettingsEntry {
             SavedFileActions.receive(intent);
             AuditMode.noteIntent(activity, intent);
             noteIntent(activity, intent);
+            OpeningPause.newIntent(intent);
         } catch (Throwable ex) {
             Logger.printException(() -> "Settings entry: onNewIntent failure", ex);
         }

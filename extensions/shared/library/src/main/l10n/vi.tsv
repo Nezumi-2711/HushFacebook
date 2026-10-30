@@ -2158,3 +2158,29 @@ Your list of feed types to hide will be empty.	Danh sách loại bảng tin cầ
 Your list of feed types to hide will hold %1$d type.	Danh sách loại bảng tin cần ẩn sẽ có %1$d loại.
 # context: import preview and toast, several feed types will be in that list after the import
 Your list of feed types to hide will hold %1$d types.	Danh sách loại bảng tin cần ẩn sẽ có %1$d loại.
+# context: title of the full screen cover the Opening pause puts over Facebook's first screen when it's opened from its icon
+Still want to open Facebook?	Bạn vẫn muốn mở Facebook?
+# context: line under that title while it counts down, one second left before the Open now button works
+You can open it in %1$d second.	Bạn có thể mở sau %1$d giây.
+# context: line under that title while it counts down, several seconds left before the Open now button works
+You can open it in %1$d seconds.	Bạn có thể mở sau %1$d giây.
+# context: line under that title once the countdown is over and both buttons work
+Open it, or close it and do something else.	Hãy mở, hoặc đóng lại và làm việc khác.
+# context: button on that cover that shows Facebook, working only once the countdown is over
+Open now	Mở ngay
+# context: button on that cover that sends Facebook to the background
+Close	Đóng
+# context: switch title in the Opening Facebook settings: a short countdown before Facebook shows when it's opened from its icon
+Opening pause	Tạm dừng khi mở
+# context: that switch's summary
+Opening Facebook from its icon shows a short countdown first, so you can change your mind. Links, notifications and shares open it straight away, and so does coming back within a minute.	Khi mở Facebook từ biểu tượng, một bộ đếm ngược ngắn hiện ra trước để bạn có thể đổi ý. Liên kết, thông báo và nội dung chia sẻ mở ngay, quay lại trong vòng một phút cũng vậy.
+# context: row title and list title under that switch: how long the countdown lasts
+Pause length	Thời lượng tạm dừng
+# context: a choice in that list
+5 seconds	5 giây
+# context: a choice in that list
+10 seconds	10 giây
+# context: that row's summary; Open now is the cover's button and %1$s is the chosen length, such as 5 seconds
+Open now works after %1$s.	Mở ngay dùng được sau %1$s.
+# context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
+With Opening pause on, Facebook will wait %1$s before it opens.	Khi bật Tạm dừng khi mở, Facebook sẽ chờ %1$s trước khi mở.

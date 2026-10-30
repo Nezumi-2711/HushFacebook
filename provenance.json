@@ -1153,6 +1153,15 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/OpeningPause.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: Opening pause, a cover over Facebook's first screen when it's opened from its launcher icon that counts down 5 or 10 seconds before Open now works, while Close or Back sends Facebook away. Like Lock Facebook it runs from the settings entry's activity callbacks rather than a patch, so links, notifications and shares open straight away."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/TextSize.java"
       ],
       "origin": "original",

@@ -46,6 +46,7 @@ import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.HeaderText;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.feed.ReactionCeiling;
@@ -313,6 +314,7 @@ public final class SettingsBackup {
             Settings.APP_LOCK,
             Settings.SAVE_CRASH_FILE,
             Settings.CLOSE_WHEN_LEFT,
+            Settings.OPENING_PAUSE,
             Settings.MARKETPLACE_ONLY,
             Settings.EVENTS_ONLY,
             Settings.MARKETPLACE_QUIET_NOTIFICATIONS,
@@ -546,6 +548,12 @@ public final class SettingsBackup {
     static final EnumSetting<AppLock.After> LOCK_AFTER = Settings.APP_LOCK_AFTER;
 
     /**
+     * How long the opening pause counts down, held in a file as its
+     * {@link OpeningPause.Length#fileValue}. Anything else refuses the whole file, as a lock time does.
+     */
+    static final EnumSetting<OpeningPause.Length> PAUSE_LENGTH = Settings.OPENING_PAUSE_LENGTH;
+
+    /**
      * How long a seen post stays hidden, held in a file as its {@link SeenPosts.Keep#fileValue}.
      * Anything else refuses the whole file, as a lock time does. The list of seen posts itself is
      * never carried: it stays on the phone.
@@ -597,7 +605,7 @@ public final class SettingsBackup {
     static final List<Setting<?>> VALUES = Collections.unmodifiableList(
             Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, FEED_TYPES, CEILING, REELS_ORDER, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
                     FILE_NAME, PHOTO_NAME, ACTION, APP, START, SUBTAB, ORDER, PLAYBACK, REELS_QUALITY, STORIES_QUALITY,
-                    QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, TEXT_SIZE, ACCENT, BADGE, LOGO, TAB));
+                    QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, PAUSE_LENGTH, TEXT_SIZE, ACCENT, BADGE, LOGO, TAB));
 
     /** The longest name or value a file holds that isn't a word list, far past a package name. */
     private static final int MAX_OTHER_CHARS = 1024;
@@ -699,6 +707,7 @@ public final class SettingsBackup {
         private static final String QUIET_UNTIL_NAME = "quiet_hours_until";
         private static final String LOCK_AFTER_NAME = "app_lock_after";
         private static final String SEEN_KEEP_NAME = "seen_posts_keep";
+        private static final String PAUSE_LENGTH_NAME = "opening_pause_length";
         private static final String TEXT_SIZE_NAME = "text_size";
         private static final String ACCENT_NAME = "accent_color";
         private static final String CEILING_NAME = "hide_posts_over_reactions";
@@ -791,6 +800,9 @@ public final class SettingsBackup {
         /** How long the file says a seen post stays hidden, or null when it names none. Set once, as it's read. */
         @Nullable
         SeenPosts.Keep seenKeep;
+        /** How long the file says the opening pause counts down, or null when it names none. Set once, as it's read. */
+        @Nullable
+        OpeningPause.Length pauseLength;
         /** The clean list of share sheet items to hide the file holds, or null when it names none. Set once, as it's read. */
         @Nullable
         String shareItems;
@@ -1027,6 +1039,7 @@ public final class SettingsBackup {
             if (quietUntilChange != null) changes.put(QUIET_UNTIL, quietUntilChange);
             AppLock.After lockAfterChange = lockAfterChange();
             if (lockAfterChange != null) changes.put(LOCK_AFTER, lockAfterChange);
+            if (pauseLength != null && pauseLength != PAUSE_LENGTH.savedValue()) changes.put(PAUSE_LENGTH, pauseLength);
             TextSize.Scale textSizeChange = textSizeChange();
             if (textSizeChange != null) changes.put(TEXT_SIZE, textSizeChange);
             AccentColor.Preset accentChange = accentChange();
@@ -1356,6 +1369,7 @@ public final class SettingsBackup {
             if (accent != null) state.putString(ACCENT_NAME, accent.fileValue);
             if (ceiling != null) state.putString(CEILING_NAME, ceiling.fileValue);
             if (seenKeep != null) state.putString(SEEN_KEEP_NAME, seenKeep.fileValue);
+            if (pauseLength != null) state.putString(PAUSE_LENGTH_NAME, pauseLength.fileValue);
             if (shareItems != null) state.putString(SHARE_ITEMS_NAME, shareItems);
             if (menuTiles != null) state.putString(MENU_TILES_NAME, menuTiles);
             if (feedTypes != null) state.putString(FEED_TYPES_NAME, feedTypes);
@@ -1420,6 +1434,7 @@ public final class SettingsBackup {
                     ReactionCeiling.fromFile(state.get(CEILING_NAME)),
                     unknown);
             read.seenKeep = SeenPosts.Keep.fromFile(state.get(SEEN_KEEP_NAME));
+            read.pauseLength = OpeningPause.Length.fromFile(state.get(PAUSE_LENGTH_NAME));
             Object shareItems = state.get(SHARE_ITEMS_NAME);
             read.shareItems = shareItems instanceof String && ShareSheetItems.isClean((String) shareItems)
                     ? (String) shareItems : null;
@@ -1499,6 +1514,7 @@ public final class SettingsBackup {
             switches.put(QUIET_FROM.key, of(QUIET_FROM).fileValue());
             switches.put(QUIET_UNTIL.key, of(QUIET_UNTIL).fileValue());
             switches.put(LOCK_AFTER.key, of(LOCK_AFTER).fileValue);
+            switches.put(PAUSE_LENGTH.key, of(PAUSE_LENGTH).fileValue);
             switches.put(SEEN_KEEP.key, of(SEEN_KEEP).fileValue);
             switches.put(TEXT_SIZE.key, of(TEXT_SIZE).fileValue);
             switches.put(ACCENT.key, of(ACCENT).fileValue);
@@ -1643,6 +1659,7 @@ public final class SettingsBackup {
         QuietHour quietUntil = null;
         AppLock.After lockAfter = null;
         SeenPosts.Keep seenKeep = null;
+        OpeningPause.Length pauseLength = null;
         TextSize.Scale textSize = null;
         AccentColor.Preset accent = null;
         ReactionCeiling ceiling = null;
@@ -1793,6 +1810,11 @@ public final class SettingsBackup {
                 if (lockAfter == null) throw new Rejected(Reason.VALUE, "Not an app lock time: " + name);
                 continue;
             }
+            if (PAUSE_LENGTH.key.equals(name)) {
+                pauseLength = OpeningPause.Length.fromFile(values.opt(name));
+                if (pauseLength == null) throw new Rejected(Reason.VALUE, "Not an opening pause length: " + name);
+                continue;
+            }
             if (TEXT_SIZE.key.equals(name)) {
                 textSize = TextSize.Scale.fromFile(values.opt(name));
                 if (textSize == null) throw new Rejected(Reason.VALUE, "Not a text size: " + name);
@@ -1904,6 +1926,7 @@ public final class SettingsBackup {
                 subtab, sources, photoName, videoSubfolder, photoSubfolder, reelsQuality, storiesQuality, quietFrom,
                 quietUntil, lockAfter, textSize, accent, ceiling, unknown);
         read.seenKeep = seenKeep;
+        read.pauseLength = pauseLength;
         read.shareItems = shareItems;
         read.menuTiles = menuTiles;
         read.feedTypes = feedTypes;

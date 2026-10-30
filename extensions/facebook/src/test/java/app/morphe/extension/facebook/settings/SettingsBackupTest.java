@@ -87,6 +87,7 @@ import app.morphe.extension.facebook.feed.WordsCorpus;
 import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.theme.AccentColor;
@@ -208,6 +209,7 @@ public class SettingsBackupTest {
         Settings.QUIET_HOURS_FROM.resetToDefault();
         Settings.QUIET_HOURS_UNTIL.resetToDefault();
         Settings.APP_LOCK_AFTER.resetToDefault();
+        Settings.OPENING_PAUSE_LENGTH.resetToDefault();
         Settings.TEXT_SIZE.resetToDefault();
         Settings.ACCENT_COLOR.resetToDefault();
         Settings.VIDEO_SUBFOLDER.resetToDefault();
@@ -276,7 +278,7 @@ public class SettingsBackupTest {
                 Settings.FILENAME_TEMPLATE, Settings.PHOTO_FILENAME_TEMPLATE, Settings.DOWNLOAD_ACTION, Settings.SEND_TO_APP,
                 Settings.START_TAB, Settings.FEEDS_SUBTAB, Settings.COMMENT_ORDER, Settings.PLAYBACK_QUALITY,
                 Settings.REELS_PLAYBACK_QUALITY, Settings.STORIES_PLAYBACK_QUALITY, Settings.QUIET_HOURS_FROM,
-                Settings.QUIET_HOURS_UNTIL, Settings.APP_LOCK_AFTER, Settings.TEXT_SIZE, Settings.ACCENT_COLOR, Settings.BADGE_COLOR, Settings.LOGO_COLOR, Settings.TAB_COLOR), SettingsBackup.VALUES);
+                Settings.QUIET_HOURS_UNTIL, Settings.APP_LOCK_AFTER, Settings.OPENING_PAUSE_LENGTH, Settings.TEXT_SIZE, Settings.ACCENT_COLOR, Settings.BADGE_COLOR, Settings.LOGO_COLOR, Settings.TAB_COLOR), SettingsBackup.VALUES);
         assertEquals(Settings.SAVE_TO, SettingsBackup.TO);
         assertEquals(Settings.HIDDEN_WORDS, SettingsBackup.HIDDEN);
         assertEquals(Settings.KEPT_WORDS, SettingsBackup.KEPT);
@@ -2534,6 +2536,62 @@ public class SettingsBackupTest {
         assertEquals("Settings imported. With Lock Facebook on, it will lock once you've been away for 1 hour.",
                 SettingsBackupPreference.importedMessage(0, null, null, null, null, null, null, null, null, null, null,
                         null, null, null, null, null, null, null, null, null, null, AppLock.After.ONE_HOUR));
+    }
+
+    /**
+     * The opening pause's length goes out as its file value and comes back only as one this build
+     * offers: any other value refuses the whole file. The switch rides with the other switches.
+     */
+    @Test
+    public void theOpeningPauseLengthRoundTripsAndComesBackOnlyAsOneThisBuildOffers() throws Exception {
+        assertTrue(SettingsBackup.ALLOWLIST.contains(Settings.OPENING_PAUSE));
+        for (OpeningPause.Length choice : OpeningPause.Length.values()) {
+            OpeningPause.Length other = choice == OpeningPause.Length.TEN_SECONDS
+                    ? OpeningPause.Length.FIVE_SECONDS : OpeningPause.Length.TEN_SECONDS;
+            Settings.OPENING_PAUSE_LENGTH.save(choice);
+            String file = SettingsBackup.create();
+            assertEquals(choice.fileValue, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.PAUSE_LENGTH.key));
+            Settings.OPENING_PAUSE_LENGTH.save(other);
+
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+            assertEquals(choice, snapshot.pauseLength);
+            Map<Setting<?>, Object> expected = new LinkedHashMap<>();
+            expected.put(SettingsBackup.PAUSE_LENGTH, choice);
+            assertEquals(expected, snapshot.changes());
+            assertEquals(1, SettingsBackup.apply(snapshot));
+            assertEquals(choice, Settings.OPENING_PAUSE_LENGTH.savedValue());
+            assertEquals("a file read back is the file", file, SettingsBackup.create());
+        }
+
+        Settings.OPENING_PAUSE_LENGTH.save(OpeningPause.Length.TEN_SECONDS);
+        String file = SettingsBackup.create();
+        Map<String, ?> before = store();
+        for (Object refused : new Object[]{"TEN_SECONDS", "10 seconds", "15_seconds", "", 10, true, JSONObject.NULL}) {
+            JSONObject hostile = new JSONObject(file);
+            hostile.getJSONObject("settings").put(SettingsBackup.PAUSE_LENGTH.key, refused);
+            try {
+                SettingsBackup.parse(hostile.toString());
+                fail("a file with the pause length " + printable(String.valueOf(refused)) + " was read");
+            } catch (SettingsBackup.Rejected rejected) {
+                assertEquals(printable(String.valueOf(refused)), SettingsBackup.Reason.VALUE, rejected.reason);
+            }
+        }
+        assertEquals("a refused file wrote something", before, store());
+
+        // A file from before the length was carried leaves it alone.
+        SettingsBackup.Snapshot older = SettingsBackup.parse(fileWith(Settings.HIDE_SUGGESTED_POSTS, false));
+        assertNull(older.pauseLength);
+        SettingsBackup.apply(older);
+        assertEquals(OpeningPause.Length.TEN_SECONDS, Settings.OPENING_PAUSE_LENGTH.savedValue());
+
+        // A preview kept across a rebuild keeps it, and only one this build offers comes back.
+        Bundle state = SettingsBackup.parse(file).toBundle();
+        assertEquals(OpeningPause.Length.TEN_SECONDS, SettingsBackup.Snapshot.fromBundle(state).pauseLength);
+        state.putString("opening_pause_length", "TEN_SECONDS");
+        assertNull(SettingsBackup.Snapshot.fromBundle(state).pauseLength);
+
+        assertEquals("With Opening pause on, Facebook will wait 10 seconds before it opens.",
+                SettingsBackupPreference.pauseLengthSentence(OpeningPause.Length.TEN_SECONDS));
     }
 
     /**
