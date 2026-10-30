@@ -509,6 +509,12 @@ final class FeedPages {
                 stories.addPreference(toggle(context, Settings.HIDE_STORY_PROMPTS,
                         L10n.t("Hides cards beside Create story that suggest a story to make, like Share music you love. Applies "
                                 + "when Facebook next loads the tray.")));
+                stories.addPreference(toggle(context, Settings.HIDE_PAGE_STORIES,
+                        L10n.t("Shows only people's stories in the Stories tray, without the Pages you follow. Applies when "
+                                + "Facebook next loads the tray.")));
+                stories.addPreference(toggle(context, Settings.HIDE_SEEN_STORIES,
+                        L10n.t("Stories you've already watched leave the Stories tray until there's a new one. Applies when "
+                                + "Facebook next loads the tray.")));
             }
             if (build.contains(PatchFamily.STORY_AUTO_ADVANCE)) {
                 stories.addPreference(toggle(context, Settings.BLOCK_STORY_AUTO_ADVANCE,

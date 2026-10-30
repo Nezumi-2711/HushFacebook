@@ -1566,6 +1566,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 return L10n.t("3 days");
             case THIRTY_DAYS:
                 return L10n.t("30 days");
+            case NINETY_DAYS:
+                return L10n.t("90 days");
             default:
                 return L10n.t("7 days");
         }

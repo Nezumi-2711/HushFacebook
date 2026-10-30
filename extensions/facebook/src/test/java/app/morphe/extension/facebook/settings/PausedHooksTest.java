@@ -499,8 +499,10 @@ public class PausedHooksTest {
                     return !FeedsHeader.roomForFilters(true);
                 }));
         probes.put(PatchFamily.SPONSORED_STORIES, Collections.singletonList(FeedFilter::hideSponsoredStories));
-        // A tray of a friend's bucket, a suggested one and one labelled SUGGESTED keeps only the friend's.
-        probes.put(PatchFamily.SUGGESTED_STORIES, Collections.singletonList(SuggestedStoriesForTests::hidesSuggestions));
+        // A tray of a friend's bucket, a suggested one and one labelled SUGGESTED keeps only the friend's,
+        // a Page's bucket leaves it, and so does a bucket you've watched.
+        probes.put(PatchFamily.SUGGESTED_STORIES, Arrays.asList(SuggestedStoriesForTests::hidesSuggestions,
+                SuggestedStoriesForTests::hidesPageStories, SuggestedStoriesForTests::hidesSeenStories));
         probes.put(PatchFamily.STORY_AUTO_ADVANCE, Arrays.asList(StoryAdvance::waitForTap, StoryAdvance::loop));
         // The story viewer's report of the stories you viewed goes out whole, and with Mark as seen
         // on a marked card goes alone and the button follows the card on screen.

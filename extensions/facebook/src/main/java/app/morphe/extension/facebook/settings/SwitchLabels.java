@@ -78,6 +78,8 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_SUGGESTED_STORIES) return L10n.t("Hide suggested stories");
         if (setting == Settings.HIDE_CONTACT_IMPORT_CARD) return L10n.t("Hide \"Find friends from contacts\"");
         if (setting == Settings.HIDE_STORY_PROMPTS) return L10n.t("Hide story prompts");
+        if (setting == Settings.HIDE_PAGE_STORIES) return L10n.t("Hide stories from Pages");
+        if (setting == Settings.HIDE_SEEN_STORIES) return L10n.t("Hide seen stories");
         if (setting == Settings.BLOCK_STORY_AUTO_ADVANCE) return L10n.t("Stop Story auto-advance");
         if (setting == Settings.LOOP_STORIES) return L10n.t("Loop stories");
         if (setting == Settings.VIEW_STORIES_ANONYMOUSLY) return L10n.t("View stories anonymously");
