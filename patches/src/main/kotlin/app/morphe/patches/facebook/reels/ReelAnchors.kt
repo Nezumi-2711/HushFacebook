@@ -701,7 +701,7 @@ internal fun followCheck(author: Method, resolve: (MethodReference) -> Method?):
     }
     val checks = callees.filter(::isFollowCheck)
     return checks.singleOrNull()?.let { FollowCheck(it, null) } ?: FollowCheck(null,
-        "the author row asks ${checks.size} Follow checks, expected 1 (static, a boolean, the session first, " +
+        "the author row asks ${checks.size} Follow checks, expected 1 (a boolean, the session first, " +
             "naming ${FOLLOW_CHECK_SURFACES.joinToString(" and ") { "\"$it\"" }})" +
             checks.joinToString(prefix = if (checks.isEmpty()) "" else ": ") { "${it.definingClass}->${it.name}" },
     )

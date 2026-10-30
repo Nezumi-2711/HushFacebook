@@ -797,7 +797,7 @@ try {
         'ReturnRefresh;->skip()Z holding FeedRefreshTriggerController onRefresh: first in Lfixture/ReturnController;->resumeAfterBackground(')) `
         "The good build's background-return guard was not first in the resume callback.`n$($good.Output -join "`n")"
     Assert-True (($good.Output -join "`n") -match [regex]::Escape(
-        ('ReelDeclutter;->hideFollowButton()Z in static (Lcom/facebook/auth/usersession/FbUserSession;*)Z holding ' +
+        ('ReelDeclutter;->hideFollowButton()Z in instance (Lcom/facebook/auth/usersession/FbUserSession;*Ljava/lang/String;ZZ)Z holding ' +
             'friendly_feed friends_tab_ifu: first in Lfixture/FollowCheck;->offersFollow('))) `
         "The good build's Follow hook was not first in Facebook's Follow check.`n$($good.Output -join "`n")"
     Assert-True (($good.Output -join "`n") -match [regex]::Escape(
@@ -829,7 +829,7 @@ try {
             'first in Lfixture/AttachmentTap;->onDoubleTap('))) `
         "The good build's double tap hook was not first in the feed attachment's onDoubleTap.`n$($good.Output -join "`n")"
     Assert-True (($good.Output -join "`n") -match [regex]::Escape(
-        ('ReelSpeed;->picked(F)V in static (Landroid/content/Context;F)V holding InlinePlaybackSpeedAttributeSelector: ' +
+        ('ReelSpeed;->picked(F)V in instance ()V holding InlinePlaybackSpeedAttributeSelector: ' +
             'first in Lfixture/SpeedToast;->show('))) `
         "The good build's reel speed hook was not first in the Reels menu's speed toast.`n$($good.Output -join "`n")"
     Assert-True (($good.Output -join "`n") -match [regex]::Escape(
@@ -1265,8 +1265,8 @@ try {
             'called in Lfixture/ReturnController;->resumeAfterBackground(Ljava/lang/Object;)V, the one method holding ' +
             '"FeedRefreshTriggerController" and "onRefresh"; the host methods that call it: Lfixture/ReturnController;->onPause()V'))
         'bad-follow-hook-wrong-method' = @(('*contract: Lapp/morphe/extension/facebook/reels/ReelDeclutter;->hideFollowButton()Z is not ' +
-            'called in Lfixture/FollowCheck;->offersFollow(Lcom/facebook/auth/usersession/FbUserSession;)Z, the one method holding ' +
-            '"friendly_feed" and "friends_tab_ifu" with the shape static (Lcom/facebook/auth/usersession/FbUserSession;*)Z; the host ' +
+            'called in Lfixture/FollowCheck;->offersFollow(Lcom/facebook/auth/usersession/FbUserSession;Ljava/lang/String;ZZ)Z, the one method holding ' +
+            '"friendly_feed" and "friends_tab_ifu" with the shape instance (Lcom/facebook/auth/usersession/FbUserSession;*Ljava/lang/String;ZZ)Z; the host ' +
             'methods that call it: Lfixture/FollowCheck;->offersFollowHere(Lcom/facebook/auth/usersession/FbUserSession;)Z'))
         'bad-emoji-hook-wrong-method' = @(('*contract: Lapp/morphe/extension/facebook/emoji/SystemEmoji;->typeface()Landroid/graphics/Typeface; ' +
             'is not called in Lfixture/EmojiProvider;->emojiTypeface()Landroid/graphics/Typeface;, the one method holding ' +
@@ -1296,8 +1296,8 @@ try {
             'with the shape instance (Landroid/view/MotionEvent;)Z; the host methods that call it: ' +
             '*Lfixture/AttachmentTap;->animateHeart(Landroid/view/MotionEvent;)Z*'))
         'bad-reel-speed-hook-wrong-method' = @(('*contract: Lapp/morphe/extension/facebook/media/ReelSpeed;->picked(F)V ' +
-            'is not called in Lfixture/SpeedToast;->show(Landroid/content/Context;F)V, the one method holding ' +
-            '"InlinePlaybackSpeedAttributeSelector" with the shape static (Landroid/content/Context;F)V; the host methods ' +
+            'is not called in Lfixture/SpeedToast;->show()V, the one method holding ' +
+            '"InlinePlaybackSpeedAttributeSelector" with the shape instance ()V; the host methods ' +
             'that call it: *Lfixture/SpeedToast;->showOver(Landroid/content/Context;F)V*'))
         'bad-reels-tab-dot-hook-wrong-method' = @(('*contract: Lapp/morphe/extension/facebook/navigation/ReelsTabDot;->clear(Ljava/lang/Object;)Z ' +
             'is not called in Lfixture/JewelController;->count(Lcom/facebook/auth/usersession/FbUserSession;Lfixture/JewelController;' +
@@ -1308,8 +1308,8 @@ try {
             'Lfixture/JewelController;Lcom/facebook/navigation/tabbar/state/model/TabTag;I)I*'))
         'bad-follow-hook-also-elsewhere' = @(('*contract: Lapp/morphe/extension/facebook/reels/ReelDeclutter;->hideFollowButton()Z ' +
             'is called in Lfixture/FollowCheck;->offersFollowHere(Lcom/facebook/auth/usersession/FbUserSession;)Z as well as in ' +
-            'Lfixture/FollowCheck;->offersFollow(Lcom/facebook/auth/usersession/FbUserSession;)Z, the one method holding ' +
-            '"friendly_feed" and "friends_tab_ifu" with the shape static (Lcom/facebook/auth/usersession/FbUserSession;*)Z'))
+            'Lfixture/FollowCheck;->offersFollow(Lcom/facebook/auth/usersession/FbUserSession;Ljava/lang/String;ZZ)Z, the one method holding ' +
+            '"friendly_feed" and "friends_tab_ifu" with the shape instance (Lcom/facebook/auth/usersession/FbUserSession;*Ljava/lang/String;ZZ)Z'))
         'bad-return-refresh-two-callbacks' = @(('*contract: 2 methods hold "FeedRefreshTriggerController" and "onRefresh", and exactly ' +
             'one must, so the rule can''t say which one calls Lapp/morphe/extension/facebook/feed/ReturnRefresh;->skip()Z: *' +
             'Lfixture/ReturnController;->resume*(Ljava/lang/Object;)V, Lfixture/ReturnController;->resume*(Ljava/lang/Object;)V'))

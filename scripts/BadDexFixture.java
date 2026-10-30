@@ -712,17 +712,23 @@ public class BadDexFixture {
     }
 
     /**
-     * Facebook's Follow check for a reel's author row, static: v0 free, v1 the session. [prefix]
-     * comes first, then the two surface names it holds, then Facebook's own yes. Beside it, two of
-     * the other methods naming both surfaces, as nineteen do on 580: an instance method taking the
-     * session and answering a boolean, with [instancePrefix] first, and a static one taking a
-     * string. Only the check's shape tells it from them.
+     * Facebook's Follow check for a reel's author row, an instance method of a singleton on 585: v0
+     * free, v1 this, v2 the session, then a string and two flags. [prefix] comes first, then the two
+     * surface names it holds, then Facebook's own yes. Beside it, three of the other methods naming
+     * both surfaces, as nineteen do on 580: an instance method taking the session, a string and three
+     * flags, as 585's video check does, a static method taking the session and answering a boolean,
+     * the check's shape through 584, with [staticPrefix] first, and a static one taking a string.
+     * Only the check's shape tells it from them.
      */
-    private static ClassDef followCheck(List<Instruction> prefix, List<Instruction> instancePrefix) {
+    private static ClassDef followCheck(List<Instruction> prefix, List<Instruction> staticPrefix) {
         return new ImmutableClassDef(FOLLOW_CHECK, AccessFlags.PUBLIC.getValue(), OBJECT, null, null, null, null,
                 Arrays.asList(
-                        define(FOLLOW_CHECK, "offersFollow", "Z", true, surfaceCheck(2, prefix), FB_USER_SESSION),
-                        define(FOLLOW_CHECK, "offersFollowHere", "Z", false, surfaceCheck(3, instancePrefix), FB_USER_SESSION),
+                        define(FOLLOW_CHECK, "offersFollow", "Z", false, surfaceCheck(6, prefix), FB_USER_SESSION,
+                                "Ljava/lang/String;", "Z", "Z"),
+                        define(FOLLOW_CHECK, "offersFollowOnVideo", "Z", false,
+                                surfaceCheck(7, Collections.<Instruction>emptyList()), FB_USER_SESSION,
+                                "Ljava/lang/String;", "Z", "Z", "Z"),
+                        define(FOLLOW_CHECK, "offersFollowHere", "Z", true, surfaceCheck(2, staticPrefix), FB_USER_SESSION),
                         define(FOLLOW_CHECK, "surfaceAllows", "Z", true, surfaceCheck(2, Collections.<Instruction>emptyList()),
                                 "Ljava/lang/String;")));
     }
@@ -1007,16 +1013,20 @@ public class BadDexFixture {
     }
 
     /**
-     * The Reels menu's speed toast: its show, a static method taking a context and the speed (v0
-     * and v1 free, v2 the context, v3 the speed), holding the selector's name with [showPrefix]
-     * first, and an instance method of the same parameters holding it too (v3 the context, v4 the
-     * speed), with [instancePrefix] first, as Facebook has only the static one.
+     * The Reels menu's speed toast as 585 has it: a Runnable keeping the picked speed in a field,
+     * whose show (Facebook's run()) is an instance method taking nothing (v0 and v1 free, v2 this),
+     * holding the selector's name with [showPrefix] first. Beside it, a static method taking a
+     * context and the speed holding it too (v3 the context, v4 the speed), the toast's shape through
+     * 584, with [staticPrefix] first, as Facebook has only the Runnable now.
      */
-    private static ClassDef speedToast(List<Instruction> showPrefix, List<Instruction> instancePrefix) {
-        return new ImmutableClassDef(SPEED_TOAST, AccessFlags.PUBLIC.getValue(), OBJECT, null, null, null, null,
+    private static ClassDef speedToast(List<Instruction> showPrefix, List<Instruction> staticPrefix) {
+        return new ImmutableClassDef(SPEED_TOAST, AccessFlags.PUBLIC.getValue(), OBJECT,
+                Collections.singletonList("Ljava/lang/Runnable;"), null, null,
+                Collections.singletonList(new ImmutableField(SPEED_TOAST, "speed", "F", AccessFlags.FINAL.getValue(),
+                        null, null, null)),
                 Arrays.asList(
-                        define(SPEED_TOAST, "show", "V", true, toastBody(showPrefix, 4), CONTEXT, "F"),
-                        define(SPEED_TOAST, "showOver", "V", false, toastBody(instancePrefix, 5), CONTEXT, "F")));
+                        define(SPEED_TOAST, "show", "V", false, toastBody(showPrefix, 3)),
+                        define(SPEED_TOAST, "showOver", "V", true, toastBody(staticPrefix, 5), CONTEXT, "F")));
     }
 
     /** [prefix], then the selector's name in v0 and a return, in [registers] registers. */
@@ -1028,18 +1038,26 @@ public class BadDexFixture {
         return new ImmutableMethodImplementation(registers, instructions, null, null);
     }
 
-    /** What Keep the reel speed puts first in the toast: the speed in [register] handed over as a range. */
+    /** The speed in [register] handed over as a range, as the hook does in the 584 toast. */
     private static List<Instruction> toastHook(int register) {
         return Collections.<Instruction>singletonList(
                 new ImmutableInstruction3rc(Opcode.INVOKE_STATIC_RANGE, register, 1, PICKED));
     }
 
-    /** The toast's hook after a branch on the context, not first. */
+    /** What Keep the reel speed puts first in the 585 toast: its speed field read into v1 and handed over. */
+    private static List<Instruction> runHook() {
+        List<Instruction> hook = new ArrayList<>();
+        hook.add(new ImmutableInstruction22c(Opcode.IGET, 1, 2, new ImmutableFieldReference(SPEED_TOAST, "speed", "F")));
+        hook.addAll(toastHook(1));
+        return hook;
+    }
+
+    /** The toast's hook after a branch on the Runnable, not first. */
     private static List<Instruction> lateToastHook() {
         List<Instruction> late = new ArrayList<>();
         late.add(ifEqz(2, 3));                                            // 0 -> 3
         late.add(op(Opcode.NOP));                                         // 2
-        late.addAll(toastHook(3));                                        // 3
+        late.addAll(runHook());                                           // 3
         return late;
     }
 
@@ -1766,7 +1784,7 @@ public class BadDexFixture {
                         Collections.<Instruction>emptyList()), messengerIcon(),
                 reelLikeHelper(likeHook(), Collections.<Instruction>emptyList()),
                 attachmentTap(tapHook(), Collections.<Instruction>emptyList()), doubleTapLike(),
-                speedToast(toastHook(3), Collections.<Instruction>emptyList()), reelSpeed(),
+                speedToast(runHook(), Collections.<Instruction>emptyList()), reelSpeed(),
                 jewelController(dotHook(4), Collections.<Instruction>emptyList()), reelsTabDot(),
                 tabLinks(true, true, true), tabBarFilter(), postText(FILLED_STUB, FILLED_STUB),
                 postSources(FILLED_STUB, FILLED_STUB), mailbox(typingHook(), 1), iconBadger(iconHook()), tabBadges()));
