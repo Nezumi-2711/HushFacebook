@@ -574,6 +574,9 @@ public class PausedHooksTest {
                 ReelDeclutter::skipSocialBubbles,
                 ReelMidCardsForTests::dropsAThreadsCard,
                 () -> ReelCleanMode.startClean(false),
+                // Its button takes the sticky way, and a reel taken out keeps it (#304).
+                () -> ReelCleanMode.stickyClean(false),
+                () -> ReelCleanMode.cleanButtonState(ReelCleanMode.markLeftClean(new Object[] {Boolean.FALSE})[0]) == Boolean.TRUE,
                 ReelLoopForTests::stopsAReel,
                 // A video whose audio Facebook would pick in Spanish is asked for no language.
                 () -> !"es".equals(OriginalAudio.language("es")),

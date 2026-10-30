@@ -98,6 +98,8 @@ val cleanUpReelsPatch = bytecodePatch(
         skipFooterQueries()
         hideThreadsCards()
         startReelsInCleanMode()
+        // #304: and its button over a clean reel switches Clean mode off and back on.
+        toggleReelCleanMode()
         // #148: the audio language the player picks a video's sound by.
         hookOriginalAudio()
         // #148: and the manifest parser's dubbing reads, which skip that language when Facebook's Languages menu is on.
