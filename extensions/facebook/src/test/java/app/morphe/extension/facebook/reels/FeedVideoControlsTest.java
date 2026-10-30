@@ -39,8 +39,10 @@ import java.util.List;
 import app.morphe.extension.facebook.settings.Settings;
 import app.morphe.extension.shared.SettingsContextRule;
 import app.morphe.extension.shared.diagnostics.HookStatus;
+import app.morphe.extension.shared.settings.BaseSettings;
 import app.morphe.extension.shared.settings.PauseForTests;
 import app.morphe.extension.shared.settings.HushfacebookPause;
+import app.morphe.extension.shared.settings.preference.LogBufferManager;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30, qualifiers = "w1080dp-h2400dp-mdpi")
@@ -110,6 +112,8 @@ public class FeedVideoControlsTest {
         Settings.INLINE_FEED_VIDEO_CONTROLS.resetToDefault();
         Settings.FEED_VIDEO_CAST_BUTTON.resetToDefault();
         Settings.TAP_TO_PLAY.resetToDefault();
+        BaseSettings.DEBUG.resetToDefault();
+        LogBufferManager.clearLogBuffer();
         PauseForTests.resume();
         HookStatus.clear();
         if (window != null) window.pause().stop().destroy();
@@ -414,6 +418,46 @@ public class FeedVideoControlsTest {
         FeedVideoControls.changed(player);
         drain();
         assertNull("a container that shows nothing", button());
+    }
+
+    @Test public void aContainerHoldingAnotherPlayerGetsNoButtonOfItsOwn() {
+        player.view.removeAllViews();
+        Player inner = new Player();
+        inner.view = new FrameLayout(activity);
+        place(player.view, inner.view, 0, 0, 1080, 600);
+        layout();
+        attach(inner);
+        FeedVideoControls.changed(player);
+        drain();
+        assertNull(button());
+    }
+
+    @Test public void debugLoggingNamesWhyAVideoHasNoButtonOncePerReason() {
+        player.origin = "fb_shorts_tab::fb_shorts_viewer";
+        FeedVideoControls.changed(player);
+        drain();
+        BaseSettings.DEBUG.save(true);
+        LogBufferManager.clearLogBuffer();
+        for (int pass = 0; pass < 3; pass++) {
+            FeedVideoControls.changed(player);
+            drain();
+        }
+        String log = LogBufferManager.buildExportText();
+        assertEquals("a video already without one is named once Debug logging is on", 1,
+                occurrences(log, "Inline feed button: none, origin fb_shorts_tab::fb_shorts_viewer"));
+        player.origin = "newsfeed::feed_story";
+        player.params.ordinary = false;
+        FeedVideoControls.changed(player);
+        drain();
+        log = LogBufferManager.buildExportText();
+        assertEquals(log, 1, occurrences(log, "Inline feed button: none, no video id, or a live video, ad, audio or GIF"));
+        assertEquals(log, 1, occurrences(log, "Inline feed button: none, origin"));
+    }
+
+    private static int occurrences(String text, String part) {
+        int count = 0;
+        for (int at = text.indexOf(part); at >= 0; at = text.indexOf(part, at + part.length())) count++;
+        return count;
     }
 
     @Test public void ambiguousSurfacesGetNoButton() {

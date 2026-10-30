@@ -76,8 +76,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  *
  * <p>Every other start is held, and the player stays where it was, showing its first frame or its
  * cover. Facebook's own Autoplay setting reads Off while the switch is on and Inline feed video
- * controls is off ({@link #autoplaySetting}), so the surfaces that ask it draw their play button, and the Reels controls show theirs up front
- * ({@link #showReelPlayButton}). Off, paused, before the settings are ready, or
+ * controls is off ({@link #autoplaySetting}), so the surfaces that ask it draw their play button,
+ * and the Reels controls show theirs up front ({@link #showReelPlayButton}). Off, paused, before
+ * the settings are ready, or
  * when anything here throws, every start goes ahead and the setting reads what you chose, as it
  * would unpatched.
  */

@@ -37,6 +37,7 @@ import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.diagnostics.DiagnosticCategory;
 import app.morphe.extension.shared.diagnostics.HookStatus;
+import app.morphe.extension.shared.settings.BaseSettings;
 
 /**
  * A separate play/pause button on a feed video's own visible surface, and a cast button across
@@ -246,7 +247,7 @@ public final class FeedVideoControls {
         if (params == null || id == null || id.isEmpty() || !access.eligible(params)) {
             return miss(control, "no video id, or a live video, ad, audio or GIF");
         }
-        if (origin == null || !origin.toString().startsWith("newsfeed::")) return miss(control, "origin " + origin);
+        if (origin == null || !origin.toString().startsWith("newsfeed::")) return miss(control, "origin", origin);
         View row = container;
         View list = null;
         for (ViewParent parent = container.getParent(); parent instanceof View; parent = parent.getParent()) {
@@ -298,12 +299,21 @@ public final class FeedVideoControls {
                 visible.left - at[0] + margin, visible.right - at[0] - margin - size, visible.top - at[1] + margin);
     }
 
-    /** Puts why [control]'s video gets no button in the debug log, once until that changes. Answers null. */
     @Nullable
-    private static Target miss(Control control, String why) {
-        if (!why.equals(control.missed)) {
+    private static Target miss(Control control, String why) { return miss(control, why, null); }
+
+    /**
+     * Puts why [control]'s video gets no button in the debug log, once until that changes, so
+     * turning Debug logging on later still names a video already missing one. Answers null.
+     */
+    @Nullable
+    private static Target miss(Control control, String why, @Nullable Object detail) {
+        if (!BaseSettings.DEBUG.get()) {
+            control.missed = null;
+        } else if (!why.equals(control.missed)) {
             control.missed = why;
-            Logger.diagnosticDebug(DiagnosticCategory.OTHER, SOURCE, () -> "Inline feed button: none, " + why);
+            Logger.diagnosticDebug(DiagnosticCategory.OTHER, SOURCE,
+                    () -> "Inline feed button: none, " + why + (detail == null ? "" : " " + detail));
         }
         return null;
     }
