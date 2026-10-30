@@ -120,6 +120,12 @@ class FeedReelPreviewsFixtureTest {
                     with(PatchContexts.of(listOf(tile) + implementing.map { if (it.type == changed.type) swapped else it })) { playFeedReelsWhole() }
                 }
                 assertTrue(refused.message, refused.message.orEmpty().contains("don't all load the keys"))
+                // Positive control: a build whose implementers answer a fourth double beside the
+                // three preview fields still passes; one missing a preview field's key doesn't.
+                val fourth = "a_fourth_double".hashCode()
+                assertTrue("$name: a fourth double getter was refused", loadsPreviewKeys(implemented.map { it + fourth }))
+                assertTrue("$name: an implementer missing a preview key passed",
+                    !loadsPreviewKeys(implemented.mapIndexed { at, it -> if (at == 0) it - it.first() + fourth else it }))
                 assertEquals("$name: the store is an int field of the builder", Opcode.IPUT, original[points.store].opcode)
                 assertEquals("$name: the end is stored twice", (original[points.store + 1] as TwoRegisterInstruction).registerA, points.end)
 
