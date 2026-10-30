@@ -119,6 +119,8 @@ public final class FeedVideoAlone {
         final boolean player;
         /** The Warion viewer open when it first asked, whose closing ends the hold, or null. */
         @Nullable final Viewer viewer;
+        /** Whether it already asked {@link #seedCheck} once. Guarded by FEEDS. */
+        boolean asked;
 
         Feed(Object feed, boolean player, @Nullable Viewer viewer) {
             this.feed = new WeakReference<>(feed);
@@ -357,8 +359,36 @@ public final class FeedVideoAlone {
 
     /**
      * Injection point, first thing in a reels data source's answer to whether it shows its seed video
-     * alone, which skips both the reels Facebook would add after it and every later fetch more. True
-     * answers yes. The data source of a feed's ordinary video keeps Facebook's answer: the yes also
+     * alone. True answers yes. A tapped feed video's player ({@link #seedOnly}) says yes from its
+     * second ask on. Its first comes from the data source's own start as the viewer opens, where a no
+     * starts loading the video: the yes there left the viewer black for a moment until the first page
+     * brought the video in (#237, a group's reel and a home feed reel, 585 emulator 2026-10-30). The
+     * asks after it get the yes, the one that would bring Facebook's "Up next" reel in among them.
+     * Never throws.
+     *
+     * @param source the data source asking.
+     */
+    public static boolean seedCheck(@Nullable Object source) {
+        if (!seedOnly(source)) return false;
+        boolean first = false;
+        synchronized (FEEDS) {
+            for (Feed seen : FEEDS) {
+                if (seen.feed.get() == source) {
+                    first = !seen.asked;
+                    seen.asked = true;
+                    break;
+                }
+            }
+        }
+        if (!first) return true;
+        Logger.printDebug(() -> "Feed videos on their own: a tapped feed video's reels data source keeps Facebook's answer on its first ask, so the video starts loading");
+        return false;
+    }
+
+    /**
+     * Whether a reels data source shows its seed video alone, which skips both the reels Facebook
+     * would add after it and every later fetch more. True answers yes. The data source of a feed's
+     * ordinary video keeps Facebook's answer: the yes also
      * skips the first page that brings that video to the viewer, which then stands empty for up to a
      * second longer (#237, 584 emulator 2026-10-27), and no reels follow such a video anyway, its feed's
      * fetch more being held and its list showing no loading page. Never throws.
