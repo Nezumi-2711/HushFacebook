@@ -12,6 +12,8 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patches.facebook.downloads.story.rememberPlayerSources
+import app.morphe.patches.facebook.feed.resolveStatic
+import app.morphe.patches.facebook.feed.tableStringAt
 import app.morphe.patches.facebook.misc.extension.enableStatus
 import app.morphe.patches.facebook.misc.extension.facebookExtensionPatch
 import app.morphe.patches.facebook.misc.settings.settingsPatch
@@ -178,7 +180,9 @@ internal fun BytecodePatchContext.postMenu(): PostMenu {
         menuRegister = call.startRegister + 1,
         propsType = propsType,
         itemField = itemField.single().name,
-        icon = stockDownloadIcon(videoMenu.instructionsOrEmpty(), "$optionsType->${videoMenu.name}"),
+        icon = stockDownloadIcon(videoMenu.instructionsOrEmpty(), "$optionsType->${videoMenu.name}") { call ->
+            classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) }
+        },
         attachments = graphQlGetter(GRAPHQL_STORY, IMMUTABLE_LIST, ATTACHMENTS_FIELD, "attachments"),
         media = graphQlGetter(GRAPHQL_STORY_ATTACHMENT, GRAPHQL_MEDIA, MEDIA_FIELD, "media"),
         attachedStory = graphQlGetter(GRAPHQL_STORY, GRAPHQL_STORY, ATTACHED_STORY_FIELD, "attached_story"),
@@ -265,8 +269,12 @@ internal fun BytecodePatchContext.graphQlGetter(owner: String, returnType: Strin
  * `setIcon(I)` the row calls just before it reports itself as [STOCK_DOWNLOAD_ROW], and the
  * constant that call is given.
  */
-private fun stockDownloadIcon(instructions: List<Instruction>, where: String): Int {
-    val row = instructions.indexOfFirst { it.stringReference() == STOCK_DOWNLOAD_ROW }
+private fun stockDownloadIcon(instructions: List<Instruction>, where: String, resolve: (MethodReference) -> Method?): Int {
+    // 585 asks a string table for the row's name instead of holding the literal, so both forms count.
+    val row = instructions.indices.firstOrNull { index ->
+        instructions[index].stringReference() == STOCK_DOWNLOAD_ROW ||
+            tableStringAt(instructions, index, resolve) == STOCK_DOWNLOAD_ROW
+    } ?: -1
     check(row > 0) { "$where does not name its $STOCK_DOWNLOAD_ROW row" }
 
     val setIcon = (row - 1 downTo maxOf(0, row - 16)).firstOrNull { index ->
