@@ -61,8 +61,8 @@ internal object AppCompatibilities {
      * The version code of the armeabi-v7a build of [FACEBOOK_TARGET_VERSION] (APKMirror's 320dpi,
      * Android 11+ bundle). The 32-bit DEX is a separate rebuild whose obfuscated names share
      * nothing with the arm64 build's apart from kept names, so it is a build of its own and every
-     * patch was applied to it in full: all 105 applied, and its bundle is signed with the same two
-     * Meta certificates.
+     * patch is applied to it in full by verify-all-patches, and its bundle is signed with the same
+     * two Meta certificates.
      */
     const val FACEBOOK_V7A_TARGET_VERSION_CODE = 476015543
 
