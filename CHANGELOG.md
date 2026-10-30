@@ -30,6 +30,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** Opening a link to a post from another app, a message or a notification shows that post at the top of Home again. Facebook sends it as the first post of the feed, flagged like a suggested post when you don't follow its author, so `Hide "Suggested for you" posts` hid the one post you asked for. The first post after a link lands now stays whatever switch would hide it, ads aside (Refs #306).
 * **Facebook:** `Hide dislike on comments` leaves a comment's reaction icons and their count alone now. 0.19.0 took the thumbs-down out by telling Facebook the button wasn't there, and the reactions next to it went too. The button is built empty instead, so the rest of the row is drawn the way it is next to a dislike (Refs #241).
 * **Tooling:** The file listing the supported Facebook builds credits where it really came from, De-Vanced, by way of tiktok-patches-for-morphe and Hushfeed. Its old notice pointed at a ReVanced file that never existed. NOTICE and the app's Licenses page name De-Vanced now, and the mirror check fails a cited file that GitLab sends to a folder page instead.
+* **Tooling:** The build moves to Gradle 9.8.2, still pinned by checksum. It's a bug-fix release, and the wrapper jar is the same file as 9.8.1's.
 
 ## 0.19.0 (2026-10-27)
 
