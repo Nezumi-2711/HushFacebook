@@ -66,7 +66,8 @@ val openOnChosenTabPatch = bytecodePatch(
         if (pickers.size != 1) {
             throw PatchException(
                 "$PATCH: expected one method that answers Facebook's start tab from an intent's " +
-                    "\"$TARGET_TAB_ID\", found ${pickers.size}. Facebook no longer opens a tab the way this patch asks for one.",
+                    "\"$TARGET_TAB_ID\", found ${pickers.size}${listed(pickers)}. Facebook no longer opens a tab the way " +
+                    "this patch asks for one.",
             )
         }
 
@@ -102,7 +103,8 @@ val openOnChosenTabPatch = bytecodePatch(
         if (keeps.size + inlineKeeps.size != 1) {
             throw PatchException(
                 "$PATCH: expected one static check on the main screen that it keeps the start tab its " +
-                    "intent's \"$TARGET_TAB_ID\" asked for, or one run inline, found ${keeps.size} and ${inlineKeeps.size}.",
+                    "intent's \"$TARGET_TAB_ID\" asked for, or one run inline, found ${keeps.size} and " +
+                    "${inlineKeeps.size}${listed(keeps + inlineKeeps.map { it.first })}.",
             )
         }
         val keepFlag = inlineKeeps.singleOrNull()?.let { (method, reset) ->
@@ -130,9 +132,13 @@ val openOnChosenTabPatch = bytecodePatch(
     }
 }
 
-/** The one [found], or a stop naming [what] and how many there were. */
-private fun <T> exactlyOne(found: List<T>, what: String): T =
-    found.singleOrNull() ?: throw PatchException("$PATCH: expected one $what, found ${found.size}.")
+/** The one [found], or a stop naming [what], how many there were and where. */
+private fun <T> exactlyOne(found: List<Pair<Method, T>>, what: String): Pair<Method, T> =
+    found.singleOrNull() ?: throw PatchException("$PATCH: expected one $what, found ${found.size}${listed(found.map { it.first })}.")
+
+/** [methods] by class and name after a colon, for a refusal to say where it looked; empty when none. */
+private fun listed(methods: List<Method>): String =
+    if (methods.isEmpty()) "" else ": " + methods.joinToString { "${it.definingClass}->${it.name}" }
 
 private fun BytecodePatchContext.mutable(method: Method): MutableMethod =
     mutableClassDefBy(method.definingClass).methods.single {
