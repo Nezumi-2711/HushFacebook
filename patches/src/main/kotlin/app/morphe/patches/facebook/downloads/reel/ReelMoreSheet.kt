@@ -12,6 +12,7 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.misc.extension.parameterRegister
+import app.morphe.patches.facebook.misc.extension.parameterRegisterNumber
 import app.morphe.patches.facebook.misc.extension.requireFreeAt
 import app.morphe.util.classDefForEachReferencing
 import app.morphe.util.findMutableMethodOf
@@ -22,6 +23,7 @@ import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -235,6 +237,15 @@ internal fun BytecodePatchContext.implementClick(sheet: MoreSheet, handlerType: 
     }
 }
 
+/** Whether the method tests its parameter [index] against null with an `if-eqz` or `if-nez` on the parameter's own register. */
+internal fun Method.testsForNull(index: Int): Boolean {
+    val register = parameterRegisterNumber(index)
+    return implementation?.instructions?.any { instruction ->
+        (instruction.opcode == Opcode.IF_EQZ || instruction.opcode == Opcode.IF_NEZ) &&
+            (instruction as OneRegisterInstruction).registerA == register
+    } == true
+}
+
 /**
  * Puts a Download row first in the sheet's settings group, right before Clear mode: a helper on the
  * builder's class asks [MENU_HANDLER] for the row's handler and builds the row when it gets one.
@@ -264,7 +275,12 @@ internal fun BytecodePatchContext.addDownloadRow(
     val store = parameter(sheet.lookup.definingClass, "player state store")
     val origin = parameter(PLAYER_ORIGIN, "PlayerOrigin")
     val id = parameter(STRING, "video id")
-    val scoped = parameter(scopedType, "scoped context")
+    // 585 hands the builder its scoped context twice: the sheet's own, read for the row titles
+    // without a test, and another that it null-tests before using. The one nothing tests is the
+    // one the helper can read the Context off safely.
+    val scoped = parameters.indices.filter { parameters[it] == scopedType }.let { candidates ->
+        if (candidates.size > 1) candidates.filterNot { builder.testsForNull(it) } else candidates
+    }.singleOrPatchException("$patch: the one scoped context parameter of ${builder.definingClass}->${builder.name}")
     val list = parameter(LIST, "row list")
     val story = storyType?.let { type -> parameters.indices.singleOrNull { parameters[it] == type } }
 
