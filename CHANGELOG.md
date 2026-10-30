@@ -10,6 +10,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** New `Hide the emoji row on comments` under Comments and writing takes away the row of emoji Facebook puts over the comment box. Typing and the box's buttons stay, and you can still type emoji from your keyboard (Refs #290).
 * **Facebook:** `Badge and logo colors` has a third box, `Selected tab color`, under Appearance. Type a color code like #2ECC71 and the selected tab in the tab bar takes it after a restart. It wins over Material You's accent when both are on, blank keeps Facebook's own color, and settings backups carry it (Refs #297).
 * **Facebook:** New `Show Comment when comments are off` under Reels and Watch, part of `Clean up Reels`. Facebook takes the Comment button off a reel's sidebar when you can't comment on it, so the comments already there can't be read either. With the switch on the button stays, and a change shows from the next reel. It's off by default (Refs #299).
+* **Facebook:** New `Select part of a post's text` under News feed. Holding a post's text still copies all of it, and with the switch on the text also opens in a box where you can select a word or a line and copy just that. It's off by default and needs no restart (Refs #294).
 
 ### Changed
 

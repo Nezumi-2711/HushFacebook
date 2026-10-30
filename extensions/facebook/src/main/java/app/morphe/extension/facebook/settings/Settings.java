@@ -789,6 +789,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_long_press_opens_comments", FALSE);
 
     /**
+     * A long press on a feed post's text, which Facebook answers by copying all of it, also opens
+     * that text in a box where a part can be selected and copied
+     * ({@link app.morphe.extension.facebook.reels.PostTextSelect}, #294). Starts off.
+     */
+    public static final BooleanSetting SELECT_POST_TEXT =
+            new BooleanSetting("hushfacebook_select_post_text", FALSE);
+
+    /**
      * A speed picked in a reel's menu stays for the next reels where it was picked, ads and live
      * videos aside, until another is picked, and is saved so a restart keeps it
      * ({@link app.morphe.extension.facebook.media.ReelSpeed}). Normal speed forgets it.

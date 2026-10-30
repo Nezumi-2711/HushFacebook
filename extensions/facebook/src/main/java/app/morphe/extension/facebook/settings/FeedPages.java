@@ -243,6 +243,12 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.SHOW_FULL_POST_TEXT,
                         L10n.t("Posts in the feed show all of their text, so there's no See more to tap.")));
             }
+            if (build.contains(PatchFamily.REEL_GESTURES)) {
+                // Read on each long press, so a change shows on the next one.
+                feed.addPreference(toggle(context, Settings.SELECT_POST_TEXT,
+                        L10n.t("Holding a post's text still copies all of it, and also opens the text in a box where you "
+                                + "can select just the part you want and copy that.")));
+            }
             if (build.contains(PatchFamily.AUTO_TRANSLATION)) {
                 // Each post and reel reads the answer as it's drawn, so a change shows on the next ones.
                 feed.addPreference(toggle(context, Settings.TURN_OFF_AUTO_TRANSLATION,
