@@ -2161,3 +2161,7 @@ A video comment gets Save video when you long-press it.	Ao tocar e segurar um co
 Hide the Subscribe button on videos	Ocultar o botão Inscrever-se nos vídeos
 # context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
 The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	O botão Inscrever-se que alguns autores têm ali no lugar, que inscreve você com um toque. Os botões Seguir continuam.
+# context: switch title under Play SDR versions of HDR videos; washed-out means pale, faded colors
+Fix washed-out video colors	Corrigir cores desbotadas nos vídeos
+# context: summary under that switch; Disable HW overlays and developer options are Android's own setting names, use the names Android shows in this language
+Videos and reels draw together with the rest of the screen, like Disable HW overlays in developer options. Try it if reels look pale until something covers them. Uses a little more battery.	Vídeos e Reels são desenhados junto com o resto da tela, como Desativar sobreposições de HW nas opções do desenvolvedor. Experimente se os Reels ficam pálidos até algo cobri-los. Gasta um pouco mais de bateria.

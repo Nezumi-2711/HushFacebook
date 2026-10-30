@@ -2275,3 +2275,7 @@ A video comment gets Save video when you long-press it.	Bir video yorumuna bası
 Hide the Subscribe button on videos	Videolardaki Abone Ol düğmesini gizle
 # context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
 The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	Bazı içerik sahiplerinde onun yerine çıkan ve tek dokunuşla abone yapan Abone Ol düğmesi. Takip Et düğmeleri kalır.
+# context: switch title under Play SDR versions of HDR videos; washed-out means pale, faded colors
+Fix washed-out video colors	Soluk video renklerini düzelt
+# context: summary under that switch; Disable HW overlays and developer options are Android's own setting names, use the names Android shows in this language
+Videos and reels draw together with the rest of the screen, like Disable HW overlays in developer options. Try it if reels look pale until something covers them. Uses a little more battery.	Videolar ve Reels, Geliştirici seçeneklerindeki HW katmanlarını devre dışı bırak gibi ekranın geri kalanıyla birlikte çizilir. Reels bir şey üstünü kapatana kadar soluk görünüyorsa dene. Biraz daha fazla pil kullanır.

@@ -203,6 +203,7 @@ final class SwitchLabels {
         if (setting == Settings.PICTURE_IN_PICTURE_BUTTON) return L10n.t("Picture-in-picture button");
         if (setting == Settings.TURN_OFF_HDR_BRIGHTNESS) return L10n.t("Turn off HDR brightness");
         if (setting == Settings.PREFER_SDR_RENDITIONS) return L10n.t("Play SDR versions of HDR videos");
+        if (setting == Settings.DRAW_VIDEOS_WITH_THE_SCREEN) return L10n.t("Fix washed-out video colors");
         if (setting == Settings.SKIP_SILENT_PARTS) return L10n.t("Skip silent parts");
         if (setting == Settings.KEEP_FEED_VIDEOS_MUTED) return L10n.t("Keep feed videos muted");
         if (setting == Settings.KEEP_PROGRESS_BAR) return L10n.t("Keep the progress bar");

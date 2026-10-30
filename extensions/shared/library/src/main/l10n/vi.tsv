@@ -2275,3 +2275,7 @@ A video comment gets Save video when you long-press it.	Nhấn giữ một bình
 Hide the Subscribe button on videos	Ẩn nút Đăng ký trên video
 # context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
 The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	Nút Đăng ký mà một số tác giả có ở đó thay cho nút kia, chỉ một lần chạm là đăng ký. Nút Theo dõi vẫn giữ nguyên.
+# context: switch title under Play SDR versions of HDR videos; washed-out means pale, faded colors
+Fix washed-out video colors	Sửa màu video bị nhạt
+# context: summary under that switch; Disable HW overlays and developer options are Android's own setting names, use the names Android shows in this language
+Videos and reels draw together with the rest of the screen, like Disable HW overlays in developer options. Try it if reels look pale until something covers them. Uses a little more battery.	Video và reel được vẽ cùng phần còn lại của màn hình, giống Tắt lớp phủ HW trong Tùy chọn cho nhà phát triển. Hãy thử nếu reel trông nhạt màu cho đến khi có gì đó che lên. Tốn pin hơn một chút.

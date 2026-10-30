@@ -1360,12 +1360,14 @@
       "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/media/HdrBrightness.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/media/SdrRenditions.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/media/TextureVideo.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/media/hdr/TextureVideo.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/media/hdr/TurnOffHdrBrightnessPatch.kt"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook from Facebook 577, 580 and 581, for issue #66: every call of Window.setColorMode and Window.setDesiredHdrHeadroom outside the extension goes through the extension, which asks for the default colour mode and no headroom in place of Facebook's HDR window while the switch is on, and each SurfaceView Facebook builds asks Android 15 for no headroom. From 582, Play SDR versions of HDR videos: the DASH manifest string Facebook's parse logging DashManifestHelper2 reads goes through SdrRenditions first, which drops an HDR rendition (PQ or HLG transfer, or Dolby Vision) when an SDR one at least as tall is in the same manifest. No Facebook patch source in the ledger has an HDR switch."
+      "changes": "Written for Hushfacebook from Facebook 577, 580 and 581, for issue #66: every call of Window.setColorMode and Window.setDesiredHdrHeadroom outside the extension goes through the extension, which asks for the default colour mode and no headroom in place of Facebook's HDR window while the switch is on, and each SurfaceView Facebook builds asks Android 15 for no headroom. From 582, Play SDR versions of HDR videos: the DASH manifest string Facebook's parse logging DashManifestHelper2 reads goes through SdrRenditions first, which drops an HDR rendition (PQ or HLG transfer, or Dolby Vision) when an SDR one at least as tall is in the same manifest. From 585, for issue #308, Fix washed-out video colors: the player's must-use-a-SurfaceView decision, found by the force_texture_view_for_blur key it loads, answers no through TextureVideo, and each read of the player's TextureView preference behind that no answers yes, so the player draws into a TextureView the GPU composes with the screen. No Facebook patch source in the ledger has an HDR switch or one for the player's view."
     },
     {
       "paths": [

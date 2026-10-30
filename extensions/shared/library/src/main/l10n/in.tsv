@@ -2275,3 +2275,7 @@ A video comment gets Save video when you long-press it.	Tekan lama komentar vide
 Hide the Subscribe button on videos	Sembunyikan tombol Berlangganan di video
 # context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
 The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	Tombol Berlangganan yang dimiliki sebagian pembuat di sana, yang langsung berlangganan dengan sekali ketuk. Tombol Ikuti tetap ada.
+# context: switch title under Play SDR versions of HDR videos; washed-out means pale, faded colors
+Fix washed-out video colors	Perbaiki warna video yang pudar
+# context: summary under that switch; Disable HW overlays and developer options are Android's own setting names, use the names Android shows in this language
+Videos and reels draw together with the rest of the screen, like Disable HW overlays in developer options. Try it if reels look pale until something covers them. Uses a little more battery.	Video dan reel digambar bersama bagian layar lainnya, seperti Nonaktifkan overlay HW di Opsi developer. Coba ini jika reel terlihat pucat sampai ada sesuatu yang menutupinya. Sedikit lebih boros baterai.

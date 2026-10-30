@@ -1254,6 +1254,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_prefer_sdr_renditions", FALSE);
 
     /**
+     * Videos and reels draw into a TextureView, composed with the rest of the screen, instead of a
+     * SurfaceView of their own ({@link app.morphe.extension.facebook.media.TextureVideo}, #308).
+     * Starts off. Off or paused, the next player Facebook builds picks its own view again.
+     */
+    public static final BooleanSetting DRAW_VIDEOS_WITH_THE_SCREEN =
+            new BooleanSetting("hushfacebook_draw_videos_with_the_screen", FALSE);
+
+    /**
      * Videos, reels and stories play past the silent stretches in their sound ({@link
      * app.morphe.extension.facebook.media.SkipSilence}). Starts off. Off or paused, each player
      * gets Facebook's own flag again from its next seek or video.

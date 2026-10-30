@@ -312,6 +312,11 @@ final class VideoPages {
                         L10n.t("When Facebook also sends an HDR video in SDR at the same size, play that version instead. "
                                 + "The screen doesn't brighten and the picture stays as sharp. Works with the switch above "
                                 + "on or off.")));
+                // Asked as each player picks its view, so a change shows from the next video.
+                playback.addPreference(toggle(context, Settings.DRAW_VIDEOS_WITH_THE_SCREEN,
+                        L10n.t("Videos and reels draw together with the rest of the screen, like Disable HW overlays "
+                                + "in developer options. Try it if reels look pale until something covers them. "
+                                + "Uses a little more battery.")));
             }
             subheading(playback, L10n.t("Sound"));
             if (build.contains(PatchFamily.SKIP_SILENCE)) {

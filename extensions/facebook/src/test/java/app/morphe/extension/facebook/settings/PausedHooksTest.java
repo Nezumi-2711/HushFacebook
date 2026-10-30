@@ -964,10 +964,12 @@ public class PausedHooksTest {
                 PictureInPictureForTests::homeFlagAllows, PictureInPictureForTests::offersTheMenuRow,
                 PictureInPictureForTests::offersTheButton));
         // An HDR window comes out in the default colour mode, a headroom as none, the screen
-        // answers as one that shows no HDR, and a manifest loses the HDR twin of an SDR rendition.
+        // answers as one that shows no HDR, a manifest loses the HDR twin of an SDR rendition, and
+        // a player goes from its SurfaceView to its TextureView.
         probes.put(PatchFamily.HDR_BRIGHTNESS, Arrays.asList(
                 HdrBrightnessForTests::keepsAnHdrWindowInTheUsualRange, HdrBrightnessForTests::holdsTheHeadroom,
-                HdrBrightnessForTests::answersTheScreenAsShowingNoHdr, HdrBrightnessForTests::dropsTheHdrRendition));
+                HdrBrightnessForTests::answersTheScreenAsShowingNoHdr, HdrBrightnessForTests::dropsTheHdrRendition,
+                HdrBrightnessForTests::drawsVideosWithTheScreen));
         // A sink's sound starts with its silent parts skipped.
         probes.put(PatchFamily.SKIP_SILENCE, Collections.singletonList(() -> SkipSilence.skipSilence(false)));
         // A new session starts muted, and a sound-on that isn't the user's keeps the feed muted.

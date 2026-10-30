@@ -3627,7 +3627,7 @@
     },
     {
       "name": "Turn off HDR brightness",
-      "description": "Stops HDR videos and photos from turning your screen up to full brightness, which can be harsh in the dark. They keep their resolution. Starts off. Turn it on in Hushfacebook settings > Video and audio.",
+      "description": "Stops HDR videos and photos from turning your screen up to full brightness, which can be harsh in the dark. They keep their resolution. A second switch fixes pale, washed-out reels on phones that show them that way. Its switches start off. Turn them on in Hushfacebook settings > Video and audio.",
       "category": "Playback",
       "use": true,
       "dependencies": [

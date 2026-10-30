@@ -283,6 +283,7 @@ public final class SettingsBackup {
             Settings.PICTURE_IN_PICTURE_BUTTON,
             Settings.TURN_OFF_HDR_BRIGHTNESS,
             Settings.PREFER_SDR_RENDITIONS,
+            Settings.DRAW_VIDEOS_WITH_THE_SCREEN,
             Settings.SKIP_SILENT_PARTS,
             Settings.KEEP_FEED_VIDEOS_MUTED,
             Settings.KEEP_PROGRESS_BAR,

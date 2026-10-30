@@ -2279,3 +2279,7 @@ A video comment gets Save video when you long-press it.	長按影片留言時，
 Hide the Subscribe button on videos	隱藏影片的訂閱按鈕
 # context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
 The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	部分作者在那裡顯示的是訂閱按鈕，點一下就會訂閱。追蹤按鈕會保留。
+# context: switch title under Play SDR versions of HDR videos; washed-out means pale, faded colors
+Fix washed-out video colors	修正影片顏色泛白
+# context: summary under that switch; Disable HW overlays and developer options are Android's own setting names, use the names Android shows in this language
+Videos and reels draw together with the rest of the screen, like Disable HW overlays in developer options. Try it if reels look pale until something covers them. Uses a little more battery.	影片和 Reels 會與螢幕其他部分一起繪製，效果同開發人員選項中的「停用 HW 重疊圖層」。如果 Reels 在被其他東西蓋住之前一直顯得泛白，可以試試。會多耗一點電。
