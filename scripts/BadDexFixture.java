@@ -1941,6 +1941,27 @@ public class BadDexFixture {
     private static final ImmutableMethodReference TAKES_FEED = method(HOST, "takesFeed", "V", HOST);
     /** A flag the host keeps, the way the comment faces flag sat on the component. */
     private static final ImmutableFieldReference FEED_FLAG = new ImmutableFieldReference(HOST, "flag", "Z");
+    /** A class declaring one flag, and a subclass of it declaring another. */
+    private static final String FEED_MID = "Lfixture/FeedMid;";
+    private static final String FEED_SUB = "Lfixture/FeedSub;";
+
+    private static ClassDef flagClass(String type, String superclass, String flag) {
+        return new ImmutableClassDef(type, AccessFlags.PUBLIC.getValue(), superclass, null, null, null,
+                Collections.singletonList(new ImmutableField(type, flag, "Z", AccessFlags.PUBLIC.getValue(), null, null, null)),
+                null);
+    }
+
+    /**
+     * staticHost casting its object argument, v0, to [type], then [then] from 2 with v1 and v2
+     * (the long) free to write, beside FeedMid and FeedSub.
+     */
+    private static List<ClassDef> castThen(String type, Instruction... then) {
+        List<Instruction> instructions = new ArrayList<>();
+        instructions.add(new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(type)));
+        instructions.addAll(Arrays.asList(then));
+        return replaced(withStaticHost(new ImmutableMethodImplementation(3, instructions, null, null)),
+                flagClass(FEED_MID, OBJECT, "kept"), flagClass(FEED_SUB, FEED_MID, "own"));
+    }
 
     /**
      * staticHost asking whether its object argument, v0, is the host, into v1 (the long's lower
@@ -1977,6 +1998,18 @@ public class BadDexFixture {
         dexes.put("good-with-secondary", goodWithSecondary);
         // The host taken where an instance-of right above said v0 is one, which ART allows.
         dexes.put("good-narrowed", instanceThen(Opcode.IF_EQZ));
+        // The host taken where an instance-of right above asked about an interface, which ART
+        // doesn't narrow to, so v0 keeps the host it was cast to.
+        dexes.put("good-narrowed-interface", castThen(HOST,
+                new ImmutableInstruction22c(Opcode.INSTANCE_OF, 1, 0, new ImmutableTypeReference("Ljava/io/Closeable;")), // 2
+                new ImmutableInstruction21t(Opcode.IF_EQZ, 1, 5),                                                       // 4 -> 9
+                invoke(TAKES_FEED, 0),                                                                                  // 6
+                op(Opcode.RETURN_VOID)));                                                                               // 9
+        // FeedMid's flag read off a FeedMid through a reference naming FeedSub, which ART resolves
+        // to the FeedMid that declares it.
+        dexes.put("good-inherited-field", castThen(FEED_MID,
+                new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 1, 0, new ImmutableFieldReference(FEED_SUB, "kept", "Z")), // 2
+                op(Opcode.RETURN_VOID)));                                                                                    // 4
         dexes.put("removed-method", bundle(host(feedEdge(GUARDED_FEED_EDGE), staticHost(GOOD_STATIC_HOST),
                 switchHost(7), tryHost(CLEAN_TRY), false)));
 
@@ -2405,6 +2438,10 @@ public class BadDexFixture {
                 new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 1, 0, FEED_FLAG),                         // 2
                 op(Opcode.RETURN_VOID))));                                                                  // 4
         dexes.put("bad-arg-type-not-instance", instanceThen(Opcode.IF_NEZ));
+        // FeedSub's own flag read off a FeedMid, which ART refuses since FeedSub declares it.
+        dexes.put("bad-subclass-field", castThen(FEED_MID,
+                new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 1, 0, new ImmutableFieldReference(FEED_SUB, "own", "Z")), // 2
+                op(Opcode.RETURN_VOID)));                                                                                   // 4
 
         // contract: each of the sources filter's story stubs left as the extension ships it.
         dexes.put("bad-post-message-stub-not-filled", replaced(good(), postText(UNFILLED_STUB, FILLED_STUB)));

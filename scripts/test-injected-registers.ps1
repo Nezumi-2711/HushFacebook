@@ -773,6 +773,14 @@ try {
         'classes.dex' = (Get-Dex 'good-narrowed') })) -Allowlist $emptyAllowlist -Name 'good-narrowed' -Contracts $contracts
     Assert-True ($narrowed.ExitCode -eq 0 -and (Get-Findings $narrowed).Fails.Count -eq 0) `
         "The host taken on an instance-of's yes branch was refused.`n$($narrowed.Output -join "`n")"
+    # ART doesn't narrow to an interface, so the host v0 was cast to still passes on that branch;
+    # and a field named through a subclass resolves to the superclass the register holds.
+    foreach ($kept in @('good-narrowed-interface', 'good-inherited-field')) {
+        $keptRun = Invoke-DexDiff -Clean $cleanApk -Patched (New-DexApk -Name $kept -Entries ([ordered]@{
+            'classes.dex' = (Get-Dex $kept) })) -Allowlist $emptyAllowlist -Name $kept -Contracts $contracts
+        Assert-True ($keptRun.ExitCode -eq 0 -and (Get-Findings $keptRun).Fails.Count -eq 0) `
+            "$kept was refused.`n$($keptRun.Output -join "`n")"
+    }
     # The badge writer's count handed over as a range from v17 is a changed method the good build
     # passes with, so the dropped-call control below is refused for the lone move-result alone.
     Assert-True ((Get-Content -LiteralPath $good.Report -Raw) -match
@@ -1066,6 +1074,7 @@ try {
         'bad-arg-type' = 'type'
         'bad-field-type' = 'type'
         'bad-arg-type-not-instance' = 'type'
+        'bad-subclass-field' = 'type'
         'bad-post-message-stub-not-filled' = 'contract'
         'bad-post-attached-stub-not-filled' = 'contract'
         'bad-post-actors-stub-not-filled' = 'contract'
@@ -1345,6 +1354,7 @@ try {
         'bad-field-type' = @("*type: iget-boolean at 2 uses Lfixture/Feed;->flag:Z on v0, which holds Lfixture/TabLinks;  in $staticHostSig")
         'bad-arg-type-not-instance' = @(('*type: invoke-static at 4 passes v0, which holds Ljava/lang/Object;, where ' +
             "Lfixture/Feed;->takesFeed(Lfixture/Feed;)V takes Lfixture/Feed;  in $staticHostSig"))
+        'bad-subclass-field' = @("*type: iget-boolean at 2 uses Lfixture/FeedSub;->own:Z on v0, which holds Lfixture/FeedMid;  in $staticHostSig")
     }
     foreach ($case in $wrongPlace.GetEnumerator()) {
         $fails = @((Get-Findings $badResults[$case.Key]).Fails)

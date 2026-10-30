@@ -5,6 +5,7 @@ import com.android.tools.smali.dexlib2.Opcodes;
 import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tools.smali.dexlib2.iface.DexFile;
 import com.android.tools.smali.dexlib2.iface.ExceptionHandler;
+import com.android.tools.smali.dexlib2.iface.Field;
 import com.android.tools.smali.dexlib2.iface.Method;
 import com.android.tools.smali.dexlib2.iface.MethodImplementation;
 import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
@@ -985,7 +986,8 @@ public class DexDiff {
      * Each object an instruction in [m] hands on to something that names its class: an invoke's
      * receiver and arguments, the object an instance field is read from or written to, and the
      * value an iput-object or sput-object stores. Each comes as the class wanted, the class the
-     * register holds, and the finding. ART refuses the whole class when the held class can't be
+     * register holds, the finding, and for a receiver or a field's object the member (see
+     * memberKey), else null. ART refuses the whole class when the held class can't be
      * the wanted one ("argument type mismatch"), which is how the comment faces hook crashed
      * Facebook 585 at launch: the register it passed as the component had been reused for one of
      * the factory's arguments. Whether the held class can be the wanted one is only known once
@@ -1034,7 +1036,8 @@ public class DexDiff {
                     String have = typeOf(types[k], regs[a]);
                     if (have == null || wanted.get(a) == null || have.equals(wanted.get(a))) continue;
                     out.add(new String[]{wanted.get(a), have, "type: " + where + " passes v" + regs[a] + ", which holds "
-                            + have + ", where " + callee + " takes " + wanted.get(a)});
+                            + have + ", where " + callee + " takes " + wanted.get(a),
+                            a == 0 && !isStaticInvoke(opcode) ? memberKey(callee) : null});
                 }
             } else if (r instanceof FieldReference) {
                 FieldReference field = (FieldReference) r;
@@ -1046,7 +1049,7 @@ public class DexDiff {
                         String have = typeOf(types[k], object);
                         if (have != null && !have.equals(field.getDefiningClass())) {
                             out.add(new String[]{field.getDefiningClass(), have, "type: " + where + " uses " + field
-                                    + " on v" + object + ", which holds " + have});
+                                    + " on v" + object + ", which holds " + have, memberKey(field)});
                         }
                         // An iput-object also stores a value, which falls through to the
                         // sput-object check.
@@ -1057,7 +1060,7 @@ public class DexDiff {
                         String have = typeOf(types[k], value);
                         if (have != null && field.getType().charAt(0) == 'L' && !have.equals(field.getType())) {
                             out.add(new String[]{field.getType(), have, "type: " + where + " stores v" + value
-                                    + ", which holds " + have + ", in " + field});
+                                    + ", which holds " + have + ", in " + field, null});
                         }
                         break;
                     }
@@ -1079,10 +1082,10 @@ public class DexDiff {
      * that disagree), and a null row where no path reaches the instruction. The parameters and
      * this start with their declared classes, what makes an object gives its class, a move copies
      * it, and anything else leaves the register unknown. ART merges two classes into the class
-     * they share; this leaves them unknown, so wherever it's unsure, nothing is judged. Like ART,
-     * an instance-of tested right below gives the tested register its class on the branch where
-     * it's an instance (see narrowed). An exception edge carries the classes from before the
-     * throwing instruction, as in registerKinds.
+     * they share; this leaves them unknown, so wherever it's unsure, nothing is judged. An
+     * instance-of tested right below leaves the tested register unknown on the branch where it's
+     * an instance (see narrowed). An exception edge carries the classes from before the throwing
+     * instruction, as in registerKinds.
      */
     private static String[][] registerTypes(MethodImplementation impl, Layout layout,
             Map<Integer, String> parameterType) {
@@ -1184,11 +1187,13 @@ public class DexDiff {
     }
 
     /**
-     * The classes on the instance branch of an if-eqz or if-nez at [k], or null. ART gives the
-     * register an instance-of right above the if tested its class there, when nothing else
-     * branches to the if and the instance-of didn't write over what it tested, and gives it as
-     * well to the register a move-object right above the instance-of copied it from. R8 can drop
-     * the check-cast that would follow, so without this a stock method reads as a finding.
+     * The classes on the instance branch of an if-eqz or if-nez at [k], or null. ART can narrow
+     * the register an instance-of right above the if tested, when nothing else branches to the if
+     * and the instance-of didn't write over what it tested, and the register a move-object right
+     * above the instance-of copied it from. R8 can drop the check-cast that would follow, so
+     * without this a stock method reads as a finding. ART narrows only to a class below the one
+     * the register held and keeps that one otherwise (an interface, a superclass), which the
+     * flow can't tell apart before every class is read, so both registers go unknown there.
      */
     private static String[] narrowed(Layout layout, Set<Integer> joins, int k, String[] after) {
         Instruction i = layout.instructions.get(k);
@@ -1201,16 +1206,15 @@ public class DexDiff {
         int result = ((TwoRegisterInstruction) test).getRegisterA();
         int tested = ((TwoRegisterInstruction) test).getRegisterB();
         if (result != ((OneRegisterInstruction) i).getRegisterA() || result == tested || tested >= after.length) return null;
-        String type = ((TypeReference) ((ReferenceInstruction) test).getReference()).getType();
         String[] out = after.clone();
-        out[tested] = type;
+        out[tested] = null;
         if (k > 1 && !joins.contains(layout.addresses.get(k - 1))) {
             Instruction move = layout.instructions.get(k - 2);
             Opcode moved = move.getOpcode();
             if ((moved == Opcode.MOVE_OBJECT || moved == Opcode.MOVE_OBJECT_FROM16 || moved == Opcode.MOVE_OBJECT_16)
                     && ((TwoRegisterInstruction) move).getRegisterA() == tested) {
                 int source = ((TwoRegisterInstruction) move).getRegisterB();
-                if (source < out.length) out[source] = type;
+                if (source < out.length) out[source] = null;
             }
         }
         return out;
@@ -1236,6 +1240,75 @@ public class DexDiff {
             if (type == null) return false;
         }
         return isPlatform(type);
+    }
+
+    /** A method or field as its name and signature, the same for a reference and a definition. */
+    private static String memberKey(Reference r) {
+        if (r instanceof MethodReference) {
+            MethodReference method = (MethodReference) r;
+            return method.getName() + "(" + String.join("", method.getParameterTypes()) + ")" + method.getReturnType();
+        }
+        FieldReference field = (FieldReference) r;
+        return field.getName() + ":" + field.getType();
+    }
+
+    /**
+     * The classes from [wanted] up its superclasses to [have], [have] left out, or null when
+     * [have] isn't one of [wanted]'s superclasses.
+     */
+    private static List<String> classesBelow(String have, String wanted, Map<String, String> superclasses) {
+        List<String> below = new ArrayList<>();
+        String type = wanted;
+        while (type != null && !type.equals(have)) {
+            if (!superclasses.containsKey(type)) return null;
+            below.add(type);
+            type = superclasses.get(type);
+        }
+        return type == null ? null : below;
+    }
+
+    /**
+     * The members each class declares, read only for the classes that decide a refused receiver
+     * or field's object (see declaredAbove), from the same classesN.dex entry its superclass came
+     * from. Most runs have none, and then the APK isn't read again.
+     */
+    private static Map<String, Set<String>> declaredMembers(MultiDexContainer<? extends DexFile> container,
+            List<String[]> refused, Map<String, String> superclasses, Map<String, Integer> superclassDex) throws Exception {
+        Map<String, Set<String>> declared = new HashMap<>();
+        for (String[] found : refused) {
+            List<String> below = found[4] == null ? null : classesBelow(found[2], found[1], superclasses);
+            if (below != null) for (String type : below) declared.put(type, new HashSet<>());
+        }
+        if (declared.isEmpty()) return declared;
+        for (String entry : container.getDexEntryNames()) {
+            int dexNumber = appDexNumber(entry);
+            if (dexNumber == 0) continue;
+            for (ClassDef cd : container.getEntry(entry).getDexFile().getClasses()) {
+                Set<String> members = declared.get(cd.getType());
+                if (members == null || !Integer.valueOf(dexNumber).equals(superclassDex.get(cd.getType()))) continue;
+                for (Method m : cd.getMethods()) members.add(memberKey(m));
+                for (Field f : cd.getFields()) members.add(memberKey(f));
+            }
+        }
+        return declared;
+    }
+
+    /**
+     * Whether a refused receiver or field's object is one ART takes after all: the register holds
+     * one of the named class's superclasses, and no class between the two declares the member, so
+     * it resolves to one at or above the held class, which ART checks the object against. Javac
+     * and R8 name the declaring class, but hand-written smali can name a subclass.
+     */
+    private static boolean declaredAbove(String[] found, Map<String, String> superclasses,
+            Map<String, Set<String>> declared) {
+        if (found[4] == null) return false;
+        List<String> below = classesBelow(found[2], found[1], superclasses);
+        if (below == null) return false;
+        for (String type : below) {
+            Set<String> members = declared.get(type);
+            if (members == null || members.contains(found[4])) return false;
+        }
+        return true;
     }
 
     /** classes.dex as 1, classesN.dex as N, and any other dex in the APK as 0. */
@@ -1705,7 +1778,9 @@ public class DexDiff {
                         List<String> findings = structuralFindings(cd, m);
                         if (!findings.isEmpty()) out.computeIfAbsent(s, k -> new ArrayList<>()).addAll(findings);
                         for (String[] found : objectReturns(m)) uncast.add(new String[]{s, found[0], found[1]});
-                        for (String[] found : typeChecks(cd, m)) mistyped.add(new String[]{s, found[0], found[1], found[2]});
+                        for (String[] found : typeChecks(cd, m)) {
+                            mistyped.add(new String[]{s, found[0], found[1], found[2], found[3]});
+                        }
                     }
                     String firstCallOn = firstCallTargets.get(s);
                     if (firstCallOn != null) firstCalls.put(s, firstCallBeforeReturn(m, firstCallOn));
@@ -1735,8 +1810,13 @@ public class DexDiff {
         for (String[] found : uncast) {
             if (!takesAnyObject(found[1], interfaces)) out.computeIfAbsent(found[0], k -> new ArrayList<>()).add(found[2]);
         }
+        List<String[]> refused = new ArrayList<>();
         for (String[] found : mistyped) {
-            if (refuses(found[2], found[1], superclasses, interfaces)) {
+            if (refuses(found[2], found[1], superclasses, interfaces)) refused.add(found);
+        }
+        Map<String, Set<String>> declared = declaredMembers(container, refused, superclasses, superclassDex);
+        for (String[] found : refused) {
+            if (!declaredAbove(found, superclasses, declared)) {
                 out.computeIfAbsent(found[0], k -> new ArrayList<>()).add(found[3]);
             }
         }
