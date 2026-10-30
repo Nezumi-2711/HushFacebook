@@ -694,7 +694,9 @@ internal fun Method.sidebarBlockPlace(
             playerParameter?.let { requireParameterIntact("$PATCH: the player", it, listOf(index)) }
             val reads = held + player
             val live = liveAcrossInjection(index)
-            val scratch = (0..locals - SIDEBAR_BLOCK_ARGUMENTS).firstOrNull { first ->
+            // The block writes its six locals as 8-bit destinations (move-result, if-eqz,
+            // move-object/from16), so the run has to end at v255 even in a bigger frame.
+            val scratch = (0..minOf(locals, 256) - SIDEBAR_BLOCK_ARGUMENTS).firstOrNull { first ->
                 (first until first + SIDEBAR_BLOCK_ARGUMENTS).none { it in live || it in reads }
             } ?: throw PatchException(
                 "$PATCH: $definingClass->$name has no $SIDEBAR_BLOCK_ARGUMENTS consecutive locals that nothing reads " +

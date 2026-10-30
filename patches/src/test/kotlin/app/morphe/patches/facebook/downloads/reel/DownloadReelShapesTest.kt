@@ -279,6 +279,17 @@ class DownloadReelShapesTest {
     }
 
     /**
+     * The block's writes are 8-bit destinations, so six dead locals above v255 don't count. Here
+     * v3 to v257 are read after the call and only v258 up are free past v0 to v2.
+     */
+    @Test
+    fun `dead locals above v255 are refused`() {
+        val method = loopEnd(after = "invoke-static/range { v3 .. v257 }, Lfixture/Log;->all()V", registers = 300)
+        val refused = assertThrows(PatchException::class.java) { placeIn(method) }
+        assertTrue(refused.message, refused.message.orEmpty().contains("no 6 consecutive locals"))
+    }
+
+    /**
      * The player is read from the register the builder parked it in, so every path to the block
      * has to come through the parking. One that skips it, or one coming round the loop after the
      * loop parks something else, would hand the helper a wrong player that still verifies, so the
