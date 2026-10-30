@@ -13,6 +13,7 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMuta
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.misc.extension.parameterRegister
 import app.morphe.patches.facebook.misc.extension.requireFreeAt
+import app.morphe.util.classDefForEachReferencing
 import app.morphe.util.findMutableMethodOf
 import app.morphe.util.singleOrPatchException
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -58,6 +59,11 @@ internal const val ROW_HELPER = "hushfacebookDownloadRow"
  * list. The one for Clear mode looks up the reel's player state by its player origin and video id,
  * and builds its row as `new Row(click, icon, Boolean, title, subtitle, id, Integer)`. That one
  * method gives every name the Download row needs. Nothing obfuscated is written down.
+ *
+ * 585 (read 2026-10-29, both ABIs) splits that method: the one holding the id only builds and
+ * answers the row (arm64 `LX/0cw7;->A00(scoped, title, click)`), and its one static caller
+ * (`LX/0dWH;->A04`) does the player state lookup and adds the row to the list, so that caller is
+ * the builder the helper goes into while the row's own types are still read from the first.
  */
 internal class MoreSheet(
     /** The method that adds the Clear mode row, where the Download row goes in first. */
@@ -79,14 +85,35 @@ internal class MoreSheet(
 )
 
 internal fun BytecodePatchContext.moreSheet(patch: String): MoreSheet {
-    val (builderClass, builderMethod) = classDefByStrings(CLEAR_MODE_ROW, StringComparisonType.EQUALS)
+    val (rowClass, rowMethod) = classDefByStrings(CLEAR_MODE_ROW, StringComparisonType.EQUALS)
         .filterNot { it.type.startsWith(EXTENSION_CLASSES) }
         .flatMap { classDef -> classDef.methods.filter { holds(it, CLEAR_MODE_ROW) }.map { classDef to it } }
         .singleOrPatchException("$patch: the one method adding the More sheet's \"$CLEAR_MODE_ROW\" row")
-    if (!AccessFlags.STATIC.isSet(builderMethod.accessFlags) || builderMethod.returnType != "V") {
-        throw PatchException("$patch: ${builderClass.type}->${builderMethod.name} isn't a static method adding a row")
+    if (!AccessFlags.STATIC.isSet(rowMethod.accessFlags)) {
+        throw PatchException("$patch: ${rowClass.type}->${rowMethod.name} isn't a static method adding a row")
+    }
+    // Up to 584 that method adds the row to the sheet's list itself. 585 splits it: the method holding
+    // the id only builds and answers the row, and the one static method calling it adds the row.
+    val (builderClass, builderMethod) = if (rowMethod.returnType == "V") {
+        rowClass to rowMethod
+    } else {
+        val callers = mutableListOf<Pair<ClassDef, Method>>()
+        classDefForEachReferencing(types = listOf(rowClass.type)) { owner ->
+            owner.methods.filter { caller ->
+                AccessFlags.STATIC.isSet(caller.accessFlags) && caller.returnType == "V" &&
+                    LIST in caller.parameterTypes.map(CharSequence::toString) &&
+                    caller.implementation?.instructions?.any { instruction ->
+                        instruction.methodReference()?.let { call ->
+                            call.definingClass == rowClass.type && call.name == rowMethod.name &&
+                                call.returnType == rowMethod.returnType
+                        } == true
+                    } == true
+            }.forEach { callers += owner to it }
+        }
+        callers.singleOrPatchException("$patch: the one static method adding the row ${rowClass.type}->${rowMethod.name} builds")
     }
     val instructions = builderMethod.implementation!!.instructions.toList()
+    val rowInstructions = rowMethod.implementation!!.instructions.toList()
     val parameters = builderMethod.parameterTypes.map(CharSequence::toString)
 
     // The player state: looked up on one of the builder's parameters by origin and video id, and
@@ -106,8 +133,8 @@ internal fun BytecodePatchContext.moreSheet(patch: String): MoreSheet {
     }
 
     // The row: the constructor called after the id, taking the title as a CharSequence.
-    val idAt = instructions.indexOfFirst { it.stringValue() == CLEAR_MODE_ROW }
-    val row = instructions.drop(idAt).mapNotNull { it.methodReference() }
+    val idAt = rowInstructions.indexOfFirst { it.stringValue() == CLEAR_MODE_ROW }
+    val row = rowInstructions.drop(idAt).mapNotNull { it.methodReference() }
         .firstOrNull { it.name == "<init>" && CHAR_SEQUENCE in it.parameterTypes.map(CharSequence::toString) }
         ?: throw PatchException("$patch: no row is built after \"$CLEAR_MODE_ROW\"")
     val rowParameters = row.parameterTypes.map(CharSequence::toString)
@@ -121,7 +148,7 @@ internal fun BytecodePatchContext.moreSheet(patch: String): MoreSheet {
         .singleOrPatchException("$patch: the one public click interface among ${row.definingClass}'s parameters")
 
     // The icon: a static wrapping an enum constant into one of the row's parameter types.
-    val iconWrap = instructions.mapNotNull { it.methodReference() }.filter { reference ->
+    val iconWrap = rowInstructions.mapNotNull { it.methodReference() }.filter { reference ->
         reference.returnType in rowParameters && reference.parameterTypes.size == 1 &&
             classDefByOrNull(reference.parameterTypes.single().toString())?.superclass == "Ljava/lang/Enum;"
     }.distinctBy { "${it.definingClass}->${it.name}" }
@@ -137,7 +164,7 @@ internal fun BytecodePatchContext.moreSheet(patch: String): MoreSheet {
                 ?.takeIf { instruction.opcode == Opcode.SGET_OBJECT && it.type == iconEnum }
         } ?: throw PatchException("$patch: Facebook's \"$OWN_DOWNLOAD_ROW\" row draws no icon of $iconEnum")
 
-    val clearModeIcon = instructions.take(idAt).lastOrNull { instruction ->
+    val clearModeIcon = rowInstructions.take(idAt).lastOrNull { instruction ->
         instruction.opcode == Opcode.SGET_OBJECT &&
             ((instruction as ReferenceInstruction).reference as? FieldReference)?.type == iconEnum
     }?.let { (it as ReferenceInstruction).reference as FieldReference }
