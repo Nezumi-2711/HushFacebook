@@ -58,6 +58,7 @@ import app.morphe.extension.facebook.menu.MenuLayoutDump;
 import app.morphe.extension.facebook.media.TapToPlay;
 import app.morphe.extension.facebook.misc.AppIcons;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.misc.CloseWhenLeft;
 import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ScreenTransitions;
@@ -163,6 +164,8 @@ public final class SettingsEntry {
             CloseWhenLeft.watch(context);
             // The opening pause, after the lock's, so on a resume it knows whether the lock covers.
             OpeningPause.watch(context);
+            // Take breaks (#248), after both, so a break waits for their covers.
+            BreakTimer.watch(context);
             ReturnRefresh.register(context);
             watchLauncherChanges(context);
             TextSize.application(context);

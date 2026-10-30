@@ -22,6 +22,7 @@ import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.reels.FeedVideoControls;
 import app.morphe.extension.facebook.reels.ReelsOrder;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
@@ -1667,6 +1668,14 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting OPENING_PAUSE =
             new BooleanSetting("hushfacebook_opening_pause", FALSE);
 
+    /**
+     * Browsing for {@link #BREAK_AFTER} starts a break of {@link #BREAK_LENGTH} that covers Home,
+     * Feeds, Video and Reels ({@link app.morphe.extension.facebook.misc.BreakTimer}). The settings
+     * entry's own switch, so every build has it ({@link PatchFamily#ENTRY_SWITCHES}). Off by default.
+     */
+    public static final BooleanSetting TAKE_BREAKS =
+            new BooleanSetting("hushfacebook_take_breaks", FALSE);
+
     static {
         // The crash handler is the shared library's, which can't name this class.
         CrashFile.useSwitch(SAVE_CRASH_FILE);
@@ -2343,6 +2352,16 @@ public class Settings extends BaseSettings {
     public static final EnumSetting<OpeningPause.Length> OPENING_PAUSE_LENGTH =
             new EnumSetting<>("hushfacebook_opening_pause_length", OpeningPause.Length.FIVE_SECONDS,
                     Setting.parent(OPENING_PAUSE));
+
+    /** How long {@link #TAKE_BREAKS} lets browsing go before a break. It isn't a switch. */
+    public static final EnumSetting<BreakTimer.Use> BREAK_AFTER =
+            new EnumSetting<>("hushfacebook_break_after", BreakTimer.Use.THIRTY_MINUTES,
+                    Setting.parent(TAKE_BREAKS));
+
+    /** How long a {@link #TAKE_BREAKS} break lasts. It isn't a switch. */
+    public static final EnumSetting<BreakTimer.Length> BREAK_LENGTH =
+            new EnumSetting<>("hushfacebook_break_length", BreakTimer.Length.FIVE_MINUTES,
+                    Setting.parent(TAKE_BREAKS));
 
     static {
         // The lock guards the phone's owner rather than changing Facebook, so no pause opens it: not

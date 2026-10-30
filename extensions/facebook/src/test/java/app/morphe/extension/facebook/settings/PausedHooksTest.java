@@ -308,6 +308,8 @@ public class PausedHooksTest {
         probes.put(Settings.CLOSE_WHEN_LEFT, app.morphe.extension.facebook.misc.CloseWhenLeftForTests::aLeaveCloses);
         // A start from Facebook's icon puts the countdown cover over its first screen.
         probes.put(Settings.OPENING_PAUSE, app.morphe.extension.facebook.misc.OpeningPauseForTests::aLaunchCovers);
+        // An hour of feed browsing puts a break over the feed.
+        probes.put(Settings.TAKE_BREAKS, app.morphe.extension.facebook.misc.BreakTimerForTests::aBreakCovers);
         return probes;
     }
 

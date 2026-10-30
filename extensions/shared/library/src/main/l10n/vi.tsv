@@ -2202,3 +2202,43 @@ It wasn't put back. It was watched again since, or its time on the list is up.	K
 Recently watched will keep entries until you clear them.	Đã xem gần đây sẽ giữ các mục cho đến khi bạn xóa.
 # context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
 Recently watched will keep entries for %1$s.	Đã xem gần đây sẽ giữ các mục trong %1$s.
+# context: a switch on the Feeds page, under Opening pause; it covers Home, Feeds, Video and Reels after a chosen time of use
+Take breaks	Nghỉ giải lao
+# context: that switch's summary; Home, Feeds, Video and Reels are Facebook's tabs, Menu is Facebook's Menu tab; the last part means being away from Facebook as long as a break also counts as a break
+After the time you pick on Home, Feeds, Video and Reels, they're covered for a break. Chats, your profile and the Menu still work, and time away as long as a break counts as one.	Sau khoảng thời gian bạn chọn trên Trang chủ, Bảng feed, Video và Reels, các mục này sẽ bị che để bạn nghỉ. Đoạn chat, trang cá nhân và Menu vẫn hoạt động, và rời đi lâu bằng một lần nghỉ cũng được tính là một lần nghỉ.
+# context: a row under Take breaks that opens a list of times; it's how long you can browse before a break starts
+Break after	Nghỉ sau
+# context: a row under Take breaks that opens a list of times; it's how long a break lasts
+Break length	Thời lượng nghỉ
+# context: a choice in those lists
+10 minutes	10 phút
+# context: a choice in those lists
+30 minutes	30 phút
+# context: a choice in those lists
+45 minutes	45 phút
+# context: the Break after row's summary; %1$s is the chosen time, such as 30 minutes
+A break starts after %1$s of Home, Feeds, Video and Reels.	Lần nghỉ bắt đầu sau %1$s trên Trang chủ, Bảng feed, Video và Reels.
+# context: the Break length row's summary; %1$s is the chosen time, such as 5 minutes
+Home, Feeds, Video and Reels stay covered for %1$s.	Trang chủ, Bảng feed, Video và Reels bị che trong %1$s.
+# context: title of the cover shown over Home, Feeds, Video and Reels during a break
+Time for a break	Đến giờ nghỉ rồi
+# context: line on the break cover; %1$d is the whole minutes left, here 1
+Home, Feeds, Video and Reels open again in %1$d minute.	Trang chủ, Bảng feed, Video và Reels sẽ mở lại sau %1$d phút.
+# context: line on the break cover; %1$d is the whole minutes left, more than 1
+Home, Feeds, Video and Reels open again in %1$d minutes.	Trang chủ, Bảng feed, Video và Reels sẽ mở lại sau %1$d phút.
+# context: line on the break cover in its last minute
+Home, Feeds, Video and Reels open again in under a minute.	Trang chủ, Bảng feed, Video và Reels sẽ mở lại sau chưa đầy một phút.
+# context: line on the break cover; Menu is Facebook's Menu tab
+Chats, your profile and the Menu still work.	Đoạn chat, trang cá nhân và Menu vẫn hoạt động.
+# context: button on the break cover that switches to Facebook's Menu tab
+Go to the Menu	Đi tới Menu
+# context: button on the break cover that sends Facebook to the background
+Close Facebook	Đóng Facebook
+# context: button on the break cover that opens the Take breaks settings
+Break settings	Cài đặt nghỉ
+# context: toast when a break's time is up and the cover goes away
+Your break is over.	Giờ nghỉ của bạn đã hết.
+# context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 30 minutes
+With Take breaks on, a break will start after %1$s of browsing.	Khi bật Nghỉ giải lao, lần nghỉ sẽ bắt đầu sau %1$s lướt xem.
+# context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 5 minutes
+With Take breaks on, a break will last %1$s.	Khi bật Nghỉ giải lao, mỗi lần nghỉ sẽ kéo dài %1$s.

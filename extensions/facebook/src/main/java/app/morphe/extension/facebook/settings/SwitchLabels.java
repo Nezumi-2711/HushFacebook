@@ -229,6 +229,7 @@ final class SwitchLabels {
         if (setting == Settings.SAVE_CRASH_FILE) return L10n.t("Save crashes to Downloads");
         if (setting == Settings.CLOSE_WHEN_LEFT) return L10n.t("Close Facebook when you leave it");
         if (setting == Settings.OPENING_PAUSE) return L10n.t("Opening pause");
+        if (setting == Settings.TAKE_BREAKS) return L10n.t("Take breaks");
         if (setting == Settings.HIDE_MENU_UPGRADES) return L10n.t("Hide Upgrades");
         if (setting == Settings.HIDE_MENU_ALSO_FROM_META) return L10n.t("Hide Also from Meta");
         if (setting == Settings.HIDE_MENU_HELP) return L10n.t("Hide Help and support");

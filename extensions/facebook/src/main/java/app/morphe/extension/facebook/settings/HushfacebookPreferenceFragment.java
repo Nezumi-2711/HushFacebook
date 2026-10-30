@@ -61,6 +61,7 @@ import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.misc.HeaderText;
 import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.menu.MenuTiles;
@@ -87,6 +88,7 @@ import app.morphe.extension.facebook.settings.ValueRows.CommentOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.ReelsOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.LockAfterRow;
 import app.morphe.extension.facebook.settings.ValueRows.SeenKeepRow;
+import app.morphe.extension.facebook.settings.ValueRows.BreakRow;
 import app.morphe.extension.facebook.settings.ValueRows.PauseLengthRow;
 import app.morphe.extension.facebook.settings.ValueRows.WatchedKeepRow;
 import app.morphe.extension.facebook.settings.ValueRows.AccentRow;
@@ -1608,6 +1610,90 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         return L10n.f("Open now works after %1$s.", pauseLengthLabel(length));
     }
 
+    /** How long Take breaks lets browsing go. Its values are the setting's own names. */
+    static BreakRow breakAfterRow(Context context) {
+        BreakRow row = new BreakRow(context, value -> breakAfterSummary(breakAfter(value)));
+        row.setKey(Settings.BREAK_AFTER.key);
+        row.setTitle(L10n.t("Break after"));
+        row.setDialogTitle(L10n.t("Break after"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        BreakTimer.Use[] choices = BreakTimer.Use.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = minutesLabel(choices[i].minutes);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.BREAK_AFTER.savedValue().name());
+        return row;
+    }
+
+    /** How long a Take breaks break lasts. Its values are the setting's own names. */
+    static BreakRow breakLengthRow(Context context) {
+        BreakRow row = new BreakRow(context, value -> breakLengthSummary(breakLength(value)));
+        row.setKey(Settings.BREAK_LENGTH.key);
+        row.setTitle(L10n.t("Break length"));
+        row.setDialogTitle(L10n.t("Break length"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        BreakTimer.Length[] choices = BreakTimer.Length.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = minutesLabel(choices[i].minutes);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.BREAK_LENGTH.savedValue().name());
+        return row;
+    }
+
+    private static BreakTimer.Use breakAfter(@Nullable String name) {
+        for (BreakTimer.Use use : BreakTimer.Use.values()) {
+            if (use.name().equals(name)) return use;
+        }
+        return BreakTimer.Use.THIRTY_MINUTES;
+    }
+
+    private static BreakTimer.Length breakLength(@Nullable String name) {
+        for (BreakTimer.Length length : BreakTimer.Length.values()) {
+            if (length.name().equals(name)) return length;
+        }
+        return BreakTimer.Length.FIVE_MINUTES;
+    }
+
+    /** What the break lists and the sentences about them call [minutes]. */
+    static String minutesLabel(int minutes) {
+        switch (minutes) {
+            case 1:
+                return L10n.t("1 minute");
+            case 5:
+                return L10n.t("5 minutes");
+            case 10:
+                return L10n.t("10 minutes");
+            case 15:
+                return L10n.t("15 minutes");
+            case 30:
+                return L10n.t("30 minutes");
+            case 45:
+                return L10n.t("45 minutes");
+            default:
+                return L10n.t("1 hour");
+        }
+    }
+
+    /** What the use time does, for its row's summary. */
+    static String breakAfterSummary(BreakTimer.Use use) {
+        return L10n.f("A break starts after %1$s of Home, Feeds, Video and Reels.", minutesLabel(use.minutes));
+    }
+
+    /** What the break length does, for its row's summary. */
+    static String breakLengthSummary(BreakTimer.Length length) {
+        return L10n.f("Home, Feeds, Video and Reels stay covered for %1$s.", minutesLabel(length.minutes));
+    }
+
     /**
      * How long a Recently watched entry stays. Like the seen posts row, its values are the
      * setting's own names and its summary says what the choice does.
@@ -2178,6 +2264,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             ((PauseLengthRow) listPreference).showSummary();
         } else if (listPreference instanceof WatchedKeepRow) {
             ((WatchedKeepRow) listPreference).showSummary();
+        } else if (listPreference instanceof BreakRow) {
+            ((BreakRow) listPreference).showSummary();
         } else if (listPreference instanceof TextSizeRow) {
             ((TextSizeRow) listPreference).showSummary();
         } else if (listPreference instanceof AccentRow) {

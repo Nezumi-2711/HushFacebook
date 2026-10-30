@@ -205,6 +205,8 @@ Videos save to your gallery at the quality you pick under Downloads, best by def
 
 Under Video and audio > Recently watched, Clear also discards watches waiting to be saved. Turning Remember what you watch off stops new entries and discards pending watches. It keeps the entries already on the list, and they still leave once they're older than Keep watched entries for (30 days unless you pick 7 days or until you clear it). The remove button on a row takes just that one off, with Undo under the list.
 
+Under Opening Facebook, **Opening pause** makes you wait a few seconds before Facebook opens from its icon, and **Take breaks** covers the feeds and Reels with a break screen after the browsing time you pick. Chats, your profile and the Menu still work during a break. Both start off.
+
 ## Help
 
 Questions about setting up, or about whether a Facebook build works, go in [Discussions](https://github.com/SysAdminDoc/Hushfacebook/discussions). For something that's broken, use the [bug form](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=bug_report.yml) and attach a diagnostic report from Hushfacebook settings. It leaves out links, IDs and the credentials it recognizes, but read it before you share it. If Facebook crashes before you can reach the settings, attach the newest `crash-` file from Download/Hushfacebook instead. The file identifies the Facebook build and the patch bundle that produced it. Ideas go on the [feature form](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=feature_request.yml). When Morphe Manager misbehaves with every app, not only Facebook, [Morphe's own tracker](https://github.com/MorpheApp/morphe-manager/issues) is the place.

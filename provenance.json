@@ -1162,6 +1162,15 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/BreakTimer.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: Take breaks, which counts foreground time on Home, Feeds, Video and screens a reel played on, and after the chosen use time covers those screens for the chosen break length while chats, profiles and the Menu keep working. It runs from the settings entry's activity callbacks plus Resume playback's player-start hook, and keeps a break under way across restarts and reboots."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/TextSize.java"
       ],
       "origin": "original",

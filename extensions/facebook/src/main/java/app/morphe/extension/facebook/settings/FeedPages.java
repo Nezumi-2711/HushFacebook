@@ -6,6 +6,8 @@
  */
 package app.morphe.extension.facebook.settings;
 
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.breakAfterRow;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.breakLengthRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.category;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.commentOrderRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.feedsSubtabRow;
@@ -34,6 +36,7 @@ import app.morphe.extension.facebook.comments.CommentSheetOptions;
 import app.morphe.extension.facebook.feed.FeedTypeNames;
 import app.morphe.extension.facebook.feed.HiddenTally;
 import app.morphe.extension.facebook.feed.SeenPosts;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.navigation.MarketplaceOnly;
 import app.morphe.extension.facebook.settings.SettingsRows.Row;
 import app.morphe.extension.shared.L10n;
@@ -51,8 +54,9 @@ final class FeedPages {
     }
 
     /**
-     * Opening Facebook: the opening pause, Marketplace only, the tab Facebook opens on, and the
-     * feed Home loads. Every build has the section, since the pause is the settings entry's own.
+     * Opening Facebook: the opening pause, breaks, Marketplace only, the tab Facebook opens on, and
+     * the feed Home loads. Every build has the section, since the pause and breaks are the settings
+     * entry's own.
      */
     static void opening(HushfacebookPreferenceFragment page, PreferenceScreen screen, Context context,
             Set<PatchFamily> build) {
@@ -70,6 +74,25 @@ final class FeedPages {
         });
         opening.addPreference(pause);
         opening.addPreference(pauseLength);
+        // Take breaks (#248), the settings entry's own too, with its two lists following its switch.
+        SwitchPreference breaks = toggle(context, Settings.TAKE_BREAKS,
+                L10n.t("After the time you pick on Home, Feeds, Video and Reels, they're covered for a break. "
+                        + "Chats, your profile and the Menu still work, and time away as long as a break counts as one."));
+        Preference breakAfter = breakAfterRow(context);
+        Preference breakLength = breakLengthRow(context);
+        boolean breaksOn = Settings.TAKE_BREAKS.savedValue();
+        breakAfter.setEnabled(breaksOn);
+        breakLength.setEnabled(breaksOn);
+        breaks.setOnPreferenceChangeListener((preference, value) -> {
+            breakAfter.setEnabled(Boolean.TRUE.equals(value));
+            breakLength.setEnabled(Boolean.TRUE.equals(value));
+            // The screen under the settings stays resumed, so nothing else would start or end the count.
+            BreakTimer.switched();
+            return true;
+        });
+        opening.addPreference(breaks);
+        opening.addPreference(breakAfter);
+        opening.addPreference(breakLength);
         if (build.contains(PatchFamily.MARKETPLACE_ONLY)) {
             // Facebook builds the tab bar once, and the hook is asked then and not again.
             opening.addPreference(toggle(context, Settings.MARKETPLACE_ONLY, ""));

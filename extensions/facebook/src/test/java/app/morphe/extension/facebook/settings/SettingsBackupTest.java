@@ -87,6 +87,7 @@ import app.morphe.extension.facebook.feed.WordsCorpus;
 import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
@@ -212,6 +213,8 @@ public class SettingsBackupTest {
         Settings.QUIET_HOURS_UNTIL.resetToDefault();
         Settings.APP_LOCK_AFTER.resetToDefault();
         Settings.OPENING_PAUSE_LENGTH.resetToDefault();
+        Settings.BREAK_AFTER.resetToDefault();
+        Settings.BREAK_LENGTH.resetToDefault();
         Settings.TEXT_SIZE.resetToDefault();
         Settings.ACCENT_COLOR.resetToDefault();
         Settings.VIDEO_SUBFOLDER.resetToDefault();
@@ -280,7 +283,8 @@ public class SettingsBackupTest {
                 Settings.FILENAME_TEMPLATE, Settings.PHOTO_FILENAME_TEMPLATE, Settings.DOWNLOAD_ACTION, Settings.SEND_TO_APP,
                 Settings.START_TAB, Settings.FEEDS_SUBTAB, Settings.COMMENT_ORDER, Settings.PLAYBACK_QUALITY,
                 Settings.REELS_PLAYBACK_QUALITY, Settings.STORIES_PLAYBACK_QUALITY, Settings.QUIET_HOURS_FROM,
-                Settings.QUIET_HOURS_UNTIL, Settings.APP_LOCK_AFTER, Settings.OPENING_PAUSE_LENGTH, Settings.TEXT_SIZE, Settings.ACCENT_COLOR, Settings.BADGE_COLOR, Settings.LOGO_COLOR, Settings.TAB_COLOR), SettingsBackup.VALUES);
+                Settings.QUIET_HOURS_UNTIL, Settings.APP_LOCK_AFTER, Settings.OPENING_PAUSE_LENGTH, Settings.BREAK_AFTER,
+                Settings.BREAK_LENGTH, Settings.TEXT_SIZE, Settings.ACCENT_COLOR, Settings.BADGE_COLOR, Settings.LOGO_COLOR, Settings.TAB_COLOR), SettingsBackup.VALUES);
         assertEquals(Settings.SAVE_TO, SettingsBackup.TO);
         assertEquals(Settings.HIDDEN_WORDS, SettingsBackup.HIDDEN);
         assertEquals(Settings.KEPT_WORDS, SettingsBackup.KEPT);
@@ -2594,6 +2598,89 @@ public class SettingsBackupTest {
 
         assertEquals("With Opening pause on, Facebook will wait 10 seconds before it opens.",
                 SettingsBackupPreference.pauseLengthSentence(OpeningPause.Length.TEN_SECONDS));
+    }
+
+    /**
+     * The time before a break and the break's length go out as their file values and come back
+     * only as ones this build offers: any other value refuses the whole file. The switch rides with
+     * the other switches.
+     */
+    @Test
+    public void theBreakTimesRoundTripAndComeBackOnlyAsOnesThisBuildOffers() throws Exception {
+        assertTrue(SettingsBackup.ALLOWLIST.contains(Settings.TAKE_BREAKS));
+        for (BreakTimer.Use choice : BreakTimer.Use.values()) {
+            BreakTimer.Use other = choice == BreakTimer.Use.TEN_MINUTES
+                    ? BreakTimer.Use.SIXTY_MINUTES : BreakTimer.Use.TEN_MINUTES;
+            Settings.BREAK_AFTER.save(choice);
+            String file = SettingsBackup.create();
+            assertEquals(choice.fileValue, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.BREAK_AFTER.key));
+            Settings.BREAK_AFTER.save(other);
+
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+            assertEquals(choice, snapshot.breakAfter);
+            Map<Setting<?>, Object> expected = new LinkedHashMap<>();
+            expected.put(SettingsBackup.BREAK_AFTER, choice);
+            assertEquals(expected, snapshot.changes());
+            assertEquals(1, SettingsBackup.apply(snapshot));
+            assertEquals(choice, Settings.BREAK_AFTER.savedValue());
+            assertEquals("a file read back is the file", file, SettingsBackup.create());
+        }
+        for (BreakTimer.Length choice : BreakTimer.Length.values()) {
+            BreakTimer.Length other = choice == BreakTimer.Length.FIVE_MINUTES
+                    ? BreakTimer.Length.ONE_MINUTE : BreakTimer.Length.FIVE_MINUTES;
+            Settings.BREAK_LENGTH.save(choice);
+            String file = SettingsBackup.create();
+            assertEquals(choice.fileValue, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.BREAK_LENGTH.key));
+            Settings.BREAK_LENGTH.save(other);
+
+            SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+            assertEquals(choice, snapshot.breakLength);
+            Map<Setting<?>, Object> expected = new LinkedHashMap<>();
+            expected.put(SettingsBackup.BREAK_LENGTH, choice);
+            assertEquals(expected, snapshot.changes());
+            assertEquals(1, SettingsBackup.apply(snapshot));
+            assertEquals(choice, Settings.BREAK_LENGTH.savedValue());
+        }
+
+        Settings.BREAK_AFTER.save(BreakTimer.Use.THIRTY_MINUTES);
+        Settings.BREAK_LENGTH.save(BreakTimer.Length.TEN_MINUTES);
+        String file = SettingsBackup.create();
+        Map<String, ?> before = store();
+        for (String key : new String[]{SettingsBackup.BREAK_AFTER.key, SettingsBackup.BREAK_LENGTH.key}) {
+            for (Object refused : new Object[]{"TEN_MINUTES", "10 minutes", "20_minutes", "", 10, true, JSONObject.NULL}) {
+                JSONObject hostile = new JSONObject(file);
+                hostile.getJSONObject("settings").put(key, refused);
+                try {
+                    SettingsBackup.parse(hostile.toString());
+                    fail("a file with " + key + " " + printable(String.valueOf(refused)) + " was read");
+                } catch (SettingsBackup.Rejected rejected) {
+                    assertEquals(key + " " + printable(String.valueOf(refused)), SettingsBackup.Reason.VALUE, rejected.reason);
+                }
+            }
+        }
+        assertEquals("a refused file wrote something", before, store());
+
+        // A file from before the break times were carried leaves them alone.
+        SettingsBackup.Snapshot older = SettingsBackup.parse(fileWith(Settings.HIDE_SUGGESTED_POSTS, false));
+        assertNull(older.breakAfter);
+        assertNull(older.breakLength);
+        SettingsBackup.apply(older);
+        assertEquals(BreakTimer.Use.THIRTY_MINUTES, Settings.BREAK_AFTER.savedValue());
+        assertEquals(BreakTimer.Length.TEN_MINUTES, Settings.BREAK_LENGTH.savedValue());
+
+        // A preview kept across a rebuild keeps them, and only ones this build offers come back.
+        Bundle state = SettingsBackup.parse(file).toBundle();
+        assertEquals(BreakTimer.Use.THIRTY_MINUTES, SettingsBackup.Snapshot.fromBundle(state).breakAfter);
+        assertEquals(BreakTimer.Length.TEN_MINUTES, SettingsBackup.Snapshot.fromBundle(state).breakLength);
+        state.putString("break_after", "THIRTY_MINUTES");
+        state.putString("break_length", "TEN_MINUTES");
+        assertNull(SettingsBackup.Snapshot.fromBundle(state).breakAfter);
+        assertNull(SettingsBackup.Snapshot.fromBundle(state).breakLength);
+
+        assertEquals("With Take breaks on, a break will start after 30 minutes of browsing.",
+                SettingsBackupPreference.breakAfterSentence(BreakTimer.Use.THIRTY_MINUTES));
+        assertEquals("With Take breaks on, a break will last 10 minutes.",
+                SettingsBackupPreference.breakLengthSentence(BreakTimer.Length.TEN_MINUTES));
     }
 
     /**

@@ -2197,3 +2197,43 @@ It wasn't put back. It was watched again since, or its time on the list is up.	�
 Recently watched will keep entries until you clear them.	最近观看将保留记录，直到你清空。
 # context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
 Recently watched will keep entries for %1$s.	最近观看将保留记录 %1$s。
+# context: a switch on the Feeds page, under Opening pause; it covers Home, Feeds, Video and Reels after a chosen time of use
+Take breaks	定时休息
+# context: that switch's summary; Home, Feeds, Video and Reels are Facebook's tabs, Menu is Facebook's Menu tab; the last part means being away from Facebook as long as a break also counts as a break
+After the time you pick on Home, Feeds, Video and Reels, they're covered for a break. Chats, your profile and the Menu still work, and time away as long as a break counts as one.	在主页、动态、视频和 Reels 上用满你选的时间后，它们会被遮住，让你休息一下。聊天、你的个人主页和菜单仍可使用，离开时长达到一次休息也算作休息。
+# context: a row under Take breaks that opens a list of times; it's how long you can browse before a break starts
+Break after	多久后休息
+# context: a row under Take breaks that opens a list of times; it's how long a break lasts
+Break length	休息时长
+# context: a choice in those lists
+10 minutes	10 分钟
+# context: a choice in those lists
+30 minutes	30 分钟
+# context: a choice in those lists
+45 minutes	45 分钟
+# context: the Break after row's summary; %1$s is the chosen time, such as 30 minutes
+A break starts after %1$s of Home, Feeds, Video and Reels.	在主页、动态、视频和 Reels 上用满 %1$s 后开始休息。
+# context: the Break length row's summary; %1$s is the chosen time, such as 5 minutes
+Home, Feeds, Video and Reels stay covered for %1$s.	主页、动态、视频和 Reels 会被遮住 %1$s。
+# context: title of the cover shown over Home, Feeds, Video and Reels during a break
+Time for a break	该休息一下了
+# context: line on the break cover; %1$d is the whole minutes left, here 1
+Home, Feeds, Video and Reels open again in %1$d minute.	主页、动态、视频和 Reels 将在 %1$d 分钟后重新开放。
+# context: line on the break cover; %1$d is the whole minutes left, more than 1
+Home, Feeds, Video and Reels open again in %1$d minutes.	主页、动态、视频和 Reels 将在 %1$d 分钟后重新开放。
+# context: line on the break cover in its last minute
+Home, Feeds, Video and Reels open again in under a minute.	主页、动态、视频和 Reels 将在一分钟内重新开放。
+# context: line on the break cover; Menu is Facebook's Menu tab
+Chats, your profile and the Menu still work.	聊天、你的个人主页和菜单仍可使用。
+# context: button on the break cover that switches to Facebook's Menu tab
+Go to the Menu	前往菜单
+# context: button on the break cover that sends Facebook to the background
+Close Facebook	关闭 Facebook
+# context: button on the break cover that opens the Take breaks settings
+Break settings	休息设置
+# context: toast when a break's time is up and the cover goes away
+Your break is over.	休息结束了。
+# context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 30 minutes
+With Take breaks on, a break will start after %1$s of browsing.	开启定时休息后，浏览 %1$s 后会开始休息。
+# context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 5 minutes
+With Take breaks on, a break will last %1$s.	开启定时休息后，每次休息持续 %1$s。

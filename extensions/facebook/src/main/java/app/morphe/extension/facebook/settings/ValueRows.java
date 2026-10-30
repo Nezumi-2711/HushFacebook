@@ -62,6 +62,7 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import app.morphe.extension.facebook.comments.CommentOrder;
 import app.morphe.extension.facebook.reels.ReelsOrder;
@@ -1279,6 +1280,57 @@ final class ValueRows {
             String summary = pauseLengthSummary(length);
             if (!isEnabled()) {
                 summary += " " + L10n.f("Turn on %1$s to use this.", L10n.isolate(SwitchLabels.title(Settings.OPENING_PAUSE)));
+            }
+            setSummary(summary);
+        }
+
+        @Override
+        protected void onBindView(View view) {
+            super.onBindView(view);
+            showAllText(view);
+            ScreenColors.row(view, this);
+            view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+        }
+
+        /** Its list takes the screen's colours, as the other rows' dialogs do. */
+        @Override
+        protected void showDialog(Bundle state) {
+            super.showDialog(state);
+            if (getDialog() instanceof AlertDialog) ScreenColors.dialog((AlertDialog) getDialog());
+        }
+    }
+
+    /**
+     * A Take breaks row, the use time or the break length. Its summary follows its value, whoever
+     * sets it: the person, the shared page syncing it from the setting, or an import.
+     */
+    static final class BreakRow extends PlainSummaryList {
+        private final Function<String, String> summaryOf;
+
+        BreakRow(Context context, Function<String, String> summaryOf) {
+            super(context);
+            this.summaryOf = summaryOf;
+        }
+
+        @Override
+        public void setValue(String value) {
+            super.setValue(value);
+            showSummary();
+        }
+
+        /** It's greyed out while Take breaks is off, and its summary then says so. */
+        @Override
+        public void setEnabled(boolean enabled) {
+            super.setEnabled(enabled);
+            showSummary();
+        }
+
+        void showSummary() {
+            // The list's constructor can set a value before this row has its summary.
+            if (summaryOf == null) return;
+            String summary = summaryOf.apply(getValue());
+            if (!isEnabled()) {
+                summary += " " + L10n.f("Turn on %1$s to use this.", L10n.isolate(SwitchLabels.title(Settings.TAKE_BREAKS)));
             }
             setSummary(summary);
         }

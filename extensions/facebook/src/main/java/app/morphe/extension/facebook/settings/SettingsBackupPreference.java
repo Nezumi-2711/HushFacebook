@@ -59,6 +59,7 @@ import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.notifications.QuietHour;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
@@ -419,6 +420,12 @@ public class SettingsBackupPreference extends Preference {
             if (snapshot.pauseLength != null && snapshot.changes().containsKey(SettingsBackup.PAUSE_LENGTH)) {
                 parts.add(pauseLengthSentence(snapshot.pauseLength));
             }
+            if (snapshot.breakAfter != null && snapshot.changes().containsKey(SettingsBackup.BREAK_AFTER)) {
+                parts.add(breakAfterSentence(snapshot.breakAfter));
+            }
+            if (snapshot.breakLength != null && snapshot.changes().containsKey(SettingsBackup.BREAK_LENGTH)) {
+                parts.add(breakLengthSentence(snapshot.breakLength));
+            }
             if (snapshot.watchedKeep != null && snapshot.changes().containsKey(SettingsBackup.WATCHED_KEEP)) {
                 parts.add(watchedKeepSentence(snapshot.watchedKeep));
             }
@@ -602,6 +609,18 @@ public class SettingsBackupPreference extends Preference {
     static String pauseLengthSentence(OpeningPause.Length length) {
         return L10n.f("With Opening pause on, Facebook will wait %1$s before it opens.",
                 HushfacebookPreferenceFragment.pauseLengthLabel(length));
+    }
+
+    /** The sentence that says how long browsing goes before a break, after an import. */
+    static String breakAfterSentence(BreakTimer.Use use) {
+        return L10n.f("With Take breaks on, a break will start after %1$s of browsing.",
+                HushfacebookPreferenceFragment.minutesLabel(use.minutes));
+    }
+
+    /** The sentence that says how long a break lasts, after an import. */
+    static String breakLengthSentence(BreakTimer.Length length) {
+        return L10n.f("With Take breaks on, a break will last %1$s.",
+                HushfacebookPreferenceFragment.minutesLabel(length.minutes));
     }
 
     /** The sentence that says how long Recently watched keeps an entry, after an import. */
@@ -996,6 +1015,10 @@ public class SettingsBackupPreference extends Preference {
                     + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()))
                     + (snapshot.pauseLength == null || !snapshot.changes().containsKey(SettingsBackup.PAUSE_LENGTH) ? ""
                             : " " + pauseLengthSentence(snapshot.pauseLength))
+                    + (snapshot.breakAfter == null || !snapshot.changes().containsKey(SettingsBackup.BREAK_AFTER) ? ""
+                            : " " + breakAfterSentence(snapshot.breakAfter))
+                    + (snapshot.breakLength == null || !snapshot.changes().containsKey(SettingsBackup.BREAK_LENGTH) ? ""
+                            : " " + breakLengthSentence(snapshot.breakLength))
                     + (snapshot.watchedKeep == null || !snapshot.changes().containsKey(SettingsBackup.WATCHED_KEEP) ? ""
                             : " " + watchedKeepSentence(snapshot.watchedKeep));
             accepted =Utils.runOnBackgroundThread(() -> {

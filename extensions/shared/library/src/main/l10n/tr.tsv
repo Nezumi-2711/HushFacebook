@@ -2202,3 +2202,43 @@ It wasn't put back. It was watched again since, or its time on the list is up.	G
 Recently watched will keep entries until you clear them.	Son izlenenler girişleri sen temizleyene kadar tutacak.
 # context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
 Recently watched will keep entries for %1$s.	Son izlenenler girişleri %1$s boyunca tutacak.
+# context: a switch on the Feeds page, under Opening pause; it covers Home, Feeds, Video and Reels after a chosen time of use
+Take breaks	Mola ver
+# context: that switch's summary; Home, Feeds, Video and Reels are Facebook's tabs, Menu is Facebook's Menu tab; the last part means being away from Facebook as long as a break also counts as a break
+After the time you pick on Home, Feeds, Video and Reels, they're covered for a break. Chats, your profile and the Menu still work, and time away as long as a break counts as one.	Ana Sayfa, Akışlar, Video ve Reels'te seçtiğin süreden sonra bunlar bir mola için kapatılır. Sohbetler, profilin ve Menü çalışmaya devam eder, bir mola kadar uzak kalmak da mola sayılır.
+# context: a row under Take breaks that opens a list of times; it's how long you can browse before a break starts
+Break after	Moladan önceki süre
+# context: a row under Take breaks that opens a list of times; it's how long a break lasts
+Break length	Mola süresi
+# context: a choice in those lists
+10 minutes	10 dakika
+# context: a choice in those lists
+30 minutes	30 dakika
+# context: a choice in those lists
+45 minutes	45 dakika
+# context: the Break after row's summary; %1$s is the chosen time, such as 30 minutes
+A break starts after %1$s of Home, Feeds, Video and Reels.	Ana Sayfa, Akışlar, Video ve Reels'te %1$s geçince mola başlar.
+# context: the Break length row's summary; %1$s is the chosen time, such as 5 minutes
+Home, Feeds, Video and Reels stay covered for %1$s.	Ana Sayfa, Akışlar, Video ve Reels %1$s boyunca kapalı kalır.
+# context: title of the cover shown over Home, Feeds, Video and Reels during a break
+Time for a break	Mola zamanı
+# context: line on the break cover; %1$d is the whole minutes left, here 1
+Home, Feeds, Video and Reels open again in %1$d minute.	Ana Sayfa, Akışlar, Video ve Reels %1$d dakika sonra yeniden açılır.
+# context: line on the break cover; %1$d is the whole minutes left, more than 1
+Home, Feeds, Video and Reels open again in %1$d minutes.	Ana Sayfa, Akışlar, Video ve Reels %1$d dakika sonra yeniden açılır.
+# context: line on the break cover in its last minute
+Home, Feeds, Video and Reels open again in under a minute.	Ana Sayfa, Akışlar, Video ve Reels bir dakikadan kısa sürede yeniden açılır.
+# context: line on the break cover; Menu is Facebook's Menu tab
+Chats, your profile and the Menu still work.	Sohbetler, profilin ve Menü çalışmaya devam eder.
+# context: button on the break cover that switches to Facebook's Menu tab
+Go to the Menu	Menü'ye git
+# context: button on the break cover that sends Facebook to the background
+Close Facebook	Facebook'u kapat
+# context: button on the break cover that opens the Take breaks settings
+Break settings	Mola ayarları
+# context: toast when a break's time is up and the cover goes away
+Your break is over.	Molan bitti.
+# context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 30 minutes
+With Take breaks on, a break will start after %1$s of browsing.	Mola ver açıkken %1$s gezindikten sonra mola başlar.
+# context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 5 minutes
+With Take breaks on, a break will last %1$s.	Mola ver açıkken bir mola %1$s sürer.
