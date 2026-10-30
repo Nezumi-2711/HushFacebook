@@ -96,6 +96,32 @@ Start from the stock Facebook build that the patch should support. Facebook rena
 
 For DEX edits, check the utilities in `patches/src/main/kotlin/app/morphe/util/` before writing register numbers by hand. `FreeRegisterProvider` and `RegisterLiveness` help keep injected instructions from overwriting values Facebook still needs. The register tests and `scripts/test-injected-registers.ps1` catch invalid injected code. Resource changes need a resource fixture check as well, since APKM bundles can hold resources in splits that a merged base APK does not show.
 
+## Translating
+
+Hushfacebook's own text (its settings, toasts and the menu rows it adds) comes from one table per language in `extensions/shared/library/src/main/l10n/`. Facebook's own text isn't in them. There's `de.tsv`, `es.tsv`, `in.tsv` (Indonesian, under Android's older code), `pt-rBR.tsv`, `tr.tsv`, `vi.tsv`, `zh-rCN.tsv` and `zh-rTW.tsv`.
+
+Each row is the English exactly as the code hands it to `L10n.t`, `L10n.f` or `L10n.quantity`, then one tab, then the translation. Lines starting with `#` are comments, and a `# context:` line above a row says where the text shows and what it does. Write a line break as `\n`. The English is the whole sentence, so change only the right-hand column. A row can keep the English as its translation, and that's how a string sits until someone translates it.
+
+Placeholders have to survive. When the English has numbered ones like `%1$s` and `%2$d`, the translation needs the same set and can put them in any order, so `%1$s of %2$s` may become `%2$s: %1$s`. Bare `%s` and `%d` have to stay in the same order, because they're filled by position. A count uses two English keys, the singular and the plural, and `L10n.quantity` picks by the language's plural rule. A language with more plural forms adds a row for each one, keyed by the plural English plus `|` and the CLDR name (`few`, `many`, `two` or `zero`). Use straight apostrophes, and no em or en dash anywhere. A hyphen standing in for one fails too.
+
+After editing a table, run this from the repository root and commit the table together with the regenerated `L10nTranslations.java`:
+
+```
+python scripts/gen-l10n.py
+```
+
+It stops at the first row it can't use and names the file and line: a missing translation, a duplicate, a key starting with `#`, an invisible or control character, or placeholders that don't match. Then run the catalog test. It needs the Gradle variables from [Building and checking](#building-and-checking), but no Facebook bundles.
+
+```
+./gradlew :extensions:facebook:testDebugUnitTest --tests "app.morphe.extension.shared.L10nCatalogTest"
+```
+
+It checks the generated class against the tables, and it holds every table to exactly the English the code shows, both ways. A row missing from any table fails it, and so does a row for text the code no longer shows. So when a change retires a string, delete its row from all eight tables. When a change rewords one, the key is the English, so update the key in every table and keep each translation that still fits. Where you can't say, put the new English in as the translation. A second `--tests "*L10nTest"` adds the other language tests, `SettingsL10nTest` among them, which builds the settings screens in each language.
+
+To add a language, copy `de.tsv` to the new code, named the way an Android resource folder would be (`fr.tsv`, `pt-rPT.tsv`), and translate the right-hand column. Every row has to be there, translated or not. Then add the code to the three language lists in `SettingsL10nTest` and to the README sentence that names the translated languages.
+
+To look for clipped text without knowing a language, turn on Developer options, add English (XA) or Arabic (XB) under the phone's languages and move it to the top. Under en-XA every Hushfacebook string comes out accented, bracketed and about a third longer. Under ar-XB it's mirrored right to left. Only the first language in the list counts, so a pseudo-locale lower down does nothing.
+
 ## Inspecting stock Facebook
 
 Install the original signed APKM in a fresh test profile and don't add the Hushfacebook `.mpp` bundle. Check the package, version code, ABI, density split, and signer before comparing screenshots or behavior. This separates Facebook's own screens from injected settings and hooks. APKM files contain several splits, so install a device-matching set rather than only `base.apk`.
