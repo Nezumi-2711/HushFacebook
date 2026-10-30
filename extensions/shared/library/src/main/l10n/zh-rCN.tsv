@@ -2237,3 +2237,23 @@ Your break is over.	休息结束了。
 With Take breaks on, a break will start after %1$s of browsing.	开启定时休息后，浏览 %1$s 后会开始休息。
 # context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 5 minutes
 With Take breaks on, a break will last %1$s.	开启定时休息后，每次休息持续 %1$s。
+# context: Marketplace search, the Advanced Marketplace search switch and its Adv. Filters button and dialog
+Advanced Marketplace search	Marketplace 高级搜索
+Lets you type rules into Marketplace search. Put a word in quotes, like "word", to keep only titles with it, put a minus in front, like -word, to hide titles with it, and add in:place to keep listings in that place.	让你在 Marketplace 搜索中输入规则。给词语加上引号，例如 "词语"，只保留标题含有它的商品；在前面加减号，例如 -词语，隐藏标题含有它的商品；添加 in:地点，只保留位于该地点的商品。
+Adv. Filters button	高级筛选按钮
+Adds an Adv. Filters button under Marketplace's Filters on search results. It opens lists of words to keep, words to hide and places, and writes the rules into the search for you.	在搜索结果中 Marketplace 的“筛选”下方添加“高级筛选”按钮。它会打开要保留的词语、要隐藏的词语和地点的列表，并帮你把规则写进搜索。
+How Adv. Filters works	高级筛选的用法
+Type a word or a phrase and tap Add. A phrase of more than one word has to be in the title as written. A term matches anywhere in a title, so cat also matches cats. Put it in quotes with a space after it, like "cat ", to leave out cats. Go puts these into the search box and searches again.	输入一个词或短语，然后点按“添加”。由多个词组成的短语必须按原样出现在标题中。词语可匹配标题中的任意位置，所以 cat 也会匹配 cats。给它加上引号并在后面加一个空格，例如 "cat "，就能排除 cats。“搜索”会把这些放进搜索框并重新搜索。
+You can also type "word", -word or in:place straight into the search box.	你也可以直接在搜索框中输入 "词语"、-词语 或 in:地点。
+Adv. Filters	高级筛选
+Adv. Filters (%1$d)	高级筛选 (%1$d)
+Advanced Marketplace filters	Marketplace 高级筛选
+Advanced Marketplace filters, %1$d on	Marketplace 高级筛选，已开启 %1$d 项
+Add	添加
+Title must include	标题必须包含
+Hide titles with	隐藏标题含有
+Only show listings in	只显示位于以下地点的商品
+Go	搜索
+Clear all	全部清除
+Search box not found. Type the search again.	找不到搜索框。请重新输入搜索内容。
+The search box didn't open. Type the search again.	搜索框没有打开。请重新输入搜索内容。

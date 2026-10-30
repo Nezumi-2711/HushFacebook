@@ -2242,3 +2242,23 @@ Your break is over.	Deine Pause ist vorbei.
 With Take breaks on, a break will start after %1$s of browsing.	Mit Pausen machen beginnt eine Pause nach %1$s Surfen.
 # context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 5 minutes
 With Take breaks on, a break will last %1$s.	Mit Pausen machen dauert eine Pause %1$s.
+# context: Marketplace search, the Advanced Marketplace search switch and its Adv. Filters button and dialog
+Advanced Marketplace search	Erweiterte Marketplace-Suche
+Lets you type rules into Marketplace search. Put a word in quotes, like "word", to keep only titles with it, put a minus in front, like -word, to hide titles with it, and add in:place to keep listings in that place.	Lässt dich Regeln in die Marketplace-Suche tippen. Setze ein Wort in Anführungszeichen, etwa "wort", um nur Titel damit zu behalten, setze ein Minus davor, etwa -wort, um Titel damit auszublenden, und füge in:ort hinzu, um nur Angebote an diesem Ort zu behalten.
+Adv. Filters button	Schaltfläche Erw. Filter
+Adds an Adv. Filters button under Marketplace's Filters on search results. It opens lists of words to keep, words to hide and places, and writes the rules into the search for you.	Fügt in den Suchergebnissen unter den Filtern des Marketplace eine Schaltfläche Erw. Filter hinzu. Sie öffnet Listen mit Wörtern zum Behalten, Wörtern zum Ausblenden und Orten und schreibt die Regeln für dich in die Suche.
+How Adv. Filters works	So funktionieren Erw. Filter
+Type a word or a phrase and tap Add. A phrase of more than one word has to be in the title as written. A term matches anywhere in a title, so cat also matches cats. Put it in quotes with a space after it, like "cat ", to leave out cats. Go puts these into the search box and searches again.	Tippe ein Wort oder eine Wortgruppe und tippe auf Hinzufügen. Eine Wortgruppe aus mehreren Wörtern muss so im Titel stehen. Ein Begriff passt überall im Titel, also passt cat auch zu cats. Setze ihn mit einem Leerzeichen dahinter in Anführungszeichen, etwa "cat ", um cats auszulassen. Los setzt diese in das Suchfeld und sucht erneut.
+You can also type "word", -word or in:place straight into the search box.	Du kannst auch "wort", -wort oder in:ort direkt ins Suchfeld tippen.
+Adv. Filters	Erw. Filter
+Adv. Filters (%1$d)	Erw. Filter (%1$d)
+Advanced Marketplace filters	Erweiterte Marketplace-Filter
+Advanced Marketplace filters, %1$d on	Erweiterte Marketplace-Filter, %1$d aktiv
+Add	Hinzufügen
+Title must include	Titel muss enthalten
+Hide titles with	Titel ausblenden mit
+Only show listings in	Nur Angebote zeigen in
+Go	Los
+Clear all	Alles löschen
+Search box not found. Type the search again.	Suchfeld nicht gefunden. Gib die Suche erneut ein.
+The search box didn't open. Type the search again.	Das Suchfeld hat sich nicht geöffnet. Gib die Suche erneut ein.

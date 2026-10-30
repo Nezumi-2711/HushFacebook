@@ -2242,3 +2242,23 @@ Your break is over.	Molan bitti.
 With Take breaks on, a break will start after %1$s of browsing.	Mola ver açıkken %1$s gezindikten sonra mola başlar.
 # context: import preview and toast; Take breaks is the switch's name and %1$s is a time such as 5 minutes
 With Take breaks on, a break will last %1$s.	Mola ver açıkken bir mola %1$s sürer.
+# context: Marketplace search, the Advanced Marketplace search switch and its Adv. Filters button and dialog
+Advanced Marketplace search	Gelişmiş Marketplace araması
+Lets you type rules into Marketplace search. Put a word in quotes, like "word", to keep only titles with it, put a minus in front, like -word, to hide titles with it, and add in:place to keep listings in that place.	Marketplace aramasına kural yazmanızı sağlar. Yalnızca o kelimeyi içeren başlıkları tutmak için kelimeyi "kelime" gibi tırnak içine alın, o kelimeyi içeren başlıkları gizlemek için önüne -kelime gibi eksi koyun ve yalnızca o yerdeki ilanları tutmak için in:yer ekleyin.
+Adv. Filters button	Gel. Filtreler düğmesi
+Adds an Adv. Filters button under Marketplace's Filters on search results. It opens lists of words to keep, words to hide and places, and writes the rules into the search for you.	Arama sonuçlarında Marketplace'in Filtreler'inin altına bir Gel. Filtreler düğmesi ekler. Tutulacak kelimeler, gizlenecek kelimeler ve yerler listelerini açar ve kuralları sizin için aramaya yazar.
+How Adv. Filters works	Gel. Filtreler nasıl çalışır
+Type a word or a phrase and tap Add. A phrase of more than one word has to be in the title as written. A term matches anywhere in a title, so cat also matches cats. Put it in quotes with a space after it, like "cat ", to leave out cats. Go puts these into the search box and searches again.	Bir kelime veya ifade yazıp Ekle'ye dokunun. Birden fazla kelimeden oluşan bir ifade başlıkta yazıldığı gibi geçmelidir. Bir terim başlığın herhangi bir yerinde eşleşir, yani cat, cats ile de eşleşir. cats'i dışarıda bırakmak için "cat " gibi arkasında boşlukla tırnak içine alın. Git bunları arama kutusuna koyar ve yeniden arar.
+You can also type "word", -word or in:place straight into the search box.	Arama kutusuna doğrudan "kelime", -kelime veya in:yer da yazabilirsiniz.
+Adv. Filters	Gel. Filtreler
+Adv. Filters (%1$d)	Gel. Filtreler (%1$d)
+Advanced Marketplace filters	Gelişmiş Marketplace filtreleri
+Advanced Marketplace filters, %1$d on	Gelişmiş Marketplace filtreleri, %1$d açık
+Add	Ekle
+Title must include	Başlıkta olması gereken
+Hide titles with	Şunları içeren başlıkları gizle
+Only show listings in	Yalnızca şuradaki ilanları göster
+Go	Git
+Clear all	Tümünü temizle
+Search box not found. Type the search again.	Arama kutusu bulunamadı. Aramayı yeniden yazın.
+The search box didn't open. Type the search again.	Arama kutusu açılmadı. Aramayı yeniden yazın.

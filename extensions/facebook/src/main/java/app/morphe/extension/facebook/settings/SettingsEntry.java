@@ -64,6 +64,7 @@ import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ScreenTransitions;
 import app.morphe.extension.facebook.misc.TextSize;
 import app.morphe.extension.facebook.navigation.HiddenStatusBar;
+import app.morphe.extension.facebook.navigation.MarketplaceFilterButton;
 import app.morphe.extension.facebook.navigation.ReelsTab;
 import app.morphe.extension.facebook.navigation.TranslucentBars;
 import app.morphe.extension.facebook.notifications.PushDiagnostics;
@@ -742,10 +743,12 @@ public final class SettingsEntry {
             SavedShortcut.refresh(activity);
             WatchHistoryShortcut.refresh(activity);
             FreeStuffShortcut.refresh(activity);
+            if (SettingsStatus.sponsoredMarketplace()) MarketplaceFilterButton.activityResumed(activity);
         }
 
         @Override
         public void onActivityPaused(Activity activity) {
+            if (SettingsStatus.sponsoredMarketplace()) MarketplaceFilterButton.activityPaused(activity);
             SavedFileActions.onPaused(activity);
             ClipboardLink.onPaused(activity);
             StorySeenButton.activityPaused(activity);
