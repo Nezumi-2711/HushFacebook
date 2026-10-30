@@ -369,7 +369,8 @@ class ColourResolverFixtureTest {
     /**
      * Light mode on the Video tab. That tab keeps a dark surface in both themes, and Facebook writes
      * its bars' #252728 into code: in the tab's SystemBarsController config and in the calls that
-     * paint its status bar and its navigation bar. Route three, as AMOLED, Material You or both run
+     * paint its status bar and its navigation bar, or from 585 in a static helper whose answer the
+     * tab hands to the status bar's painter. Route three, as AMOLED, Material You or both run
      * it, leaves those for the bar hooks, which ask Facebook's theme, and still rewrites every other
      * #252728 in the same classes.
      */
@@ -396,22 +397,33 @@ class ColourResolverFixtureTest {
                 val painters = named.getValue(navigation.definingClass).methods.map { it.descriptor() }
                     .filter { it.endsWith("I)V") }.toSet() + status
 
-                val bars = FixtureDex.methodsWhere(bundle, { dex ->
+                val handing = FixtureDex.methodsWhere(bundle, { dex ->
                     dex.methodSection.any { it.toString() in painters || it.definingClass == config && it.name == "<init>" }
                 }) { method ->
-                    method.writesVideoGrey() > 0 && method.implementation!!.instructions.any {
+                    method.implementation?.instructions?.any {
                         val reference = (it as? ReferenceInstruction)?.reference
                         reference.toString() in painters || it.opcode == Opcode.NEW_INSTANCE && reference.toString() == config
-                    }
+                    } == true
                 }
+                // 585 keeps the Video tab's grey in a static int helper whose answer the tab hands to the status bar's painter.
+                val helperCalls = handing.associateWith { barColourHelpers(it, painters) }.filterValues { it.isNotEmpty() }
+                val helpers = helperCalls.values.flatten().toSet()
+                val helperMethods = if (helpers.isEmpty()) emptyList() else FixtureDex.methodsWhere(bundle, { dex ->
+                    dex.methodSection.any { it.toString() in helpers }
+                }) { it.descriptor() in helpers }
+                val bars = (handing + helperMethods).filter { it.writesVideoGrey() > 0 }.distinctBy { it.descriptor() }
                 val barNames = bars.map { it.descriptor() }.toSet()
                 assertTrue("$name: Facebook writes the Video tab's bar colour in $barNames", bars.size >= 3)
                 assertTrue("$name: FbChromeFragment's bar config isn't in $barNames",
                     bars.any { it.definingClass == "Lcom/facebook/katana/fragment/FbChromeFragment;" && it.name == "getSystemBarsConfig" })
+                val videoTab = "Lcom/facebook/video/videohome/fragment/VideoHomeRootFragment;"
+                val tabHelpers = helperCalls.filterKeys { it.definingClass == videoTab }.values.flatten().toSet()
                 assertTrue("$name: no Video tab painter in $barNames",
-                    bars.any { it.definingClass == "Lcom/facebook/video/videohome/fragment/VideoHomeRootFragment;" })
+                    bars.any { it.definingClass == videoTab || it.descriptor() in tabHelpers })
 
-                val classes = named + FixtureDex.classes(bundle, bars.map { it.definingClass }.toSet() - named.keys) +
+                // A helper's callers come along, so the sweep sees the painter its answer goes to.
+                val callers = helperCalls.filterValues { calls -> calls.any { it in barNames } }.keys.map { it.definingClass }
+                val classes = named + FixtureDex.classes(bundle, (bars.map { it.definingClass } + callers).toSet() - named.keys) +
                     (MATERIAL_YOU to ExtensionDex.classDef(MATERIAL_YOU))
                 for ((amoled, you) in listOf(true to false, false to true, true to true)) {
                     forgetMatches()
