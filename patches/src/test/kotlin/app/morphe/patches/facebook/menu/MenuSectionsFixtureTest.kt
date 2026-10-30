@@ -51,7 +51,7 @@ class MenuSectionsFixtureTest {
      * the same five ids as 583's (`LX/S3S;`) in the same order, each 9 higher, so its label is 0x7f140460.
      */
     private val headerLabel = mapOf(
-        "584.0.0.51.56" to 0x7f140460,
+        "585.0.0.47.54" to 0x7f140460,
     )
 
     private val testKeys = listOf(UPGRADES_TEST_KEY, ALSO_FROM_META_TEST_KEY)

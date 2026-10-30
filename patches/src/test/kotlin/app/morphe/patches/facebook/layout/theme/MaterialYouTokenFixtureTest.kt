@@ -110,7 +110,7 @@ class MaterialYouTokenFixtureTest {
          * pill bar below reads the same array in its constructor, under a name Redex leaves alone
          * on both ABIs, where the Litho component and the array's holder are renamed per build.
          */
-        val LIKES_LINE_ATTRIBUTE = mapOf("584.0.0.51.56" to 0x7f040fcf)
+        val LIKES_LINE_ATTRIBUTE = mapOf("585.0.0.47.54" to 0x7f040fcf)
         /**
          * The seven tokens 584 dropped from 583's 324 (all of them named in MaterialYouTheme's
          * tables or the AMOLED roles at some point), so a listed name missing from a build's enum is
@@ -168,7 +168,7 @@ class MaterialYouTokenFixtureTest {
             "Lcom/mapbox/mapboxsdk/utils/ColorUtils;->getPrimaryDarkColor(Landroid/content/Context;)I@13",
         )
         val UNRESOLVED = mapOf(
-            "584.0.0.51.56" to mapOf(
+            "585.0.0.47.54" to mapOf(
                 // The same 15 reads as 583's arm64, renamed: 584 keeps every shape and moves one offset.
                 "arm64-v8a" to MAPBOX + setOf(
                     "LX/AcB;->A0R(Ljava/lang/Integer;)V@16",
