@@ -117,6 +117,9 @@ final class SettingsRows {
             showAllText(view);
             ScreenColors.row(view, this);
             view.setAccessibilityDelegate(isSelectable() ? new RowSemantics(this, Button.class) : null);
+            // A row that only shows something, such as the feed's hidden count, is one stop for a
+            // screen reader: TalkBack read its title and its summary as two.
+            view.setScreenReaderFocusable(!isSelectable());
         }
     }
 
