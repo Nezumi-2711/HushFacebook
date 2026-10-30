@@ -40,7 +40,7 @@ import java.io.File
 class SuggestedStoriesFixtureTest {
     /**
      * The tray data constructor's registers and the register of its bucket list, per build. Both
-     * of 584's builds lay it out the same way.
+     * of 585's builds lay it out the same way.
      */
     private val expected = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to (7 to 4),
@@ -48,20 +48,20 @@ class SuggestedStoriesFixtureTest {
 
     /**
      * The bucket interface's type accessor and the enum it answers, per build and then by the
-     * bundle's ABI. On 583 the two builds share the enum but not the accessor's name.
+     * bundle's ABI. On 583 and 585 the two builds share the enum but not the accessor's name.
      */
     private val expectedType = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to ("CFi" to "LX/2Cd;"),
-            "armeabi-v7a" to ("CFi" to "LX/2Cd;"),
+            "arm64-v8a" to ("Flp" to "LX/026l;"),
+            "armeabi-v7a" to ("Fln" to "LX/026l;"),
         ),
     )
 
     /** The query builders that set skip_srtt_item_list, per build and then by ABI (issue #21). */
     private val expectedSkips = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to setOf("LX/1rk;->A03", "LX/1rk;->A07"),
-            "armeabi-v7a" to setOf("LX/1rk;->A03", "LX/1rk;->A07"),
+            "arm64-v8a" to setOf("LX/01oE;->A03", "LX/01oE;->A07"),
+            "armeabi-v7a" to setOf("LX/01oE;->A03", "LX/01oE;->A07"),
         ),
     )
 
