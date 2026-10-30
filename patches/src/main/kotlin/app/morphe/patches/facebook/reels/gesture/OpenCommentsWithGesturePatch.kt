@@ -144,10 +144,13 @@ internal class SheetCalls(
     val holder: String get() = story.definingClass
     val config: String get() = build.parameterTypes[CONFIG_ARGUMENT].toString()
 
-    /** How many arguments the builder takes, and where its number goes: right before the two booleans it ends with. */
+    /** How many arguments the builder takes, and where its number goes. */
     val arguments: Int get() = build.parameterTypes.size
-    val numberArgument: Int get() = arguments - 3
+    val numberArgument: Int get() = numberArgumentOf(build)
 }
+
+/** Where [build] takes its number: right before the two booleans it ends with. */
+private fun numberArgumentOf(build: MethodReference) = build.parameterTypes.size - 3
 
 /** Where the comment sheet's builder takes the viewer config and its two log names. */
 private const val CONFIG_ARGUMENT = 11
@@ -213,7 +216,7 @@ internal fun sheetCalls(click: Method, itemType: String): SheetCalls {
     val first = (code[buildAt] as? RegisterRangeInstruction)?.startRegister
         ?: refuse("$where builds the comment sheet without a register range")
     val names = NAME_ARGUMENTS.map { literalBefore(code, buildAt, first + it) as? String }
-    val number = literalBefore(code, buildAt, first + build.parameterTypes.size - 3) as? Int
+    val number = literalBefore(code, buildAt, first + numberArgumentOf(build)) as? Int
     if (names.any { it == null } || number == null) refuse("$where hands the comment sheet's builder no constant log names and number")
 
     fun distinct(what: String, matches: (Instruction, MethodReference) -> Boolean): Pair<Instruction, MethodReference> {
