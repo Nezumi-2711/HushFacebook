@@ -486,27 +486,19 @@ val materialYouThemePatch = bytecodePatch(
  * token, which route one already themes. The string came out #333334, a grey light mode draws too,
  * so route four's parser leaves it. The fallbacks that route one doesn't reach are in
  * LinkBoxFallbacks.kt. Facebook renumbers MobileConfig ids between builds: 582 had it at
- * `0x103074c000203a8`, and 583's ten readers, with the same shapes, load it as the id below.
- */
-internal const val LINK_BOX_COLOUR_CONFIG = 0x1030747000203a7L
-
-/**
- * The same config on 584, renumbered to `0x1030741000203a6` (`LX/5BP;->A00` and the renders read it
- * through `MobileConfigUnsafeContext.A0H`, the String reader, which 583 had as `A0C`). Each declared
- * build lists the id its readers load.
- */
-internal const val LINK_BOX_COLOUR_CONFIG_584 = 0x1030741000203a6L
-
-/**
- * The same config on 585, renumbered to `0x1030736000203aa` on both ABIs, read 2026-10-30 by nine
- * methods that each parse its string: eight renders (arm64 `LX/08d5;->render`, `LX/0Iqd;->render`,
+ * `0x103074c000203a8`, 583 at `0x1030747000203a7` and 584 at `0x1030741000203a6` (584's
+ * `LX/5BP;->A00` and renders read it through `MobileConfigUnsafeContext.A0H`, the String reader,
+ * which 583 had as `A0C`). 585 has it at the id below on both ABIs, read 2026-10-30 by nine methods
+ * that each parse its string: eight renders (arm64 `LX/08d5;->render`, `LX/0Iqd;->render`,
  * `LX/0N8x;->A17` and five more) and the attachment footer's `LX/05X5;->A0B(FbUserSession, LX/01PR, Z)I`.
  */
-internal const val LINK_BOX_COLOUR_CONFIG_585 = 0x1030736000203aaL
+internal const val LINK_BOX_COLOUR_CONFIG = 0x1030736000203aaL
 
-/** Every id the declared builds give the link box's colour config. */
-internal val LINK_BOX_COLOUR_CONFIGS: Set<Long> =
-    setOf(LINK_BOX_COLOUR_CONFIG, LINK_BOX_COLOUR_CONFIG_584, LINK_BOX_COLOUR_CONFIG_585)
+/**
+ * Every id the declared builds give the link box's colour config. Only declared builds' ids belong
+ * here: a newer build can hand a dropped build's id to another config.
+ */
+internal val LINK_BOX_COLOUR_CONFIGS: Set<Long> = setOf(LINK_BOX_COLOUR_CONFIG)
 
 /** Where the parse of [LINK_BOX_COLOUR_CONFIG]'s string goes instead of route four's parser. */
 internal const val PARSE_LINK_BOX = "$MATERIAL_YOU->parseLinkBox(Ljava/lang/String;)I"
