@@ -2269,3 +2269,5 @@ Stories you've already watched leave the Stories tray until there's a new one. A
 90 days	90 ngày
 Tap a reel above its comments	Chạm vào reel phía trên bình luận
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Chạm vào reel phía trên phần bình luận sẽ tạm dừng hoặc phát tiếp, và bình luận vẫn mở. Có tác dụng khi bình luận không mở ở chiều cao tối đa.
+# context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
+A video comment gets Save video when you long-press it.	Nhấn giữ một bình luận video để hiện Lưu video.

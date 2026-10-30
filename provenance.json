@@ -1296,6 +1296,15 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/CommentVideo.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 584 and 585 (#318): Save video in a video comment's long-press sheet, added at Save GIF's point with the sheet's own Save photo row builder. It reads the video's id and files from the comment's attachments through the kept GraphQL models' getters found by their field hashes, and saves through Download to phone's quality picker, naming the file from the video id only."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/ReelMenuDownload.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/download/ReelSidebarDiagnostics.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/downloads/reel/ReelMoreSheet.kt"

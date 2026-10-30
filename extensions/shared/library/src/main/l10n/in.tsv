@@ -2269,3 +2269,5 @@ Stories you've already watched leave the Stories tray until there's a new one. A
 90 days	90 hari
 Tap a reel above its comments	Ketuk reel di atas komentarnya
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Mengetuk reel di atas komentarnya akan menjeda atau memutarnya, dan komentar tetap terbuka. Berlaku selama komentar tidak dibuka dengan tinggi penuh.
+# context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
+A video comment gets Save video when you long-press it.	Tekan lama komentar video untuk memunculkan Simpan video.

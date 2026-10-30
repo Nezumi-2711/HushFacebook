@@ -2155,3 +2155,5 @@ Stories you've already watched leave the Stories tray until there's a new one. A
 90 days	90 dias
 Tap a reel above its comments	Tocar no reel acima dos comentários
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Tocar no reel acima dos comentários pausa ou reproduz o vídeo, e os comentários continuam abertos. Funciona enquanto os comentários não abrem em altura total.
+# context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
+A video comment gets Save video when you long-press it.	Ao tocar e segurar um comentário com vídeo, aparece Salvar vídeo.

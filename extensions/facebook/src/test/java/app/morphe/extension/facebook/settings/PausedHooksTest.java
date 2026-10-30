@@ -64,6 +64,7 @@ import app.morphe.extension.facebook.chats.ReadReceipts;
 import app.morphe.extension.facebook.chats.TypingIndicator;
 import app.morphe.extension.facebook.download.ClipboardLinkForTests;
 import app.morphe.extension.facebook.download.CommentGifForTests;
+import app.morphe.extension.facebook.download.CommentVideoForTests;
 import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
 import app.morphe.extension.facebook.download.PhotoSave;
@@ -742,11 +743,13 @@ public class PausedHooksTest {
                 PlayerSourcesForTests::recordsAPlayer));
         // Every reel's sidebar gets the Download button, and a reel whose caption was seen gets Copy caption.
         probes.put(PatchFamily.REEL_DOWNLOAD, Arrays.asList(ReelDownload::showsButton, ReelCaptionForTests::addsTheRow));
-        // A video post's menu gets Download to phone, and the video recorder keeps a player.
-        // Its copied-link option reads the clipboard as a screen comes to the front.
+        // A video post's menu gets Download to phone, a video comment's sheet gets Save video, and
+        // the video recorder keeps a player. Its copied-link option reads the clipboard as a screen
+        // comes to the front.
         probes.put(PatchFamily.VIDEO_DOWNLOAD, Arrays.asList(
                 VideoMenuItemForTests::addsAnItem,
                 VideoMenuItemForTests::addsTheOpenItem,
+                CommentVideoForTests::addsARow,
                 PlayerSourcesForTests::recordsAVideoPlayer,
                 ClipboardLinkForTests::readsTheClipboard));
         // Every photo the viewer opens offers Save photo, a photo post's menu gets Save photo, and a

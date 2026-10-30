@@ -2269,3 +2269,5 @@ Stories you've already watched leave the Stories tray until there's a new one. A
 90 days	90 Tage
 Tap a reel above its comments	Reel über den Kommentaren antippen
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Tippst du auf das Reel über seinen Kommentaren, hält es an oder läuft weiter, und die Kommentare bleiben offen. Gilt, solange Kommentare nicht in voller Höhe öffnen.
+# context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
+A video comment gets Save video when you long-press it.	Hältst du einen Video-Kommentar gedrückt, erscheint Video speichern.

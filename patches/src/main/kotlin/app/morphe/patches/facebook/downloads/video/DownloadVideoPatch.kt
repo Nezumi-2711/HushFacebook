@@ -11,6 +11,7 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
+import app.morphe.patches.facebook.downloads.photo.commentSheetVideoRow
 import app.morphe.patches.facebook.downloads.story.rememberPlayerSources
 import app.morphe.patches.facebook.feed.resolveStatic
 import app.morphe.patches.facebook.feed.tableStringAt
@@ -65,13 +66,16 @@ private const val REMEMBER_HELPER = "hushfacebookRememberVideoSource"
  *
  * The save reuses the story save's pipeline whole: the player of the same video records its
  * DASH manifest under the video's id, and the post's media carries that id.
+ *
+ * A video someone posted in a comment gets Save video on the comment's long-press sheet (#318), a
+ * row built the way Download any photo's Save GIF is, at the same point.
  */
 @Suppress("unused")
 val downloadVideoPatch = bytecodePatch(
     name = "Download any video",
     description = "Adds Download to phone to the menu of videos in the feed and in Watch, so you can save them " +
-        "to watch later. Videos save at the quality you set, best by default. Starts off. Turn it on in " +
-        "Hushfacebook settings > Downloads.",
+        "to watch later. A video comment gets Save video when you long-press it. Videos save at the quality you " +
+        "set, best by default. Starts off. Turn it on in Hushfacebook settings > Downloads.",
 ) {
     category("Downloads")
     dependsOn(settingsPatch)
@@ -80,6 +84,8 @@ val downloadVideoPatch = bytecodePatch(
 
     execute {
         val menu = postMenu()
+        // Found before any hook goes in, so a build without the sheet fails whole.
+        val addCommentVideoRow = commentSheetVideoRow()
         callAfterMenuFill(
             menu,
             postMenuHelper(menu, MENU_HELPER, ADD_ITEM, listOf(menu.attachments, menu.media, menu.attachedStory)),
@@ -88,6 +94,7 @@ val downloadVideoPatch = bytecodePatch(
         // ---- the players' sources, for the manifest a post's media doesn't carry -------------------
         rememberPlayerSources(helperName = REMEMBER_HELPER, recorder = REMEMBER_VIDEO_SOURCE)
 
+        addCommentVideoRow()
         enableStatus("videoDownload")
     }
 }

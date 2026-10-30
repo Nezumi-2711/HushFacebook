@@ -887,7 +887,7 @@
     },
     {
       "name": "Download any video",
-      "description": "Adds Download to phone to the menu of videos in the feed and in Watch, so you can save them to watch later. Videos save at the quality you set, best by default. Starts off. Turn it on in Hushfacebook settings > Downloads.",
+      "description": "Adds Download to phone to the menu of videos in the feed and in Watch, so you can save them to watch later. A video comment gets Save video when you long-press it. Videos save at the quality you set, best by default. Starts off. Turn it on in Hushfacebook settings > Downloads.",
       "category": "Downloads",
       "use": true,
       "dependencies": [

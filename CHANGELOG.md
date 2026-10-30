@@ -21,6 +21,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** New `Hide stories from Pages` under Stories keeps the Pages you follow out of the Stories tray, so it shows only people's stories. A Page's story goes whether Facebook suggests it or not. It's off by default and takes effect the next time Facebook loads the tray (Refs #313).
 * **Facebook:** New `Hide seen stories` under Stories takes the stories you've already watched all the way through out of the Stories tray, Pages' stories included. Your Add to story tile stays put. It's off by default too. `Keep seen posts hidden for` also has a longer choice now, 90 days, and the list of seen posts holds up to 20,000 so a busy feed doesn't push older ones out early (Refs #317).
 * **Facebook:** New `Tap a reel above its comments` under Comments and writing. When a reel's comments open part way up, a tap on the reel above them plays or pauses it and the comments stay open. Before, that tap closed them. With `Open comments at full height` on there's no reel left above the comments, so this one only matters with that switch off. It's off by default (Refs #315).
+* **Facebook:** Long-press a comment with a video in it and its menu has `Save video` now, when `Download any video` is on. It saves at the quality you picked under Downloads, like Download to phone on a post, and the file name leaves out who commented. With downloads set to send links instead, the row is `Send to app` (Refs #318).
 
 ### Changed
 

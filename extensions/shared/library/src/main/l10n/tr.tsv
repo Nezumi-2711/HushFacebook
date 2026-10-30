@@ -2269,3 +2269,5 @@ Stories you've already watched leave the Stories tray until there's a new one. A
 90 days	90 gün
 Tap a reel above its comments	Yorumların üstündeki reele dokun
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Yorumlarının üstündeki reele dokunmak onu duraklatır ya da oynatır ve yorumlar açık kalır. Yorumlar tam yükseklikte açılmadığı sürece çalışır.
+# context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
+A video comment gets Save video when you long-press it.	Bir video yorumuna basılı tuttuğunda Videoyu kaydet çıkar.
