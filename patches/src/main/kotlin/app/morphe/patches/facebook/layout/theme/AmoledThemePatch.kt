@@ -1119,7 +1119,7 @@ internal fun BytecodePatchContext.systemBarColourMethods(): (Method) -> Boolean 
             types.drop(2).all { it == SYSTEM_BARS_CONTROLLER } && types.size <= 3 && method.calls(setOf(status))
     }
     val config = applies.singleOrNull()?.parameterTypes?.get(1)?.toString() ?: throw PatchException(
-        "SystemBarsController has ${applies.size} (Window, config) methods that paint the status bar, expected one",
+        "SystemBarsController has ${applies.size} (Window, config[, SystemBarsController]) methods that paint the status bar, expected one",
     )
 
     // Why: 585 moved the Video tab's bar grey into a static int helper the tab hands to the painter.
@@ -1139,6 +1139,8 @@ internal fun BytecodePatchContext.systemBarColourMethods(): (Method) -> Boolean 
 /**
  * The static methods answering an int that [method] calls and hands the answer of, as it is, to one
  * of [painters]: a bar colour Facebook keeps in a helper of its own, the way 585's Video tab does.
+ * The sweep skips a helper for all its callers, so ColourResolverFixtureTest holds the helpers found
+ * that write a dark grey to the Video tab's.
  */
 internal fun barColourHelpers(method: Method, painters: Set<String>): Set<String> {
     val code = method.implementation?.instructions?.toList() ?: return emptySet()
@@ -1385,7 +1387,7 @@ internal fun BytecodePatchContext.hookDarkModeAnswer() {
 }
 
 /** True when this method writes a dark grey. It only reads, thus it needs no proxy of the class. */
-private fun Method.hasDarkColor(): Boolean =
+internal fun Method.hasDarkColor(): Boolean =
     implementation?.instructions?.any { it.isDarkColor() } == true
 
 /**

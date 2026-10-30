@@ -420,6 +420,12 @@ class ColourResolverFixtureTest {
                 val tabHelpers = helperCalls.filterKeys { it.definingClass == videoTab }.values.flatten().toSet()
                 assertTrue("$name: no Video tab painter in $barNames",
                     bars.any { it.definingClass == videoTab || it.descriptor() in tabHelpers })
+                // A helper is left out of the sweep for every caller it has, so one holding a dark grey
+                // keeps Facebook's colour wherever else it's called. Only the Video tab's grey may.
+                val keepsGrey = helperMethods.filter { it.hasDarkColor() }.map { it.descriptor() }.toSet()
+                val videoGreyHelpers = helperMethods.filter { it.descriptor() in tabHelpers && it.writesVideoGrey() > 0 }
+                    .map { it.descriptor() }.toSet()
+                assertEquals("$name: bar colour helpers holding a dark grey", videoGreyHelpers, keepsGrey)
 
                 // A helper's callers come along, so the sweep sees the painter its answer goes to.
                 val callers = helperCalls.filterValues { calls -> calls.any { it in barNames } }.keys.map { it.definingClass }
