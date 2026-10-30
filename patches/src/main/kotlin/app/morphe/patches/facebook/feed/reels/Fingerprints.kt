@@ -9,9 +9,11 @@ import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.treeFieldKey
 import app.morphe.patches.facebook.shared.FEED_UNIT_EDGE
 import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
@@ -48,7 +50,10 @@ internal val REELS_SHOWCASE_TYPES = listOf(
 /**
  * Kept literal. The showcase renderer's complaint about a story type it has no layout for. The
  * method holding it (`LX/7Nu;->A1F` in 580, `LX/76K;->A1N` in 577) reads the story type through the
- * accessor above, which is what ties the accessor to the rows on screen.
+ * accessor above, which is what ties the accessor to the rows on screen. On 585 (`LX/08Md;->A00`
+ * on arm64, `LX/08Mi;->A00` on armeabi-v7a) the one caller of that renderer reads the type through
+ * the accessor and passes the enum in as the renderer's first parameter, which the renderer
+ * switches on by ordinal.
  */
 internal const val SHOWCASE_NOT_HANDLED = "ShowcaseFeedUnit with %s has not been handled NT or Native properly!"
 
@@ -75,8 +80,9 @@ internal const val PRE_EOF_ADAPTER = "PreEofIfuSectionAdapter"
  * `LX/1k1;->A0J` in 577), which takes a GraphQLFeedUnitEdge and answers whether it went in. On both
  * builds exactly two methods call it: `addNewEdgeToCollection`, behind the one feed guard, and the
  * pre-EOF injector. On 583 the funnel's body moved into a static method of its class, which the
- * feed guard goes on, and that method is the caller. A third caller would be a way into the feed
- * that neither hook sees.
+ * feed guard goes on, and that method is the caller. 585 keeps that split with a private instance
+ * method (`LX/020h;->A0D`), which the batch add calls as well, and the funnel only wraps it. A third
+ * caller would be a way into the feed that neither hook sees.
  */
 internal const val ADD_ELEMENT_AT_TAIL = "FeedUnitCollection.addElementAtTail"
 
@@ -121,11 +127,21 @@ internal fun isCallTo(call: MethodReference, target: Method): Boolean =
     call.definingClass == target.definingClass && call.name == target.name && call.returnType == target.returnType &&
         call.parameterList() == target.parameterTypes.map { it.toString() }
 
-/** Whether [method] invokes [target] anywhere in its body. */
+/** Whether [method] invokes [target] anywhere in its body (an invoke is the one instruction that names a method). */
 internal fun callsMethod(method: Method, target: Method): Boolean = method.body().any { instruction ->
-    instruction.opcode.name.startsWith("invoke") &&
-        ((instruction as? ReferenceInstruction)?.reference as? MethodReference)?.let { isCallTo(it, target) } == true
+    ((instruction as? ReferenceInstruction)?.reference as? MethodReference)?.let { isCallTo(it, target) } == true
 }
+
+/**
+ * Whether [renderer] draws the row by the story type [accessor] reads. On 577 through 584 the
+ * renderer calls the accessor itself. 585 reads the type once in the renderer's caller and hands the
+ * enum over as the renderer's first parameter, so the renderer qualifies when it takes the type
+ * [accessor] answers and one of [callers] (the methods that call this renderer) reads it through
+ * [accessor].
+ */
+internal fun rendersByStoryType(renderer: Method, accessor: Method, callers: List<Method>): Boolean =
+    callsMethod(renderer, accessor) ||
+        (renderer.parameterTypes.any { it.toString() == accessor.returnType } && callers.any { callsMethod(it, accessor) })
 
 /** Whether [method] has the pre-EOF injector's shape: its kept name, no arguments, void, a body. */
 internal fun isPreEofInjector(method: Method): Boolean =
@@ -143,9 +159,24 @@ internal fun signatureOf(method: Method): String =
     "${method.definingClass}->${method.name}(${method.parameterTypes.joinToString("")})${method.returnType}"
 
 /**
+ * The methods of [owner], [funnel]'s own class, that [funnel] only wraps: it has no branch and calls
+ * methods of its class that take an edge and answer a boolean. 583 made that a static method; 585
+ * a private instance one, which the feed's batch add calls as well, so the tail adder's caller there
+ * is this body and never the funnel by name. Empty when [funnel] does the work itself.
+ */
+internal fun funnelHandOffs(funnel: Method, owner: ClassDef): List<Method> {
+    val code = funnel.body()
+    if (code.any { it is OffsetInstruction || it.opcode == Opcode.THROW }) return emptyList()
+    val called = code.mapNotNull { (it as? ReferenceInstruction)?.reference as? MethodReference }.filter {
+        it.definingClass == owner.type && it.returnType == "Z" && FEED_UNIT_EDGE in it.parameterList() && !isCallTo(it, funnel)
+    }
+    return owner.methods.filter { method -> called.any { isCallTo(it, method) } }
+}
+
+/**
  * Why the callers of the tail adder aren't exactly the feed funnel and [injector], or null when
- * they are. The feed guard covers `addNewEdgeToCollection`, or on 583 the body [isFunnelBody] says
- * it went on instead (feedFunnelBody), and the pre-EOF hook covers the injector; any other caller
+ * they are. The feed's edges go through `addNewEdgeToCollection`, or through the body [isFunnelBody]
+ * says it only wraps (funnelHandOffs), and the pre-EOF hook covers the injector; any other caller
  * adds rows neither sees, and the switch would promise more than it does.
  */
 internal fun tailCallerProblem(

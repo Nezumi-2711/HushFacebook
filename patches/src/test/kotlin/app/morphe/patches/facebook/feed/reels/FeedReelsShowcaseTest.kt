@@ -12,11 +12,11 @@ import app.morphe.patches.facebook.feed.methodsHolding
 import app.morphe.patches.facebook.feed.treeFieldKey
 import app.morphe.patches.facebook.shared.FEED_UNIT_EDGE
 import app.morphe.patches.facebook.shared.admittedAsFeedFunnel
-import app.morphe.patches.facebook.shared.outlinedFunnelBody
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
@@ -26,6 +26,7 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction10x
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction11x
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21c
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction21t
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction31i
 import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction35c
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference
@@ -124,8 +125,13 @@ class FeedReelsShowcaseTest {
 
                 val renderers = FixtureDex.classesHolding(bundle, SHOWCASE_NOT_HANDLED)
                     .flatMap { methodsHolding(it, SHOWCASE_NOT_HANDLED) }
+                // The renderer reads the type itself, or (585) takes the enum from its caller, which does.
+                val takers = renderers.filter { renderer -> renderer.parameterTypes.any { it.toString() == accessor.returnType } }
+                val handers = if (takers.isEmpty()) emptyList() else FixtureDex.methodsWhere(bundle,
+                    { dex -> dex.methodSection.any { call -> takers.any { isCallTo(call, it) } } },
+                ) { method -> takers.any { callsMethod(method, it) } }
                 assertTrue("${bundle.name}: no renderer reads the type through ${accessor.name}()",
-                    renderers.any { callsMethod(it, accessor) })
+                    renderers.any { renderer -> rendersByStoryType(renderer, accessor, handers.filter { callsMethod(it, renderer) }) })
 
                 val validators = FixtureDex.classesHolding(bundle, FB_SHORTS_IFU_VALIDATOR)
                     .flatMap { methodsHolding(it, FB_SHORTS_IFU_VALIDATOR) }
@@ -159,15 +165,16 @@ class FeedReelsShowcaseTest {
                 assertTrue("${bundle.name}: the injector has no local for the hook", locals >= 1)
 
                 val callers = found.filter { callsMethod(it, adder) }
-                // 583's funnel hands its edge to a method of its own class, which the feed guard goes
-                // on, and that one calls the adder.
+                // 583's funnel hands its edge to a method of its own class, and so does 585's (a private
+                // instance method the batch add calls as well); that one calls the adder.
                 val funnel = FixtureDex.methodsWhere(bundle,
                     { dex -> dex.stringSection.any { it == ADD_NEW_EDGE_TO_COLLECTION } },
                 ) { admittedAsFeedFunnel(it) }.single()
-                val guarded = outlinedFunnelBody(funnel)?.let {
-                    "${it.definingClass}->${it.name}(${it.parameterTypes.joinToString("")})${it.returnType}"
-                } ?: signatureOf(funnel)
-                val isBody = { method: Method -> signatureOf(method) == guarded }
+                val owner = FixtureDex.classes(bundle, setOf(funnel.definingClass)).getValue(funnel.definingClass)
+                val bodies = funnelHandOffs(funnel, owner).map(::signatureOf)
+                val isBody = { method: Method -> signatureOf(method) in bodies }
+                assertTrue("${bundle.name}: the funnel wraps ${bodies.size} bodies, expected the one the adder is called from",
+                    if (bodies.isEmpty()) callers.any { it.name == ADD_NEW_EDGE_TO_COLLECTION } else bodies.size == 1 && callers.any(isBody))
                 assertNull("${bundle.name}", tailCallerProblem(callers, injector, isBody))
                 assertEquals("${bundle.name}: ${callers.map { it.name }}", listOf(injector.name),
                     callers.filterNot { it.name == ADD_NEW_EDGE_TO_COLLECTION || isBody(it) }.map { it.name })
@@ -251,5 +258,81 @@ class FeedReelsShowcaseTest {
         val showcase = typed("Lfixture/Showcase;", SHOWCASE_FEED_UNIT)
         assertEquals(listOf(showcase.type), unitClassesNamed(listOf(typed("Lfixture/Tray;", "StoriesTrayFeedUnit"), showcase),
             SHOWCASE_FEED_UNIT).map { it.type })
+    }
+
+    private val manager = "Lfixture/Manager;"
+
+    private fun invoke(opcode: Opcode, owner: String, name: String, params: List<String>, returns: String): Instruction =
+        ImmutableInstruction35c(opcode, 2, 0, 1, 0, 0, 0, ImmutableMethodReference(owner, name, params, returns))
+
+    private fun managerMethod(name: String, params: List<String>, returns: String, code: List<Instruction>): ImmutableMethod =
+        ImmutableMethod(manager, name, params.map { ImmutableMethodParameter(it, null, null) }, returns,
+            AccessFlags.PRIVATE.value, null, null, ImmutableMethodImplementation(4, code, null, null))
+
+    @Test
+    fun `a funnel that only wraps a method of its class hands the adder's caller over to that method`() {
+        val body = managerMethod("A0D", listOf(FEED_UNIT_EDGE), "Z", listOf(ImmutableInstruction11x(Opcode.RETURN, 0)))
+        // 585: a null check, then a private instance method of the class, called with the edge.
+        val wrapper = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
+            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
+        val owner = ImmutableClassDef(manager, AccessFlags.PUBLIC.value, "Ljava/lang/Object;", null, null, null, null,
+            listOf(wrapper, body, managerMethod("A07", emptyList(), "Ljava/lang/Long;", listOf(ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)))))
+        assertEquals(listOf("A0D"), funnelHandOffs(wrapper, owner).map { it.name })
+
+        // 583: the same through a static call.
+        val staticWrapper = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
+            invoke(Opcode.INVOKE_STATIC, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
+        assertEquals(listOf("A0D"), funnelHandOffs(staticWrapper, owner).map { it.name })
+
+        // A funnel that does the work itself, one that calls itself, one that calls another class and
+        // one that branches before it hands anything over hand nothing over.
+        assertEquals(emptyList<String>(), funnelHandOffs(body, owner).map { it.name })
+        val recursive = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
+            invoke(Opcode.INVOKE_DIRECT, manager, ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z"),
+            ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
+        assertEquals(emptyList<String>(), funnelHandOffs(recursive, owner).map { it.name })
+        val elsewhere = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
+            invoke(Opcode.INVOKE_STATIC, "Lfixture/Other;", "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
+        assertEquals(emptyList<String>(), funnelHandOffs(elsewhere, owner).map { it.name })
+        val branching = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
+            ImmutableInstruction21t(Opcode.IF_EQZ, 0, 4),
+            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
+        assertEquals(emptyList<String>(), funnelHandOffs(branching, owner).map { it.name })
+
+        // The body stands in for the funnel in the caller check, and a second method of the class doesn't.
+        val adder = ImmutableMethod("Lfixture/Collection;", "tail", listOf(ImmutableMethodParameter(FEED_UNIT_EDGE, null, null)),
+            "Z", AccessFlags.PUBLIC.value, null, null, null)
+        val injector = caller("Lfixture/PreEof;", "${PRE_EOF_INJECTOR_PREFIX}fixture", adder)
+        val bodies = funnelHandOffs(wrapper, owner).map(::signatureOf)
+        val isBody = { method: Method -> signatureOf(method) in bodies }
+        assertNull(tailCallerProblem(listOf(body, injector), injector, isBody))
+        val sibling = managerMethod("A0E", listOf(FEED_UNIT_EDGE), "Z", listOf(ImmutableInstruction11x(Opcode.RETURN, 0)))
+        assertNotNull(tailCallerProblem(listOf(sibling, injector), injector, isBody))
+        assertNotNull("the wrapper and its body both", tailCallerProblem(listOf(wrapper, body, injector), injector, isBody))
+    }
+
+    @Test
+    fun `a renderer that takes the story type is held to a caller reading it through the accessor`() {
+        val accessor = ImmutableMethod("Lfixture/Unit;", "A01", emptyList(), "Lfixture/Type;", AccessFlags.PUBLIC.value,
+            null, null, null)
+        fun method(name: String, params: List<String>, code: List<Instruction>) =
+            ImmutableMethod("Lfixture/Renderer;", name, params.map { ImmutableMethodParameter(it, null, null) }, "V",
+                AccessFlags.PUBLIC.value, null, null, ImmutableMethodImplementation(4, code + ImmutableInstruction10x(Opcode.RETURN_VOID), null, null))
+        val reads = invoke(Opcode.INVOKE_VIRTUAL, "Lfixture/Unit;", "A01", emptyList(), "Lfixture/Type;")
+        val takes = method("render", listOf("Lfixture/Type;"), emptyList())
+        val readsItself = method("renderAlone", emptyList(), listOf(reads))
+        val readsOther = method("readOther", emptyList(), listOf(invoke(Opcode.INVOKE_VIRTUAL, "Lfixture/Unit;", "A02", emptyList(), "Lfixture/Type;")))
+        val handsOver = method("handOver", emptyList(), listOf(reads))
+
+        assertTrue("reads the type itself", rendersByStoryType(readsItself, accessor, emptyList()))
+        assertTrue("takes the type, caller reads it", rendersByStoryType(takes, accessor, listOf(handsOver)))
+        assertFalse("takes the type, no caller", rendersByStoryType(takes, accessor, emptyList()))
+        assertFalse("takes the type, caller reads another accessor", rendersByStoryType(takes, accessor, listOf(readsOther)))
+        val takesOther = method("renderOther", listOf("Lfixture/Other;"), emptyList())
+        assertFalse("takes another type, caller reads the accessor", rendersByStoryType(takesOther, accessor, listOf(handsOver)))
     }
 }
