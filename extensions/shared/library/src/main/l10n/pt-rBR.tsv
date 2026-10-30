@@ -2030,3 +2030,17 @@ AI posts	publicações de IA
 posts your filters matched	publicações que seus filtros pegaram
 # context: a kind in that list, posts hidden because the user already saw them
 posts you've seen	publicações que você já viu
+# context: row title in News feed settings and the title of its list: Facebook's own names for kinds of post and card the user can pick to hide
+Feed types to hide	Tipos do feed para ocultar
+# context: warning under that row: hiding a type Home's ordinary posts use can leave Home with nothing to show
+Picking a type Home needs can leave it empty.	Escolher um tipo que a Página inicial usa pode deixá-la vazia.
+# context: that row's summary while nothing is picked; Debug logging is the name of a switch
+None picked. Hides posts and cards by Facebook's own type name, as Debug logging records it.	Nada escolhido. Oculta publicações e cartões pelo nome de tipo do próprio Facebook, como o Registro de depuração anota.
+# context: message when the list has no types to offer because Home hasn't been scrolled since Facebook started
+No types seen yet. Scroll Home and come back.	Nenhum tipo visto ainda. Role a Página inicial e volte aqui.
+# context: import preview and toast, no feed type will be in that list after the import
+Your list of feed types to hide will be empty.	Sua lista de tipos do feed para ocultar ficará vazia.
+# context: import preview and toast, one feed type will be in that list after the import
+Your list of feed types to hide will hold %1$d type.	Sua lista de tipos do feed para ocultar terá %1$d tipo.
+# context: import preview and toast, several feed types will be in that list after the import
+Your list of feed types to hide will hold %1$d types.	Sua lista de tipos do feed para ocultar terá %1$d tipos.

@@ -2139,3 +2139,17 @@ AI posts	AI 帖子
 posts your filters matched	符合你筛选条件的帖子
 # context: a kind in that list, posts hidden because the user already saw them
 posts you've seen	你看过的帖子
+# context: row title in News feed settings and the title of its list: Facebook's own names for kinds of post and card the user can pick to hide
+Feed types to hide	要隐藏的动态类型
+# context: warning under that row: hiding a type Home's ordinary posts use can leave Home with nothing to show
+Picking a type Home needs can leave it empty.	选择主页需要的类型可能会让主页变空。
+# context: that row's summary while nothing is picked; Debug logging is the name of a switch
+None picked. Hides posts and cards by Facebook's own type name, as Debug logging records it.	尚未选择。按 Facebook 自己的类型名称隐藏帖子和卡片，名称以调试日志记录的为准。
+# context: message when the list has no types to offer because Home hasn't been scrolled since Facebook started
+No types seen yet. Scroll Home and come back.	还没有看到任何类型。先浏览一下主页再回来看看。
+# context: import preview and toast, no feed type will be in that list after the import
+Your list of feed types to hide will be empty.	你要隐藏的动态类型列表将为空。
+# context: import preview and toast, one feed type will be in that list after the import
+Your list of feed types to hide will hold %1$d type.	你要隐藏的动态类型列表将包含 %1$d 个类型。
+# context: import preview and toast, several feed types will be in that list after the import
+Your list of feed types to hide will hold %1$d types.	你要隐藏的动态类型列表将包含 %1$d 个类型。

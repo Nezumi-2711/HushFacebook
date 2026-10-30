@@ -51,6 +51,7 @@ import app.morphe.extension.facebook.download.SaveFolder;
 import app.morphe.extension.facebook.download.SaveStorage;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
+import app.morphe.extension.facebook.feed.FeedTypeNames;
 import app.morphe.extension.facebook.feed.PostSources;
 import app.morphe.extension.facebook.feed.PostWords;
 import app.morphe.extension.facebook.feed.ReactionCeiling;
@@ -856,6 +857,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         showSaveFolder();
         showShareItemsSummary();
         showMenuTilesSummary();
+        showFeedTypesSummary();
         for (TabBarChoices.Pair pair : TabBarChoices.Pair.values()) {
             if (getPreferenceScreen() != null) TabBarChoices.showSaved(findPreference(pair.rowKey), pair);
         }
@@ -880,6 +882,15 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         if (getPreferenceScreen() == null) return;
         Preference row = findPreference(AppPages.MENU_TILES_ROW);
         if (row != null) row.setSummary(AppPages.menuTilesSummary(MenuTiles.hidden()));
+    }
+
+    /** No setting is behind the Feed types row's key, so its summary is redone here after an import. */
+    private void showFeedTypesSummary() {
+        if (getPreferenceScreen() == null) return;
+        Preference row = findPreference(FeedPages.FEED_TYPES_ROW);
+        if (row != null) {
+            row.setSummary(FeedPages.feedTypesSummary(FeedTypeNames.hidden()));
+        }
     }
 
     /** No setting is behind the share sheet row's key, so its summary is redone here after an import. */

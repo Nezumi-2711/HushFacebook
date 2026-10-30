@@ -17,21 +17,27 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subheading;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.toggle;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import app.morphe.extension.facebook.comments.CommentSheetOptions;
+import app.morphe.extension.facebook.feed.FeedTypeNames;
 import app.morphe.extension.facebook.feed.HiddenTally;
 import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.navigation.MarketplaceOnly;
 import app.morphe.extension.facebook.settings.SettingsRows.Row;
 import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Utils;
+import app.morphe.extension.shared.settings.BaseSettings;
 
 /**
  * The category pages for the feed: Opening Facebook, News feed, Stories, and Comments and writing. Each method adds its section to the page
@@ -330,8 +336,82 @@ final class FeedPages {
                         L10n.t("Hides posts written by Pages, the ones you follow too. Posts from friends and groups "
                                 + "stay, and so does a friend's share of a Page's post.")));
                 feed.addPreference(reactionCeilingRow(context));
+                // For people who read Debug reports, where the type names come from, so it shows
+                // with Debug logging on, and from then on while anything's picked.
+                if (BaseSettings.DEBUG.savedValue() || !FeedTypeNames.hidden().isEmpty()) {
+                    feed.addPreference(feedTypesRow(page, context));
+                }
             }
         }
+    }
+
+    /** The row's key, for the settings search. No setting is behind it. */
+    static final String FEED_TYPES_ROW = "action_feed_types";
+
+    /** Feed types to hide: units hidden by the type name Debug logging records, picked from a list. */
+    static Preference feedTypesRow(HushfacebookPreferenceFragment page, Context context) {
+        Row row = new Row(context);
+        row.setKey(FEED_TYPES_ROW);
+        row.setTitle(L10n.t("Feed types to hide"));
+        row.setPersistent(false);
+        row.setSummary(feedTypesSummary(FeedTypeNames.hidden()));
+        row.setOnPreferenceClickListener(p -> {
+            showFeedTypes(page, context, row);
+            return true;
+        });
+        return row;
+    }
+
+    /** The row's summary: the types picked, or none, and that a type Home needs is the picker's risk. */
+    static String feedTypesSummary(Set<String> hidden) {
+        String warning = L10n.t("Picking a type Home needs can leave it empty.");
+        if (hidden.isEmpty()) {
+            return L10n.t("None picked. Hides posts and cards by Facebook's own type name, as Debug logging records it.") + " " + warning;
+        }
+        return L10n.f("Hidden: %s", L10n.join(new ArrayList<>(hidden))) + " " + warning;
+    }
+
+    /**
+     * The list: every type seen since Facebook started and every one picked, ticked when it's
+     * hidden. Save keeps the ticks or, when they don't fit or the phone doesn't keep the write,
+     * keeps the list open with its ticks.
+     */
+    private static void showFeedTypes(HushfacebookPreferenceFragment page, Context context, Preference row) {
+        List<String> types = FeedTypeNames.choices();
+        if (types.isEmpty()) {
+            page.show(new AlertDialog.Builder(context)
+                    .setTitle(L10n.t("Feed types to hide"))
+                    .setMessage(L10n.t("No types seen yet. Scroll Home and come back."))
+                    .setPositiveButton(L10n.t("OK"), null));
+            return;
+        }
+        Set<String> hidden = FeedTypeNames.hidden();
+        String[] names = types.toArray(new String[0]);
+        boolean[] ticked = new boolean[names.length];
+        for (int i = 0; i < names.length; i++) ticked[i] = hidden.contains(names[i]);
+        AlertDialog list = page.show(new AlertDialog.Builder(context)
+                .setTitle(L10n.t("Feed types to hide"))
+                .setMultiChoiceItems(names, ticked, (shown, which, isTicked) -> ticked[which] = isTicked)
+                .setPositiveButton(L10n.t("Save"), null)
+                .setNegativeButton(L10n.t("Cancel"), null));
+        if (list == null) return;
+        list.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(button -> {
+            List<String> picked = new ArrayList<>();
+            for (int i = 0; i < ticked.length; i++) {
+                if (ticked[i]) picked.add(names[i]);
+            }
+            FeedTypeNames.Hidden saved = FeedTypeNames.hide(picked);
+            if (saved == FeedTypeNames.Hidden.NO_ROOM) {
+                Utils.showToastLong(L10n.t("This list needs more room than it has. Shorten it, then save again."));
+                return;
+            }
+            if (saved == FeedTypeNames.Hidden.NOT_STORED) {
+                Utils.showToastLong(L10n.t("Couldn't save the change. Try again."));
+                return;
+            }
+            row.setSummary(feedTypesSummary(FeedTypeNames.hidden()));
+            list.dismiss();
+        });
     }
 
     /**

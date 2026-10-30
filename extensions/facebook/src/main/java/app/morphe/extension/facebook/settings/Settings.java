@@ -262,6 +262,14 @@ public class Settings extends BaseSettings {
             new StringSetting("hushfacebook_hidden_sources", "");
 
     /**
+     * The feed unit type names picked in Feed types to hide, as GraphQL names them
+     * ({@code FriendsLocationsFeedUnit}), separated by commas. Empty, no unit is hidden by name.
+     * A paused Facebook reads it as empty.
+     */
+    public static final StringSetting HIDDEN_FEED_TYPES =
+            new StringSetting("hushfacebook_hidden_feed_types", "");
+
+    /**
      * Feed posts whose attachment Facebook draws as a photo or an album, and shares of them
      * ({@link app.morphe.extension.facebook.feed.PostTypes}). Off by default, like the three below:
      * none has been checked on a signed-in feed yet.

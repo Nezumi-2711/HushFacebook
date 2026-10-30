@@ -575,6 +575,8 @@ public final class FeedFilter {
             if (reason == null && wordsPatched && Settings.HIDE_REPOSTS.get()) {
                 reason = repostReason(feedUnit, attachedAccessor);
             }
+            // Last of the filters: a type picked by name, which also writes the type down for its list.
+            if (reason == null && wordsPatched) reason = FeedTypeNames.reason(typeName(feedUnit));
             // The seen rule goes last so a post another rule would hide is counted under that rule.
             if (reason == null) {
                 kind = HiddenTally.Kind.SEEN;

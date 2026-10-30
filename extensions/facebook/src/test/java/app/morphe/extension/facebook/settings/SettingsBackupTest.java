@@ -220,6 +220,7 @@ public class SettingsBackupTest {
         Settings.HIDDEN_SOURCES.resetToDefault();
         Settings.HIDDEN_SHARE_ITEMS.resetToDefault();
         Settings.HIDDEN_MENU_TILES.resetToDefault();
+        Settings.HIDDEN_FEED_TYPES.resetToDefault();
         Settings.AMOLED_BACKGROUND.resetToDefault();
         Settings.AMOLED_LIGHT_BACKGROUND.resetToDefault();
         Settings.BADGE_COLOR.resetToDefault();
@@ -270,7 +271,7 @@ public class SettingsBackupTest {
         for (Setting<?> setting : SettingsBackup.VALUES) {
             assertFalse(setting.key + " is carried and kept out at once", VALUES_STAY_OUT.containsKey(setting.key));
         }
-        assertEquals(Arrays.<Setting<?>>asList(Settings.HIDDEN_WORDS, Settings.KEPT_WORDS, Settings.HIDDEN_SOURCES, Settings.HIDE_POSTS_OVER_REACTIONS, Settings.REELS_ORDER, Settings.HIDDEN_SHARE_ITEMS, Settings.HIDDEN_MENU_TILES, Settings.HOME_FEED, Settings.AMOLED_BACKGROUND, Settings.AMOLED_LIGHT_BACKGROUND, Settings.HEADER_TEXT, Settings.SEEN_POSTS_KEEP, Settings.SAVE_TO,
+        assertEquals(Arrays.<Setting<?>>asList(Settings.HIDDEN_WORDS, Settings.KEPT_WORDS, Settings.HIDDEN_SOURCES, Settings.HIDDEN_FEED_TYPES, Settings.HIDE_POSTS_OVER_REACTIONS, Settings.REELS_ORDER, Settings.HIDDEN_SHARE_ITEMS, Settings.HIDDEN_MENU_TILES, Settings.HOME_FEED, Settings.AMOLED_BACKGROUND, Settings.AMOLED_LIGHT_BACKGROUND, Settings.HEADER_TEXT, Settings.SEEN_POSTS_KEEP, Settings.SAVE_TO,
                 Settings.SAVE_FOLDER, Settings.VIDEO_SUBFOLDER, Settings.PHOTO_SUBFOLDER, Settings.DOWNLOAD_QUALITY,
                 Settings.FILENAME_TEMPLATE, Settings.PHOTO_FILENAME_TEMPLATE, Settings.DOWNLOAD_ACTION, Settings.SEND_TO_APP,
                 Settings.START_TAB, Settings.FEEDS_SUBTAB, Settings.COMMENT_ORDER, Settings.PLAYBACK_QUALITY,
@@ -282,6 +283,7 @@ public class SettingsBackupTest {
         assertEquals(Settings.HIDDEN_SOURCES, SettingsBackup.SOURCES);
         assertEquals(Settings.HIDDEN_SHARE_ITEMS, SettingsBackup.SHARE_ITEMS);
         assertEquals(Settings.HIDDEN_MENU_TILES, SettingsBackup.MENU_TILES);
+        assertEquals(Settings.HIDDEN_FEED_TYPES, SettingsBackup.FEED_TYPES);
         assertEquals(Settings.SAVE_FOLDER, SettingsBackup.FOLDER);
         assertEquals(Settings.DOWNLOAD_QUALITY, SettingsBackup.QUALITY);
         assertEquals(Settings.FILENAME_TEMPLATE, SettingsBackup.FILE_NAME);
@@ -1012,6 +1014,64 @@ public class SettingsBackupTest {
         assertEquals(picks, SettingsBackup.Snapshot.fromBundle(state).menuTiles);
         state.putString("hidden_menu_tiles", "gaming,gaming");
         assertNull(SettingsBackup.Snapshot.fromBundle(state).menuTiles);
+    }
+
+    /**
+     * The feed types to hide go out and come back as their row stores them, a type this build has
+     * never been handed included. A file can clear the list, an older file leaves it alone, and a
+     * list the row would store differently refuses the whole file, an ordinary post's type with it.
+     */
+    @Test
+    public void feedTypePicksRoundTripWithTypesThisBuildHasntSeen() throws Exception {
+        String picks = "FriendsLocationsFeedUnit,GroupsYouShouldJoinFeedUnit,SomeNewerFeedUnit";
+        Settings.HIDDEN_FEED_TYPES.save(picks);
+        String file = SettingsBackup.create();
+        JSONObject written = new JSONObject(file).getJSONObject("settings");
+        assertEquals(picks, written.get(SettingsBackup.FEED_TYPES.key));
+        Settings.HIDDEN_FEED_TYPES.resetToDefault();
+
+        SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+        assertEquals(picks, snapshot.feedTypesChange());
+        assertEquals(1, SettingsBackup.apply(snapshot));
+        assertEquals(picks, Settings.HIDDEN_FEED_TYPES.savedValue());
+        assertEquals("a file read back is the file", file, SettingsBackup.create());
+        assertEquals(0, SettingsBackup.parse(file).changes().size());
+        assertEquals("Your list of feed types to hide will hold 3 types.",
+                SettingsBackupPreference.feedTypesSentence(snapshot.feedTypes));
+        assertEquals("Your list of feed types to hide will hold 1 type.",
+                SettingsBackupPreference.feedTypesSentence("FriendsLocationsFeedUnit"));
+        assertEquals("Your list of feed types to hide will be empty.", SettingsBackupPreference.feedTypesSentence(""));
+
+        Map<String, ?> before = store();
+        for (Object refused : new Object[]{" FriendsLocationsFeedUnit", "FriendsLocationsFeedUnit,",
+                "FriendsLocationsFeedUnit,FriendsLocationsFeedUnit", "Story", "Feed-Unit", "1FeedUnit", 5, true,
+                JSONObject.NULL}) {
+            JSONObject hostile = new JSONObject(file);
+            hostile.getJSONObject("settings").put(SettingsBackup.FEED_TYPES.key, refused);
+            try {
+                SettingsBackup.parse(hostile.toString());
+                fail("a file with the list " + printable(String.valueOf(refused)) + " was read");
+            } catch (SettingsBackup.Rejected rejected) {
+                assertEquals(printable(String.valueOf(refused)), SettingsBackup.Reason.VALUE, rejected.reason);
+            }
+        }
+        assertEquals("a refused file wrote something", before, store());
+
+        JSONObject emptied = new JSONObject(file);
+        emptied.getJSONObject("settings").put(SettingsBackup.FEED_TYPES.key, "");
+        assertEquals(1, SettingsBackup.apply(SettingsBackup.parse(emptied.toString())));
+        assertEquals("", Settings.HIDDEN_FEED_TYPES.savedValue());
+
+        Settings.HIDDEN_FEED_TYPES.save("FriendsLocationsFeedUnit");
+        JSONObject older = new JSONObject(file);
+        older.getJSONObject("settings").remove(SettingsBackup.FEED_TYPES.key);
+        SettingsBackup.apply(SettingsBackup.parse(older.toString()));
+        assertEquals("FriendsLocationsFeedUnit", Settings.HIDDEN_FEED_TYPES.savedValue());
+
+        Bundle state = snapshot.toBundle();
+        assertEquals(picks, SettingsBackup.Snapshot.fromBundle(state).feedTypes);
+        state.putString("hidden_feed_types", "Story");
+        assertNull(SettingsBackup.Snapshot.fromBundle(state).feedTypes);
     }
 
     /**

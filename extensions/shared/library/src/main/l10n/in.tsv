@@ -2144,3 +2144,17 @@ AI posts	postingan AI
 posts your filters matched	postingan yang cocok dengan filter kamu
 # context: a kind in that list, posts hidden because the user already saw them
 posts you've seen	postingan yang sudah kamu lihat
+# context: row title in News feed settings and the title of its list: Facebook's own names for kinds of post and card the user can pick to hide
+Feed types to hide	Jenis feed yang disembunyikan
+# context: warning under that row: hiding a type Home's ordinary posts use can leave Home with nothing to show
+Picking a type Home needs can leave it empty.	Memilih jenis yang dibutuhkan Beranda bisa membuatnya kosong.
+# context: that row's summary while nothing is picked; Debug logging is the name of a switch
+None picked. Hides posts and cards by Facebook's own type name, as Debug logging records it.	Belum ada yang dipilih. Menyembunyikan postingan dan kartu menurut nama jenis dari Facebook sendiri, seperti yang dicatat Pencatatan debug.
+# context: message when the list has no types to offer because Home hasn't been scrolled since Facebook started
+No types seen yet. Scroll Home and come back.	Belum ada jenis yang terlihat. Gulir Beranda lalu kembali ke sini.
+# context: import preview and toast, no feed type will be in that list after the import
+Your list of feed types to hide will be empty.	Daftar jenis feed yang disembunyikan akan kosong.
+# context: import preview and toast, one feed type will be in that list after the import
+Your list of feed types to hide will hold %1$d type.	Daftar jenis feed yang disembunyikan akan berisi %1$d jenis.
+# context: import preview and toast, several feed types will be in that list after the import
+Your list of feed types to hide will hold %1$d types.	Daftar jenis feed yang disembunyikan akan berisi %1$d jenis.

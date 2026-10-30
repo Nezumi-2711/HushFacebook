@@ -2144,3 +2144,17 @@ AI posts	bài viết AI
 posts your filters matched	bài viết khớp với bộ lọc của bạn
 # context: a kind in that list, posts hidden because the user already saw them
 posts you've seen	bài viết bạn đã xem
+# context: row title in News feed settings and the title of its list: Facebook's own names for kinds of post and card the user can pick to hide
+Feed types to hide	Loại bảng tin cần ẩn
+# context: warning under that row: hiding a type Home's ordinary posts use can leave Home with nothing to show
+Picking a type Home needs can leave it empty.	Chọn một loại mà Trang chủ cần có thể khiến Trang chủ trống.
+# context: that row's summary while nothing is picked; Debug logging is the name of a switch
+None picked. Hides posts and cards by Facebook's own type name, as Debug logging records it.	Chưa chọn mục nào. Ẩn bài viết và thẻ theo tên loại của chính Facebook, như Ghi nhật ký gỡ lỗi ghi lại.
+# context: message when the list has no types to offer because Home hasn't been scrolled since Facebook started
+No types seen yet. Scroll Home and come back.	Chưa thấy loại nào. Hãy cuộn Trang chủ rồi quay lại.
+# context: import preview and toast, no feed type will be in that list after the import
+Your list of feed types to hide will be empty.	Danh sách loại bảng tin cần ẩn sẽ trống.
+# context: import preview and toast, one feed type will be in that list after the import
+Your list of feed types to hide will hold %1$d type.	Danh sách loại bảng tin cần ẩn sẽ có %1$d loại.
+# context: import preview and toast, several feed types will be in that list after the import
+Your list of feed types to hide will hold %1$d types.	Danh sách loại bảng tin cần ẩn sẽ có %1$d loại.

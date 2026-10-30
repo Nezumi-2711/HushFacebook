@@ -38,6 +38,7 @@ import app.morphe.extension.facebook.download.FileNameTemplate;
 import app.morphe.extension.facebook.download.SaveFolder;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
+import app.morphe.extension.facebook.feed.FeedTypeNames;
 import app.morphe.extension.facebook.feed.PostSources;
 import app.morphe.extension.facebook.feed.PostWords;
 import app.morphe.extension.facebook.menu.MenuTiles;
@@ -585,9 +586,16 @@ public final class SettingsBackup {
      */
     static final StringSetting MENU_TILES = Settings.HIDDEN_MENU_TILES;
 
+    /**
+     * The feed types to hide, held in a file exactly as their row stores them: GraphQL type names,
+     * commas between. A type this build hasn't seen is carried like any other. A list
+     * {@link FeedTypeNames#clean} would change refuses the whole file, as a Menu tiles list does.
+     */
+    static final StringSetting FEED_TYPES = Settings.HIDDEN_FEED_TYPES;
+
     /** The settings a file carries that aren't switches, in the order Settings declares them. */
     static final List<Setting<?>> VALUES = Collections.unmodifiableList(
-            Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, CEILING, REELS_ORDER, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
+            Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, FEED_TYPES, CEILING, REELS_ORDER, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
                     FILE_NAME, PHOTO_NAME, ACTION, APP, START, SUBTAB, ORDER, PLAYBACK, REELS_QUALITY, STORIES_QUALITY,
                     QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, TEXT_SIZE, ACCENT, BADGE, LOGO, TAB));
 
@@ -696,6 +704,7 @@ public final class SettingsBackup {
         private static final String CEILING_NAME = "hide_posts_over_reactions";
         private static final String SHARE_ITEMS_NAME = "hidden_share_items";
         private static final String MENU_TILES_NAME = "hidden_menu_tiles";
+        private static final String FEED_TYPES_NAME = "hidden_feed_types";
         private static final String HOME_FEED_NAME = "home_feed";
         private static final String BACKGROUND_NAME = "amoled_background";
         private static final String LIGHT_BACKGROUND_NAME = "amoled_light_background";
@@ -788,6 +797,9 @@ public final class SettingsBackup {
         /** The clean list of Menu tiles to hide the file holds, or null when it names none. Set once, as it's read. */
         @Nullable
         String menuTiles;
+        /** The clean list of feed types to hide the file holds, or null when it names none. Set once, as it's read. */
+        @Nullable
+        String feedTypes;
         /** The feed the file says Home shows, or null when it names none. Set once, as it's read. */
         @Nullable
         FeedsSubtab homeFeed;
@@ -1025,6 +1037,8 @@ public final class SettingsBackup {
             if (shareItemsChange != null) changes.put(SHARE_ITEMS, shareItemsChange);
             String menuTilesChange = menuTilesChange();
             if (menuTilesChange != null) changes.put(MENU_TILES, menuTilesChange);
+            String feedTypesChange = feedTypesChange();
+            if (feedTypesChange != null) changes.put(FEED_TYPES, feedTypesChange);
             if (seenKeep != null && seenKeep != SEEN_KEEP.savedValue()) changes.put(SEEN_KEEP, seenKeep);
             FeedsSubtab homeFeedChange = homeFeedChange();
             if (homeFeedChange != null) changes.put(HOME_FEED, homeFeedChange);
@@ -1242,6 +1256,13 @@ public final class SettingsBackup {
             return menuTiles.equals(MenuTiles.clean(MENU_TILES.savedValue())) ? null : menuTiles;
         }
 
+        /** The feed types to hide this file sets, or null when it names none or the ones already set. */
+        @Nullable
+        String feedTypesChange() {
+            if (feedTypes == null) return null;
+            return feedTypes.equals(FeedTypeNames.clean(FEED_TYPES.savedValue())) ? null : feedTypes;
+        }
+
         /** The Background color this file sets, or null when it names none or the one already set. */
         @Nullable
         String backgroundChange() {
@@ -1337,6 +1358,7 @@ public final class SettingsBackup {
             if (seenKeep != null) state.putString(SEEN_KEEP_NAME, seenKeep.fileValue);
             if (shareItems != null) state.putString(SHARE_ITEMS_NAME, shareItems);
             if (menuTiles != null) state.putString(MENU_TILES_NAME, menuTiles);
+            if (feedTypes != null) state.putString(FEED_TYPES_NAME, feedTypes);
             if (homeFeed != null) state.putString(HOME_FEED_NAME, homeFeed.fileValue);
             if (background != null) state.putString(BACKGROUND_NAME, background);
             if (lightBackground != null) state.putString(LIGHT_BACKGROUND_NAME, lightBackground);
@@ -1404,6 +1426,9 @@ public final class SettingsBackup {
             Object menuTiles = state.get(MENU_TILES_NAME);
             read.menuTiles = menuTiles instanceof String && MenuTiles.isClean((String) menuTiles)
                     ? (String) menuTiles : null;
+            Object feedTypes = state.get(FEED_TYPES_NAME);
+            read.feedTypes = feedTypes instanceof String && FeedTypeNames.isClean((String) feedTypes)
+                    ? (String) feedTypes : null;
             read.homeFeed = FeedsSubtab.fromFile(state.get(HOME_FEED_NAME));
             read.reelsOrder = ReelsOrder.fromFile(state.get(REELS_ORDER_NAME));
             Object background = state.get(BACKGROUND_NAME);
@@ -1487,6 +1512,7 @@ public final class SettingsBackup {
             switches.put(SOURCES.key, PostSources.clean(of(SOURCES)));
             switches.put(SHARE_ITEMS.key, ShareSheetItems.clean(of(SHARE_ITEMS)));
             switches.put(MENU_TILES.key, MenuTiles.clean(of(MENU_TILES)));
+            switches.put(FEED_TYPES.key, FeedTypeNames.clean(of(FEED_TYPES)));
             // The colour as the row keeps it, so a file never carries one an import would refuse.
             String background = AmoledBackground.stored(of(BACKGROUND));
             switches.put(BACKGROUND.key, background == null ? "" : background);
@@ -1622,6 +1648,7 @@ public final class SettingsBackup {
         ReactionCeiling ceiling = null;
         String shareItems = null;
         String menuTiles = null;
+        String feedTypes = null;
         FeedsSubtab homeFeed = null;
         String background = null;
         String lightBackground = null;
@@ -1835,6 +1862,14 @@ public final class SettingsBackup {
                 menuTiles = (String) value;
                 continue;
             }
+            if (FEED_TYPES.key.equals(name)) {
+                Object value = values.opt(name);
+                if (!(value instanceof String) || !FeedTypeNames.isClean((String) value)) {
+                    throw new Rejected(Reason.VALUE, "Not one clean list of feed types: " + name);
+                }
+                feedTypes = (String) value;
+                continue;
+            }
             BooleanSetting setting = known.get(name);
             if (setting == null) {
                 // A name this build doesn't know, Pause and the debug settings included: left
@@ -1871,6 +1906,7 @@ public final class SettingsBackup {
         read.seenKeep = seenKeep;
         read.shareItems = shareItems;
         read.menuTiles = menuTiles;
+        read.feedTypes = feedTypes;
         read.homeFeed = homeFeed;
         read.background = background;
         read.lightBackground = lightBackground;

@@ -2144,3 +2144,17 @@ AI posts	yapay zekâ gönderileri
 posts your filters matched	filtrelerine takılan gönderiler
 # context: a kind in that list, posts hidden because the user already saw them
 posts you've seen	gördüğün gönderiler
+# context: row title in News feed settings and the title of its list: Facebook's own names for kinds of post and card the user can pick to hide
+Feed types to hide	Gizlenecek akış türleri
+# context: warning under that row: hiding a type Home's ordinary posts use can leave Home with nothing to show
+Picking a type Home needs can leave it empty.	Ana Sayfa'nın ihtiyaç duyduğu bir türü seçmek onu boş bırakabilir.
+# context: that row's summary while nothing is picked; Debug logging is the name of a switch
+None picked. Hides posts and cards by Facebook's own type name, as Debug logging records it.	Hiçbiri seçilmedi. Gönderileri ve kartları, Hata ayıklama günlüğünün kaydettiği şekilde Facebook'un kendi tür adına göre gizler.
+# context: message when the list has no types to offer because Home hasn't been scrolled since Facebook started
+No types seen yet. Scroll Home and come back.	Henüz tür görülmedi. Ana Sayfa'da biraz gezinip geri gel.
+# context: import preview and toast, no feed type will be in that list after the import
+Your list of feed types to hide will be empty.	Gizlenecek akış türleri listen boş olacak.
+# context: import preview and toast, one feed type will be in that list after the import
+Your list of feed types to hide will hold %1$d type.	Gizlenecek akış türleri listen %1$d tür içerecek.
+# context: import preview and toast, several feed types will be in that list after the import
+Your list of feed types to hide will hold %1$d types.	Gizlenecek akış türleri listen %1$d tür içerecek.
