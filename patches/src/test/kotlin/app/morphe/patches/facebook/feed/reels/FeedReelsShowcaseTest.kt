@@ -5,12 +5,18 @@
 package app.morphe.patches.facebook.feed.reels
 
 import app.morphe.Fixtures
+import app.morphe.PatchContexts
 import app.morphe.RepoFiles
 import app.morphe.patches.facebook.feed.FixtureDex
+import app.morphe.patches.facebook.feed.hook.EDGE_SWAP_DROPPED
+import app.morphe.patches.facebook.feed.hook.HIDES_EDGE
+import app.morphe.patches.facebook.feed.hook.feedFilterHookPatch
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.methodsHolding
 import app.morphe.patches.facebook.feed.treeFieldKey
+import app.morphe.patches.facebook.shared.AddNewEdgeToCollectionFingerprint
 import app.morphe.patches.facebook.shared.FEED_UNIT_EDGE
+import app.morphe.patches.facebook.shared.addNewEdgeToCollection
 import app.morphe.patches.facebook.shared.admittedAsFeedFunnel
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -186,6 +192,57 @@ class FeedReelsShowcaseTest {
                 assertNotNull(bundle.name, tailCallerProblem(
                     callers.filter { it.name == ADD_NEW_EDGE_TO_COLLECTION || isBody(it) } + third, injector, isBody))
                 checked[version] = "${injector.definingClass} calls ${adder.definingClass}->${adder.name}"
+            }
+        }
+        assertEquals("a declared build went unchecked: $checked", declaredBundles().keys, checked.keys)
+    }
+
+    /**
+     * The feed guard is applied before this patch looks at the funnel, so the funnel it reads has had
+     * the guard put in. 585's funnel hands its edge to a private instance method (invoke-direct on
+     * `this`) that the batch add calls too: the guard goes on that method, the funnel stays a
+     * branch-free wrapper, and the tail adder's caller is still the method the funnel hands off to.
+     * Run without the guard this check passed while the real apply failed, because a guard on the
+     * wrapper gave it a branch and the hand-off was no longer found.
+     */
+    @Test
+    fun `with the feed guard in, the funnel still hands off to the body the guard went on`() {
+        val checked = mutableMapOf<String, String>()
+        for ((version, bundles) in declaredBundles()) {
+            for (bundle in bundles) {
+                val funnel = FixtureDex.methodsWhere(bundle,
+                    { dex -> dex.stringSection.any { it == ADD_NEW_EDGE_TO_COLLECTION } },
+                ) { admittedAsFeedFunnel(it) }.single()
+                val context = PatchContexts.of(
+                    FixtureDex.classes(bundle, setOf(FEED_UNIT_EDGE, funnel.definingClass)).values +
+                        FixtureDex.classesHolding(bundle, EDGE_SWAP_DROPPED),
+                )
+                AddNewEdgeToCollectionFingerprint.clearMatch()
+                feedFilterHookPatch.execute(context)
+
+                fun guards(method: Method) = method.implementation!!.instructions.count {
+                    (it as? ReferenceInstruction)?.reference?.toString() == HIDES_EDGE
+                }
+                val unpatched = FixtureDex.classes(bundle, setOf(funnel.definingClass)).getValue(funnel.definingClass)
+                val expected = funnelHandOffs(funnel, unpatched).map(::signatureOf)
+                val wrapper = context.addNewEdgeToCollection()
+                val bodies = funnelHandOffs(wrapper, context.mutableClassDefBy(wrapper.definingClass)).map(::signatureOf)
+                assertEquals("${bundle.name}: the hand-off once the guard is in", expected, bodies)
+                assertEquals("${bundle.name}: the funnel only wraps one body", 1, bodies.size)
+                val guarded = context.mutableClassDefBy(wrapper.definingClass).methods.filter { guards(it) > 0 }
+                assertEquals("${bundle.name}: the guard sits on the body, not the wrapper", bodies, guarded.map(::signatureOf))
+                assertEquals("${bundle.name}: one guard on the body", 1, guards(guarded.single()))
+
+                // And the check the patch makes on top of that, with the guard in.
+                val adder = FixtureDex.classesHolding(bundle, ADD_ELEMENT_AT_TAIL).flatMap(::tailAdders).single()
+                val found = FixtureDex.methodsWhere(bundle, dexFilter = { dex ->
+                    dex.stringSection.any { it.startsWith(PRE_EOF_INJECTOR_PREFIX) } ||
+                        dex.methodSection.any { isCallTo(it, adder) }
+                }) { isPreEofInjector(it) || callsMethod(it, adder) }
+                val injector = found.single(::isPreEofInjector)
+                val callers = found.filter { callsMethod(it, adder) }
+                assertNull("${bundle.name}", tailCallerProblem(callers, injector) { signatureOf(it) in bodies })
+                checked[version] = "the guard went on ${bodies.single()}"
             }
         }
         assertEquals("a declared build went unchecked: $checked", declaredBundles().keys, checked.keys)
