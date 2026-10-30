@@ -319,8 +319,10 @@ class FeedReelsShowcaseTest {
 
     private val manager = "Lfixture/Manager;"
 
-    private fun invoke(opcode: Opcode, owner: String, name: String, params: List<String>, returns: String): Instruction =
-        ImmutableInstruction35c(opcode, 2, 0, 1, 0, 0, 0, ImmutableMethodReference(owner, name, params, returns))
+    /** An invoke passing [registers]; in a [managerMethod] `this` is v2 and the edge v3. */
+    private fun invoke(opcode: Opcode, owner: String, name: String, params: List<String>, returns: String, vararg registers: Int): Instruction =
+        ImmutableInstruction35c(opcode, registers.size, registers.getOrElse(0) { 0 }, registers.getOrElse(1) { 0 }, 0, 0, 0,
+            ImmutableMethodReference(owner, name, params, returns))
 
     private fun managerMethod(name: String, params: List<String>, returns: String, code: List<Instruction>): ImmutableMethod =
         ImmutableMethod(manager, name, params.map { ImmutableMethodParameter(it, null, null) }, returns,
@@ -331,7 +333,7 @@ class FeedReelsShowcaseTest {
         val body = managerMethod("A0D", listOf(FEED_UNIT_EDGE), "Z", listOf(ImmutableInstruction11x(Opcode.RETURN, 0)))
         // 585: a null check, then a private instance method of the class, called with the edge.
         val wrapper = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
-            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z", 2, 3),
             ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
         val owner = ImmutableClassDef(manager, AccessFlags.PUBLIC.value, "Ljava/lang/Object;", null, null, null, null,
             listOf(wrapper, body, managerMethod("A07", emptyList(), "Ljava/lang/Long;", listOf(ImmutableInstruction11x(Opcode.RETURN_OBJECT, 0)))))
@@ -339,7 +341,7 @@ class FeedReelsShowcaseTest {
 
         // 583: the same through a static call.
         val staticWrapper = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
-            invoke(Opcode.INVOKE_STATIC, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            invoke(Opcode.INVOKE_STATIC, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z", 3),
             ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
         assertEquals(listOf("A0D"), funnelHandOffs(staticWrapper, owner).map { it.name })
 
@@ -347,18 +349,26 @@ class FeedReelsShowcaseTest {
         // one that branches before it hands anything over hand nothing over.
         assertEquals(emptyList<String>(), funnelHandOffs(body, owner).map { it.name })
         val recursive = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
-            invoke(Opcode.INVOKE_DIRECT, manager, ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z"),
+            invoke(Opcode.INVOKE_DIRECT, manager, ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", 2, 3),
             ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
         assertEquals(emptyList<String>(), funnelHandOffs(recursive, owner).map { it.name })
         val elsewhere = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
-            invoke(Opcode.INVOKE_STATIC, "Lfixture/Other;", "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            invoke(Opcode.INVOKE_STATIC, "Lfixture/Other;", "A0D", listOf(FEED_UNIT_EDGE), "Z", 3),
             ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
         assertEquals(emptyList<String>(), funnelHandOffs(elsewhere, owner).map { it.name })
         val branching = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
             ImmutableInstruction21t(Opcode.IF_EQZ, 0, 4),
-            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z"),
+            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z", 2, 3),
             ImmutableInstruction11x(Opcode.MOVE_RESULT, 0), ImmutableInstruction11x(Opcode.RETURN, 0)))
         assertEquals(emptyList<String>(), funnelHandOffs(branching, owner).map { it.name })
+        // One that does more after the call is no wrapper, so the feed guard stays on it, and the
+        // method it calls doesn't stand in for it either.
+        val working = managerMethod(ADD_NEW_EDGE_TO_COLLECTION, listOf(FEED_UNIT_EDGE), "Z", listOf(
+            invoke(Opcode.INVOKE_DIRECT, manager, "A0D", listOf(FEED_UNIT_EDGE), "Z", 2, 3),
+            ImmutableInstruction11x(Opcode.MOVE_RESULT, 0),
+            invoke(Opcode.INVOKE_STATIC, "Lfixture/Log;", "edge", listOf(FEED_UNIT_EDGE), "V", 3),
+            ImmutableInstruction11x(Opcode.RETURN, 0)))
+        assertEquals(emptyList<String>(), funnelHandOffs(working, owner).map { it.name })
 
         // The body stands in for the funnel in the caller check, and a second method of the class doesn't.
         val adder = ImmutableMethod("Lfixture/Collection;", "tail", listOf(ImmutableMethodParameter(FEED_UNIT_EDGE, null, null)),

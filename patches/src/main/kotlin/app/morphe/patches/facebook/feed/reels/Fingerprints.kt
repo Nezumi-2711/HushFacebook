@@ -8,12 +8,11 @@ import app.morphe.patches.facebook.feed.BASE_MODEL_WITH_TREE
 import app.morphe.patches.facebook.feed.holdsString
 import app.morphe.patches.facebook.feed.treeFieldKey
 import app.morphe.patches.facebook.shared.FEED_UNIT_EDGE
+import app.morphe.patches.facebook.shared.outlinedFunnelBody
 import com.android.tools.smali.dexlib2.AccessFlags
-import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
@@ -159,18 +158,15 @@ internal fun signatureOf(method: Method): String =
     "${method.definingClass}->${method.name}(${method.parameterTypes.joinToString("")})${method.returnType}"
 
 /**
- * The methods of [owner], [funnel]'s own class, that [funnel] only wraps: it has no branch and calls
- * methods of its class that take an edge and answer a boolean. 583 made that a static method; 585
- * a private instance one, which the feed's batch add calls as well, so the tail adder's caller there
- * is this body and never the funnel by name. Empty when [funnel] does the work itself.
+ * The method of [owner], [funnel]'s own class, that [funnel] only wraps. 583 made that a static
+ * method; 585 a private instance one, which the feed's batch add calls as well, so the tail adder's
+ * caller there is this body and never the funnel by name. Empty when [funnel] does the work itself.
+ * It's [outlinedFunnelBody], the finder the feed guard goes by, so a looser match can't vouch for a
+ * method the guard isn't on.
  */
 internal fun funnelHandOffs(funnel: Method, owner: ClassDef): List<Method> {
-    val code = funnel.body()
-    if (code.any { it is OffsetInstruction || it.opcode == Opcode.THROW }) return emptyList()
-    val called = code.mapNotNull { (it as? ReferenceInstruction)?.reference as? MethodReference }.filter {
-        it.definingClass == owner.type && it.returnType == "Z" && FEED_UNIT_EDGE in it.parameterList() && !isCallTo(it, funnel)
-    }
-    return owner.methods.filter { method -> called.any { isCallTo(it, method) } }
+    val body = outlinedFunnelBody(funnel)?.takeUnless { isCallTo(it, funnel) } ?: return emptyList()
+    return owner.methods.filter { isCallTo(body, it) }
 }
 
 /**
