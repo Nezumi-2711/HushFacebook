@@ -177,6 +177,8 @@ final class SettingsRows {
             bound = view;
             showAllText(view);
             ScreenColors.row(view, this);
+            // What it is and how far it has got are one stop; Cancel keeps its own.
+            view.setScreenReaderFocusable(true);
             android.view.ViewGroup frame = view.findViewById(android.R.id.widget_frame);
             if (frame == null) return;
             frame.removeAllViews();

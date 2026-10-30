@@ -169,6 +169,8 @@ public class ActiveSavesTest {
         assertEquals("Cancel", cancel.getText().toString());
         assertEquals("Cancel saving this video", String.valueOf(cancel.getContentDescription()));
         assertEquals(Button.class.getName(), cancel.createAccessibilityNodeInfo().getClassName());
+        assertTrue("a screen reader stops on the save's title and its status separately", row.isScreenReaderFocusable());
+        assertTrue("Cancel lost its own screen reader stop", cancel.isFocusable() && cancel.isClickable());
         int touch = Math.round(48 * cancel.getResources().getDisplayMetrics().density);
         assertTrue(cancel.getHeight() >= touch && cancel.getWidth() >= touch);
         assertNull("saving asked for a permission", Shadows.shadowOf(controller.get()).getLastRequestedPermission());
