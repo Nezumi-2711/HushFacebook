@@ -7,6 +7,7 @@ package app.morphe.patches.facebook.reels
 import app.morphe.ExtensionDex
 import app.morphe.Fixtures
 import app.morphe.PatchContexts
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patches.facebook.feed.FixtureDex
 import app.morphe.patches.shared.compat.AppCompatibilities
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -14,7 +15,6 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
-import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
@@ -22,6 +22,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -47,23 +48,12 @@ class FeedReelPreviewsFixtureTest {
         return found.map(ImmutableClassDef::of)
     }
 
-    /**
-     * The field hash each of [getters] reads, per class in [bundle] that implements the interface
-     * declaring them and has all of them: the getter's one const, which the tree is asked for.
-     */
-    private fun implementedHashes(bundle: java.io.File, getters: List<MethodReference>): List<Set<Int>> {
+    /** Every class in [bundle] implementing the interface that declares [getters]. */
+    private fun implementers(bundle: java.io.File, getters: List<MethodReference>): List<ClassDef> {
         val declaring = getters.map { it.definingClass }.distinct().single()
-        val found = mutableListOf<Set<Int>>()
-        FixtureDex.forEach(bundle) { dex ->
-            for (classDef in dex.classes.filter { declaring in it.interfaces }) {
-                val hashes = getters.map { getter ->
-                    val body = classDef.methods.singleOrNull { it.name == getter.name && it.parameterTypes.isEmpty() }?.body()
-                    body?.filter { it.opcode == Opcode.CONST }?.map { (it as NarrowLiteralInstruction).narrowLiteral }?.singleOrNull()
-                }
-                if (hashes.all { it != null }) found += hashes.filterNotNull().toSet()
-            }
-        }
-        return found
+        val found = mutableListOf<ClassDef>()
+        FixtureDex.forEach(bundle) { dex -> dex.classes.filterTo(found) { declaring in it.interfaces } }
+        return found.map(ImmutableClassDef::of)
     }
 
     @Test
@@ -88,13 +78,18 @@ class FeedReelPreviewsFixtureTest {
                 // The getters the render asks are the three preview fields: every class implementing them reads those hashes.
                 val getters = previewModelGetters(original)
                 assertEquals("$name: preview getters", PREVIEW_FIELDS.size, getters.size)
-                val implemented = implementedHashes(bundle, getters)
+                val implementing = implementers(bundle, getters)
+                val implemented = previewGetterKeys(implementing, getters)
                 assertTrue("$name: no class implements the preview getters", implemented.isNotEmpty())
                 implemented.forEach { assertEquals("$name: an implementer reads the preview fields", PREVIEW_FIELDS.map(String::hashCode).toSet(), it) }
+                // Negative control: with nothing to show what the getters read, the patch refuses.
+                assertThrows("$name: patched without the getters' implementers", PatchException::class.java) {
+                    with(PatchContexts.of(listOf(tile))) { playFeedReelsWhole() }
+                }
                 assertEquals("$name: the store is an int field of the builder", Opcode.IPUT, original[points.store].opcode)
                 assertEquals("$name: the end is stored twice", (original[points.store + 1] as TwoRegisterInstruction).registerA, points.end)
 
-                val context = PatchContexts.of(listOf(tile))
+                val context = PatchContexts.of(listOf(tile) + implementing)
                 with(context) { playFeedReelsWhole() }
                 val hooked = context.mutableClassDefBy(tile.type).methods.single {
                     it.name == render.name && it.parameterTypes.map(CharSequence::toString) == render.parameterTypes.map(CharSequence::toString)

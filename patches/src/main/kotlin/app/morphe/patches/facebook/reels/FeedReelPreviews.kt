@@ -7,13 +7,16 @@ package app.morphe.patches.facebook.reels
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
+import app.morphe.patches.facebook.feed.treeFieldKey
 import app.morphe.patches.facebook.layout.theme.branchTargets
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.patches.facebook.search.branchTarget
 import app.morphe.util.classDefForEachReferencing
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
@@ -100,6 +103,22 @@ internal fun previewModelGetters(code: List<Instruction>): List<MethodReference>
         .firstOrNull().orEmpty()
 
 /**
+ * The field key each of [getters] loads, per class in [classes] that implements the interface
+ * declaring them and has all of them: the getter's one const, which the model's tree is asked for.
+ */
+internal fun previewGetterKeys(classes: Iterable<ClassDef>, getters: List<MethodReference>): List<Set<Int>> {
+    val declaring = getters.map { it.definingClass }.distinct().singleOrNull() ?: return emptyList()
+    return classes.filter { declaring in it.interfaces }.mapNotNull { classDef ->
+        val keys = getters.map { getter ->
+            classDef.methods.singleOrNull { it.name == getter.name && it.parameterTypes.isEmpty() }
+                ?.implementation?.instructions?.filter { it.opcode == Opcode.CONST }
+                ?.map { (it as NarrowLiteralInstruction).narrowLiteral }?.singleOrNull()
+        }
+        if (keys.all { it != null }) keys.filterNotNull().toSet() else null
+    }
+}
+
+/**
  * The hook points in [method] when it's a Reels row tile's render: it reads the three
  * [PREVIEW_FIELDS] through the preview model's getters ([previewModelGetters]), calls one (DDDFZ) helper answering an object behind an
  * if-eqz on a call's answer that jumps past it, news up a [VIDEO_DATA_SOURCE] and then a builder, and
@@ -145,7 +164,8 @@ internal fun previewClipPoints(method: Method): PreviewClipPoints? {
 
 /**
  * Hands a Reels row tile's last clip check and its end to the extension. Refuses unless exactly one
- * method outside the extension has the shape [previewClipPoints] looks for.
+ * method outside the extension has the shape [previewClipPoints] looks for, and every class
+ * implementing its getters loads the keys of the [PREVIEW_FIELDS].
  */
 internal fun BytecodePatchContext.playFeedReelsWhole() {
     val found = mutableListOf<Pair<String, Method>>()
@@ -156,6 +176,17 @@ internal fun BytecodePatchContext.playFeedReelsWhole() {
     val (owner, holder) = found.singleOrNull() ?: throw PatchException(
         "$PATCH: expected one render that reads a reel's preview clip (${PREVIEW_FIELDS.joinToString()}) and builds its " +
             "player from a VideoDataSource, found ${found.size}",
+    )
+    // Three double getters are the preview clip only while what implements them loads those fields'
+    // keys; a build handing render three other doubles would get its tiles cut by the wrong numbers.
+    val getters = previewModelGetters(holder.implementation!!.instructions.toList())
+    val implementers = mutableListOf<ClassDef>()
+    classDefForEachReferencing(types = listOf(getters.first().definingClass)) { implementers += it }
+    val keys = previewGetterKeys(implementers, getters)
+    val wanted = PREVIEW_FIELDS.map(::treeFieldKey).toSet()
+    if (keys.isEmpty() || keys.any { it != wanted }) throw PatchException(
+        "$PATCH: $owner->${holder.name} reads its clip through ${getters.first().definingClass}, whose " +
+            "${keys.size} implementer(s) don't all load the keys of ${PREVIEW_FIELDS.joinToString()}",
     )
     val method = mutableClassDefBy(owner).methods.single {
         it.name == holder.name && it.parameterTypes.map(CharSequence::toString) == holder.parameterTypes.map(CharSequence::toString)
