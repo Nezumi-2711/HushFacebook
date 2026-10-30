@@ -44,6 +44,7 @@ import app.morphe.extension.facebook.settings.SettingsRows.FontRow;
 import app.morphe.extension.facebook.settings.SettingsRows.PictureRow;
 import app.morphe.extension.facebook.settings.SettingsRows.Row;
 import app.morphe.extension.facebook.theme.AmoledTheme;
+import app.morphe.extension.facebook.theme.MarkColors;
 import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
@@ -178,8 +179,9 @@ final class HushfacebookPages {
         }
         if (build.contains(PatchFamily.MARK_COLORS)) {
             // Colours Facebook asks for as each screen builds, so a change shows fully after a restart.
-            appearance.addPreference(page.markColorRow(context, false));
-            appearance.addPreference(page.markColorRow(context, true));
+            appearance.addPreference(page.markColorRow(context, MarkColors.Mark.BADGE));
+            appearance.addPreference(page.markColorRow(context, MarkColors.Mark.LOGO));
+            appearance.addPreference(page.markColorRow(context, MarkColors.Mark.TAB));
         }
         if (build.contains(PatchFamily.FORCE_DARK_MODE)) {
             // Facebook asks for dark mode as each screen applies its theme, so a change shows fully after a restart.

@@ -4,16 +4,22 @@
  */
 package app.morphe.extension.facebook.comments;
 
+import android.app.Dialog;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import app.morphe.extension.facebook.media.PauseUnderComments;
@@ -53,6 +59,13 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * sheet is a watch-and-comment one first thing where Facebook sets them up, and while the switch is
  * on such a header is hidden, at once or at the first layout after the video lands in it. A post's
  * header, its reactions, holds no video and stays.
+ *
+ * <p>A sheet that stops part way up takes a tap on the reel above it as a tap outside and closes
+ * (#315). Facebook already lets taps through for a part-height sheet opened from the reel viewer,
+ * behind a server gate: the sheet stays on an outside tap and its window passes outside touches
+ * on, so the reel gets the tap and plays or pauses. The patch hands {@link #tapThrough} the sheet's
+ * dialog and the surface it was opened from right where Facebook reads that surface, and while Tap
+ * a reel above its comments is on, a sheet over the reel viewer does the same.
  */
 public final class FullHeightComments {
     /** The member the report names once a comment sheet's height has been asked about. */
@@ -78,6 +91,19 @@ public final class FullHeightComments {
 
     /** What the report counts each time the video above a sheet's comments is hidden. */
     static final String VIDEO_HIDDEN = "Video above the comments hidden";
+
+    /** The member the report names once a part-height sheet's dialog has been handed over. */
+    static final String TAP_THROUGH = "comment sheet over a reel";
+
+    /** What the report counts each time a sheet lets the taps above it through to the reel. */
+    static final String TAPS_THROUGH = "Taps above the comments go to the reel";
+
+    /**
+     * The surfaces Facebook logs as "tap_fb_shorts_viewer" when a comment sheet opens from them
+     * (585 {@code LX/09ru;->A00}): the reel viewer, however it was reached. Facebook's own
+     * tap-through takes only 20.
+     */
+    static final Set<Integer> REEL_VIEWER = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(20, 24, 36, 37, 38, 39)));
 
     /** How many levels into a header a video is looked for. */
     private static final int VIDEO_DEPTH = 12;
@@ -167,6 +193,32 @@ public final class FullHeightComments {
             header.getViewTreeObserver().addOnGlobalLayoutListener(new Header(header, overVideo));
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "comment sheet header", failure);
+        }
+    }
+
+    /**
+     * The hook, where a comment sheet that stops part way up has read which surface opened it,
+     * handed the sheet's dialog and that surface. While Tap a reel above its comments is on and the
+     * surface is the reel viewer, the sheet stays open on a tap outside it and its window passes
+     * that tap on to the reel, and true tells Facebook the dialog is set up; otherwise, and for a
+     * throw, false lets Facebook's own check run.
+     */
+    public static boolean tapThrough(@Nullable Dialog dialog, int source) {
+        try {
+            HookStatus.invoked(FAMILY);
+            HookStatus.bound(FAMILY, TAP_THROUGH);
+            if (dialog == null || !Utils.settingsReady() || !Settings.TAP_REELS_ABOVE_COMMENTS.get()) return false;
+            Logger.printDebug(() -> "Tap a reel above its comments: a part-height sheet from surface " + source);
+            if (!REEL_VIEWER.contains(source)) return false;
+            Window window = dialog.getWindow();
+            if (window == null) return false;
+            dialog.setCanceledOnTouchOutside(false);
+            window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+            HookStatus.counted(FAMILY, TAPS_THROUGH);
+            return true;
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, TAP_THROUGH, failure);
+            return false;
         }
     }
 

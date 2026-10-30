@@ -33,14 +33,15 @@ import java.io.File
  * finds them: one post-processing method building the tray data through its one constructor, one
  * bucket list in it, one classic tray receiver reading that list, one bucket flag a tree class
  * answers with is_story_bucket_suggested, one label enum naming SUGGESTED and one static helper
- * answering it, and one bucket method answering the type enum that names the tray's cards. Then
- * the hook goes first in the constructor, in the list's own register, and the five stubs of the
- * extension the patch merges are filled in.
+ * answering it, one bucket method answering the type enum that names the tray's cards, and the
+ * seen flag and owner accessor the Page and seen switches read. Then the hook goes first in the
+ * constructor, in the list's own register, and the seven stubs of the extension the patch merges
+ * are filled in.
  */
 class SuggestedStoriesFixtureTest {
     /**
      * The tray data constructor's registers and the register of its bucket list, per build. Both
-     * of 584's builds lay it out the same way.
+     * of 585's builds lay it out the same way.
      */
     private val expected = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to (7 to 4),
@@ -48,20 +49,31 @@ class SuggestedStoriesFixtureTest {
 
     /**
      * The bucket interface's type accessor and the enum it answers, per build and then by the
-     * bundle's ABI. On 583 the two builds share the enum but not the accessor's name.
+     * bundle's ABI. On 583 and 585 the two builds share the enum but not the accessor's name.
      */
     private val expectedType = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to ("CFi" to "LX/2Cd;"),
-            "armeabi-v7a" to ("CFi" to "LX/2Cd;"),
+            "arm64-v8a" to ("Flp" to "LX/026l;"),
+            "armeabi-v7a" to ("Fln" to "LX/026l;"),
+        ),
+    )
+
+    /**
+     * The bucket interface's seen flag, its owner accessor and the owner interface it answers, per
+     * build and then by ABI (issues #313 and #317).
+     */
+    private val expectedOwner = mapOf(
+        AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
+            "arm64-v8a" to Triple("DtG", "Fli", "LX/0eTt;"),
+            "armeabi-v7a" to Triple("DtE", "Flg", "LX/0eTa;"),
         ),
     )
 
     /** The query builders that set skip_srtt_item_list, per build and then by ABI (issue #21). */
     private val expectedSkips = mapOf(
         AppCompatibilities.FACEBOOK_TARGET_VERSION to mapOf(
-            "arm64-v8a" to setOf("LX/1rk;->A03", "LX/1rk;->A07"),
-            "armeabi-v7a" to setOf("LX/1rk;->A03", "LX/1rk;->A07"),
+            "arm64-v8a" to setOf("LX/01oE;->A03", "LX/01oE;->A07"),
+            "armeabi-v7a" to setOf("LX/01oE;->A03", "LX/01oE;->A07"),
         ),
     )
 
@@ -122,8 +134,10 @@ class SuggestedStoriesFixtureTest {
                 assertTrue("${bundle.name}: no tree class answers a receiver flag with $SUGGESTED_FLAG_FIELD", readers.isNotEmpty())
                 assertEquals("${bundle.name}: static label helpers for a bucket", 1, helpers)
 
-                val support = FixtureDex.classes(bundle, setOf(data, IMMUTABLE_LIST) + interfaces)
-                assertEquals("${bundle.name}: a class the patch reads is missing", setOf(data, IMMUTABLE_LIST) + interfaces, support.keys)
+                val (seen, owner, ownerType) = expectedOwner.pin(version, bundle)
+                val read = setOf(data, IMMUTABLE_LIST, ownerType) + interfaces
+                val support = FixtureDex.classes(bundle, read)
+                assertEquals("${bundle.name}: a class the patch reads is missing", read, support.keys)
 
                 val extension = ExtensionDex.classDef(SUGGESTED_STORIES)
                 val context = PatchContexts.of(
@@ -136,6 +150,8 @@ class SuggestedStoriesFixtureTest {
                 assertEquals("${bundle.name}: the bucket type accessor", expectedType.pin(version, bundle), tray.type to tray.typeEnum)
                 assertTrue("${bundle.name}: ${tray.typeEnum} isn't among the enums naming the cards",
                     tray.typeEnum in typeEnums.map { it.type })
+                assertEquals("${bundle.name}: the seen flag, the owner accessor and the owner interface",
+                    Triple(seen, owner, ownerType), Triple(tray.seen, tray.owner, tray.ownerType))
                 assertTrue("${bundle.name}: ${tray.bucket} isn't among the receiver's flags", tray.bucket in interfaces)
                 assertTrue("${bundle.name}: ${tray.bucket} isn't public",
                     AccessFlags.PUBLIC.isSet(support.getValue(tray.bucket).accessFlags))
@@ -169,6 +185,11 @@ class SuggestedStoriesFixtureTest {
                     reference(first(LABEL_STUB)[1]),
                 )
                 assertEquals("$IMMUTABLE_LIST->copyOf(Ljava/util/Collection;)$IMMUTABLE_LIST", reference(first(COPY_STUB)[0]))
+                assertEquals("${tray.bucket}->$seen()Z", reference(first(SEEN_STUB)[1]))
+                val ownerStub = first(OWNER_TYPE_STUB)
+                assertEquals("${tray.bucket}->$owner()$ownerType", reference(ownerStub[1]))
+                assertEquals(Opcode.IF_EQZ, ownerStub[3].opcode)
+                assertEquals("$ownerType->$TYPE_NAME()Ljava/lang/String;", reference(ownerStub[4]))
                 checked += version
             }
         }

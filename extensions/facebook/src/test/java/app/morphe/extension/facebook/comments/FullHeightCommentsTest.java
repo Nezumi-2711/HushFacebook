@@ -7,12 +7,16 @@ package app.morphe.extension.facebook.comments;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -22,6 +26,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
@@ -39,8 +44,10 @@ import app.morphe.extension.shared.settings.PauseForTests;
  * is told it fills the screen, each counted. Facebook's own full height, and any share that isn't a
  * fraction, come back as they were. A sheet's header holding a video, the reel above its comments,
  * is hidden, at once or at the first layout after the video lands, and so is a watch-and-comment
- * sheet's header over the reel playing behind it, while a post's header stays. Off, paused, or
- * before the settings are ready, nothing changes.
+ * sheet's header over the reel playing behind it, while a post's header stays. With Tap a reel
+ * above its comments on (#315), a part-height sheet opened from the reel viewer stays open on a tap
+ * outside it and passes that tap on, counted, and one from anywhere else is left to Facebook. Off,
+ * paused, or before the settings are ready, nothing changes.
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 30)
@@ -83,6 +90,22 @@ public class FullHeightCommentsTest {
         header(sheet).getViewTreeObserver().dispatchOnGlobalLayout();
     }
 
+    /** A part-height sheet's dialog over a screen, set to close on a tap outside it the way Facebook's is. */
+    private static Dialog sheetDialog() {
+        Activity screen = Robolectric.buildActivity(Activity.class).setup().get();
+        Dialog dialog = new Dialog(screen);
+        dialog.setCanceledOnTouchOutside(true);
+        return dialog;
+    }
+
+    private static boolean passesTouchesOn(Dialog dialog) {
+        return (dialog.getWindow().getAttributes().flags & WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL) != 0;
+    }
+
+    private static boolean leftToFacebook(Dialog dialog) {
+        return shadowOf(dialog).isCancelableOnTouchOutside() && !passesTouchesOn(dialog);
+    }
+
     @Rule public final SettingsContextRule settingsContext = new SettingsContextRule();
 
     @Before
@@ -94,6 +117,7 @@ public class FullHeightCommentsTest {
     public void restore() {
         PauseForTests.resume();
         Settings.OPEN_COMMENTS_FULL_HEIGHT.resetToDefault();
+        Settings.TAP_REELS_ABOVE_COMMENTS.resetToDefault();
         HookStatus.clear();
     }
 
@@ -284,5 +308,66 @@ public class FullHeightCommentsTest {
             FullHeightComments.watchHeader(sheet, HEADER, false);
         });
         assertEquals("a sheet set up before the context lost its header", View.VISIBLE, header(sheet).getVisibility());
+    }
+
+    @Test
+    public void onASheetOverTheReelViewerPassesTapsToTheReelEachCounted() {
+        Settings.TAP_REELS_ABOVE_COMMENTS.save(true);
+        // 20 is the Reels tab, the one Facebook's own tap-through takes; 24 and 36 reach the same viewer.
+        for (int source : new int[] {20, 24, 36}) {
+            Dialog dialog = sheetDialog();
+            assertTrue("a sheet from surface " + source + " was left to Facebook",
+                    FullHeightComments.tapThrough(dialog, source));
+            assertFalse("a sheet from surface " + source + " still closes on a tap above it",
+                    shadowOf(dialog).isCancelableOnTouchOutside());
+            assertTrue("a sheet from surface " + source + " still keeps the tap", passesTouchesOn(dialog));
+        }
+        assertEquals(FamilyNames.FULL_HEIGHT_COMMENTS + ": invoked 3, 1 found, 0 missing. Counted: "
+                + FullHeightComments.TAPS_THROUGH + " 3", statusLine());
+    }
+
+    @Test
+    public void aSheetOpenedAwayFromTheReelViewerIsLeftToFacebook() {
+        Settings.TAP_REELS_ABOVE_COMMENTS.save(true);
+        // 23 is a profile's chain of videos, 0 a feed post: neither has a reel behind the sheet.
+        for (int source : new int[] {23, 0, 1}) {
+            Dialog dialog = sheetDialog();
+            assertFalse("a sheet from surface " + source + " was set up", FullHeightComments.tapThrough(dialog, source));
+            assertTrue("a sheet from surface " + source + " was changed", leftToFacebook(dialog));
+        }
+        assertEquals(FamilyNames.FULL_HEIGHT_COMMENTS + ": invoked 3, 1 found, 0 missing", statusLine());
+    }
+
+    @Test
+    public void offPausedOrBeforeTheSettingsAreReadyASheetOverAReelIsLeftToFacebook() {
+        Dialog off = sheetDialog();
+        assertFalse(FullHeightComments.tapThrough(off, 20));
+        assertTrue("off, the sheet was changed", leftToFacebook(off));
+
+        Settings.TAP_REELS_ABOVE_COMMENTS.save(true);
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        Dialog paused = sheetDialog();
+        assertFalse(FullHeightComments.tapThrough(paused, 20));
+        assertTrue("paused, the sheet was changed", leftToFacebook(paused));
+        PauseForTests.resume();
+
+        Dialog early = sheetDialog();
+        SettingsContextRule.withoutContext(() -> assertFalse(FullHeightComments.tapThrough(early, 20)));
+        assertTrue("a sheet set up before the context was changed", leftToFacebook(early));
+    }
+
+    @Test
+    public void aMissingDialogIsLeftToFacebook() {
+        Settings.TAP_REELS_ABOVE_COMMENTS.save(true);
+        assertFalse(FullHeightComments.tapThrough(null, 20));
+    }
+
+    @Test
+    public void tappingThroughHasItsOwnSwitch() {
+        // Open comments at full height on doesn't turn it on; a full-height sheet never reaches it anyway.
+        Settings.OPEN_COMMENTS_FULL_HEIGHT.save(true);
+        Dialog dialog = sheetDialog();
+        assertFalse(FullHeightComments.tapThrough(dialog, 20));
+        assertTrue(leftToFacebook(dialog));
     }
 }

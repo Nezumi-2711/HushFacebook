@@ -51,15 +51,19 @@ import app.morphe.extension.facebook.download.SaveFolder;
 import app.morphe.extension.facebook.download.SaveStorage;
 import app.morphe.extension.facebook.download.SaveTo;
 import app.morphe.extension.facebook.download.SendLink;
+import app.morphe.extension.facebook.feed.FeedTypeNames;
 import app.morphe.extension.facebook.feed.PostSources;
 import app.morphe.extension.facebook.feed.PostWords;
 import app.morphe.extension.facebook.feed.ReactionCeiling;
 import app.morphe.extension.facebook.feed.TopicPacks;
 import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.media.PlaybackQuality;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.misc.BreakTimer;
 import app.morphe.extension.facebook.misc.HeaderText;
+import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.menu.MenuTiles;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
@@ -68,6 +72,7 @@ import app.morphe.extension.facebook.theme.AmoledBackground;
 import app.morphe.extension.facebook.theme.AmoledLightBackground;
 import app.morphe.extension.facebook.theme.AmoledTheme;
 import app.morphe.extension.facebook.theme.MarkColors;
+import app.morphe.extension.facebook.theme.MarkColors.Mark;
 import app.morphe.extension.facebook.navigation.HiddenTabs;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
 import app.morphe.extension.facebook.navigation.StartTab;
@@ -83,6 +88,9 @@ import app.morphe.extension.facebook.settings.ValueRows.CommentOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.ReelsOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.LockAfterRow;
 import app.morphe.extension.facebook.settings.ValueRows.SeenKeepRow;
+import app.morphe.extension.facebook.settings.ValueRows.BreakRow;
+import app.morphe.extension.facebook.settings.ValueRows.PauseLengthRow;
+import app.morphe.extension.facebook.settings.ValueRows.WatchedKeepRow;
 import app.morphe.extension.facebook.settings.ValueRows.AccentRow;
 import app.morphe.extension.facebook.settings.ValueRows.BackgroundRow;
 import app.morphe.extension.facebook.settings.ValueRows.HeaderTextRow;
@@ -855,6 +863,7 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         showSaveFolder();
         showShareItemsSummary();
         showMenuTilesSummary();
+        showFeedTypesSummary();
         for (TabBarChoices.Pair pair : TabBarChoices.Pair.values()) {
             if (getPreferenceScreen() != null) TabBarChoices.showSaved(findPreference(pair.rowKey), pair);
         }
@@ -879,6 +888,15 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         if (getPreferenceScreen() == null) return;
         Preference row = findPreference(AppPages.MENU_TILES_ROW);
         if (row != null) row.setSummary(AppPages.menuTilesSummary(MenuTiles.hidden()));
+    }
+
+    /** No setting is behind the Feed types row's key, so its summary is redone here after an import. */
+    private void showFeedTypesSummary() {
+        if (getPreferenceScreen() == null) return;
+        Preference row = findPreference(FeedPages.FEED_TYPES_ROW);
+        if (row != null) {
+            row.setSummary(FeedPages.feedTypesSummary(FeedTypeNames.hidden()));
+        }
     }
 
     /** No setting is behind the share sheet row's key, so its summary is redone here after an import. */
@@ -1395,6 +1413,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 return L10n.t("Newest");
             case ALL_COMMENTS:
                 return L10n.t("All comments");
+            case OLDEST:
+                return L10n.t("Oldest");
             default:
                 return L10n.t("Facebook's choice");
         }
@@ -1408,6 +1428,10 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     static String commentOrderSummary(CommentOrder order) {
         if (order == CommentOrder.FACEBOOK) {
             return L10n.t("Comments open in the order Facebook picks, which is usually Most relevant.");
+        }
+        if (order == CommentOrder.OLDEST) {
+            // Facebook's own menu names this order All comments, so the summary says which it means.
+            return L10n.t("Comments open oldest first, on every post. Facebook's sort menu then shows All comments.");
         }
         return L10n.f("A post's comments open with %1$s picked in their sort menu, where the post offers it.",
                 commentOrderLabel(order));
@@ -1542,6 +1566,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 return L10n.t("3 days");
             case THIRTY_DAYS:
                 return L10n.t("30 days");
+            case NINETY_DAYS:
+                return L10n.t("90 days");
             default:
                 return L10n.t("7 days");
         }
@@ -1550,6 +1576,168 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     /** What the choice does, for the row's summary. */
     static String seenKeepSummary(SeenPosts.Keep keep) {
         return L10n.f("A post you've scrolled past stays out of the feed for %1$s.", seenKeepLabel(keep));
+    }
+
+    /**
+     * How long the opening pause counts down. Like the lock row, its values are the setting's own
+     * names and its summary says what the choice does.
+     */
+    static PauseLengthRow pauseLengthRow(Context context) {
+        PauseLengthRow row = new PauseLengthRow(context);
+        row.setKey(Settings.OPENING_PAUSE_LENGTH.key);
+        row.setTitle(L10n.t("Pause length"));
+        row.setDialogTitle(L10n.t("Pause length"));
+        // Android's own Cancel follows the activity's language, as the other lists' did.
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        OpeningPause.Length[] choices = OpeningPause.Length.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = pauseLengthLabel(choices[i]);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.OPENING_PAUSE_LENGTH.savedValue().name());
+        return row;
+    }
+
+    /** What the list and the sentences about it call [length]. */
+    static String pauseLengthLabel(OpeningPause.Length length) {
+        return length == OpeningPause.Length.TEN_SECONDS ? L10n.t("10 seconds") : L10n.t("5 seconds");
+    }
+
+    /** What the choice does, for the row's summary. */
+    static String pauseLengthSummary(OpeningPause.Length length) {
+        return L10n.f("Open now works after %1$s.", pauseLengthLabel(length));
+    }
+
+    /** How long Take breaks lets browsing go. Its values are the setting's own names. */
+    static BreakRow breakAfterRow(Context context) {
+        BreakRow row = new BreakRow(context, value -> breakAfterSummary(breakAfter(value)));
+        row.setKey(Settings.BREAK_AFTER.key);
+        row.setTitle(L10n.t("Break after"));
+        row.setDialogTitle(L10n.t("Break after"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        BreakTimer.Use[] choices = BreakTimer.Use.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = minutesLabel(choices[i].minutes);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.BREAK_AFTER.savedValue().name());
+        return row;
+    }
+
+    /** How long a Take breaks break lasts. Its values are the setting's own names. */
+    static BreakRow breakLengthRow(Context context) {
+        BreakRow row = new BreakRow(context, value -> breakLengthSummary(breakLength(value)));
+        row.setKey(Settings.BREAK_LENGTH.key);
+        row.setTitle(L10n.t("Break length"));
+        row.setDialogTitle(L10n.t("Break length"));
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        BreakTimer.Length[] choices = BreakTimer.Length.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = minutesLabel(choices[i].minutes);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.BREAK_LENGTH.savedValue().name());
+        return row;
+    }
+
+    private static BreakTimer.Use breakAfter(@Nullable String name) {
+        for (BreakTimer.Use use : BreakTimer.Use.values()) {
+            if (use.name().equals(name)) return use;
+        }
+        return BreakTimer.Use.THIRTY_MINUTES;
+    }
+
+    private static BreakTimer.Length breakLength(@Nullable String name) {
+        for (BreakTimer.Length length : BreakTimer.Length.values()) {
+            if (length.name().equals(name)) return length;
+        }
+        return BreakTimer.Length.FIVE_MINUTES;
+    }
+
+    /** What the break lists and the sentences about them call [minutes]. */
+    static String minutesLabel(int minutes) {
+        switch (minutes) {
+            case 1:
+                return L10n.t("1 minute");
+            case 5:
+                return L10n.t("5 minutes");
+            case 10:
+                return L10n.t("10 minutes");
+            case 15:
+                return L10n.t("15 minutes");
+            case 30:
+                return L10n.t("30 minutes");
+            case 45:
+                return L10n.t("45 minutes");
+            default:
+                return L10n.t("1 hour");
+        }
+    }
+
+    /** What the use time does, for its row's summary. */
+    static String breakAfterSummary(BreakTimer.Use use) {
+        return L10n.f("A break starts after %1$s of Home, Feeds, Video and Reels.", minutesLabel(use.minutes));
+    }
+
+    /** What the break length does, for its row's summary. */
+    static String breakLengthSummary(BreakTimer.Length length) {
+        return L10n.f("Home, Feeds, Video and Reels stay covered for %1$s.", minutesLabel(length.minutes));
+    }
+
+    /**
+     * How long a Recently watched entry stays. Like the seen posts row, its values are the
+     * setting's own names and its summary says what the choice does.
+     */
+    static WatchedKeepRow watchedKeepRow(Context context) {
+        WatchedKeepRow row = new WatchedKeepRow(context);
+        row.setKey(Settings.RECENTLY_WATCHED_KEEP.key);
+        row.setTitle(L10n.t("Keep watched entries for"));
+        row.setDialogTitle(L10n.t("Keep watched entries for"));
+        // Android's own Cancel follows the activity's language, as the other lists' did.
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        RecentlyWatched.Keep[] choices = RecentlyWatched.Keep.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = watchedKeepLabel(choices[i]);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.RECENTLY_WATCHED_KEEP.savedValue().name());
+        return row;
+    }
+
+    /** What the list and the sentences about it call [keep]. */
+    static String watchedKeepLabel(RecentlyWatched.Keep keep) {
+        switch (keep) {
+            case SEVEN_DAYS:
+                return L10n.t("7 days");
+            case THIRTY_DAYS:
+                return L10n.t("30 days");
+            default:
+                return L10n.t("Until you clear it");
+        }
+    }
+
+    /** What the choice does, for the row's summary. */
+    static String watchedKeepSummary(RecentlyWatched.Keep keep) {
+        if (keep == RecentlyWatched.Keep.UNTIL_CLEARED) {
+            return L10n.t("Reels, videos and stories stay on the list until you clear it.");
+        }
+        return L10n.f("Reels, videos and stories leave the list %1$s after you watch them.", watchedKeepLabel(keep));
     }
 
     /**
@@ -1788,21 +1976,34 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         return row;
     }
 
+    /** The setting a Badge and logo colors row keeps its code in. */
+    static StringSetting markColorSetting(Mark mark) {
+        switch (mark) {
+            case LOGO: return Settings.LOGO_COLOR;
+            case TAB: return Settings.TAB_COLOR;
+            default: return Settings.BADGE_COLOR;
+        }
+    }
+
     /**
-     * Badge and logo colors (#263): a color code the count badges on the tabs take, or with [logo]
-     * the Facebook logo at the top of Home. What's saved is the code in capitals, blank for
-     * Facebook's own.
+     * Badge and logo colors (#263): a color code the count badges on the tabs take, the Facebook
+     * logo at the top of Home, or the selected tab (#297), by [mark]. What's saved is the code in
+     * capitals, blank for Facebook's own.
      */
-    MarkColorRow markColorRow(Context context, boolean logo) {
-        StringSetting setting = logo ? Settings.LOGO_COLOR : Settings.BADGE_COLOR;
-        MarkColorRow row = new MarkColorRow(context, logo);
+    MarkColorRow markColorRow(Context context, Mark mark) {
+        StringSetting setting = markColorSetting(mark);
+        MarkColorRow row = new MarkColorRow(context, mark);
         row.setKey(setting.key);
-        String title = logo ? L10n.t("Logo color") : L10n.t("Badge color");
+        String title = mark == Mark.LOGO ? L10n.t("Logo color")
+                : mark == Mark.TAB ? L10n.t("Selected tab color") : L10n.t("Badge color");
         row.setTitle(title);
         row.setDialogTitle(title);
-        row.setDialogMessage(logo
+        row.setDialogMessage(mark == Mark.LOGO
                 ? L10n.t("A color code (#RRGGBB) for the Facebook logo at the top of Home, like #2ECC71. Leave it "
                         + "blank for Facebook's blue.")
+                : mark == Mark.TAB
+                ? L10n.t("A color code (#RRGGBB) for the selected tab's icon and the line over it in the tab bar, like "
+                        + "#2ECC71. Leave it blank for Facebook's own.")
                 : L10n.t("A color code (#RRGGBB) for the count badges on the tabs, like #2ECC71. Leave it blank for "
                         + "Facebook's red."));
         row.setPositiveButtonText(L10n.t("Save"));
@@ -1828,15 +2029,25 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     }
 
     /** What a Badge and logo colors row says for [text], the code typed there. One it refuses keeps Facebook's own. */
-    static String markColorSummary(boolean logo, String text) {
+    static String markColorSummary(Mark mark, String text) {
         String stored = MarkColors.stored(text);
         if (stored == null || stored.isEmpty()) {
-            return logo ? L10n.t("The Facebook logo keeps its blue. Type a color code to change it.")
-                    : L10n.t("Badges keep Facebook's red. Type a color code to change it.");
+            switch (mark) {
+                case LOGO: return L10n.t("The Facebook logo keeps its blue. Type a color code to change it.");
+                case TAB: return L10n.t("The selected tab keeps Facebook's color. Type a color code to change it.");
+                default: return L10n.t("Badges keep Facebook's red. Type a color code to change it.");
+            }
         }
-        return logo ? L10n.f("The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.",
-                L10n.isolate(stored))
-                : L10n.f("Count badges on the tabs are %1$s. Restart Facebook to see the change.", L10n.isolate(stored));
+        switch (mark) {
+            case LOGO:
+                return L10n.f("The Facebook logo at the top of Home is %1$s. Restart Facebook to see the change.",
+                        L10n.isolate(stored));
+            case TAB:
+                return L10n.f("The selected tab in the tab bar is %1$s. Restart Facebook to see the change.",
+                        L10n.isolate(stored));
+            default:
+                return L10n.f("Count badges on the tabs are %1$s. Restart Facebook to see the change.", L10n.isolate(stored));
+        }
     }
 
     /**
@@ -2051,6 +2262,12 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             ((LockAfterRow) listPreference).showSummary();
         } else if (listPreference instanceof SeenKeepRow) {
             ((SeenKeepRow) listPreference).showSummary();
+        } else if (listPreference instanceof PauseLengthRow) {
+            ((PauseLengthRow) listPreference).showSummary();
+        } else if (listPreference instanceof WatchedKeepRow) {
+            ((WatchedKeepRow) listPreference).showSummary();
+        } else if (listPreference instanceof BreakRow) {
+            ((BreakRow) listPreference).showSummary();
         } else if (listPreference instanceof TextSizeRow) {
             ((TextSizeRow) listPreference).showSummary();
         } else if (listPreference instanceof AccentRow) {
