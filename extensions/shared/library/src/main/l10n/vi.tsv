@@ -2112,3 +2112,35 @@ Done	Xong
 Oldest	Cũ nhất
 Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	Bình luận mở theo thứ tự cũ nhất trước, trên mọi bài viết. Menu sắp xếp của Facebook khi đó hiện Tất cả bình luận.
 Comments will open oldest first.	Bình luận sẽ mở theo thứ tự cũ nhất trước.
+# context: title of the News feed row counting what Hushfacebook hid in Home since Facebook was opened; it resets when Facebook restarts
+Hidden since Facebook started	Đã ẩn từ khi mở Facebook
+# context: that row's summary before anything was hidden
+Nothing hidden yet. Scroll Home and come back.	Chưa ẩn gì cả. Hãy cuộn Trang chủ rồi quay lại.
+# context: one kind in that row's list with how many of it were hidden, such as ads (12)
+%1$s (%2$d)	%1$s (%2$d)
+# context: the last item of that list, one hidden post of the kinds not named
+%1$d other	%1$d mục khác
+# context: the last item of that list, several hidden posts of the kinds not named
+%1$d others	%1$d mục khác
+# context: that row's summary when one thing was hidden; %2$s is the list of kinds with counts
+%1$d post or card: %2$s	%1$d bài viết hoặc thẻ: %2$s
+# context: that row's summary when several things were hidden; %2$s is the list of kinds with counts
+%1$d posts and cards: %2$s	%1$d bài viết và thẻ: %2$s
+# context: a kind in that list, sponsored posts
+ads	quảng cáo
+# context: a kind in that list, reels in the feed
+reels	Reels
+# context: a kind in that list, suggested posts and cards
+suggestions	gợi ý
+# context: a kind in that list, cards like Memories and friend requests
+Memories and other cards	Kỷ niệm và các thẻ khác
+# context: a kind in that list
+posts from groups you're not in	bài viết từ nhóm bạn chưa tham gia
+# context: a kind in that list, the Stories row at the top of Home
+rows of Stories	hàng Tin
+# context: a kind in that list, posts made with AI
+AI posts	bài viết AI
+# context: a kind in that list, posts hidden by the user's own word, people and Page filters
+posts your filters matched	bài viết khớp với bộ lọc của bạn
+# context: a kind in that list, posts hidden because the user already saw them
+posts you've seen	bài viết bạn đã xem

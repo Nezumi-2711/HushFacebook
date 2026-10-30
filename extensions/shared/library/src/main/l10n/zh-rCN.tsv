@@ -2107,3 +2107,35 @@ Done	完成
 Oldest	最早
 Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	每个帖子的评论都从最早的开始显示。Facebook 的排序菜单这时会显示“所有评论”。
 Comments will open oldest first.	评论将从最早的开始显示。
+# context: title of the News feed row counting what Hushfacebook hid in Home since Facebook was opened; it resets when Facebook restarts
+Hidden since Facebook started	自 Facebook 启动以来已隐藏
+# context: that row's summary before anything was hidden
+Nothing hidden yet. Scroll Home and come back.	还没有隐藏任何内容。先浏览一下主页再回来看看。
+# context: one kind in that row's list with how many of it were hidden, such as ads (12)
+%1$s (%2$d)	%1$s（%2$d）
+# context: the last item of that list, one hidden post of the kinds not named
+%1$d other	其他 %1$d 项
+# context: the last item of that list, several hidden posts of the kinds not named
+%1$d others	其他 %1$d 项
+# context: that row's summary when one thing was hidden; %2$s is the list of kinds with counts
+%1$d post or card: %2$s	%1$d 条帖子或卡片：%2$s
+# context: that row's summary when several things were hidden; %2$s is the list of kinds with counts
+%1$d posts and cards: %2$s	%1$d 条帖子和卡片：%2$s
+# context: a kind in that list, sponsored posts
+ads	广告
+# context: a kind in that list, reels in the feed
+reels	Reels
+# context: a kind in that list, suggested posts and cards
+suggestions	推荐
+# context: a kind in that list, cards like Memories and friend requests
+Memories and other cards	回忆和其他卡片
+# context: a kind in that list
+posts from groups you're not in	你未加入的小组的帖子
+# context: a kind in that list, the Stories row at the top of Home
+rows of Stories	快拍栏
+# context: a kind in that list, posts made with AI
+AI posts	AI 帖子
+# context: a kind in that list, posts hidden by the user's own word, people and Page filters
+posts your filters matched	符合你筛选条件的帖子
+# context: a kind in that list, posts hidden because the user already saw them
+posts you've seen	你看过的帖子

@@ -2112,3 +2112,35 @@ Done	Fertig
 Oldest	Älteste
 Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	Kommentare öffnen sich bei jedem Beitrag mit den ältesten zuerst. Facebooks Sortiermenü zeigt dann Alle Kommentare.
 Comments will open oldest first.	Kommentare öffnen sich mit den ältesten zuerst.
+# context: title of the News feed row counting what Hushfacebook hid in Home since Facebook was opened; it resets when Facebook restarts
+Hidden since Facebook started	Ausgeblendet seit dem Start von Facebook
+# context: that row's summary before anything was hidden
+Nothing hidden yet. Scroll Home and come back.	Noch nichts ausgeblendet. Scrolle durch die Startseite und schau dann wieder vorbei.
+# context: one kind in that row's list with how many of it were hidden, such as ads (12)
+%1$s (%2$d)	%1$s (%2$d)
+# context: the last item of that list, one hidden post of the kinds not named
+%1$d other	%1$d weiterer
+# context: the last item of that list, several hidden posts of the kinds not named
+%1$d others	%1$d weitere
+# context: that row's summary when one thing was hidden; %2$s is the list of kinds with counts
+%1$d post or card: %2$s	%1$d Beitrag oder Karte: %2$s
+# context: that row's summary when several things were hidden; %2$s is the list of kinds with counts
+%1$d posts and cards: %2$s	%1$d Beiträge und Karten: %2$s
+# context: a kind in that list, sponsored posts
+ads	Anzeigen
+# context: a kind in that list, reels in the feed
+reels	Reels
+# context: a kind in that list, suggested posts and cards
+suggestions	Vorschläge
+# context: a kind in that list, cards like Memories and friend requests
+Memories and other cards	Erinnerungen und andere Karten
+# context: a kind in that list
+posts from groups you're not in	Beiträge aus Gruppen, in denen du nicht bist
+# context: a kind in that list, the Stories row at the top of Home
+rows of Stories	Stories-Leisten
+# context: a kind in that list, posts made with AI
+AI posts	KI-Beiträge
+# context: a kind in that list, posts hidden by the user's own word, people and Page filters
+posts your filters matched	Beiträge, auf die deine Filter gepasst haben
+# context: a kind in that list, posts hidden because the user already saw them
+posts you've seen	Beiträge, die du schon gesehen hast

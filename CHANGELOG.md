@@ -12,6 +12,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** New `Show Comment when comments are off` under Reels and Watch, part of `Clean up Reels`. Facebook takes the Comment button off a reel's sidebar when you can't comment on it, so the comments already there can't be read either. With the switch on the button stays, and a change shows from the next reel. It's off by default (Refs #299).
 * **Facebook:** New `Select part of a post's text` under News feed. Holding a post's text still copies all of it, and with the switch on the text also opens in a box where you can select a word or a line and copy just that. It's off by default and needs no restart (Refs #294).
 * **Facebook:** `Comment order` has a new choice, Oldest, under Comments and writing. Comments then open first comment first on every post, even one whose sort menu has no such row. Facebook's own menu calls that order All comments, so that's the row it shows picked (Refs #295).
+* **Facebook:** The top of News feed in Hushfacebook's settings now shows how much the switches kept out of Home since Facebook started, with the three biggest kinds, like "41 posts and cards: ads (23), suggestions (12) and posts from groups you're not in (6)". It starts from zero each time Facebook does, nothing is saved or sent anywhere, and while Hushfacebook is paused the row says that instead.
 
 ### Changed
 

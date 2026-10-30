@@ -2112,3 +2112,35 @@ Done	Bitti
 Oldest	En eski
 Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	Yorumlar her gönderide en eskiden başlayarak açılır. Facebook'un sıralama menüsü o zaman Tüm yorumlar gösterir.
 Comments will open oldest first.	Yorumlar en eskiden başlayarak açılacak.
+# context: title of the News feed row counting what Hushfacebook hid in Home since Facebook was opened; it resets when Facebook restarts
+Hidden since Facebook started	Facebook açıldığından beri gizlenenler
+# context: that row's summary before anything was hidden
+Nothing hidden yet. Scroll Home and come back.	Henüz bir şey gizlenmedi. Ana Sayfa'da biraz gezinip geri gel.
+# context: one kind in that row's list with how many of it were hidden, such as ads (12)
+%1$s (%2$d)	%1$s (%2$d)
+# context: the last item of that list, one hidden post of the kinds not named
+%1$d other	%1$d diğer
+# context: the last item of that list, several hidden posts of the kinds not named
+%1$d others	%1$d diğer
+# context: that row's summary when one thing was hidden; %2$s is the list of kinds with counts
+%1$d post or card: %2$s	%1$d gönderi veya kart: %2$s
+# context: that row's summary when several things were hidden; %2$s is the list of kinds with counts
+%1$d posts and cards: %2$s	%1$d gönderi ve kart: %2$s
+# context: a kind in that list, sponsored posts
+ads	reklamlar
+# context: a kind in that list, reels in the feed
+reels	Reels
+# context: a kind in that list, suggested posts and cards
+suggestions	öneriler
+# context: a kind in that list, cards like Memories and friend requests
+Memories and other cards	anılar ve diğer kartlar
+# context: a kind in that list
+posts from groups you're not in	üyesi olmadığın grupların gönderileri
+# context: a kind in that list, the Stories row at the top of Home
+rows of Stories	Hikayeler satırları
+# context: a kind in that list, posts made with AI
+AI posts	yapay zekâ gönderileri
+# context: a kind in that list, posts hidden by the user's own word, people and Page filters
+posts your filters matched	filtrelerine takılan gönderiler
+# context: a kind in that list, posts hidden because the user already saw them
+posts you've seen	gördüğün gönderiler

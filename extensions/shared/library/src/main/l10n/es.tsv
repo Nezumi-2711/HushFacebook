@@ -2112,3 +2112,35 @@ Done	Listo
 Oldest	Más antiguos
 Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	Los comentarios se abren con los más antiguos primero, en todas las publicaciones. El menú de orden de Facebook muestra entonces Todos los comentarios.
 Comments will open oldest first.	Los comentarios se abrirán con los más antiguos primero.
+# context: title of the News feed row counting what Hushfacebook hid in Home since Facebook was opened; it resets when Facebook restarts
+Hidden since Facebook started	Ocultado desde que se abrió Facebook
+# context: that row's summary before anything was hidden
+Nothing hidden yet. Scroll Home and come back.	Todavía no se ocultó nada. Desplázate por Inicio y vuelve.
+# context: one kind in that row's list with how many of it were hidden, such as ads (12)
+%1$s (%2$d)	%1$s (%2$d)
+# context: the last item of that list, one hidden post of the kinds not named
+%1$d other	%1$d más
+# context: the last item of that list, several hidden posts of the kinds not named
+%1$d others	%1$d más
+# context: that row's summary when one thing was hidden; %2$s is the list of kinds with counts
+%1$d post or card: %2$s	%1$d publicación o tarjeta: %2$s
+# context: that row's summary when several things were hidden; %2$s is the list of kinds with counts
+%1$d posts and cards: %2$s	%1$d publicaciones y tarjetas: %2$s
+# context: a kind in that list, sponsored posts
+ads	anuncios
+# context: a kind in that list, reels in the feed
+reels	reels
+# context: a kind in that list, suggested posts and cards
+suggestions	sugerencias
+# context: a kind in that list, cards like Memories and friend requests
+Memories and other cards	recuerdos y otras tarjetas
+# context: a kind in that list
+posts from groups you're not in	publicaciones de grupos en los que no estás
+# context: a kind in that list, the Stories row at the top of Home
+rows of Stories	filas de Historias
+# context: a kind in that list, posts made with AI
+AI posts	publicaciones de IA
+# context: a kind in that list, posts hidden by the user's own word, people and Page filters
+posts your filters matched	publicaciones que coincidieron con tus filtros
+# context: a kind in that list, posts hidden because the user already saw them
+posts you've seen	publicaciones que ya viste
