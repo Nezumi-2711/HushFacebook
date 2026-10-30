@@ -893,7 +893,12 @@ public class PausedHooksTest {
         probes.put(PatchFamily.SHARE_SHEET_ITEMS, Arrays.asList(
                 () -> ShareSheetGroups.sendToGroupButton(new Object()) == null,
                 () -> !ShareSheetGroups.offerNewGroup(true),
-                () -> !ShareSheetPeople.addRow(new java.util.ArrayList<>(), new Object())));
+                () -> !ShareSheetPeople.addRow(new java.util.ArrayList<>(), new Object()),
+                () -> {
+                    java.util.ArrayList<Object> children = new java.util.ArrayList<>();
+                    ShareSheetPeople.addRowThen(new Object(), null, children);
+                    return children.isEmpty();
+                }));
         // Search leaves out its Meta AI answer and its prompt modules, and a suggestion set to open
         // Meta AI opens the results.
         probes.put(PatchFamily.META_AI_SEARCH, Arrays.asList(
