@@ -100,6 +100,8 @@ val cleanUpReelsPatch = bytecodePatch(
         startReelsInCleanMode()
         // #148: the audio language the player picks a video's sound by.
         hookOriginalAudio()
+        // #148: and the manifest parser's dubbing reads, which skip that language when Facebook's Languages menu is on.
+        hookOriginalAudioTracks()
         // #173: the search pill under a reel's caption.
         hideSearchPill()
         // #197: the same switch, for the search pill over a reel's comments.

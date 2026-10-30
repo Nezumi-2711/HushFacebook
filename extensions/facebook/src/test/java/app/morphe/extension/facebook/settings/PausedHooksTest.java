@@ -577,6 +577,9 @@ public class PausedHooksTest {
                 ReelLoopForTests::stopsAReel,
                 // A video whose audio Facebook would pick in Spanish is asked for no language.
                 () -> !"es".equals(OriginalAudio.language("es")),
+                // And a video's dubbed tracks are dropped as its manifest is read (#148).
+                () -> !OriginalAudio.dubbing(true),
+                () -> OriginalAudio.filtering(0) != 0,
                 // The search pill is answered as empty only while the patch runs.
                 ReelDeclutter::hideSearchPill,
                 // So is the prompt over a reel's comments.
