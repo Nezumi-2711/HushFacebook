@@ -20,6 +20,9 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
+import com.android.tools.smali.dexlib2.immutable.instruction.ImmutableInstruction31i
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
@@ -56,6 +59,29 @@ class FeedReelPreviewsFixtureTest {
         return found.map(ImmutableClassDef::of)
     }
 
+    /** [classDef] with [getter]'s const loading [key] instead of its field's. */
+    private fun loadingKey(classDef: ClassDef, getter: MethodReference, key: Int): ClassDef = ImmutableClassDef(
+        classDef.type, classDef.accessFlags, classDef.superclass, classDef.interfaces, classDef.sourceFile,
+        classDef.annotations, classDef.fields,
+        classDef.methods.map { method ->
+            val code = method.implementation
+            if (method.name != getter.name || method.parameterTypes.isNotEmpty() || code == null) return@map method
+            ImmutableMethod(
+                method.definingClass, method.name, method.parameters, method.returnType, method.accessFlags,
+                method.annotations, method.hiddenApiRestrictions,
+                ImmutableMethodImplementation(
+                    code.registerCount,
+                    code.instructions.map { instruction ->
+                        if (instruction.opcode != Opcode.CONST) instruction
+                        else ImmutableInstruction31i(Opcode.CONST, (instruction as OneRegisterInstruction).registerA, key)
+                    },
+                    code.tryBlocks,
+                    code.debugItems,
+                ),
+            )
+        },
+    )
+
     @Test
     fun `each declared build's Reels row tile hands its clip check and end to the extension`() {
         val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }.toSet()
@@ -86,6 +112,14 @@ class FeedReelPreviewsFixtureTest {
                 assertThrows("$name: patched without the getters' implementers", PatchException::class.java) {
                     with(PatchContexts.of(listOf(tile))) { playFeedReelsWhole() }
                 }
+                // Negative control: one implementer's getter loads some other field's key, so the
+                // doubles render reads aren't all the preview clip, and the patch refuses.
+                val changed = implementing.first { previewGetterKeys(listOf(it), getters).isNotEmpty() }
+                val swapped = loadingKey(changed, getters.first(), "not_a_preview_field".hashCode())
+                val refused = assertThrows("$name: patched with an implementer loading another key", PatchException::class.java) {
+                    with(PatchContexts.of(listOf(tile) + implementing.map { if (it.type == changed.type) swapped else it })) { playFeedReelsWhole() }
+                }
+                assertTrue(refused.message, refused.message.orEmpty().contains("don't all load the keys"))
                 assertEquals("$name: the store is an int field of the builder", Opcode.IPUT, original[points.store].opcode)
                 assertEquals("$name: the end is stored twice", (original[points.store + 1] as TwoRegisterInstruction).registerA, points.end)
 

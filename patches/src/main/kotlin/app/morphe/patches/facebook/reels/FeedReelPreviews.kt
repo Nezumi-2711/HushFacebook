@@ -165,7 +165,8 @@ internal fun previewClipPoints(method: Method): PreviewClipPoints? {
 /**
  * Hands a Reels row tile's last clip check and its end to the extension. Refuses unless exactly one
  * method outside the extension has the shape [previewClipPoints] looks for, and every class
- * implementing its getters loads the keys of the [PREVIEW_FIELDS].
+ * implementing its getters has one loading each of the [PREVIEW_FIELDS]' keys. A further double
+ * getter beside them is fine, since [previewModelGetters] takes three or more.
  */
 internal fun BytecodePatchContext.playFeedReelsWhole() {
     val found = mutableListOf<Pair<String, Method>>()
@@ -184,7 +185,7 @@ internal fun BytecodePatchContext.playFeedReelsWhole() {
     classDefForEachReferencing(types = listOf(getters.first().definingClass)) { implementers += it }
     val keys = previewGetterKeys(implementers, getters)
     val wanted = PREVIEW_FIELDS.map(::treeFieldKey).toSet()
-    if (keys.isEmpty() || keys.any { it != wanted }) throw PatchException(
+    if (keys.isEmpty() || keys.any { !it.containsAll(wanted) }) throw PatchException(
         "$PATCH: $owner->${holder.name} reads its clip through ${getters.first().definingClass}, whose " +
             "${keys.size} implementer(s) don't all load the keys of ${PREVIEW_FIELDS.joinToString()}",
     )
