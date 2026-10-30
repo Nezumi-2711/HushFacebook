@@ -4,7 +4,7 @@
   <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.19.0-0866FF" alt="Version 0.19.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%2011%2B-3DDC84" alt="Platform Android 11+">
-  <img src="https://img.shields.io/badge/Facebook-584.0.0.51.56-0866FF" alt="Facebook 584.0.0.51.56">
+  <img src="https://img.shields.io/badge/Facebook-585.0.0.47.54-0866FF" alt="Facebook 585.0.0.47.54">
   <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.2.0%2B-8A2BE2" alt="For Morphe Manager 2.2.0 or newer">
 </p>
 
@@ -33,7 +33,7 @@ The latest release is [v0.19.0](https://github.com/SysAdminDoc/Hushfacebook/rele
 
 1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.2.0 or newer.
 2. Add Hushfacebook as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook
-3. Download Facebook 584.0.0.51.56 from [APKMirror](https://www.apkmirror.com/apk/facebook-2/facebook/). Take the bundle labelled (arm64-v8a) (480-640dpi) (Android 11+), build 475817393, or on a phone with only a 32-bit processor the one labelled (arm-v7a) (320dpi) (Android 11+), build 475817404. Both are .apkm files.
+3. Download Facebook 585.0.0.47.54 from [APKMirror](https://www.apkmirror.com/apk/facebook-2/facebook/). Take the bundle labelled (arm64-v8a) (120-640dpi) (Android 11+), build 476015655, or on a phone with only a 32-bit processor the one labelled (arm-v7a) (320dpi) (Android 11+), build 476015543. Both are .apkm files.
 4. In Morphe Manager, tap **Select other apps**, then **Open APK file**, and pick that file. Android may ask for file access the first time.
 5. Patch with the default selection and install. If Meta's own Facebook is on the phone, Android makes you uninstall it first, as [Package conflict](#package-conflict) explains.
 
@@ -211,7 +211,7 @@ Questions about setting up, or about whether a Facebook build works, go in [Disc
 
 ### Unsupported Version
 
-Manager shows this before it patches, usually with "This is a different build of the same version". Facebook 584.0.0.51.56 comes in several builds, each compiled separately, and Hushfacebook declares only the two its patches are checked against, 475817393 for 64-bit phones and 475817404 for 32-bit ones. Download one of those as [Install](#install) describes and the warning goes away. **Proceed anyway** patches the build you have, but other builds haven't been tried, and if a patch can't find what it changes, patching stops and names it. The same check is why Manager won't offer the Facebook you installed from Google Play unless it's that exact build.
+Manager shows this before it patches, usually with "This is a different build of the same version". Facebook 585.0.0.47.54 comes in several builds, each compiled separately, and Hushfacebook declares only the two its patches are checked against, 476015655 for 64-bit phones and 476015543 for 32-bit ones. Download one of those as [Install](#install) describes and the warning goes away. **Proceed anyway** patches the build you have, but other builds haven't been tried, and if a patch can't find what it changes, patching stops and names it. The same check is why Manager won't offer the Facebook you installed from Google Play unless it's that exact build.
 
 ### Patching stops on one patch
 
@@ -301,20 +301,19 @@ A few rows hand a link to another app instead of going online themselves. **Send
 | Field | Value |
 |---|---|
 | Package | `com.facebook.katana` |
-| Version | `584.0.0.51.56` |
-| 64-bit phones | build `475817393`, the (arm64-v8a) (480-640dpi) (Android 11+) bundle |
-| 32-bit phones | build `475817404`, the (arm-v7a) (320dpi) (Android 11+) bundle |
+| Version | `585.0.0.47.54` |
+| 64-bit phones | build `476015655`, the (arm64-v8a) (120-640dpi) (Android 11+) bundle |
+| 32-bit phones | build `476015543`, the (arm-v7a) (320dpi) (Android 11+) bundle |
 | Minimum Android version | Android 11 |
 | Download | [APKMirror](https://www.apkmirror.com/apk/facebook-2/facebook/) |
 
-There are 105 patches for `com.facebook.katana`, and a release only goes out once every one of them has applied to that build. Older Facebook versions like 583 and 582 aren't supported any more, so update Facebook before you patch. When a newer stable Facebook comes out, Hushfacebook moves to it and drops the one before. Meta's builds for Android 9 and 8 can't be patched at all, since their code sits in a compressed archive the patcher can't read.
+There are 105 patches for `com.facebook.katana`, and a release only goes out once every one of them has applied to that build. Older Facebook versions like 584 and 583 aren't supported any more, so update Facebook before you patch. When a newer stable Facebook comes out, Hushfacebook moves to it and drops the one before. Meta's builds for Android 9 and 8 can't be patched at all, since their code sits in a compressed archive the patcher can't read. The 64-bit build is the 120-640dpi one because 585 has no 480-640dpi bundle for Android 11; it carries every screen density, so it fits any 64-bit phone.
 
-SHA-256 of the .apkm file the patches are checked against. APKMirror swapped its arm64 file for a fuller one on October 22 with the same code inside, so either arm64 hash is fine:
+SHA-256 of the .apkm files the patches are checked against:
 
 ```text
-475817393  c60b0f709dea1c58e05be83168ba26a1cf09c3b109025b01c9a63a19e164951e  arm64-v8a
-475817393  093b1406eb7eac8741bb9fafea5324abd2355e66c9e4b4b2aab9a218b569f5cc  arm64-v8a (earlier upload)
-475817404  8116f5cbe39051718ac28c9be5cc68d792487a9e32f3ed485a7159684d43e6b8  armeabi-v7a
+476015655  1090dff6c9fe4903dd7c590f4d340bf0a912e43cd0a79c019c43bc265f5dda53  arm64-v8a
+476015543  ec6bb38a25349ab6eba4750f04486ceb3e3d8b268efc6733928d8669bd489c28  armeabi-v7a
 ```
 
 On Windows, compare yours with `Get-FileHash -Algorithm SHA256 .\facebook.apkm`, or use `sha256sum facebook.apkm` on Linux and macOS.
