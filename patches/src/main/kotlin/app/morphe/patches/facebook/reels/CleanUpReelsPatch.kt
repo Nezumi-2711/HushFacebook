@@ -30,6 +30,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val DECLUTTER = "$EXTENSION_PACKAGE/reels/ReelDeclutter;"
@@ -228,7 +229,7 @@ private fun BytecodePatchContext.hideFollowButtons() {
 
     val author = authorRow(readers, dumper)
         ?: throw PatchException("$PATCH: no single reader of the Follow getter holds \"$AUTHOR_COMPONENT\"")
-    val asked = followCheck(author) { call -> classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) } }
+    val asked = followCheck(author) { call -> classDefByOrNull(call.definingClass)?.let { resolveCalled(it, call) } }
     val check = asked.check ?: throw PatchException("$PATCH: ${asked.problem}")
 
     val method = mutableClassDefByOrNull(getter.definingClass)?.methods?.singleOrNull {
@@ -244,24 +245,37 @@ private fun BytecodePatchContext.hideFollowButtons() {
  * lambda rather than one getter: each read answers true when the switch is on, and the author row,
  * the one method holding [AUTHOR_COMPONENT], asks the Follow check as before.
  */
-private fun BytecodePatchContext.hideFollowButtonsByFlags(flags: List<MethodReference>) {
+private fun BytecodePatchContext.hideFollowButtonsByFlags(flags: List<FollowFlag>) {
     val authors = classDefByStrings(AUTHOR_COMPONENT, StringComparisonType.EQUALS).flatMap { methodsHolding(it, AUTHOR_COMPONENT) }
     val author = authors.singleOrNull()
         ?: throw PatchException("$PATCH: expected one method holding \"$AUTHOR_COMPONENT\", found ${authors.size}")
-    val asked = followCheck(author) { call -> classDefByOrNull(call.definingClass)?.let { resolveStatic(it, call) } }
+    val asked = followCheck(author) { call -> classDefByOrNull(call.definingClass)?.let { resolveCalled(it, call) } }
     val check = asked.check ?: throw PatchException("$PATCH: ${asked.problem}")
+    // Hooked in each lambda's invoke() by the flag's key, since 585 writes one flag's read into a switch with no method to hook.
     for (flag in flags) {
-        mutableClassDefBy(flag.definingClass).methods.first { it.sameSignatureAs(flag) }.returnTrueObjectWhen(HIDE_FOLLOWING_BUTTON)
+        val keyField = lambdaKeyField(classDefBy(flag.lambda))
+            ?: throw PatchException("$PATCH: ${flag.lambda}'s invoke() reads no key before its switch")
+        mutableClassDefBy(flag.lambda).methods.single {
+            it.name == "invoke" && it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/Object;" && it.implementation != null
+        }.returnTrueObjectForKeyWhen(keyField, flag.key, HIDE_FOLLOWING_BUTTON)
     }
     mutableClassDefBy(check.definingClass).methods.first { it.sameSignatureAs(check) }.returnFalseWhen(HIDE_FOLLOW_BUTTON)
 }
 
-/** Asks [hook] first thing and answers a boxed true when it says so. v0 is free there, as in [answerWhen]. */
-internal fun MutableMethod.returnTrueObjectWhen(hook: String) {
-    requireLocals(PATCH, 1)
+/**
+ * Asks [hook] first thing and answers a boxed true when this lambda was made with [key] and the hook
+ * says so; any other key, or a no, runs Facebook's own switch. v0 and v1 are free at the first
+ * instruction, and the lambda reaches v0 through a 16-bit move, since `this` may sit above v15.
+ */
+internal fun MutableMethod.returnTrueObjectForKeyWhen(keyField: FieldReference, key: Int, hook: String) {
+    requireLocals(PATCH, 2)
     addInstructionsWithLabels(
         0,
         """
+            move-object/from16 v0, p0
+            iget v0, v0, ${keyField.definingClass}->${keyField.name}:I
+            const v1, $key
+            if-ne v0, v1, :facebooks_answer
             invoke-static { }, $hook
             move-result v0
             if-eqz v0, :facebooks_answer
