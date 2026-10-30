@@ -55,7 +55,9 @@ private const val MIG = "$MATERIAL_YOU->mig(ILjava/lang/Object;)I"
  * A colour resource read as a drawable. Litho resolves a token's theme attribute to its resource and
  * asks for the drawable this way, so the feed's composer row draws SURFACE_BACKGROUND's #252728 from
  * the resource table (issue #37). AMOLED has no stand-in for it: route two already wrote black there.
- * ComposerRowColourFixtureTest holds the composer row's way to this call on each declared build.
+ * ComposerRowColourFixtureTest holds the composer row's way to this call on each declared build. 585
+ * asks the token's colour instead (`LX/02It;->A00` down to FDSColors' `LX/02Jm;->A0B`) and makes the
+ * ColorDrawable itself, so route one themes the row there and the test holds that way.
  */
 internal const val CONTEXT_GET_DRAWABLE = "Landroid/content/Context;->getDrawable(I)Landroid/graphics/drawable/Drawable;"
 
@@ -495,8 +497,16 @@ internal const val LINK_BOX_COLOUR_CONFIG = 0x1030747000203a7L
  */
 internal const val LINK_BOX_COLOUR_CONFIG_584 = 0x1030741000203a6L
 
+/**
+ * The same config on 585, renumbered to `0x1030736000203aa` on both ABIs, read 2026-10-30 by nine
+ * methods that each parse its string: eight renders (arm64 `LX/08d5;->render`, `LX/0Iqd;->render`,
+ * `LX/0N8x;->A17` and five more) and the attachment footer's `LX/05X5;->A0B(FbUserSession, LX/01PR, Z)I`.
+ */
+internal const val LINK_BOX_COLOUR_CONFIG_585 = 0x1030736000203aaL
+
 /** Every id the declared builds give the link box's colour config. */
-internal val LINK_BOX_COLOUR_CONFIGS: Set<Long> = setOf(LINK_BOX_COLOUR_CONFIG, LINK_BOX_COLOUR_CONFIG_584)
+internal val LINK_BOX_COLOUR_CONFIGS: Set<Long> =
+    setOf(LINK_BOX_COLOUR_CONFIG, LINK_BOX_COLOUR_CONFIG_584, LINK_BOX_COLOUR_CONFIG_585)
 
 /** Where the parse of [LINK_BOX_COLOUR_CONFIG]'s string goes instead of route four's parser. */
 internal const val PARSE_LINK_BOX = "$MATERIAL_YOU->parseLinkBox(Ljava/lang/String;)I"
@@ -598,6 +608,17 @@ internal fun isLoggingBloksColourPair(method: Method): Boolean {
 }
 
 /**
+ * Whether a colour pair reader's whole body, NOPs aside, is `return` of its last parameter, the
+ * fallback: a model with no colour of its own, which picks nothing and parses nothing.
+ */
+internal fun answersFallbackOnly(method: Method): Boolean {
+    val implementation = method.implementation ?: return false
+    val code = implementation.instructions.filter { it.opcode != Opcode.NOP }
+    return code.size == 1 && code.single().opcode == Opcode.RETURN &&
+        (code.single() as OneRegisterInstruction).registerA == implementation.registerCount - 1
+}
+
+/**
  * Bloks' colour pairs (issue #37). A Bloks screen gets each colour from the server as a light and a
  * dark hex string, and the screen's model answers one through an interface method (582
  * `LX/fra;->BAJ`, in the models `LX/1Vp` and `LX/4TS`). Each model asks Bloks' theme whether it's
@@ -607,7 +628,11 @@ internal fun isLoggingBloksColourPair(method: Method): Boolean {
  * register. Runs after route four, so the call is already Material You's stand-in, AMOLED's included.
  * The model that logs a pair it can't parse ([isLoggingBloksColourPair]) names the interface, and the
  * interface names the other models. One that parses more than once or never is refused, and so is
- * one that doesn't ask the theme. Answers how many it changed.
+ * one that doesn't ask the theme, unless it only answers its fallback ([answersFallbackOnly]).
+ * Answers how many it changed.
+ *
+ * 585, read 2026-10-30: the interface is arm64 `LX/062H;->CPv(LX/0i13;III)I`, the logging model
+ * `LX/01JW`, the sparse one `LX/05CD`, and two more (`LX/07Dt`, `LX/07Du`) only `return p4`.
  */
 internal fun BytecodePatchContext.hookBloksColourPairs(): Int {
     val parser = standIn(MATERIAL_YOU, PARSE_COLOR)
@@ -630,6 +655,8 @@ internal fun BytecodePatchContext.hookBloksColourPairs(): Int {
         if (classDef.methods.none { it.hasColourPairShape() && it.implementation != null }) return@classDefForEachReferencing
         val model = mutableClassDefBy(classDef.type)
         val method = model.methods.singleOrNull { it.sameAs(anchor) && it.implementation != null } ?: return@classDefForEachReferencing
+        // Why: 585 adds models with no colours of their own, whose reader only answers the fallback.
+        if (answersFallbackOnly(method)) return@classDefForEachReferencing
         check(method.implementation!!.instructions.any { it.asksDark(theme) }) {
             "${method.definingClass}->${method.name} picks a Bloks colour without asking $theme whether it's dark"
         }
