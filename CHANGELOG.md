@@ -26,6 +26,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** The README's Help has a part on Google's developer verification, which since September 30 can stop a patched Facebook from installing on phones in Brazil, Indonesia, Singapore and Thailand. It covers Android's advanced flow and installing with adb from a computer, using the APK Manager exports, and asks for the exact message if Android refuses it some other way.
 * **Tooling:** CONTRIBUTING has a Translating part now. It walks through fixing a string or adding a language: the table format, keeping placeholders, regenerating the Java, the catalog test to run and what to do with a string the code drops. It also covers checking a screen for clipped text with the two pseudo-locales. The README's language line points at it.
 * **Tooling:** A few patches look harder at Facebook's code before they change it, and `Open on a chosen tab` names the methods it found when it stops. The device walk says which window was in front when Facebook loses focus, and it holds a reel with `Long press opens comments` and `Only on the right edge` off, so the hold really reaches 2x.
+* **Tooling:** The register check now also looks at the objects each changed method hands on. When an injected call, field read or field write gets an object whose class the other side can't take, the check fails before the build gets near a phone. An early 585 build crashed at launch over exactly that, and dex2oat's verify pass didn't say a word about it.
 
 ### Fixed
 

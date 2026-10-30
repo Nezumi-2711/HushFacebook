@@ -361,9 +361,13 @@ public class BadDexFixture {
 
     // The host's methods, clean.
 
-    /** Where the one feed guard goes. Instance method: v0 this, v1 and v2 the arguments. */
+    /**
+     * Where the one feed guard goes. Instance method: v0 this, v1 and v2 the arguments. The second
+     * is the edge, typed as Facebook's is, because the guard hands it to the helper, which takes
+     * a GraphQLFeedUnitEdge, and ART refuses an Object there.
+     */
     private static Method feedEdge(ImmutableMethodImplementation implementation) {
-        return define(HOST, "addNewEdgeToCollection", "V", false, implementation, OBJECT, OBJECT);
+        return define(HOST, "addNewEdgeToCollection", "V", false, implementation, OBJECT, FEED_UNIT_EDGE);
     }
 
     /**
@@ -1933,6 +1937,23 @@ public class BadDexFixture {
         return withStaticHost(new ImmutableMethodImplementation(6, instructions, null, null));
     }
 
+    /** A host method taking the host, the way the comment faces copy took the component. */
+    private static final ImmutableMethodReference TAKES_FEED = method(HOST, "takesFeed", "V", HOST);
+    /** A flag the host keeps, the way the comment faces flag sat on the component. */
+    private static final ImmutableFieldReference FEED_FLAG = new ImmutableFieldReference(HOST, "flag", "Z");
+
+    /**
+     * staticHost asking whether its object argument, v0, is the host, into v1 (the long's lower
+     * half, which nothing reads after), then [branch] on that over the host taking v0.
+     */
+    private static List<ClassDef> instanceThen(Opcode branch) {
+        return withStaticHost(body(3,
+                new ImmutableInstruction22c(Opcode.INSTANCE_OF, 1, 0, new ImmutableTypeReference(HOST)), // 0
+                new ImmutableInstruction21t(branch, 1, 5),                                                 // 2 -> 7
+                invoke(TAKES_FEED, 0),                                                                     // 4
+                op(Opcode.RETURN_VOID)));                                                                  // 7
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             System.err.println("usage: BadDexFixture <outDir>");
@@ -1954,6 +1975,8 @@ public class BadDexFixture {
         List<ClassDef> goodWithSecondary = new ArrayList<>(good());
         goodWithSecondary.add(secondary());
         dexes.put("good-with-secondary", goodWithSecondary);
+        // The host taken where an instance-of right above said v0 is one, which ART allows.
+        dexes.put("good-narrowed", instanceThen(Opcode.IF_EQZ));
         dexes.put("removed-method", bundle(host(feedEdge(GUARDED_FEED_EDGE), staticHost(GOOD_STATIC_HOST),
                 switchHost(7), tryHost(CLEAN_TRY), false)));
 
@@ -2219,8 +2242,10 @@ public class BadDexFixture {
                 invoke(HIDES_EDGE, 3), op(Opcode.MOVE_RESULT, 0), ifEqz(0, 3), op(Opcode.RETURN_VOID),
                 invoke(HIDES_EDGE, 3), op(Opcode.MOVE_RESULT, 0), ifEqz(0, 3), op(Opcode.RETURN_VOID),
                 op(Opcode.RETURN_VOID))));
-        // contract: the guard on another method, and the feed method left alone.
+        // contract: the guard on another method, and the feed method left alone. The cast keeps the
+        // type check out of it, so the contract is all that fails.
         dexes.put("bad-guard-elsewhere", patched(feedEdge(CLEAN_FEED_EDGE), staticHost(body(3,
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(FEED_UNIT_EDGE)),
                 invoke(HIDES_EDGE, 0), op(Opcode.MOVE_RESULT, 0), invoke(WIDE, 1, 2), op(Opcode.RETURN_VOID))),
                 switchHost(7), tryHost(CLEAN_TRY)));
         // contract: no guard at all.
@@ -2368,6 +2393,18 @@ public class BadDexFixture {
         // type: the launch lookup returns the extension's Object answer without casting it back to
         // the TabTag it's declared to return, the shape that failed Comment sheet options in 0.16.0.
         dexes.put("bad-uncast-return", replaced(good(), tabLinks(true, true, true, false)));
+        // type: a register holding another class passed where the host is taken, the shape that
+        // failed the comment faces lambda's class on Facebook 585; one of the host's fields read
+        // off it; and the host taken on the branch where an instance-of said v0 isn't one.
+        dexes.put("bad-arg-type", withStaticHost(body(3,
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(TAB_LINKS)), // 0
+                invoke(TAKES_FEED, 0),                                                                      // 2
+                op(Opcode.RETURN_VOID))));                                                                  // 5
+        dexes.put("bad-field-type", withStaticHost(body(3,
+                new ImmutableInstruction21c(Opcode.CHECK_CAST, 0, new ImmutableTypeReference(TAB_LINKS)), // 0
+                new ImmutableInstruction22c(Opcode.IGET_BOOLEAN, 1, 0, FEED_FLAG),                         // 2
+                op(Opcode.RETURN_VOID))));                                                                  // 4
+        dexes.put("bad-arg-type-not-instance", instanceThen(Opcode.IF_NEZ));
 
         // contract: each of the sources filter's story stubs left as the extension ships it.
         dexes.put("bad-post-message-stub-not-filled", replaced(good(), postText(UNFILLED_STUB, FILLED_STUB)));

@@ -767,6 +767,12 @@ try {
         "The good build's edge helper was not reported at its one call site.`n$($good.Output -join "`n")"
     Assert-True (($good.Output -join "`n") -match 'structural findings: 0') `
         "The good build did not report its structural count.`n$($good.Output -join "`n")"
+    # The host taken right where an instance-of said v0 is one passes, since ART gives v0 the
+    # host's class on that branch; bad-arg-type-not-instance takes it on the other branch.
+    $narrowed = Invoke-DexDiff -Clean $cleanApk -Patched (New-DexApk -Name 'good-narrowed' -Entries ([ordered]@{
+        'classes.dex' = (Get-Dex 'good-narrowed') })) -Allowlist $emptyAllowlist -Name 'good-narrowed' -Contracts $contracts
+    Assert-True ($narrowed.ExitCode -eq 0 -and (Get-Findings $narrowed).Fails.Count -eq 0) `
+        "The host taken on an instance-of's yes branch was refused.`n$($narrowed.Output -join "`n")"
     # The badge writer's count handed over as a range from v17 is a changed method the good build
     # passes with, so the dropped-call control below is refused for the lone move-result alone.
     Assert-True ((Get-Content -LiteralPath $good.Report -Raw) -match
@@ -1057,6 +1063,9 @@ try {
         'bad-tab-links-friends-hook-missing' = 'contract'
         'bad-tab-links-check-hook-missing' = 'contract'
         'bad-uncast-return' = 'type'
+        'bad-arg-type' = 'type'
+        'bad-field-type' = 'type'
+        'bad-arg-type-not-instance' = 'type'
         'bad-post-message-stub-not-filled' = 'contract'
         'bad-post-attached-stub-not-filled' = 'contract'
         'bad-post-actors-stub-not-filled' = 'contract'
@@ -1254,6 +1263,7 @@ try {
     # A hook in the wrong method names the one method its rule picks and where the hook went; a rule
     # two methods answer names both; a register out of range names the instruction, the register it
     # reaches and the count, in the method it sits in. Each FAIL line has to be one of these.
+    $staticHostSig = 'Lfixture/Feed;->staticHost(Ljava/lang/Object;J)V'
     $wrongPlace = [ordered]@{
         'bad-tray-hook-missing' = @(('*contract: Lapp/morphe/extension/facebook/feed/FeedFilter;->storiesTrayCount(Ljava/lang/Object;II)I ' +
             'has 2 call sites, and must have exactly 3, each in getItemCount of a class of its own: Lfixture/ClassicTray;->getItemCount()I, Lfixture/ComposerRow;->getItemCount()I'))
@@ -1328,6 +1338,13 @@ try {
         # without its cast, named with the hook and the type the method declares.
         'bad-uncast-return' = @(("*type: return-object at 7 returns v1, the Object $tabFilter->launchedTab(Ljava/lang/Object;)" +
             "Ljava/lang/Object; answered, uncast, where the method returns $tabTag  in Lfixture/TabLinks;->launchTab(*"))
+        # The positive controls for 585's comment faces crash: another class passed where the host
+        # is taken, a host field read off it, and the host taken where the instance-of said no.
+        'bad-arg-type' = @(('*type: invoke-static at 2 passes v0, which holds Lfixture/TabLinks;, where ' +
+            "Lfixture/Feed;->takesFeed(Lfixture/Feed;)V takes Lfixture/Feed;  in $staticHostSig"))
+        'bad-field-type' = @("*type: iget-boolean at 2 uses Lfixture/Feed;->flag:Z on v0, which holds Lfixture/TabLinks;  in $staticHostSig")
+        'bad-arg-type-not-instance' = @(('*type: invoke-static at 4 passes v0, which holds Ljava/lang/Object;, where ' +
+            "Lfixture/Feed;->takesFeed(Lfixture/Feed;)V takes Lfixture/Feed;  in $staticHostSig"))
     }
     foreach ($case in $wrongPlace.GetEnumerator()) {
         $fails = @((Get-Findings $badResults[$case.Key]).Fails)
