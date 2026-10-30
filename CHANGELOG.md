@@ -20,6 +20,7 @@ Changes in each Hushfacebook version, newest first.
 
 ### Fixed
 
+* **Facebook:** The Messenger icon in the top bar opens a repatched Messenger installed in place of Meta's, like HushMessenger over `com.facebook.orca`, even with `Open the Messenger app` off. Facebook only hands that tap to a Messenger Meta signed, so with a repatched one the icon did nothing and the screen flickered. Meta's own Messenger and a Messenger installed beside it are handled as before (Refs #292).
 * **Facebook:** `Hide comments under posts` now also hides a pinned comment shown under a post in the feed, along with the Write a comment box it comes with. Facebook draws that comment as part of the comment box, not with the other comment previews, so the switch missed it under friends' posts and group posts. The Comment button still opens the comments as before (Refs #305, #253).
 * **Facebook:** `See-through bars` works on a tab bar that's set to stay on screen now. Before, the bar stayed but the feed stopped above it, so the see-through showed black. Facebook builds that layout as it starts, so flipping `See-through bars` with the bar kept brings up the restart row, and the change shows after the restart (Refs #250).
 * **Facebook:** `Hide posts from groups you're not in` now also hides a group post that reaches your feed because a friend commented on it or shared it. Those come wrapped in the friend's activity, so the switch couldn't see the group before (Refs #195).
