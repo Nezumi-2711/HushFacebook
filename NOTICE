@@ -11,9 +11,8 @@ Hushfacebook combines the Facebook patches of several Morphe patch sources.
 Its build, shared extension library and release checks come from Hushfeed,
 which is built on icysymmetra/tiktok-patches-for-morphe, which is built on
 Morphe, which hard forked ReVanced. The file that names the supported
-Facebook builds reached tiktok-patches-for-morphe from De-Vanced. Four files
-of its settings screen, the
-quick setups, the search, the report a problem page and the return to
+Facebook builds and the patch list generator reached tiktok-patches-for-morphe
+from De-Vanced. Four files of its settings screen, the quick setups, the search, the report a problem page and the return to
 settings after a restart, come from HushPinterest, which is built on Hushfeed
 too. Its Facebook patches are rewritten from Andrew Liang's patches, which
 credit FroggoMorphePatches for some of their ideas and implementations, and

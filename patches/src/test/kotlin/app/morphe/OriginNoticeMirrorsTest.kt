@@ -39,7 +39,8 @@ class OriginNoticeMirrorsTest {
             .first { File(it, "extensions").isDirectory && File(it, "CONTRIBUTING.md").isFile }
         val mirrors = listOf(File(root, "extensions"), File(root, "patches/src")).asSequence()
             .flatMap { tree -> tree.walkTopDown().onEnter { it.name != "build" } }
-            .filter { it.isFile && (it.extension == "java" || it.extension == "kt") }
+            // This file's own sample URLs aren't notices.
+            .filter { it.isFile && (it.extension == "java" || it.extension == "kt") && it.name != "OriginNoticeMirrorsTest.kt" }
             .flatMap { file -> MIRROR.findAll(file.readText()).map { it.value } }
             .toSortedSet()
         assertTrue("no source notice cites a mirror, so the block has nothing beside it", mirrors.isNotEmpty())

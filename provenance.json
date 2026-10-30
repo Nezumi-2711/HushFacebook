@@ -15,6 +15,19 @@
       "changes": "Written for Hushfacebook for issue #216. One pass over the app's classes records which types, member names and strings each one names, so a patch's search visits only the classes that could match, in the order classDefForEach visits them. Classes a patch has changed are always visited."
     },
     {
+      "paths": ["patches/src/main/kotlin/app/morphe/util/PatchListGenerator.kt"],
+      "origin": "ported",
+      "upstream": "https://github.com/SysAdminDoc/hushfeed",
+      "commit": "1f1f81a29ffbe8468a41067b22c05a50283ef9c4",
+      "via": [
+        "https://github.com/icysymmetra/tiktok-patches-for-morphe",
+        "https://github.com/RookieEnough/De-Vanced",
+        "https://github.com/MorpheApp/morphe-patches"
+      ],
+      "license": "GPL-3.0-only with the Morphe section 7 notices",
+      "changes": "Moved to morphe-patcher 2.0: the default flag in place of use, the per-target compatibility list read as it is, and the old compatiblePackages map rebuilt from it (stable targets only, unless a package declares nothing else) for Manager 1.x."
+    },
+    {
       "paths": ["patches/src/main/kotlin/app/morphe/patches/facebook/shared/MobileConfigReads.kt"],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
@@ -55,7 +68,8 @@
       "upstream": "https://github.com/SysAdminDoc/hushfeed",
       "commit": "1f1f81a29ffbe8468a41067b22c05a50283ef9c4",
       "via": [
-        "https://gitlab.com/ReVanced/revanced-patches",
+        "https://github.com/icysymmetra/tiktok-patches-for-morphe",
+        "https://github.com/RookieEnough/De-Vanced",
         "https://github.com/andrewliang25/morphe-patches"
       ],
       "license": "GPL-3.0-only",
