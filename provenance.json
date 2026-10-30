@@ -230,6 +230,16 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/PageEventsLink.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/externalbrowser/PageEventsLinkHook.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 585 (#319): every address Facebook's link mapper is asked about goes to the extension first, which sends a Page's events address to the Page itself and adds the Events tab to the fb://profile/ link the server answers for it."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/TranslatedStart.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/misc/translatedstart/**"
       ],
