@@ -18,6 +18,7 @@ Changes in each Hushfacebook version, newest first.
 * **Facebook:** Hushfacebook now patches Facebook 585.0.0.47.54 and no longer takes 584. On a 64-bit phone download the (arm64-v8a) (120-640dpi) (Android 11+) bundle, build 476015655, and on a 32-bit phone the (arm-v7a) (320dpi) (Android 11+) bundle, build 476015543. Update Facebook before you patch (Refs #309).
 * **Facebook:** The play/pause and cast buttons on feed videos are smaller now and look like Facebook's own speaker icon, a white symbol on a see-through round background instead of a big dark square. They sit closer to the video's corners and still take a tap as easily (Refs #301).
 * **Facebook:** With `Debug logging` on, a kept post that wasn't posted to a profile or group now says what it's made of (the kinds of things in its title, share and attachments, never names or text). That's what's needed to find group posts `Hide posts from groups you're not in` still lets through (Refs #195).
+* **Facebook:** The README's Help has a part on Google's developer verification, which since September 30 can stop a patched Facebook from installing on phones in Brazil, Indonesia, Singapore and Thailand. It covers Android's advanced flow and installing with adb from a computer, using the APK Manager exports, and asks for the exact message if Android refuses it some other way.
 
 ### Fixed
 

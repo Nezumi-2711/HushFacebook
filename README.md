@@ -243,6 +243,22 @@ Android only installs an update signed with the same key as the app it replaces,
 
 Messenger, Facebook Lite, Meta Business Suite and Workplace declare two permissions under the same names as Facebook, and Android lets only one signing key own each name. `Install beside Meta's apps` renames Facebook's two, and it's on by default. If you patched without it, patch again with it, install over the top and then install the other app.
 
+### Android blocks apps from unverified developers
+
+Google now checks that apps on certified Android phones come from a developer registered with it. Phones running Android 7 or newer in Brazil, Indonesia, Singapore and Thailand have done this since September 30, 2026, and Google plans to bring it to every country in 2027. Manager signs the patched Facebook with your own key, which Google has no record of, so a phone that checks can stop the install. Updates fail the same way. There are two ways through.
+
+The first is Android's advanced flow. Turn on Developer options (tap **Build number** seven times under **Settings → About phone**), open them and turn on the setting that allows apps from unverified developers. Android asks you to confirm nobody is coaching you through it, restarts the phone and makes you wait a day before you confirm with your fingerprint or PIN. You can allow it for 7 days or for good. After that the install shows a warning that the app comes from an unverified developer, and **Install Anyway** goes ahead. If you picked 7 days, updates stop going through again once the week is up.
+
+The second is a computer with adb, because Google doesn't check apps installed that way. In Manager, open **Settings → Storage management → Patched APKs**, tap Facebook and **Export** (Manager keeps that copy unless you turned off **Keep patched APKs**). Copy the file to the computer, plug the phone in with USB debugging on and run this with your file's name:
+
+```
+adb install -r patched-facebook.apk
+```
+
+`-r` installs over the Facebook already on the phone and keeps its data, as long as both carry the same key ([Keep your signing key](#keep-your-signing-key)).
+
+If Android refuses Facebook some other way, please [report it](https://github.com/SysAdminDoc/Hushfacebook/issues/new?template=bug_report.yml) with the exact words it shows. Google hasn't said whether an app its owner signed again counts as unregistered, and that message is what will settle it.
+
 ### Facebook links from other apps don't open in Facebook
 
 Android ties facebook.com links to Meta's signature, so it may stop sending them to a re-signed Facebook. **Supported links** under Links and sharing shows what Android reports and opens the page where you can select Facebook's addresses by hand. If they won't stay selected, another Meta app such as Messenger, Instagram or Meta App Manager holds them. The official Messenger claims facebook.com, www.facebook.com and m.me for itself, which is why those switches turn back off. Tap that app's row under Links and sharing (or open its Open by default page in Android's settings), turn off **Open supported links** there, or on newer Android pick **In your browser**, then select Facebook's addresses again. Links you tap inside Messenger are Messenger's to open, and the official app may keep them in its own browser.
