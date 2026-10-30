@@ -551,6 +551,15 @@
     },
     {
       "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/resignedtrust/FamilyLinkHandoffPatch.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 585 (#287): the family intent scope's null refusal asks the extension first, which hands a plain Instagram or Threads web link to that app's own exported link activity with nothing else attached."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/emoji/**",
         "patches/src/main/kotlin/app/morphe/patches/facebook/emoji/**"
       ],

@@ -3065,7 +3065,7 @@
     },
     {
       "name": "Restore screens on re-signed builds",
-      "description": "Fixes profiles, photos, posts and some Settings pages that won't open on a patched Facebook, and lets a Messenger or Facebook Lite patched in the same Manager sign in through it. Root Mount installs don't need it. Works as soon as you patch it in, with no switch.",
+      "description": "Fixes profiles, photos, posts and some Settings pages that won't open on a patched Facebook, lets a Messenger or Facebook Lite patched in the same Manager sign in through it, and opens Instagram and Threads links in a patched Instagram or Threads. Root Mount installs don't need it. Works as soon as you patch it in, with no switch.",
       "category": "Fixes",
       "use": true,
       "dependencies": [
