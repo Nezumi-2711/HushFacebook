@@ -14,7 +14,6 @@ import app.morphe.util.classDefForEachReferencing
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
-import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
@@ -42,6 +41,11 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
  *   starts both at -1, no override.
  * - The other tile render that reads the same three fields (LX/7RU;) builds only a debug overlay
  *   from them and no player, and the prefetcher that reads them (LX/4eT;) builds no player either.
+ * - 585 (arm64 and armeabi-v7a alike, render at the same positions) keeps all of the above except
+ *   the reads: render no longer loads the three hashes itself but calls three zero-argument double
+ *   getters on the reel's preview model (arm64 LX/085u render, interface LX/0AhB: Ewf, EwQ, Ewd), one
+ *   per field, whose two implementers hold the hashes. The other render calling the helper
+ *   (LX/085h) never news up a VideoDataSource, so the player build still picks the tile out.
  *
  * The hooks: the extension is handed the second check's answer before render branches on it, so
  * false takes Facebook's own no-clip path, and it's handed the end before the first store, so -1
@@ -73,27 +77,41 @@ private fun Instruction.methodCalled() = if (opcode in INVOKES) (this as Referen
 
 private fun Instruction.fieldNamed() = (this as? ReferenceInstruction)?.reference as? FieldReference
 
+/** Whether [call] is the (DDDFZ) helper that answers the clip to play, an object. */
+private fun isClipHelper(call: MethodReference) =
+    call.parameterTypes.map(CharSequence::toString) == CLIP_PARAMETERS && call.returnType.startsWith("L")
+
+/** Whether [method] calls the clip helper, which every Reels row render does, player or not. */
+internal fun callsClipHelper(method: Method): Boolean =
+    method.implementation?.instructions?.any { it.methodCalled()?.let(::isClipHelper) == true } == true
+
 /**
- * The hook points in [method] when it's a Reels row tile's render: it reads all three
- * [PREVIEW_FIELDS] with getDoubleValue, calls one (DDDFZ) helper answering an object behind an
+ * The model getters in [code] that hand out a reel's preview fields: three or more differently named
+ * zero-argument interface calls answering a double, all declared on one interface. 585 moved the
+ * three getDoubleValue reads by field hash out of render into such a getter each.
+ */
+internal fun previewModelGetters(code: List<Instruction>): List<MethodReference> =
+    code.filter { it.opcode == Opcode.INVOKE_INTERFACE || it.opcode == Opcode.INVOKE_INTERFACE_RANGE }
+        .mapNotNull { it.methodCalled() }
+        .filter { it.parameterTypes.isEmpty() && it.returnType == "D" }
+        .groupBy { it.definingClass }.values
+        .map { group -> group.distinctBy { it.name } }
+        .filter { it.size >= PREVIEW_FIELDS.size }
+        .firstOrNull().orEmpty()
+
+/**
+ * The hook points in [method] when it's a Reels row tile's render: it reads the three
+ * [PREVIEW_FIELDS] through the preview model's getters ([previewModelGetters]), calls one (DDDFZ) helper answering an object behind an
  * if-eqz on a call's answer that jumps past it, news up a [VIDEO_DATA_SOURCE] and then a builder, and
  * after the helper stores one register into two int fields of that builder back to back, once.
  * Neither place a hook goes is a branch target, so nothing jumps past one. Null otherwise.
  */
 internal fun previewClipPoints(method: Method): PreviewClipPoints? {
     val code = method.implementation?.instructions?.toList() ?: return null
-    val reads = PREVIEW_FIELDS.map(String::hashCode).all { hash ->
-        (0 until code.size - 1).any { at ->
-            code[at].opcode == Opcode.CONST && (code[at] as NarrowLiteralInstruction).narrowLiteral == hash &&
-                code[at + 1].methodCalled()?.let { it.name == "getDoubleValue" && it.returnType == "D" } == true
-        }
-    }
-    if (!reads) return null
+    // A render that asks the preview model for its three doubles is the one that sets a clip up.
+    if (previewModelGetters(code).isEmpty()) return null
 
-    val helper = code.indices.filter { at ->
-        val call = code[at].methodCalled() ?: return@filter false
-        call.parameterTypes.map(CharSequence::toString) == CLIP_PARAMETERS && call.returnType.startsWith("L")
-    }.singleOrNull() ?: return null
+    val helper = code.indices.filter { at -> code[at].methodCalled()?.let(::isClipHelper) == true }.singleOrNull() ?: return null
     val gate = (helper - 1 downTo 1).firstOrNull { code[it].opcode == Opcode.IF_EQZ } ?: return null
     val gateAnswer = (code[gate] as OneRegisterInstruction).registerA
     val answer = code[gate - 1]
