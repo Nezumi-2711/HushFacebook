@@ -139,6 +139,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_AI_DETECTED_REELS) return L10n.t("Hide AI-detected reels and videos");
         if (setting == Settings.HIDE_REEL_CHIPS) return L10n.t("Hide prompts and promos under reels");
         if (setting == Settings.HIDE_REEL_FOLLOW_BUTTON) return L10n.t("Hide the Follow button on reels");
+        if (setting == Settings.HIDE_VIDEO_SUBSCRIBE_BUTTON) return L10n.t("Hide the Subscribe button on videos");
         if (setting == Settings.HIDE_REEL_SOCIAL_FOOTER) return L10n.t("Hide comment and reaction previews");
         if (setting == Settings.HIDE_REEL_THREADS_CARDS) return L10n.t("Hide Threads cards between reels");
         if (setting == Settings.REEL_CLEAN_MODE) return L10n.t("Always use Clean mode");

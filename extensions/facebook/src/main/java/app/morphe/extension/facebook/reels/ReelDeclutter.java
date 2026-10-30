@@ -44,6 +44,11 @@ import app.morphe.extension.shared.settings.BooleanSetting;
  *       config getter for removing it takes away when it answers true. {@link #hideFollowingButton}
  *       is asked first thing in that getter. The row reads the getter only for such an author,
  *       which is why it alone left the Follow button on everyone else's reels.
+ *   <li>A full-screen video's author row builds a pill beside the name that says Subscribe for some
+ *       owners and Follow for the rest. The row hands {@link #showAuthorPill} both its answers
+ *       where it decides to build the pill. A builder Facebook shares for the same pill elsewhere
+ *       notes which one it builds ({@link #noteAuthorPill}), and its callers hand
+ *       {@link #authorPillSlot} the slot they wrap it in. Only a Subscribe pill goes (#291).
  *   <li>The comment Facebook picks to show under a reel and the bubbles of friends who reacted each
  *       come from a query a runnable starts. {@link #skipHotComment} and {@link #skipSocialBubbles}
  *       are asked first thing in each, and true makes the runnable return before it queries.
@@ -181,6 +186,17 @@ public final class ReelDeclutter {
     static final String FOLLOW = "Follow button";
     static final String FOLLOWING = "Following button";
 
+    /** Counted under its own name for each pill beside a video's author, Follow or Subscribe (#291). */
+    static final String SUBSCRIBE_ROUTE = "Video Subscribe button";
+    static final String SUBSCRIBE = "Subscribe button";
+
+    /**
+     * Whether the pill the shared builder last built on this thread says Subscribe. The builder
+     * notes it just before it builds the pill, and its caller takes the note right after it wraps
+     * the pill, all in one call on one thread.
+     */
+    private static final ThreadLocal<Boolean> BUILDING_SUBSCRIBE = new ThreadLocal<>();
+
     /** The footer queries' kinds in the report. */
     static final String HOT_COMMENT = "hot comment";
     static final String SOCIAL_BUBBLES = "friends' reactions";
@@ -273,6 +289,58 @@ public final class ReelDeclutter {
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.REEL_DECLUTTER, button, failure);
             Logger.printException(() -> "Reel Follow button: could not read its switch for the " + button, failure);
+            return false;
+        }
+    }
+
+    /**
+     * Injection point, in a full-screen video's author row, where Facebook decides to build the pill
+     * beside the author's name (#291). Handed whether the pill would say Subscribe, which the row
+     * worked out from the video's owner a moment before, and whether the row builds it at all.
+     * False takes the row's own way for a video with no pill. Never throws: anything but a
+     * Subscribe pill with the switch on answers what Facebook decided.
+     */
+    public static boolean showAuthorPill(boolean subscribe, boolean show) {
+        return show && !hideSubscribePill(subscribe);
+    }
+
+    /**
+     * Injection point, in the builder Facebook shares for the same pill in two other spots, just
+     * before it builds it (#291). Remembers on this thread whether the pill says Subscribe, for the
+     * caller's {@link #authorPillSlot} a moment later. Never throws.
+     */
+    public static void noteAuthorPill(boolean subscribe) {
+        BUILDING_SUBSCRIBE.set(subscribe);
+    }
+
+    /**
+     * Injection point, in each caller of that builder, right after it wraps the pill in the slot the
+     * row lays out (#291). Null is what the slot holds when Facebook shows no pill there, and it's
+     * the answer for a Subscribe pill while the switch is on. Takes the builder's note either way.
+     * Never throws: anything else answers the slot as it came.
+     */
+    public static Object authorPillSlot(Object slot) {
+        boolean subscribe = Boolean.TRUE.equals(BUILDING_SUBSCRIBE.get());
+        BUILDING_SUBSCRIBE.remove();
+        return hideSubscribePill(subscribe) ? null : slot;
+    }
+
+    /** Whether the pill goes: a Subscribe pill, counted as either kind, while the switch is on. */
+    private static boolean hideSubscribePill(boolean subscribe) {
+        String pill = subscribe ? SUBSCRIBE : FOLLOW;
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            FeedFilterCounters.sawList(SUBSCRIBE_ROUTE, 1);
+            FeedFilterCounters.sawKind(SUBSCRIBE_ROUTE, pill);
+            boolean hide = subscribe && Utils.settingsReady() && Settings.HIDE_VIDEO_SUBSCRIBE_BUTTON.get();
+            if (hide) {
+                FeedFilterCounters.removed(SUBSCRIBE_ROUTE, 1, pill);
+                logOnce(SUBSCRIBE, () -> "Video Subscribe button: hid it");
+            }
+            return hide;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, pill, failure);
+            Logger.printException(() -> "Video Subscribe button: could not read its switch", failure);
             return false;
         }
     }

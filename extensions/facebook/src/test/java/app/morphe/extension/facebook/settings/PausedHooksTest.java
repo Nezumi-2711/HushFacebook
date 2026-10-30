@@ -602,6 +602,12 @@ public class PausedHooksTest {
                 () -> ReelDeclutter.hideSidebarButton(SidebarIcon.APP_WHATSAPP),
                 // A reel with comments off gets its Comment button only while the patch runs.
                 () -> ReelDeclutter.showsCommentButton(false),
+                // A video author's Subscribe pill stays out of the viewer's row and a shared row's slot (#291).
+                () -> !ReelDeclutter.showAuthorPill(true, true),
+                () -> {
+                    ReelDeclutter.noteAuthorPill(true);
+                    return ReelDeclutter.authorPillSlot(new Object()) == null;
+                },
                 // So is the speaker button under it.
                 () -> !ReelDeclutter.showsSoundButton(true),
                 // And the footer's speaker, when the footer builds it.

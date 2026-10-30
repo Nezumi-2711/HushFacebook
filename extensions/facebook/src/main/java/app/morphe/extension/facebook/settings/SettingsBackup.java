@@ -202,6 +202,7 @@ public final class SettingsBackup {
             Settings.HIDE_AFFILIATE_LINKS,
             Settings.HIDE_REEL_CHIPS,
             Settings.HIDE_REEL_FOLLOW_BUTTON,
+            Settings.HIDE_VIDEO_SUBSCRIBE_BUTTON,
             Settings.HIDE_REEL_SOCIAL_FOOTER,
             Settings.HIDE_REEL_THREADS_CARDS,
             Settings.REEL_CLEAN_MODE,

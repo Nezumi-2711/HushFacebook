@@ -111,6 +111,9 @@ final class VideoPages {
                             + "partner apps and outside links. The song label stays.")));
             reels.addPreference(toggle(context, Settings.HIDE_REEL_FOLLOW_BUTTON,
                     L10n.t("The Follow button next to the reel's author. You can still follow them from their profile.")));
+            reels.addPreference(toggle(context, Settings.HIDE_VIDEO_SUBSCRIBE_BUTTON,
+                    L10n.t("The Subscribe button some authors get there instead, which subscribes with one tap. "
+                            + "Follow buttons stay.")));
             reels.addPreference(toggle(context, Settings.HIDE_REEL_SOCIAL_FOOTER,
                     L10n.t("The comment Facebook previews under a reel and the bubbles of friends who reacted. "
                             + "Open the comments to see them all.")));

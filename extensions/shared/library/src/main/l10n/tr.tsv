@@ -2271,3 +2271,7 @@ Tap a reel above its comments	Yorumların üstündeki reele dokun
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Yorumlarının üstündeki reele dokunmak onu duraklatır ya da oynatır ve yorumlar açık kalır. Yorumlar tam yükseklikte açılmadığı sürece çalışır.
 # context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
 A video comment gets Save video when you long-press it.	Bir video yorumuna basılı tuttuğunda Videoyu kaydet çıkar.
+# context: switch title next to Hide the Follow button on reels; Subscribe is Facebook's own button name, keep it as Facebook translates it
+Hide the Subscribe button on videos	Videolardaki Abone Ol düğmesini gizle
+# context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
+The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	Bazı içerik sahiplerinde onun yerine çıkan ve tek dokunuşla abone yapan Abone Ol düğmesi. Takip Et düğmeleri kalır.

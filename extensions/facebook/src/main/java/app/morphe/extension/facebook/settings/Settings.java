@@ -528,6 +528,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_reel_follow_button", FALSE);
 
     /**
+     * The Subscribe pill beside a full-screen video's author, where Facebook offers Subscribe
+     * instead of Follow. A Follow pill stays (#291). Subscribe takes effect with one tap and no
+     * prompt.
+     */
+    public static final BooleanSetting HIDE_VIDEO_SUBSCRIBE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_video_subscribe_button", FALSE);
+
+    /**
      * The comment Facebook previews under a reel and the bubbles of friends who reacted. Both
      * queries are skipped, so neither is drawn.
      */

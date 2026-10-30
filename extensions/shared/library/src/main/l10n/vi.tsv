@@ -2271,3 +2271,7 @@ Tap a reel above its comments	Chạm vào reel phía trên bình luận
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	Chạm vào reel phía trên phần bình luận sẽ tạm dừng hoặc phát tiếp, và bình luận vẫn mở. Có tác dụng khi bình luận không mở ở chiều cao tối đa.
 # context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
 A video comment gets Save video when you long-press it.	Nhấn giữ một bình luận video để hiện Lưu video.
+# context: switch title next to Hide the Follow button on reels; Subscribe is Facebook's own button name, keep it as Facebook translates it
+Hide the Subscribe button on videos	Ẩn nút Đăng ký trên video
+# context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
+The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	Nút Đăng ký mà một số tác giả có ở đó thay cho nút kia, chỉ một lần chạm là đăng ký. Nút Theo dõi vẫn giữ nguyên.

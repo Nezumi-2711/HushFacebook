@@ -2275,3 +2275,7 @@ Tap a reel above its comments	點按留言上方的 Reels
 Tapping the reel above its comments plays or pauses it, and the comments stay open. Works while comments open part way up, not at full height.	點按留言上方的 Reels 可暫停或繼續播放，留言保持開啟。僅在留言未以全螢幕高度開啟時有效。
 # context: sentence added after the summary of the Download feed and Watch videos switch; Save video is the row's name, keep it as translated for that row
 A video comment gets Save video when you long-press it.	長按影片留言時，會顯示「儲存影片」。
+# context: switch title next to Hide the Follow button on reels; Subscribe is Facebook's own button name, keep it as Facebook translates it
+Hide the Subscribe button on videos	隱藏影片的訂閱按鈕
+# context: summary under that switch; "there" is next to the author of a reel or video, Subscribe and Follow are Facebook's button names
+The Subscribe button some authors get there instead, which subscribes with one tap. Follow buttons stay.	部分作者在那裡顯示的是訂閱按鈕，點一下就會訂閱。追蹤按鈕會保留。
