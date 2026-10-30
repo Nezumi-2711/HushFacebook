@@ -280,7 +280,7 @@ class DownloadReelShapesTest {
 
     /**
      * The block's writes are 8-bit destinations, so six dead locals above v255 don't count. Here
-     * v3 to v257 are read after the call and only v258 up are free past v0 to v2.
+     * v3 to v257 are read after the call, so only v0 to v2, v23 to v25 and v258 up are free.
      */
     @Test
     fun `dead locals above v255 are refused`() {

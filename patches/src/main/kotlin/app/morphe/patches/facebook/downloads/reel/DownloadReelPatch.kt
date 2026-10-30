@@ -699,8 +699,8 @@ internal fun Method.sidebarBlockPlace(
             val scratch = (0..minOf(locals, 256) - SIDEBAR_BLOCK_ARGUMENTS).firstOrNull { first ->
                 (first until first + SIDEBAR_BLOCK_ARGUMENTS).none { it in live || it in reads }
             } ?: throw PatchException(
-                "$PATCH: $definingClass->$name has no $SIDEBAR_BLOCK_ARGUMENTS consecutive locals that nothing reads " +
-                    "after instruction $index",
+                "$PATCH: $definingClass->$name has no $SIDEBAR_BLOCK_ARGUMENTS consecutive locals at or below v255 " +
+                    "that nothing reads after instruction $index",
             )
             return SidebarBlockPlace(index, held[0], held[1], player, held[2], held[3], held[4], scratch)
         } catch (exception: PatchException) {
