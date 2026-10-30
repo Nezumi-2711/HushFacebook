@@ -1396,6 +1396,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 return L10n.t("Newest");
             case ALL_COMMENTS:
                 return L10n.t("All comments");
+            case OLDEST:
+                return L10n.t("Oldest");
             default:
                 return L10n.t("Facebook's choice");
         }
@@ -1409,6 +1411,10 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     static String commentOrderSummary(CommentOrder order) {
         if (order == CommentOrder.FACEBOOK) {
             return L10n.t("Comments open in the order Facebook picks, which is usually Most relevant.");
+        }
+        if (order == CommentOrder.OLDEST) {
+            // Facebook's own menu names this order All comments, so the summary says which it means.
+            return L10n.t("Comments open oldest first, on every post. Facebook's sort menu then shows All comments.");
         }
         return L10n.f("A post's comments open with %1$s picked in their sort menu, where the post offers it.",
                 commentOrderLabel(order));

@@ -2109,3 +2109,6 @@ Select part of a post's text	Teil eines Beitragstexts auswählen
 Holding a post's text still copies all of it, and also opens the text in a box where you can select just the part you want and copy that.	Wenn du den Text eines Beitrags gedrückt hältst, wird er weiterhin ganz kopiert und zusätzlich in einem Feld geöffnet, in dem du nur den gewünschten Teil auswählen und kopieren kannst.
 Select text	Text auswählen
 Done	Fertig
+Oldest	Älteste
+Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	Kommentare öffnen sich bei jedem Beitrag mit den ältesten zuerst. Facebooks Sortiermenü zeigt dann Alle Kommentare.
+Comments will open oldest first.	Kommentare öffnen sich mit den ältesten zuerst.

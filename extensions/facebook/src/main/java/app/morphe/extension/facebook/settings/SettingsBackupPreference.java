@@ -570,6 +570,7 @@ public class SettingsBackupPreference extends Preference {
     /** The sentence that says in what order comments open after an import. */
     static String commentOrderSentence(CommentOrder order) {
         if (order == CommentOrder.FACEBOOK) return L10n.t("Comments will open in the order Facebook picks.");
+        if (order == CommentOrder.OLDEST) return L10n.t("Comments will open oldest first.");
         return L10n.f("Comments will open with %1$s picked in their sort menu.",
                 HushfacebookPreferenceFragment.commentOrderLabel(order));
     }

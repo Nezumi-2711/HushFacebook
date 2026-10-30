@@ -2262,7 +2262,7 @@ public class Settings extends BaseSettings {
 
     /**
      * The order comment sheets ask for while {@link #DEFAULT_COMMENT_ORDER} is on: Facebook's own
-     * choice until someone picks Most relevant, Newest or All comments, so picking the patch changes
+     * choice until someone picks Most relevant, Newest, All comments or Oldest, so picking the patch changes
      * nothing on its own. It isn't a switch, and a paused Facebook takes the order its servers
      * choose.
      */

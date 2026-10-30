@@ -2109,3 +2109,6 @@ Select part of a post's text	Gönderi metninin bir kısmını seç
 Holding a post's text still copies all of it, and also opens the text in a box where you can select just the part you want and copy that.	Bir gönderinin metnine basılı tutmak yine metnin tamamını kopyalar, ayrıca metni yalnızca istediğin kısmı seçip kopyalayabileceğin bir kutuda açar.
 Select text	Metni seç
 Done	Bitti
+Oldest	En eski
+Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	Yorumlar her gönderide en eskiden başlayarak açılır. Facebook'un sıralama menüsü o zaman Tüm yorumlar gösterir.
+Comments will open oldest first.	Yorumlar en eskiden başlayarak açılacak.

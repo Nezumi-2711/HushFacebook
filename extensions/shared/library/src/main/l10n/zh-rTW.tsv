@@ -2113,3 +2113,6 @@ Select part of a post's text	選取貼文文字的一部分
 Holding a post's text still copies all of it, and also opens the text in a box where you can select just the part you want and copy that.	長按貼文文字仍會複製全部內容，同時會在一個方塊中開啟這段文字，你可以只選取想要的部分再複製。
 Select text	選取文字
 Done	完成
+Oldest	最早
+Comments open oldest first, on every post. Facebook's sort menu then shows All comments.	每則貼文的留言都從最早的開始顯示。Facebook 的排序選單這時會顯示「所有留言」。
+Comments will open oldest first.	留言將從最早的開始顯示。
