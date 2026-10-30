@@ -58,6 +58,7 @@ import app.morphe.extension.facebook.feed.ReactionCeiling;
 import app.morphe.extension.facebook.feed.TopicPacks;
 import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.media.PlaybackQuality;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.HeaderText;
@@ -87,6 +88,7 @@ import app.morphe.extension.facebook.settings.ValueRows.ReelsOrderRow;
 import app.morphe.extension.facebook.settings.ValueRows.LockAfterRow;
 import app.morphe.extension.facebook.settings.ValueRows.SeenKeepRow;
 import app.morphe.extension.facebook.settings.ValueRows.PauseLengthRow;
+import app.morphe.extension.facebook.settings.ValueRows.WatchedKeepRow;
 import app.morphe.extension.facebook.settings.ValueRows.AccentRow;
 import app.morphe.extension.facebook.settings.ValueRows.BackgroundRow;
 import app.morphe.extension.facebook.settings.ValueRows.HeaderTextRow;
@@ -1607,6 +1609,50 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     }
 
     /**
+     * How long a Recently watched entry stays. Like the seen posts row, its values are the
+     * setting's own names and its summary says what the choice does.
+     */
+    static WatchedKeepRow watchedKeepRow(Context context) {
+        WatchedKeepRow row = new WatchedKeepRow(context);
+        row.setKey(Settings.RECENTLY_WATCHED_KEEP.key);
+        row.setTitle(L10n.t("Keep watched entries for"));
+        row.setDialogTitle(L10n.t("Keep watched entries for"));
+        // Android's own Cancel follows the activity's language, as the other lists' did.
+        row.setNegativeButtonText(L10n.t("Cancel"));
+        RecentlyWatched.Keep[] choices = RecentlyWatched.Keep.values();
+        CharSequence[] entries = new CharSequence[choices.length];
+        CharSequence[] values = new CharSequence[choices.length];
+        for (int i = 0; i < choices.length; i++) {
+            entries[i] = watchedKeepLabel(choices[i]);
+            values[i] = choices[i].name();
+        }
+        row.setEntries(entries);
+        row.setEntryValues(values);
+        row.setValue(Settings.RECENTLY_WATCHED_KEEP.savedValue().name());
+        return row;
+    }
+
+    /** What the list and the sentences about it call [keep]. */
+    static String watchedKeepLabel(RecentlyWatched.Keep keep) {
+        switch (keep) {
+            case SEVEN_DAYS:
+                return L10n.t("7 days");
+            case THIRTY_DAYS:
+                return L10n.t("30 days");
+            default:
+                return L10n.t("Until you clear it");
+        }
+    }
+
+    /** What the choice does, for the row's summary. */
+    static String watchedKeepSummary(RecentlyWatched.Keep keep) {
+        if (keep == RecentlyWatched.Keep.UNTIL_CLEARED) {
+            return L10n.t("Reels, videos and stories stay on the list until you clear it.");
+        }
+        return L10n.f("Reels, videos and stories leave the list %1$s after you watch them.", watchedKeepLabel(keep));
+    }
+
+    /**
      * How large Facebook's text is. Like the comment order row, its values are the setting's own
      * names and its summary says what the choice does.
      */
@@ -2130,6 +2176,8 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
             ((SeenKeepRow) listPreference).showSummary();
         } else if (listPreference instanceof PauseLengthRow) {
             ((PauseLengthRow) listPreference).showSummary();
+        } else if (listPreference instanceof WatchedKeepRow) {
+            ((WatchedKeepRow) listPreference).showSummary();
         } else if (listPreference instanceof TextSizeRow) {
             ((TextSizeRow) listPreference).showSummary();
         } else if (listPreference instanceof AccentRow) {

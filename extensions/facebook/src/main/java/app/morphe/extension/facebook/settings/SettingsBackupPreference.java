@@ -55,6 +55,7 @@ import app.morphe.extension.facebook.feed.PostWords;
 import app.morphe.extension.facebook.feed.FeedTypeNames;
 import app.morphe.extension.facebook.menu.MenuTiles;
 import app.morphe.extension.facebook.media.PlaybackQuality;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.notifications.QuietHour;
 import app.morphe.extension.facebook.misc.AppLock;
@@ -418,6 +419,9 @@ public class SettingsBackupPreference extends Preference {
             if (snapshot.pauseLength != null && snapshot.changes().containsKey(SettingsBackup.PAUSE_LENGTH)) {
                 parts.add(pauseLengthSentence(snapshot.pauseLength));
             }
+            if (snapshot.watchedKeep != null && snapshot.changes().containsKey(SettingsBackup.WATCHED_KEEP)) {
+                parts.add(watchedKeepSentence(snapshot.watchedKeep));
+            }
             message = String.join("\n\n", parts);
         }
         if (snapshot.unknown > 0) {
@@ -598,6 +602,14 @@ public class SettingsBackupPreference extends Preference {
     static String pauseLengthSentence(OpeningPause.Length length) {
         return L10n.f("With Opening pause on, Facebook will wait %1$s before it opens.",
                 HushfacebookPreferenceFragment.pauseLengthLabel(length));
+    }
+
+    /** The sentence that says how long Recently watched keeps an entry, after an import. */
+    static String watchedKeepSentence(RecentlyWatched.Keep keep) {
+        if (keep == RecentlyWatched.Keep.UNTIL_CLEARED) {
+            return L10n.t("Recently watched will keep entries until you clear them.");
+        }
+        return L10n.f("Recently watched will keep entries for %1$s.", HushfacebookPreferenceFragment.watchedKeepLabel(keep));
     }
 
     /** The sentence that says what the feed will do about a post's reaction count after an import. */
@@ -983,8 +995,10 @@ public class SettingsBackupPreference extends Preference {
                     + (snapshot.tabChange() == null ? "" : " " + markColorSentence(Mark.TAB, snapshot.tabChange()))
                     + (snapshot.headerTextChange() == null ? "" : " " + headerTextSentence(snapshot.headerTextChange()))
                     + (snapshot.pauseLength == null || !snapshot.changes().containsKey(SettingsBackup.PAUSE_LENGTH) ? ""
-                            : " " + pauseLengthSentence(snapshot.pauseLength));
-            accepted = Utils.runOnBackgroundThread(() -> {
+                            : " " + pauseLengthSentence(snapshot.pauseLength))
+                    + (snapshot.watchedKeep == null || !snapshot.changes().containsKey(SettingsBackup.WATCHED_KEEP) ? ""
+                            : " " + watchedKeepSentence(snapshot.watchedKeep));
+            accepted =Utils.runOnBackgroundThread(() -> {
                 try {
                     SettingsBackup.apply(snapshot);
                     Utils.showToastLong(done);

@@ -2184,3 +2184,21 @@ Pause length	Duración de la pausa
 Open now works after %1$s.	Abrir ahora funciona después de %1$s.
 # context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
 With Opening pause on, Facebook will wait %1$s before it opens.	Con Pausa al abrir activada, Facebook esperará %1$s antes de abrirse.
+# context: a row on the Playback page that opens a list of 7 days, 30 days and Until you clear it; entries are the reels, videos and stories on the Recently watched list
+Keep watched entries for	Conservar lo visto durante
+# context: a choice in that list; it means the list itself is cleared with its Clear button
+Until you clear it	Hasta que borres la lista
+# context: that row's summary when Until you clear it is picked
+Reels, videos and stories stay on the list until you clear it.	Los reels, videos e historias se quedan en la lista hasta que la borres.
+# context: that row's summary; %1$s is the chosen time, 7 days or 30 days
+Reels, videos and stories leave the list %1$s after you watch them.	Los reels, videos e historias salen de la lista %1$s después de verlos.
+# context: screen reader label of the remove button on one Recently watched row; %1$s is the row's title, such as Reel, Video or the poster's name
+Remove %1$s	Quitar %1$s
+# context: line under the Recently watched list, next to its Undo button, after one entry was removed; %1$s is that row's title
+Removed %1$s	Se quitó %1$s
+# context: toast when Undo can't put a removed entry back
+It wasn't put back. It was watched again since, or its time on the list is up.	No se restauró. Se volvió a ver desde entonces o ya se cumplió su tiempo en la lista.
+# context: import preview and toast; Recently watched is the list's name
+Recently watched will keep entries until you clear them.	Vistos recientemente conservará las entradas hasta que las borres.
+# context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
+Recently watched will keep entries for %1$s.	Vistos recientemente conservará las entradas durante %1$s.

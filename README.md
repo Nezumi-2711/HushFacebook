@@ -203,7 +203,7 @@ Morphe Manager's default selection has every patch except `AMOLED black theme`, 
 
 Videos save to your gallery at the quality you pick under Downloads, best by default. A running save shows its progress in a notification and at the top of the Downloads page, each with a Cancel button. Turn on **Quiet saves** there if the toasts at the start and end of a save bother you. A save that fails still says why.
 
-Under Video and audio > Recently watched, Clear also discards watches waiting to be saved. Turning Remember what you watch off stops new entries and discards pending watches. It keeps the entries already on the list.
+Under Video and audio > Recently watched, Clear also discards watches waiting to be saved. Turning Remember what you watch off stops new entries and discards pending watches. It keeps the entries already on the list, and they still leave once they're older than Keep watched entries for (30 days unless you pick 7 days or until you clear it). The remove button on a row takes just that one off, with Undo under the list.
 
 ## Help
 

@@ -2070,3 +2070,21 @@ Pause length	Duração da pausa
 Open now works after %1$s.	Abrir agora funciona depois de %1$s.
 # context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
 With Opening pause on, Facebook will wait %1$s before it opens.	Com a Pausa ao abrir ligada, o Facebook vai esperar %1$s antes de abrir.
+# context: a row on the Playback page that opens a list of 7 days, 30 days and Until you clear it; entries are the reels, videos and stories on the Recently watched list
+Keep watched entries for	Manter itens assistidos por
+# context: a choice in that list; it means the list itself is cleared with its Clear button
+Until you clear it	Até você limpar
+# context: that row's summary when Until you clear it is picked
+Reels, videos and stories stay on the list until you clear it.	Reels, vídeos e stories ficam na lista até você limpá-la.
+# context: that row's summary; %1$s is the chosen time, 7 days or 30 days
+Reels, videos and stories leave the list %1$s after you watch them.	Reels, vídeos e stories saem da lista %1$s depois que você os assiste.
+# context: screen reader label of the remove button on one Recently watched row; %1$s is the row's title, such as Reel, Video or the poster's name
+Remove %1$s	Remover %1$s
+# context: line under the Recently watched list, next to its Undo button, after one entry was removed; %1$s is that row's title
+Removed %1$s	Removido: %1$s
+# context: toast when Undo can't put a removed entry back
+It wasn't put back. It was watched again since, or its time on the list is up.	Não foi restaurado. Foi assistido de novo desde então, ou o tempo dele na lista acabou.
+# context: import preview and toast; Recently watched is the list's name
+Recently watched will keep entries until you clear them.	Assistidos recentemente vai manter os itens até você limpá-los.
+# context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
+Recently watched will keep entries for %1$s.	Assistidos recentemente vai manter os itens por %1$s.

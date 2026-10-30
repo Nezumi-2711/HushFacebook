@@ -51,6 +51,7 @@ import app.morphe.extension.shared.settings.preference.CrashFile;
 public class Settings extends BaseSettings {
     static {
         StoriesSetting.migrate();
+        RecentlyWatched.keepOlderListAsItWas();
     }
 
     /** Feed edges Facebook files under the SPONSORED story category. */
@@ -1081,13 +1082,27 @@ public class Settings extends BaseSettings {
     /**
      * Keeps a list on the phone of the reels, videos and stories you watch, newest first, so one a
      * refresh took away can be opened again ({@link app.morphe.extension.facebook.media.RecentlyWatched},
-     * #183). Starts off. Off or paused, nothing is added; what's listed stays until it's cleared.
+     * #183). Starts off. Off or paused, nothing is added; what's listed stays for
+     * {@link #RECENTLY_WATCHED_KEEP}.
      */
     public static final BooleanSetting RECENTLY_WATCHED =
             new BooleanSetting("hushfacebook_recently_watched", FALSE) {
                 @Override
                 protected void onValueChanged() {
                     RecentlyWatched.recordingChanged();
+                }
+            };
+
+    /**
+     * How long a Recently watched entry stays after it's watched, whether the list is recording or
+     * not. 30 days to start with. A list an earlier build kept, when entries never expired, stays
+     * until it's cleared instead, until another time is picked.
+     */
+    public static final EnumSetting<RecentlyWatched.Keep> RECENTLY_WATCHED_KEEP =
+            new EnumSetting<RecentlyWatched.Keep>(RecentlyWatched.KEEP_KEY, RecentlyWatched.Keep.THIRTY_DAYS) {
+                @Override
+                protected void onValueChanged() {
+                    RecentlyWatched.keepChanged();
                 }
             };
 

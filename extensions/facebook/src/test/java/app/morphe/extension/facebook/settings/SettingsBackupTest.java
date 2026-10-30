@@ -87,6 +87,7 @@ import app.morphe.extension.facebook.feed.WordsCorpus;
 import app.morphe.extension.facebook.media.PlaybackQuality;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.misc.OpeningPause;
 import app.morphe.extension.facebook.misc.ShareSheetItems;
 import app.morphe.extension.facebook.misc.TextSize;
@@ -206,6 +207,7 @@ public class SettingsBackupTest {
         Settings.REELS_PLAYBACK_QUALITY.resetToDefault();
         Settings.STORIES_PLAYBACK_QUALITY.resetToDefault();
         Settings.REELS_ORDER.resetToDefault();
+        Settings.RECENTLY_WATCHED_KEEP.resetToDefault();
         Settings.QUIET_HOURS_FROM.resetToDefault();
         Settings.QUIET_HOURS_UNTIL.resetToDefault();
         Settings.APP_LOCK_AFTER.resetToDefault();
@@ -273,7 +275,7 @@ public class SettingsBackupTest {
         for (Setting<?> setting : SettingsBackup.VALUES) {
             assertFalse(setting.key + " is carried and kept out at once", VALUES_STAY_OUT.containsKey(setting.key));
         }
-        assertEquals(Arrays.<Setting<?>>asList(Settings.HIDDEN_WORDS, Settings.KEPT_WORDS, Settings.HIDDEN_SOURCES, Settings.HIDDEN_FEED_TYPES, Settings.HIDE_POSTS_OVER_REACTIONS, Settings.REELS_ORDER, Settings.HIDDEN_SHARE_ITEMS, Settings.HIDDEN_MENU_TILES, Settings.HOME_FEED, Settings.AMOLED_BACKGROUND, Settings.AMOLED_LIGHT_BACKGROUND, Settings.HEADER_TEXT, Settings.SEEN_POSTS_KEEP, Settings.SAVE_TO,
+        assertEquals(Arrays.<Setting<?>>asList(Settings.HIDDEN_WORDS, Settings.KEPT_WORDS, Settings.HIDDEN_SOURCES, Settings.HIDDEN_FEED_TYPES, Settings.HIDE_POSTS_OVER_REACTIONS, Settings.REELS_ORDER, Settings.RECENTLY_WATCHED_KEEP, Settings.HIDDEN_SHARE_ITEMS, Settings.HIDDEN_MENU_TILES, Settings.HOME_FEED, Settings.AMOLED_BACKGROUND, Settings.AMOLED_LIGHT_BACKGROUND, Settings.HEADER_TEXT, Settings.SEEN_POSTS_KEEP, Settings.SAVE_TO,
                 Settings.SAVE_FOLDER, Settings.VIDEO_SUBFOLDER, Settings.PHOTO_SUBFOLDER, Settings.DOWNLOAD_QUALITY,
                 Settings.FILENAME_TEMPLATE, Settings.PHOTO_FILENAME_TEMPLATE, Settings.DOWNLOAD_ACTION, Settings.SEND_TO_APP,
                 Settings.START_TAB, Settings.FEEDS_SUBTAB, Settings.COMMENT_ORDER, Settings.PLAYBACK_QUALITY,
@@ -2592,6 +2594,71 @@ public class SettingsBackupTest {
 
         assertEquals("With Opening pause on, Facebook will wait 10 seconds before it opens.",
                 SettingsBackupPreference.pauseLengthSentence(OpeningPause.Length.TEN_SECONDS));
+    }
+
+    /**
+     * How long Recently watched keeps entries goes out as its file value and comes back only as one
+     * this build offers. The entries themselves never go in the file.
+     */
+    @Test
+    public void theWatchedEntriesTimeRoundTripsAndTheEntriesStayHome() throws Exception {
+        app.morphe.extension.facebook.media.RecentlyWatchedForTests.install();
+        try {
+            app.morphe.extension.facebook.media.RecentlyWatchedForTests.watched(
+                    RecentlyWatched.REEL, "4455667788", null, "A private caption", null, System.currentTimeMillis(), 0);
+            for (RecentlyWatched.Keep choice : RecentlyWatched.Keep.values()) {
+                RecentlyWatched.Keep other = choice == RecentlyWatched.Keep.SEVEN_DAYS
+                        ? RecentlyWatched.Keep.THIRTY_DAYS : RecentlyWatched.Keep.SEVEN_DAYS;
+                Settings.RECENTLY_WATCHED_KEEP.save(choice);
+                String file = SettingsBackup.create();
+                assertEquals(choice.fileValue, new JSONObject(file).getJSONObject("settings").get(SettingsBackup.WATCHED_KEEP.key));
+                assertFalse("an entry went in the file", file.contains("4455667788") || file.contains("A private caption"));
+                Settings.RECENTLY_WATCHED_KEEP.save(other);
+
+                SettingsBackup.Snapshot snapshot = SettingsBackup.parse(file);
+                assertEquals(choice, snapshot.watchedKeep);
+                Map<Setting<?>, Object> expected = new LinkedHashMap<>();
+                expected.put(SettingsBackup.WATCHED_KEEP, choice);
+                assertEquals(expected, snapshot.changes());
+                assertEquals(1, SettingsBackup.apply(snapshot));
+                assertEquals(choice, Settings.RECENTLY_WATCHED_KEEP.savedValue());
+                assertEquals("a file read back is the file", file, SettingsBackup.create());
+            }
+        } finally {
+            app.morphe.extension.facebook.media.RecentlyWatchedForTests.forget();
+        }
+
+        Settings.RECENTLY_WATCHED_KEEP.save(RecentlyWatched.Keep.SEVEN_DAYS);
+        String file = SettingsBackup.create();
+        Map<String, ?> before = store();
+        for (Object refused : new Object[]{"SEVEN_DAYS", "7 days", "14_days", "", 7, true, JSONObject.NULL}) {
+            JSONObject hostile = new JSONObject(file);
+            hostile.getJSONObject("settings").put(SettingsBackup.WATCHED_KEEP.key, refused);
+            try {
+                SettingsBackup.parse(hostile.toString());
+                fail("a file with the watched entries time " + printable(String.valueOf(refused)) + " was read");
+            } catch (SettingsBackup.Rejected rejected) {
+                assertEquals(printable(String.valueOf(refused)), SettingsBackup.Reason.VALUE, rejected.reason);
+            }
+        }
+        assertEquals("a refused file wrote something", before, store());
+
+        // A file from before the time was carried leaves it alone.
+        SettingsBackup.Snapshot older = SettingsBackup.parse(fileWith(Settings.HIDE_SUGGESTED_POSTS, false));
+        assertNull(older.watchedKeep);
+        SettingsBackup.apply(older);
+        assertEquals(RecentlyWatched.Keep.SEVEN_DAYS, Settings.RECENTLY_WATCHED_KEEP.savedValue());
+
+        // A preview kept across a rebuild keeps it, and only one this build offers comes back.
+        Bundle state = SettingsBackup.parse(file).toBundle();
+        assertEquals(RecentlyWatched.Keep.SEVEN_DAYS, SettingsBackup.Snapshot.fromBundle(state).watchedKeep);
+        state.putString("recently_watched_keep", "SEVEN_DAYS");
+        assertNull(SettingsBackup.Snapshot.fromBundle(state).watchedKeep);
+
+        assertEquals("Recently watched will keep entries for 7 days.",
+                SettingsBackupPreference.watchedKeepSentence(RecentlyWatched.Keep.SEVEN_DAYS));
+        assertEquals("Recently watched will keep entries until you clear them.",
+                SettingsBackupPreference.watchedKeepSentence(RecentlyWatched.Keep.UNTIL_CLEARED));
     }
 
     /**

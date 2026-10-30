@@ -2184,3 +2184,21 @@ Pause length	Mola süresi
 Open now works after %1$s.	Şimdi aç düğmesi %1$s sonra çalışır.
 # context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
 With Opening pause on, Facebook will wait %1$s before it opens.	Açılış molası açıkken Facebook açılmadan önce %1$s bekler.
+# context: a row on the Playback page that opens a list of 7 days, 30 days and Until you clear it; entries are the reels, videos and stories on the Recently watched list
+Keep watched entries for	İzlenenleri tutma süresi
+# context: a choice in that list; it means the list itself is cleared with its Clear button
+Until you clear it	Sen temizleyene kadar
+# context: that row's summary when Until you clear it is picked
+Reels, videos and stories stay on the list until you clear it.	Reeller, videolar ve hikayeler sen temizleyene kadar listede kalır.
+# context: that row's summary; %1$s is the chosen time, 7 days or 30 days
+Reels, videos and stories leave the list %1$s after you watch them.	Reeller, videolar ve hikayeler izlendikten %1$s sonra listeden çıkar.
+# context: screen reader label of the remove button on one Recently watched row; %1$s is the row's title, such as Reel, Video or the poster's name
+Remove %1$s	Kaldır: %1$s
+# context: line under the Recently watched list, next to its Undo button, after one entry was removed; %1$s is that row's title
+Removed %1$s	Kaldırıldı: %1$s
+# context: toast when Undo can't put a removed entry back
+It wasn't put back. It was watched again since, or its time on the list is up.	Geri konmadı. O zamandan beri yeniden izlendi ya da listedeki süresi doldu.
+# context: import preview and toast; Recently watched is the list's name
+Recently watched will keep entries until you clear them.	Son izlenenler girişleri sen temizleyene kadar tutacak.
+# context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
+Recently watched will keep entries for %1$s.	Son izlenenler girişleri %1$s boyunca tutacak.

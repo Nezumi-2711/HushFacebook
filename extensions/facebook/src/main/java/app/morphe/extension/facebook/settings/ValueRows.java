@@ -36,6 +36,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.startTabSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subfolderSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.surfaceQualitySummary;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.watchedKeepSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.ceilingSummary;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.packResult;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.wordsEditorLine;
@@ -75,6 +76,7 @@ import app.morphe.extension.facebook.feed.ReactionCeiling;
 import app.morphe.extension.facebook.feed.TopicPacks;
 import app.morphe.extension.facebook.feed.SeenPosts;
 import app.morphe.extension.facebook.media.PlaybackQuality;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.OpeningPause;
@@ -1279,6 +1281,46 @@ final class ValueRows {
                 summary += " " + L10n.f("Turn on %1$s to use this.", L10n.isolate(SwitchLabels.title(Settings.OPENING_PAUSE)));
             }
             setSummary(summary);
+        }
+
+        @Override
+        protected void onBindView(View view) {
+            super.onBindView(view);
+            showAllText(view);
+            ScreenColors.row(view, this);
+            view.setAccessibilityDelegate(new RowSemantics(this, Button.class));
+        }
+
+        /** Its list takes the screen's colours, as the other rows' dialogs do. */
+        @Override
+        protected void showDialog(Bundle state) {
+            super.showDialog(state);
+            if (getDialog() instanceof AlertDialog) ScreenColors.dialog((AlertDialog) getDialog());
+        }
+    }
+
+    /**
+     * The Recently watched keep row: how long an entry stays on the list. Its summary follows its
+     * value, whoever sets it: the person, the shared page syncing it from the setting, or an import.
+     * It stays usable with recording off, since what's listed still ages.
+     */
+    static final class WatchedKeepRow extends PlainSummaryList {
+        WatchedKeepRow(Context context) {
+            super(context);
+        }
+
+        @Override
+        public void setValue(String value) {
+            super.setValue(value);
+            showSummary();
+        }
+
+        void showSummary() {
+            RecentlyWatched.Keep keep = RecentlyWatched.Keep.THIRTY_DAYS;
+            for (RecentlyWatched.Keep candidate : RecentlyWatched.Keep.values()) {
+                if (candidate.name().equals(getValue())) keep = candidate;
+            }
+            setSummary(watchedKeepSummary(keep));
         }
 
         @Override

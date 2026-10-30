@@ -43,6 +43,7 @@ import app.morphe.extension.facebook.feed.PostSources;
 import app.morphe.extension.facebook.feed.PostWords;
 import app.morphe.extension.facebook.menu.MenuTiles;
 import app.morphe.extension.facebook.media.PlaybackQuality;
+import app.morphe.extension.facebook.media.RecentlyWatched;
 import app.morphe.extension.facebook.media.SurfaceQuality;
 import app.morphe.extension.facebook.misc.AppLock;
 import app.morphe.extension.facebook.misc.HeaderText;
@@ -554,6 +555,13 @@ public final class SettingsBackup {
     static final EnumSetting<OpeningPause.Length> PAUSE_LENGTH = Settings.OPENING_PAUSE_LENGTH;
 
     /**
+     * How long a Recently watched entry stays, held in a file as its
+     * {@link RecentlyWatched.Keep#fileValue}. Anything else refuses the whole file, as a pause
+     * length does. The entries themselves never go in a file.
+     */
+    static final EnumSetting<RecentlyWatched.Keep> WATCHED_KEEP = Settings.RECENTLY_WATCHED_KEEP;
+
+    /**
      * How long a seen post stays hidden, held in a file as its {@link SeenPosts.Keep#fileValue}.
      * Anything else refuses the whole file, as a lock time does. The list of seen posts itself is
      * never carried: it stays on the phone.
@@ -603,7 +611,7 @@ public final class SettingsBackup {
 
     /** The settings a file carries that aren't switches, in the order Settings declares them. */
     static final List<Setting<?>> VALUES = Collections.unmodifiableList(
-            Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, FEED_TYPES, CEILING, REELS_ORDER, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
+            Arrays.<Setting<?>>asList(HIDDEN, KEPT, SOURCES, FEED_TYPES, CEILING, REELS_ORDER, WATCHED_KEEP, SHARE_ITEMS, MENU_TILES, HOME_FEED, BACKGROUND, LIGHT_BACKGROUND, HEADER_TEXT, SEEN_KEEP, TO, FOLDER, VIDEO_SUBFOLDER, PHOTO_SUBFOLDER, QUALITY,
                     FILE_NAME, PHOTO_NAME, ACTION, APP, START, SUBTAB, ORDER, PLAYBACK, REELS_QUALITY, STORIES_QUALITY,
                     QUIET_FROM, QUIET_UNTIL, LOCK_AFTER, PAUSE_LENGTH, TEXT_SIZE, ACCENT, BADGE, LOGO, TAB));
 
@@ -708,6 +716,7 @@ public final class SettingsBackup {
         private static final String LOCK_AFTER_NAME = "app_lock_after";
         private static final String SEEN_KEEP_NAME = "seen_posts_keep";
         private static final String PAUSE_LENGTH_NAME = "opening_pause_length";
+        private static final String WATCHED_KEEP_NAME = "recently_watched_keep";
         private static final String TEXT_SIZE_NAME = "text_size";
         private static final String ACCENT_NAME = "accent_color";
         private static final String CEILING_NAME = "hide_posts_over_reactions";
@@ -803,6 +812,9 @@ public final class SettingsBackup {
         /** How long the file says the opening pause counts down, or null when it names none. Set once, as it's read. */
         @Nullable
         OpeningPause.Length pauseLength;
+        /** How long the file says a Recently watched entry stays, or null when it names none. Set once, as it's read. */
+        @Nullable
+        RecentlyWatched.Keep watchedKeep;
         /** The clean list of share sheet items to hide the file holds, or null when it names none. Set once, as it's read. */
         @Nullable
         String shareItems;
@@ -1040,6 +1052,7 @@ public final class SettingsBackup {
             AppLock.After lockAfterChange = lockAfterChange();
             if (lockAfterChange != null) changes.put(LOCK_AFTER, lockAfterChange);
             if (pauseLength != null && pauseLength != PAUSE_LENGTH.savedValue()) changes.put(PAUSE_LENGTH, pauseLength);
+            if (watchedKeep != null && watchedKeep != WATCHED_KEEP.savedValue()) changes.put(WATCHED_KEEP, watchedKeep);
             TextSize.Scale textSizeChange = textSizeChange();
             if (textSizeChange != null) changes.put(TEXT_SIZE, textSizeChange);
             AccentColor.Preset accentChange = accentChange();
@@ -1370,6 +1383,7 @@ public final class SettingsBackup {
             if (ceiling != null) state.putString(CEILING_NAME, ceiling.fileValue);
             if (seenKeep != null) state.putString(SEEN_KEEP_NAME, seenKeep.fileValue);
             if (pauseLength != null) state.putString(PAUSE_LENGTH_NAME, pauseLength.fileValue);
+            if (watchedKeep != null) state.putString(WATCHED_KEEP_NAME, watchedKeep.fileValue);
             if (shareItems != null) state.putString(SHARE_ITEMS_NAME, shareItems);
             if (menuTiles != null) state.putString(MENU_TILES_NAME, menuTiles);
             if (feedTypes != null) state.putString(FEED_TYPES_NAME, feedTypes);
@@ -1435,6 +1449,7 @@ public final class SettingsBackup {
                     unknown);
             read.seenKeep = SeenPosts.Keep.fromFile(state.get(SEEN_KEEP_NAME));
             read.pauseLength = OpeningPause.Length.fromFile(state.get(PAUSE_LENGTH_NAME));
+            read.watchedKeep = RecentlyWatched.Keep.fromFile(state.get(WATCHED_KEEP_NAME));
             Object shareItems = state.get(SHARE_ITEMS_NAME);
             read.shareItems = shareItems instanceof String && ShareSheetItems.isClean((String) shareItems)
                     ? (String) shareItems : null;
@@ -1515,6 +1530,7 @@ public final class SettingsBackup {
             switches.put(QUIET_UNTIL.key, of(QUIET_UNTIL).fileValue());
             switches.put(LOCK_AFTER.key, of(LOCK_AFTER).fileValue);
             switches.put(PAUSE_LENGTH.key, of(PAUSE_LENGTH).fileValue);
+            switches.put(WATCHED_KEEP.key, of(WATCHED_KEEP).fileValue);
             switches.put(SEEN_KEEP.key, of(SEEN_KEEP).fileValue);
             switches.put(TEXT_SIZE.key, of(TEXT_SIZE).fileValue);
             switches.put(ACCENT.key, of(ACCENT).fileValue);
@@ -1660,6 +1676,7 @@ public final class SettingsBackup {
         AppLock.After lockAfter = null;
         SeenPosts.Keep seenKeep = null;
         OpeningPause.Length pauseLength = null;
+        RecentlyWatched.Keep watchedKeep = null;
         TextSize.Scale textSize = null;
         AccentColor.Preset accent = null;
         ReactionCeiling ceiling = null;
@@ -1815,6 +1832,11 @@ public final class SettingsBackup {
                 if (pauseLength == null) throw new Rejected(Reason.VALUE, "Not an opening pause length: " + name);
                 continue;
             }
+            if (WATCHED_KEEP.key.equals(name)) {
+                watchedKeep = RecentlyWatched.Keep.fromFile(values.opt(name));
+                if (watchedKeep == null) throw new Rejected(Reason.VALUE, "Not a watched entries time: " + name);
+                continue;
+            }
             if (TEXT_SIZE.key.equals(name)) {
                 textSize = TextSize.Scale.fromFile(values.opt(name));
                 if (textSize == null) throw new Rejected(Reason.VALUE, "Not a text size: " + name);
@@ -1927,6 +1949,7 @@ public final class SettingsBackup {
                 quietUntil, lockAfter, textSize, accent, ceiling, unknown);
         read.seenKeep = seenKeep;
         read.pauseLength = pauseLength;
+        read.watchedKeep = watchedKeep;
         read.shareItems = shareItems;
         read.menuTiles = menuTiles;
         read.feedTypes = feedTypes;

@@ -2184,3 +2184,21 @@ Pause length	Lama jeda
 Open now works after %1$s.	Buka sekarang bisa dipakai setelah %1$s.
 # context: import preview and toast; Opening pause is the switch's name and %1$s is the length the import sets, such as 10 seconds
 With Opening pause on, Facebook will wait %1$s before it opens.	Dengan Jeda saat membuka aktif, Facebook akan menunggu %1$s sebelum terbuka.
+# context: a row on the Playback page that opens a list of 7 days, 30 days and Until you clear it; entries are the reels, videos and stories on the Recently watched list
+Keep watched entries for	Simpan entri tontonan selama
+# context: a choice in that list; it means the list itself is cleared with its Clear button
+Until you clear it	Sampai kamu menghapusnya
+# context: that row's summary when Until you clear it is picked
+Reels, videos and stories stay on the list until you clear it.	Reel, video, dan cerita tetap di daftar sampai kamu menghapusnya.
+# context: that row's summary; %1$s is the chosen time, 7 days or 30 days
+Reels, videos and stories leave the list %1$s after you watch them.	Reel, video, dan cerita keluar dari daftar %1$s setelah kamu menontonnya.
+# context: screen reader label of the remove button on one Recently watched row; %1$s is the row's title, such as Reel, Video or the poster's name
+Remove %1$s	Hapus %1$s
+# context: line under the Recently watched list, next to its Undo button, after one entry was removed; %1$s is that row's title
+Removed %1$s	%1$s dihapus
+# context: toast when Undo can't put a removed entry back
+It wasn't put back. It was watched again since, or its time on the list is up.	Tidak dikembalikan. Sudah ditonton lagi sejak itu, atau waktunya di daftar sudah habis.
+# context: import preview and toast; Recently watched is the list's name
+Recently watched will keep entries until you clear them.	Baru ditonton akan menyimpan entri sampai kamu menghapusnya.
+# context: import preview and toast; Recently watched is the list's name and %1$s is 7 days or 30 days
+Recently watched will keep entries for %1$s.	Baru ditonton akan menyimpan entri selama %1$s.

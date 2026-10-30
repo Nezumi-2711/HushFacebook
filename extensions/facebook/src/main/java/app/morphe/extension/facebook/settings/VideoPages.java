@@ -22,6 +22,7 @@ import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragm
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.subheading;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.surfaceQualityRow;
 import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.toggle;
+import static app.morphe.extension.facebook.settings.HushfacebookPreferenceFragment.watchedKeepRow;
 
 import android.content.Context;
 import android.preference.Preference;
@@ -286,6 +287,8 @@ final class VideoPages {
                         L10n.t("Keeps a list on this phone of the reels, videos and stories you watch, so you can find one "
                                 + "again after the feed refreshes. Nothing leaves your phone.")));
                 playback.addPreference(RecentlyWatchedScreen.row(page, context));
+                // Usable with recording off too, since what's listed goes on aging.
+                playback.addPreference(watchedKeepRow(context));
             }
             subheading(playback, L10n.t("Video quality"));
             if (build.contains(PatchFamily.PLAYBACK_QUALITY)) {
