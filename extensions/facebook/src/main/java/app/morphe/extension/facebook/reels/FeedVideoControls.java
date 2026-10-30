@@ -229,9 +229,23 @@ public final class FeedVideoControls {
         return current;
     }
 
+    /**
+     * Takes [button] off the screen. A feed list recycling a video row in its own layout pass gets
+     * here while the content frame is laying out its children, from a count taken before the loop,
+     * so then the button only hides and comes off once that pass is done.
+     */
     private static void detach(View button) {
         ViewParent parent = button.getParent();
-        if (parent instanceof ViewGroup) ((ViewGroup) parent).removeView(button);
+        if (!(parent instanceof ViewGroup)) return;
+        ViewGroup group = (ViewGroup) parent;
+        if (!group.isInLayout()) {
+            group.removeView(button);
+            return;
+        }
+        button.setVisibility(View.GONE);
+        group.post(() -> {
+            if (button.getParent() == group) group.removeView(button);
+        });
     }
 
     /** Where the buttons go on the video [control] shows, or null when none fit. [both] needs room for two. */

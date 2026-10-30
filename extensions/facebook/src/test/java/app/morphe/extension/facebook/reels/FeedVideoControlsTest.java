@@ -523,4 +523,32 @@ public class FeedVideoControlsTest {
         drain();
         assertNull(button());
     }
+
+    @Test public void aRowRecycledDuringALayoutPassTakesTheButtonsOffAfterThePass() {
+        castOn();
+        View play = button();
+        View cast = cast();
+        assertNotNull(play);
+        assertNotNull(cast);
+        ViewGroup content = activity.findViewById(android.R.id.content);
+        assertEquals(3, content.getChildCount());
+        // Like the feed list recycling a video row in its own onLayout, while the content frame lays out its children.
+        Runnable[] recycle = { () -> row.removeView(player.view) };
+        View lister = new View(activity) {
+            @Override protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+                Runnable now = recycle[0];
+                recycle[0] = null;
+                if (now != null) now.run();
+            }
+        };
+        place(root, lister, 0, 0, 10, 10);
+        layout();
+        assertTrue(recycle[0] == null);
+        assertNull(button());
+        assertNull(cast());
+        drain();
+        assertTrue(play.getParent() == null);
+        assertTrue(cast.getParent() == null);
+        assertEquals(1, content.getChildCount());
+    }
 }
