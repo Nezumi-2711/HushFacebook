@@ -392,6 +392,9 @@ public class ColdStartHooksTest {
                 FullHeightComments.skipSplitScreen());
         assertFalse("a comment sheet sized before the context was made full screen",
                 FullHeightComments.fillsScreen(1f));
+        assertFalse("a comment sheet over a reel set up before the context let taps through",
+                FullHeightComments.tapThrough(
+                        new android.app.Dialog(Robolectric.buildActivity(Activity.class).setup().get()), 20));
         android.widget.FrameLayout earlyHeader = new android.widget.FrameLayout(RuntimeEnvironment.getApplication());
         earlyHeader.setId(0x7f0a0612);
         earlyHeader.addView(new android.view.TextureView(RuntimeEnvironment.getApplication()));

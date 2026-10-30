@@ -150,7 +150,7 @@ public enum PatchFamily {
             Settings.HIDE_POST_COMMENT_PREVIEWS, Settings.HIDE_COMMENT_DOWNVOTE_BUTTON,
             Settings.HIDE_COMMENT_EMOJI_ROW),
     FULL_HEIGHT_COMMENTS(FamilyNames.FULL_HEIGHT_COMMENTS, "fullHeightComments", null,
-            Settings.OPEN_COMMENTS_FULL_HEIGHT, Settings.PAUSE_REELS_UNDER_COMMENTS),
+            Settings.OPEN_COMMENTS_FULL_HEIGHT, Settings.PAUSE_REELS_UNDER_COMMENTS, Settings.TAP_REELS_ABOVE_COMMENTS),
     TAG_SUGGESTIONS(FamilyNames.TAG_SUGGESTIONS, "tagSuggestions", null,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT),
     TAP_TO_PLAY(FamilyNames.TAP_TO_PLAY, "tapToPlay", null,

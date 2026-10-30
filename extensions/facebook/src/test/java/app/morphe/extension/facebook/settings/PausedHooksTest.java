@@ -846,13 +846,15 @@ public class PausedHooksTest {
                 () -> CommentSheetOptions.incomingTypers(3) == 0,
                 () -> CommentSheetOptions.newCommentsPill("3 new comments").isEmpty()));
         // A reel's comment sheet asking for two thirds of the screen gets all of it, a split-screen
-        // launcher answers that it didn't open, a full-height sheet fills the screen, and the reel
-        // drawn above the comments is hidden.
+        // launcher answers that it didn't open, a full-height sheet fills the screen, the reel
+        // drawn above the comments is hidden, and a part-height sheet over the Reels tab lets a tap
+        // above it through to the reel.
         probes.put(PatchFamily.FULL_HEIGHT_COMMENTS, Arrays.asList(
                 () -> FullHeightComments.sheetHeight(0.66f) == 1f,
                 FullHeightComments::skipSplitScreen,
                 () -> FullHeightComments.fillsScreen(1f),
-                PausedHooksTest::hidesTheVideoAboveTheComments));
+                PausedHooksTest::hidesTheVideoAboveTheComments,
+                PausedHooksTest::letsATapThroughToTheReel));
         // A word without @ in a post or comment box looks nobody up, and a list of people left open
         // by an earlier @ is closed.
         probes.put(PatchFamily.TAG_SUGGESTIONS, Arrays.asList(
@@ -1067,6 +1069,12 @@ public class PausedHooksTest {
         sheet.addView(header);
         FullHeightComments.watchHeader(sheet, 0x7f0a0612, true);
         return header.getVisibility() == View.GONE;
+    }
+
+    /** A part-height comment sheet opened from the Reels tab, surface 20, handed over by Facebook. */
+    private static boolean letsATapThroughToTheReel() {
+        return FullHeightComments.tapThrough(
+                new android.app.Dialog(Robolectric.buildActivity(Activity.class).setup().get()), 20);
     }
 
     /** A press at the far end of a bar whose thumb sits at its start, then a cancel to end it. */

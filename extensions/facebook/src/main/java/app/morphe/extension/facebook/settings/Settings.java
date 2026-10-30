@@ -1057,6 +1057,16 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_pause_reels_under_comments", FALSE);
 
     /**
+     * A tap on the reel above a comment sheet that stops part way up goes to the reel, which plays
+     * or pauses, instead of closing the sheet
+     * ({@link app.morphe.extension.facebook.comments.FullHeightComments#tapThrough}, #315). Needs
+     * Open comments at full height's popover hook, and does nothing while that switch keeps sheets
+     * at full height. Off by default.
+     */
+    public static final BooleanSetting TAP_REELS_ABOVE_COMMENTS =
+            new BooleanSetting("hushfacebook_tap_reels_above_comments", FALSE);
+
+    /**
      * Facebook's text boxes (posts, comments, captions, a story's text) look people up to tag only
      * for a word that starts with @. Off, they also look them up for a plain word Facebook takes for
      * a name, what its code calls an implicit mention

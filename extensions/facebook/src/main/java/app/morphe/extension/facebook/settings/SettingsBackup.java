@@ -267,6 +267,7 @@ public final class SettingsBackup {
             Settings.HIDE_VIDEO_COMMENT_COMPOSER,
             Settings.OPEN_COMMENTS_FULL_HEIGHT,
             Settings.PAUSE_REELS_UNDER_COMMENTS,
+            Settings.TAP_REELS_ABOVE_COMMENTS,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT,
             Settings.TAP_TO_PLAY,
             Settings.TAP_TO_PLAY_REELS_AFTER_FIRST,

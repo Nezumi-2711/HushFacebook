@@ -645,6 +645,10 @@ final class FeedPages {
                         L10n.t("A reel stops while you read its comments and plays on from the same spot when you close "
                                 + "them.")));
             }
+            // Facebook's own tap on the reel does the playing and pausing (#315).
+            comments.addPreference(toggle(context, Settings.TAP_REELS_ABOVE_COMMENTS,
+                    L10n.t("Tapping the reel above its comments plays or pauses it, and the comments stay open. "
+                            + "Works while comments open part way up, not at full height.")));
         }
         // Writing had a section of its own for this one switch.
         if (tags) {
