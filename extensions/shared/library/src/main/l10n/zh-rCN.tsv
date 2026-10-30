@@ -1969,7 +1969,7 @@ The app holding that picture is taking too long, so Hushfacebook stopped waiting
 # context: toast when a tap on Home header picture comes while the last stalled app still holds a worker
 The app holding the last picture still hasn't answered. Try again later.	持有上一张图片的应用仍未响应。请稍后重试。
 Inline feed video controls	动态消息视频控件
-Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	为动态消息视频添加播放或暂停按钮。点按视频本身仍会全屏打开。直播视频和广告保留原有控件。
+Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls. With Tap to play on too, Facebook's own Autoplay setting stays as you set it so the button can show, and videos still wait for your tap.	为动态消息视频添加播放或暂停按钮。点按视频本身仍会全屏打开。直播视频和广告保留原有控件。同时开启“点按播放”时，Facebook 自己的自动播放设置会保持你的选择，这样按钮才能显示，视频仍会等你点按。
 Play feed video	播放动态消息视频
 Pause feed video	暂停动态消息视频
 Support	帮助与支持

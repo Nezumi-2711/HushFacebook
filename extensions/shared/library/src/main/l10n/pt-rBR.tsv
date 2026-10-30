@@ -1860,7 +1860,7 @@ The app holding that picture is taking too long, so Hushfacebook stopped waiting
 # context: toast when a tap on Home header picture comes while the last stalled app still holds a worker
 The app holding the last picture still hasn't answered. Try again later.	O app da última imagem ainda não respondeu. Tente de novo mais tarde.
 Inline feed video controls	Controles de vídeo no feed
-Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Adiciona um botão de reprodução e pausa aos vídeos do feed. Toque no vídeo para abri-lo em tela cheia. Vídeos ao vivo e anúncios mantêm seus próprios controles.
+Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls. With Tap to play on too, Facebook's own Autoplay setting stays as you set it so the button can show, and videos still wait for your tap.	Adiciona um botão de reprodução e pausa aos vídeos do feed. Toque no vídeo para abri-lo em tela cheia. Vídeos ao vivo e anúncios mantêm seus próprios controles. Com “Tocar para reproduzir” também ligado, a configuração de reprodução automática do Facebook fica como você escolheu para o botão poder aparecer, e os vídeos continuam esperando seu toque.
 Play feed video	Reproduzir vídeo do feed
 Pause feed video	Pausar vídeo do feed
 Support	Suporte

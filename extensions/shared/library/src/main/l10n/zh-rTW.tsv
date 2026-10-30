@@ -1978,7 +1978,7 @@ The app holding the last picture still hasn't answered. Try again later.	提供�
 # context: primary save row for a Story that reshares a Reel
 Save video	儲存影片
 Inline feed video controls	動態消息影片控制項
-Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	在動態消息影片上加入播放或暫停按鈕。輕觸影片本身仍會以全螢幕開啟。直播影片和廣告保留原有控制項。
+Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls. With Tap to play on too, Facebook's own Autoplay setting stays as you set it so the button can show, and videos still wait for your tap.	在動態消息影片上加入播放或暫停按鈕。輕觸影片本身仍會以全螢幕開啟。直播影片和廣告保留原有控制項。同時開啟「點按播放」時，Facebook 本身的自動播放設定會維持你的選擇，按鈕才能顯示，影片仍會等你點按。
 Play feed video	播放動態消息影片
 Pause feed video	暫停動態消息影片
 Support	說明與支援

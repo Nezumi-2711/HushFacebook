@@ -674,7 +674,15 @@ public class PausedHooksTest {
                     TapToPlayForTests.forget();
                     return !TapToPlay.allowLegacyStart(new Object(), TapToPlayForTests.Trigger.BY_AUTOPLAY);
                 },
-                () -> TapToPlay.autoplaySetting(TapToPlayForTests.Autoplay.ON) != TapToPlayForTests.Autoplay.ON,
+                () -> {
+                    // Inline feed video controls keeps the chosen setting, its button needs a player (#239).
+                    Settings.INLINE_FEED_VIDEO_CONTROLS.save(false);
+                    try {
+                        return TapToPlay.autoplaySetting(TapToPlayForTests.Autoplay.ON) != TapToPlayForTests.Autoplay.ON;
+                    } finally {
+                        Settings.INLINE_FEED_VIDEO_CONTROLS.save(true);
+                    }
+                },
                 () -> TapToPlay.showReelPlayButton(false)));
         // A long video left at 5:00 is saved, and its next start seeks back there.
         // A long video picks up where it was left, and a reel played on and a story viewed go on the

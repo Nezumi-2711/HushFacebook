@@ -401,11 +401,23 @@ public class FeedVideoControlsTest {
         assertNull(button());
     }
 
-    @Test public void absentAndAmbiguousSurfacesGetNoButton() {
+    @Test public void aHeldPlayerWithNoSurfaceYetGetsItsButtonOnTheContainer() {
+        // Tap to play holds a feed video before it draws, so its surface may not exist yet (#239).
         player.view.removeAllViews();
         FeedVideoControls.changed(player);
         drain();
-        assertNull(button());
+        assertNotNull(button());
+        assertEquals(4, at(button()).leftMargin);
+        button().performClick();
+        assertEquals(java.util.Arrays.asList(true), commands);
+        player.view.setAlpha(0f);
+        FeedVideoControls.changed(player);
+        drain();
+        assertNull("a container that shows nothing", button());
+    }
+
+    @Test public void ambiguousSurfacesGetNoButton() {
+        player.view.removeAllViews();
         place(player.view, new TextureView(activity), 0, 0, 500, 500);
         place(player.view, new SurfaceView(activity), 500, 0, 500, 500);
         layout();

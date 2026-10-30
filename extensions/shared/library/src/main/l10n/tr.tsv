@@ -1974,7 +1974,7 @@ The app holding that picture is taking too long, so Hushfacebook stopped waiting
 # context: toast when a tap on Home header picture comes while the last stalled app still holds a worker
 The app holding the last picture still hasn't answered. Try again later.	Son resmi tutan uygulama hâlâ yanıt vermedi. Daha sonra tekrar dene.
 Inline feed video controls	Akış videosu denetimleri
-Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls.	Akış videolarına oynat/duraklat düğmesi ekler. Tam ekran açmak için videonun kendisine dokunun. Canlı videolar ve reklamlar kendi denetimlerini korur.
+Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls. With Tap to play on too, Facebook's own Autoplay setting stays as you set it so the button can show, and videos still wait for your tap.	Akış videolarına oynat/duraklat düğmesi ekler. Tam ekran açmak için videonun kendisine dokunun. Canlı videolar ve reklamlar kendi denetimlerini korur. “Oynatmak için dokun” da açıksa Facebook'un kendi otomatik oynatma ayarı seçtiğiniz gibi kalır, böylece düğme görünebilir. Videolar yine de dokunmanızı bekler.
 Play feed video	Akış videosunu oynat
 Pause feed video	Akış videosunu duraklat
 Support	Destek

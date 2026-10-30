@@ -1033,8 +1033,9 @@ public class Settings extends BaseSettings {
 
     /**
      * Videos, reels, stories and songs start only after a tap: a player's start goes ahead when a
-     * tap has just ended, and Facebook's own Autoplay setting reads Off
-     * ({@link app.morphe.extension.facebook.media.TapToPlay}). The stored Autoplay setting is never
+     * tap has just ended, and Facebook's own Autoplay setting reads Off unless
+     * {@link #INLINE_FEED_VIDEO_CONTROLS} is on ({@link app.morphe.extension.facebook.media.TapToPlay}).
+     * The stored Autoplay setting is never
      * written, so off or paused, Facebook plays as you set it.
      */
     public static final BooleanSetting TAP_TO_PLAY =
@@ -1048,7 +1049,11 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting TAP_TO_PLAY_REELS_AFTER_FIRST =
             new BooleanSetting("hushfacebook_tap_to_play_reels_after_first", FALSE);
 
-    /** A separate feed play/pause button. Native video taps still open fullscreen. Starts off. */
+    /**
+     * A separate feed play/pause button. Native video taps still open fullscreen. Starts off. With
+     * {@link #TAP_TO_PLAY} on it keeps Facebook's Autoplay setting as chosen, since the feed binds a
+     * player to a video only while autoplay is allowed (#239).
+     */
     public static final BooleanSetting INLINE_FEED_VIDEO_CONTROLS =
             new BooleanSetting("hushfacebook_inline_feed_video_controls", FALSE) {
                 @Override
