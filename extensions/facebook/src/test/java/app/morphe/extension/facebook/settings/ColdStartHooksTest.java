@@ -257,6 +257,7 @@ public class ColdStartHooksTest {
         assertFalse("a reel's More sheet built before the context got Copy caption", ReelCaptionForTests.addsTheRow());
         assertNull(ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsRemixAttribution"))));
         assertFalse("a Reels tab audio line drawn before the context came off", ReelDeclutter.hideAudioLine());
+        assertFalse("a Made with Edits line taken before the context came off", ReelDeclutter.hideEditsLabel());
         assertFalse("a slow connection message posted before the context was held back",
                 ReelDeclutter.hideSlowConnectionMessage());
         assertTrue("a feed Reels row tile lost its clip before the context came off", ReelDeclutter.allowsPreviewClip(true));

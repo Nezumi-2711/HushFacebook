@@ -568,6 +568,8 @@ public class PausedHooksTest {
                 () -> ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsSoundtrackTitle"))) != null,
                 // So does the Reels tab's own audio line row.
                 ReelDeclutter::hideAudioLine,
+                // And "Made with Edits" under the caption.
+                ReelDeclutter::hideEditsLabel,
                 // A stalled video's slow connection message.
                 ReelDeclutter::hideSlowConnectionMessage,
                 ReelDeclutter::hideFollowButton,

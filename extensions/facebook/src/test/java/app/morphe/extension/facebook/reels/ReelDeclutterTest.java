@@ -209,6 +209,43 @@ public class ReelDeclutterTest {
                 line(ReelDeclutter.AUDIO_ROUTE));
     }
 
+    /**
+     * "Made with Edits" under a caption (#314) goes with the chips switch, which already hides the
+     * Edits chip, and comes back paused, before the settings are ready and once the switch is off.
+     * The audio line switch doesn't touch it.
+     */
+    @Test
+    public void theEditsLineGoesWithTheChipsSwitch() {
+        Settings.HIDE_REEL_CHIPS.save(false);
+        Settings.HIDE_REEL_AUDIO_LINE.save(true);
+        assertFalse("the audio line switch took the Edits line", ReelDeclutter.hideEditsLabel());
+        Settings.HIDE_REEL_CHIPS.save(true);
+        assertTrue(ReelDeclutter.hideEditsLabel());
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertFalse("the Edits line went while paused", ReelDeclutter.hideEditsLabel());
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertFalse("the Edits line went before the settings were ready",
+                ReelDeclutter.hideEditsLabel()));
+        Settings.HIDE_REEL_CHIPS.save(false);
+        assertFalse("turning the switch off didn't bring the Edits line back", ReelDeclutter.hideEditsLabel());
+        assertEquals(ReelDeclutter.EDITS_ROUTE + ": 5 lists, 5 items, 1 removed. Last reason: " + ReelDeclutter.EDITS_LABEL
+                + ". Removed: " + ReelDeclutter.EDITS_LABEL + " 1. Kinds: " + ReelDeclutter.EDITS_LABEL + " 5",
+                line(ReelDeclutter.EDITS_ROUTE));
+    }
+
+    /** A chips switch that can't be read draws the Edits line, and the report names the hook. */
+    @Test
+    public void anEditsLineSwitchThatCantBeReadDrawsTheLine() {
+        SettingReadsForTests.breakReads(Settings.HIDE_REEL_CHIPS);
+        try {
+            assertFalse(ReelDeclutter.hideEditsLabel());
+        } finally {
+            SettingReadsForTests.mend(Settings.HIDE_REEL_CHIPS);
+        }
+        assertTrue(HookStatus.missing(FamilyNames.REEL_DECLUTTER).toString(), HookStatus.missing(FamilyNames.REEL_DECLUTTER)
+                .contains("a working '" + ReelDeclutter.EDITS_LABEL + "' hook (it threw " + NullPointerException.class.getName() + ")"));
+    }
+
     /** A Reels tab audio line switch that can't be read draws the line, and the report names the hook. */
     @Test
     public void aReelsTabAudioLineSwitchThatCantBeReadDrawsTheLine() {

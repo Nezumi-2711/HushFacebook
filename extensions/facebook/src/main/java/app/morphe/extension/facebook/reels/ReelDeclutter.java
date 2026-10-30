@@ -34,6 +34,8 @@ import app.morphe.extension.shared.settings.BooleanSetting;
  *       under its own switch ({@link #SOUNDTRACK_CHIP}, #200). The footer draws nothing for a
  *       list left empty. The Reels tab draws that line in a component of its own, which picks the
  *       soundtrack out of the models itself, and {@link #hideAudioLine} is asked first thing there.
+ *       "Made with Edits" under the caption is a component of its own too, drawn from a flag on the
+ *       video, and {@link #hideEditsLabel} is asked first thing there under the chips switch (#314).
  *   <li>The Follow button beside a reel's author is built only when Facebook's Follow check
  *       answers yes, and {@link #hideFollowButton} is asked first thing in that check. The author
  *       row asks it on every surface, the Reels tab included. So do the author rows of sponsored
@@ -115,6 +117,10 @@ public final class ReelDeclutter {
     /** Counted under its own name each time the Reels tab's audio line isn't drawn. */
     static final String AUDIO_ROUTE = "Reel audio line";
     static final String AUDIO_LINE = "audio line";
+
+    /** Counted under its own name each time a reel's "Made with Edits" line isn't drawn (#314). */
+    static final String EDITS_ROUTE = "Reel Edits line";
+    static final String EDITS_LABEL = "Made with Edits";
 
     /** Counted under its own name each time a video's slow connection message isn't shown. */
     static final String SLOW_ROUTE = "Slow connection message";
@@ -325,6 +331,31 @@ public final class ReelDeclutter {
         } catch (Throwable failure) {
             HookStatus.threw(FamilyNames.REEL_DECLUTTER, AUDIO_LINE, failure);
             Logger.printException(() -> "Reel audio line: could not read its switch", failure);
+            return false;
+        }
+    }
+
+    /**
+     * Injection point, first thing in the component that draws "Made with Edits" under the caption of
+     * a video made in Meta's Edits app (#314). It reads that from the video on its own, so the chip
+     * filter never sees it, and it goes with the chips switch, which already hides the Edits chip.
+     * True makes it draw nothing, as it does for a video made anywhere else. Never throws: false
+     * draws it as before.
+     */
+    public static boolean hideEditsLabel() {
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            FeedFilterCounters.sawList(EDITS_ROUTE, 1);
+            FeedFilterCounters.sawKind(EDITS_ROUTE, EDITS_LABEL);
+            boolean hide = Utils.settingsReady() && Settings.HIDE_REEL_CHIPS.get();
+            if (hide) {
+                FeedFilterCounters.removed(EDITS_ROUTE, 1, EDITS_LABEL);
+                logOnce(EDITS_LABEL, () -> "Reel Edits line: not drawn");
+            }
+            return hide;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, EDITS_LABEL, failure);
+            Logger.printException(() -> "Reel Edits line: could not read its switch", failure);
             return false;
         }
     }

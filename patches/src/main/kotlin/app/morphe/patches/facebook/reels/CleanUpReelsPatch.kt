@@ -45,7 +45,8 @@ private const val PATCH = "Clean up Reels"
 
 /**
  * Takes three things off the Reels viewer, each behind its own switch, all on once the patch is in:
- * the chips under a reel that prompt you to make something or promote something, the Follow button
+ * the chips under a reel that prompt you to make something or promote something (and with them the
+ * "Made with Edits" line under the caption, #314, see ReelEditsLabel.kt), the Follow button
  * in the author row (with the Following button an author you already follow gets there), and the
  * comment and friends' reaction previews in the footer. A fourth switch, off until it's turned on,
  * takes the "Threads you might like" card out from between reels (see ReelMidCards.kt), a fifth,
@@ -92,6 +93,8 @@ val cleanUpReelsPatch = bytecodePatch(
 
     execute {
         filterChips()
+        // #314: and "Made with Edits" under the caption, which isn't one of the chips.
+        hideEditsLabel()
         // #200: the Reels tab draws the audio line in a row of its own, past the chip list.
         hideReelsTabAudioLine()
         hideFollowButtons()

@@ -246,6 +246,33 @@ class ReelAnchorsFixtureTest {
         assertEquals("a declared build went unchecked: $checked", versions.toSet(), checked.keys)
     }
 
+    /**
+     * "Made with Edits" under a caption (#314), found the way the patch finds it: the one `render`
+     * reading the video's Edits flag and nothing else from the tree. The flag's other readers are
+     * static helpers.
+     */
+    @Test
+    fun `every declared build has one Made with Edits line, with a local for its hook`() {
+        val versions = AppCompatibilities.facebook().single().targets.mapNotNull { it.version }
+        assertTrue("the bundle declares no Facebook build", versions.isNotEmpty())
+        val checked = mutableMapOf<String, String>()
+        for (version in versions) {
+            for (bundle in Fixtures.files { it.extension == "apkm" && it.name.contains("-$version-") }) {
+                val name = bundle.name
+                val lines = mutableListOf<Method>()
+                FixtureDex.forEach(bundle) { dex ->
+                    for (classDef in dex.classes) {
+                        classDef.methods.filter(::isEditsLabelRender).mapTo(lines) { ImmutableMethod.of(it) }
+                    }
+                }
+                assertEquals("$name: $lines", 1, lines.size)
+                assertTrue("$name: the line has no local for the hook", locals(lines.single()) >= 1)
+                checked[version] = lines.single().definingClass
+            }
+        }
+        assertEquals("a declared build went unchecked: $checked", versions.toSet(), checked.keys)
+    }
+
     @Test
     fun `the patch requires the chips the extension hides`() {
         val declutter = File(RepoFiles.root,

@@ -497,6 +497,60 @@ class CleanUpReelsShapesTest {
         assertThrows(PatchException::class.java) { noLocal.returnNullWhen(HIDE_AUDIO_LINE) }
     }
 
+    /** A tree read of [key] into v0, on to `:none` when it's false. */
+    private fun readFlag(key: Int) = """
+        const v1, $key
+        invoke-virtual { p1, v1 }, Lcom/facebook/graphservice/tree/TreeJNI;->getBooleanValue(I)Z
+        move-result v0
+        if-eqz v0, :none
+    """
+
+    /**
+     * "Made with Edits" under a caption (#314) is the render that reads the video's Edits flag and
+     * nothing else from the tree. A render that reads another flag beside it, a static helper reading
+     * it, and a method that isn't a render are the other readers 585 has. The hook asks first and
+     * answers null.
+     */
+    @Test
+    fun `the Edits line is the render reading only the Edits flag`() {
+        val tail = """
+            new-instance v2, Lfixture/Row;
+            return-object v2
+            :none
+            const/4 v2, 0x0
+            return-object v2
+        """
+        val line = render(readFlag(MADE_WITH_EDITS) + tail)
+        assertTrue(isEditsLabelRender(line))
+        val alsoReadsAnother = render(readFlag(MADE_WITH_EDITS) + readFlag("can_viewer_comment".hashCode()) + tail)
+        assertTrue("a render reading a second flag was taken", !isEditsLabelRender(alsoReadsAnother))
+        val readsNoFlag = render("""
+            new-instance v2, Lfixture/Row;
+            return-object v2
+        """)
+        assertTrue("a render reading no flag was taken", !isEditsLabelRender(readsNoFlag))
+        val helper = method(RENDER, listOf("Lfixture/Context;"), "Lfixture/Component;", 6, static = true,
+            readFlag(MADE_WITH_EDITS).replace("p1", "p0") + tail)
+        assertTrue("a static helper was taken", !isEditsLabelRender(helper))
+        val notRender = render(readFlag(MADE_WITH_EDITS) + tail, name = "A1C")
+        assertTrue("a method that isn't a render was taken", !isEditsLabelRender(notRender))
+        val answersFlag = method(RENDER, listOf("Lfixture/Context;"), "Z", 6, static = false, """
+            const v1, $MADE_WITH_EDITS
+            invoke-virtual { p1, v1 }, Lcom/facebook/graphservice/tree/TreeJNI;->getBooleanValue(I)Z
+            move-result v0
+            return v0
+        """)
+        assertTrue("a method answering the flag itself was taken", !isEditsLabelRender(answersFlag))
+
+        line.returnNullWhen(HIDE_EDITS_LABEL)
+        val body = line.body()
+        assertEquals(HIDE_EDITS_LABEL, body[0].call)
+        assertEquals(Opcode.IF_EQZ, body[2].opcode)
+        assertEquals("off draws Facebook's line", 5, line.target(2))
+        assertEquals("the hook answers null", 0, (body[3] as NarrowLiteralInstruction).narrowLiteral)
+        assertEquals(Opcode.RETURN_OBJECT, body[4].opcode)
+    }
+
     /** A reel header: p0 the row, p1 the search bar, p2 its send button, each wrapped and tagged when there is one. */
     private fun header(add: String = "Lfixture/Row;->add(Lfixture/Component;)V", sendTag: String = SEARCH_BAR_SEND) = method(
         "A00", listOf("Lfixture/Row;", "Lfixture/Component;", "Lfixture/Component;"), "Lfixture/Component;", 6, static = true, """
