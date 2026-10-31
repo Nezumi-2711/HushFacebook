@@ -10,6 +10,7 @@ package app.morphe.patches.facebook.downloads.reel
 import app.morphe.patcher.StringComparisonType
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.feed.holdsString
+import app.morphe.patches.facebook.feed.refresh.enumConstant
 import app.morphe.patches.facebook.feed.resolveStatic
 import app.morphe.patches.facebook.media.resume.TRACK_START
 import app.morphe.patches.facebook.media.resume.paramsGetters
@@ -38,6 +39,8 @@ import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.classDefForEachReferencing
 import app.morphe.util.singleOrPatchException
 import app.morphe.util.findMutableMethodOf
+import app.morphe.util.readsAfter
+import app.morphe.util.writersReaching
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
@@ -45,6 +48,7 @@ import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Field
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
@@ -103,6 +107,15 @@ private const val TEST_ID = "download_button"
  */
 private const val LABEL = "$HANDLER->label()Ljava/lang/String;"
 
+/** The Cast button (#182): its slot name, its label read the same way, and Facebook's own cast icon it draws. */
+private const val CAST_TEST_ID = "cast_button"
+private const val CAST_LABEL = "$HANDLER->castLabel()Ljava/lang/String;"
+internal const val CAST_ICON = "GOOGLE_CAST"
+
+/** Asked inside the helper, once the sidebar's switch said yes, for each of the two buttons. */
+private const val DOWNLOAD_BUTTON = "$HANDLER->downloadButton()Z"
+private const val CAST_BUTTON = "$HANDLER->castButton()Z"
+
 /**
  * What is written under the icon.
  *
@@ -122,6 +135,12 @@ private const val TAP_SLOT = 1
 
 /** The helper this patch adds to the component. */
 private const val HELPER = "hushfacebookDownloadButton"
+
+/** The MobileConfig flag that picks a reel's button layout: on draws the UDD sidebar, off the older strip (#316). */
+internal const val VERTICAL_UFI_FLAG = "fdsConfig.enableFDSVerticalUfiFbReels"
+
+/** Handed Facebook's answer for [VERTICAL_UFI_FLAG], returns the one the render goes by. */
+private const val VERTICAL_UFI = "$HANDLER->verticalUfi(Z)Z"
 
 /**
  * Adds a download button beside every reel.
@@ -348,6 +367,11 @@ val downloadReelPatch = bytecodePatch(
 
         check(icon != null) { "The download row of Facebook draws no icon of $iconEnumType" }
 
+        // The Cast button (#182) draws Facebook's own cast icon, a constant of the same enum. A build
+        // whose enum lost it keeps the Download button.
+        val castIcon = mutableClassDefByOrNull(iconEnumType)?.let { enumConstant(it, CAST_ICON) }
+        if (castIcon == null) patchLog.warning("$PATCH: $iconEnumType names no $CAST_ICON, so reels get no Cast button.")
+
         // ---- what the component holds --------------------------------------------------------
         //
         // Both by type. The player params are the field whose own type holds the player, and the
@@ -397,24 +421,31 @@ val downloadReelPatch = bytecodePatch(
             null,
             MutableMethodImplementation(HELPER_LOCALS + 6),
         ).toMutable().apply {
+            fun button(icon: String, testId: String, label: String, cast: Boolean) = buildButton(
+                factory = factory,
+                parameters = parameters,
+                trailingBooleans = parameters.size - 16,
+                mode = mode,
+                icon = icon,
+                iconWrapperClass = iconWrapper.definingClass,
+                iconEnumType = iconEnumType,
+                primaryType = primaryType,
+                labelType = labelType,
+                scopedType = scopedType,
+                contextField = contextField.name,
+                hdField = hdField,
+                sdField = sdField,
+                manifestField = manifestField,
+                marker = "${marker.definingClass}->${marker.name}($iconEnumType)${marker.returnType}",
+                testId = testId,
+                label = label,
+                cast = cast,
+            )
             addInstructions(
                 0,
-                buildButton(
-                    factory = factory,
-                    parameters = parameters,
-                    trailingBooleans = parameters.size - 16,
-                    mode = mode,
-                    icon = icon!!,
-                    iconWrapperClass = iconWrapper.definingClass,
-                    iconEnumType = iconEnumType,
-                    primaryType = primaryType,
-                    labelType = labelType,
-                    scopedType = scopedType,
-                    contextField = contextField.name,
-                    hdField = hdField,
-                    sdField = sdField,
-                    manifestField = manifestField,
-                    marker = "${marker.definingClass}->${marker.name}($iconEnumType)${marker.returnType}",
+                helperBody(
+                    download = button("${icon!!.definingClass}->${icon!!.name}:$iconEnumType", TEST_ID, LABEL, cast = false),
+                    cast = castIcon?.let { button(it, CAST_TEST_ID, CAST_LABEL, cast = true) },
                 ),
             )
         }
@@ -536,6 +567,32 @@ val downloadReelPatch = bytecodePatch(
                 helper = "$sidebarClass->$HELPER($FB_USER_SESSION$scopedType${playerField.type}$OBJECT$LIST$LIST)V",
             ),
         )
+
+        // ---- the older button layout --------------------------------------------------------------
+        //
+        // The render draws a reel's buttons one of two ways (#316, #298). The newer layout goes on to
+        // the sidebar assembly, where the block above adds the button. The older one, which a server
+        // flag still gives some accounts, draws its own strip (585 LX/0B7e;->A17 from 499) and never
+        // reaches that call, so those reels had Facebook's buttons alone. On 585 the render is the
+        // builder itself. It reads the flag once into a boolean and branches on it, so the hook goes
+        // where both of its writes meet and hands Facebook's answer to the extension, which says yes
+        // while the button is on. The block's scratch registers include the flag's (v8 on 585), but
+        // the block comes after the flag's one branch, where the flag is dead.
+        try {
+            val reader = verticalUfiReader()
+            val method = component.findMutableMethodOf(render)
+            val branch = layoutBranch(method, reader)
+                ?: throw PatchException("$PATCH: $renderClass->${render.name} doesn't pick its button layout by $reader the way 585 does")
+            method.addInstructionsAtControlFlowLabel(
+                branch.join,
+                """
+                    invoke-static/range { v${branch.register} .. v${branch.register} }, $VERTICAL_UFI
+                    move-result v${branch.register}
+                """,
+            )
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so reels Facebook draws with its older button layout keep Facebook's own buttons.")
+        }
 
         // ---- the More sheet -----------------------------------------------------------------------
         //
@@ -825,6 +882,87 @@ internal fun rendersThrough(method: Method, builder: Method): Boolean {
     }
 }
 
+/**
+ * The calls [method] reads [VERTICAL_UFI_FLAG] with. Facebook's config dump (585
+ * LX/0Ap7;->getExtraFileFromWorkerThread, armeabi-v7a LX/0ApA) asks the config for the flag, turns
+ * the answer into a string and names it, so the reader is the interface call closest before the
+ * name, a few instructions up, and it answers a boolean with no arguments (585 LX/0DhM;->BUD()Z).
+ */
+internal fun verticalUfiReadersIn(method: Method): List<MethodReference> {
+    val code = method.instructions()
+    return code.indices.filter { code[it].stringReference() == VERTICAL_UFI_FLAG }.mapNotNull { named ->
+        (named - 1 downTo maxOf(0, named - 6)).firstNotNullOfOrNull { at ->
+            code[at].takeIf { it.opcode == Opcode.INVOKE_INTERFACE || it.opcode == Opcode.INVOKE_INTERFACE_RANGE }?.methodReference()
+        }?.takeIf { it.returnType == "Z" && it.parameterTypes.isEmpty() }
+    }
+}
+
+/** The one call the app reads [VERTICAL_UFI_FLAG] with, found by the name its config dump gives it. */
+internal fun BytecodePatchContext.verticalUfiReader(): MethodReference {
+    val readers = classDefByStrings(VERTICAL_UFI_FLAG, StringComparisonType.EQUALS)
+        .filterNot { it.type.startsWith(EXTENSION_CLASSES) }
+        .flatMap { classDef -> classDef.methods.flatMap(::verticalUfiReadersIn) }
+        .distinctBy(MethodReference::toString)
+    return readers.singleOrNull()
+        ?: throw PatchException("$PATCH: ${readers.size} config reads name $VERTICAL_UFI_FLAG, not one")
+}
+
+/** Where the render's layout flag is settled: the instruction both its writes run into, and its register. */
+internal class LayoutBranch(val join: Int, val register: Int)
+
+/**
+ * The render's choice of button layout, read the way 585 reads it (LX/0B7e;->A17, 208 to 216):
+ *
+ *     invoke-interface {v7}, LX/0DhM;->BUD()Z   # the flag, through [reader]
+ *     move-result v7
+ *     const/4 v8, 0x1
+ *     if-eq v7, v0, :join                        # v0 is 1 on every way in
+ *     const/4 v8, 0x0
+ *   :join
+ *
+ * so v8 is the flag, and 0 when the config is missing (the null checks before the call jump to the
+ * second write). Both writes have to be all that reaches the join, and the flag has to feed one
+ * `if-eqz` (233, to the older strip at 499) and nothing else. Null when the render reads [reader]
+ * any other way or more than once, or the flag's register is beyond `move-result`'s reach.
+ */
+internal fun layoutBranch(render: Method, reader: MethodReference): LayoutBranch? {
+    val code = render.instructions()
+    val ask = code.indices.filter { code[it].methodReference()?.toString() == reader.toString() }.singleOrNull() ?: return null
+    val join = ask + 5
+    if (join > code.lastIndex) return null
+    val answer = code[ask + 1]
+    if (answer.opcode != Opcode.MOVE_RESULT) return null
+    val read = (answer as OneRegisterInstruction).registerA
+    val flag = literalWrite(code[ask + 2], 1) ?: return null
+    if (literalWrite(code[ask + 4], 0) != flag || flag == read || flag > 255) return null
+    val test = code[ask + 3]
+    if (test.opcode != Opcode.IF_EQ) return null
+    test as TwoRegisterInstruction
+    val one = when (read) {
+        test.registerA -> test.registerB
+        test.registerB -> test.registerA
+        else -> return null
+    }
+    val flow = ControlFlow.of(render)
+    if (flow.normal[ask + 3].toSet() != setOf(ask + 4, join) || flow.normal[ask + 4] != listOf(join)) return null
+    if (render.writersReaching(ask + 3, one).any { it < 0 || literalWrite(code[it], 1) != one }) return null
+    if (render.writersReaching(join, flag) != listOf(ask + 2, ask + 4)) return null
+    val branches = listOf(ask + 2, ask + 4).map { render.readsAfter(it, flag).singleOrNull() ?: return null }.distinct()
+    val branch = code[branches.singleOrNull() ?: return null]
+    if (branch.opcode != Opcode.IF_EQZ || (branch as OneRegisterInstruction).registerA != flag) return null
+    return LayoutBranch(join, flag)
+}
+
+private val NARROW_CONSTANTS = setOf(Opcode.CONST_4, Opcode.CONST_16, Opcode.CONST)
+
+/** The register [instruction] sets to [literal], or null when it sets no such constant. */
+private fun literalWrite(instruction: Instruction, literal: Int): Int? =
+    if (instruction.opcode in NARROW_CONSTANTS && (instruction as NarrowLiteralInstruction).narrowLiteral == literal) {
+        (instruction as OneRegisterInstruction).registerA
+    } else {
+        null
+    }
+
 /** The registers [instruction] writes: its destination, and the one above for a wide value. */
 private fun writtenRegisters(instruction: Instruction): Set<Int> {
     val destination = (instruction as? OneRegisterInstruction)?.registerA
@@ -866,7 +1004,31 @@ internal fun <T : Field> fieldOfType(fields: Iterable<T>, type: String, what: St
     fields.filter { it.type.toString() == type }.singleOrPatchException("$PATCH: $what")
 
 /**
- * The body of the helper that builds one button.
+ * The helper's whole body: the Download button and then the Cast button (#182), each built only
+ * when its own switch is on. The sidebar's block asked whether either is, so it calls the helper for
+ * a sidebar that gets one or both. [cast] is null on a build whose icon enum has no cast icon.
+ */
+private fun helperBody(download: String, cast: String?): String = """
+        invoke-static { }, $DOWNLOAD_BUTTON
+        move-result v0
+        if-eqz v0, :no_download
+$download
+        :no_download
+""" + (cast?.let {
+    """
+        invoke-static { }, $CAST_BUTTON
+        move-result v0
+        if-eqz v0, :no_cast
+$it
+        :no_cast
+"""
+} ?: "") + """
+        return-void
+"""
+
+/**
+ * The code that builds one button and adds it and its marker to the two lists, falling through at
+ * the end.
  *
  * Register use here is dictated by the instruction formats, not by taste. An `invoke-direct` with
  * arguments and an `iget` both take **4-bit** registers, so everything they touch has to sit in
@@ -884,7 +1046,7 @@ private fun buildButton(
     parameters: List<String>,
     trailingBooleans: Int,
     mode: FieldReference,
-    icon: FieldReference,
+    icon: String,
     iconWrapperClass: String,
     iconEnumType: String,
     primaryType: String,
@@ -895,6 +1057,9 @@ private fun buildButton(
     sdField: String,
     manifestField: String,
     marker: String,
+    testId: String,
+    label: String,
+    cast: Boolean,
 ): String {
     val signature = "${factory.definingClass}->${factory.name}" +
         parameters.joinToString("", "(", ")") + factory.returnType
@@ -907,8 +1072,8 @@ private fun buildButton(
         move-object/from16 v6, p0
         move-object/from16 v3, p3
 
-${handlers(hdField, sdField, manifestField)}
-        invoke-static { }, $LABEL
+${handlers(hdField, sdField, manifestField, cast)}
+        invoke-static { }, $label
         move-result-object v1
 
         new-instance v2, $primaryType
@@ -923,7 +1088,7 @@ ${handlers(hdField, sdField, manifestField)}
         invoke-direct { v2, v1, v10 }, $labelType-><init>(Ljava/lang/String;$FUNCTION1)V
         move-object/from16 v44, v2
 
-        sget-object v7, ${icon.definingClass}->${icon.name}:$iconEnumType
+        sget-object v7, $icon
         new-instance v2, $iconWrapperClass
         invoke-direct { v2, v7 }, $iconWrapperClass-><init>($iconEnumType)V
         move-object/from16 v45, v2
@@ -932,7 +1097,7 @@ ${handlers(hdField, sdField, manifestField)}
         sget-object v41, ${mode.definingClass}->${mode.name}:${mode.type}
         sget-object v46, Ljava/lang/Boolean;->TRUE:Ljava/lang/Boolean;
         sget-object v47, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
-        const-string v48, "$TEST_ID"
+        const-string v48, "$testId"
         const-string v49, "$CAPTION"
         const/16 v50, 0x0
         move-object/from16 v51, v11
@@ -947,12 +1112,11 @@ ${trailingBooleanArguments(trailingBooleans)}
         move-object/from16 v1, p4
         invoke-interface { v1, v0 }, $LIST_ADD
 
-        sget-object v2, ${icon.definingClass}->${icon.name}:$iconEnumType
+        sget-object v2, $icon
         invoke-static { v2 }, $marker
         move-result-object v2
         move-object/from16 v1, p5
         invoke-interface { v1, v2 }, $LIST_ADD
-        return-void
     """
 }
 
@@ -975,9 +1139,10 @@ private fun trailingBooleanArguments(count: Int): String =
  *
  * Only the tap slot saves. The others are still given a handler rather than null, because the
  * factory is not documented to accept null, and a handler that returns without a word costs
- * nothing. Each gets the player (v4), the context (v5) and the reel's story (v3).
+ * nothing. Each gets the player (v4), the context (v5) and the reel's story (v3), and whether it
+ * belongs to the Cast button, whose tap casts instead of saving.
  */
-private fun handlers(hd: String, sd: String, manifest: String) = (0..6).joinToString("\n") { slot ->
+private fun handlers(hd: String, sd: String, manifest: String, cast: Boolean) = (0..6).joinToString("\n") { slot ->
     val saves = if (slot == TAP_SLOT) 1 else 0
 
     """
@@ -990,7 +1155,8 @@ private fun handlers(hd: String, sd: String, manifest: String) = (0..6).joinToSt
         const/16 v26, 0x$slot
         const/16 v27, 0x$saves
         move-object/from16 v28, v3
-        invoke-direct/range { v20 .. v28 }, $HANDLER-><init>($OBJECT${CONTEXT}Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZ$OBJECT)V
+        const/16 v29, 0x${if (cast) 1 else 0}
+        invoke-direct/range { v20 .. v29 }, $HANDLER-><init>($OBJECT${CONTEXT}Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZ${OBJECT}Z)V
         move-object/from16 v${8 + slot}, v20
     """
 }

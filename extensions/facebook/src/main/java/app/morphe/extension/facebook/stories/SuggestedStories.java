@@ -26,7 +26,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * <p>A tray holds one bucket per person or Page with a story. Every answer of the tray's fetch,
  * from the network or the cache, becomes one tray data object, and both of Facebook's trays, the
  * classic one and the unified one, draw from it. The hook goes first in that object's one
- * constructor and hands its bucket list to {@link #keptBuckets}.
+ * constructor and hands its bucket list to {@link #keptBuckets}. Home's tray comes inside the feed
+ * instead, as does a single story shown in the feed, and Facebook's tray parser builds what those
+ * draw, so a second hook goes first in that parser and hands it the same kind of list (#313, #317).
  *
  * <p>A bucket is a suggestion when Facebook marks it as one: its is_story_bucket_suggested flag is
  * true, or its first label is SUGGESTED. Those are the two things the tray's own card reads before
@@ -40,8 +42,8 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * only go when that patch is in too. The contacts card has a switch of its own.
  *
  * <p>Two more switches, both off until you turn them on, go by who posted a story and whether you
- * watched it. A Page's bucket is one whose story_bucket_owner is a Page, or whose type is PAGE_STORY
- * or SHARED_PAGE_STORY (#313). A seen bucket is one whose is_bucket_seen_by_viewer flag is true, the
+ * watched it. A Page's bucket is one whose story_bucket_owner is a Page, or whose type is PAGE_STORY,
+ * SHARED_PAGE_STORY or one of a profile-style Page's two (#313). A seen bucket is one whose is_bucket_seen_by_viewer flag is true, the
  * flag that greys the tray's ring, and which View stories anonymously sets on this phone for the
  * stories it watches (#317). The cards above aren't stories, and neither is the Add to story tile,
  * so none of them goes as seen.
@@ -75,6 +77,14 @@ public final class SuggestedStories {
     /** The types a Page's stories come as, and the Add to story tile's, which never goes as seen. */
     static final String PAGE_TYPE = "PAGE_STORY";
     static final String SHARED_PAGE_TYPE = "SHARED_PAGE_STORY";
+    /**
+     * A profile-style Page is an additional profile ("Profile Plus" inside the app) whose owner reads
+     * as a User, not a Page. The S22's tray on 2026-10-31 kept National Geographic's story with Hide
+     * stories from Pages on: its one kept bucket was ADMINED_ADDITIONAL_PROFILE_STORY.
+     * PROFESSIONAL_STORY is a person in professional mode, so it stays.
+     */
+    static final String ADDITIONAL_PROFILE_PAGE_TYPE = "ADMINED_ADDITIONAL_PROFILE_STORY";
+    static final String PROFILE_PLUS_PAGE_TYPE = "PROFILE_PLUS_STORY";
     static final String ADD_TO_STORY_TYPE = "ADD_TO_STORY";
 
     /** The GraphQL fields of who posted a bucket and whether you've watched it, and a Page's type name. */
@@ -243,7 +253,8 @@ public final class SuggestedStories {
     }
 
     /**
-     * Injection point, first in the constructor of the tray data. Answers the list it was handed,
+     * Injection point, first in the constructor of the tray data and first in the tray parser that
+     * Home's tray and a story shown in the feed go through (#313, #317). Answers the list it was handed,
      * or an ImmutableList of the same buckets in the same order without the ones whose switch is
      * on, which takes the list's place. Never throws.
      *
@@ -299,6 +310,7 @@ public final class SuggestedStories {
 
             // What a tray held, as kinds and how many of each, never whose stories they are.
             final int shown = buckets.size() - left.size();
+            StoriesTrayPaging.sawTray(shown, left.size());
             final String off = switches.offNote();
             Logger.printDebug(() -> "Stories tray: " + buckets.size() + " buckets, " + shown + " kept. Kinds: "
                     + summary(kinds) + off);
@@ -423,7 +435,8 @@ public final class SuggestedStories {
             Object type = access.type(bucket);
             if (type instanceof Enum) {
                 String name = ((Enum<?>) type).name();
-                if (PAGE_TYPE.equals(name) || SHARED_PAGE_TYPE.equals(name)) return true;
+                if (PAGE_TYPE.equals(name) || SHARED_PAGE_TYPE.equals(name)
+                        || ADDITIONAL_PROFILE_PAGE_TYPE.equals(name) || PROFILE_PLUS_PAGE_TYPE.equals(name)) return true;
             }
         } catch (Throwable ignored) {
             // cardKind already reported this read, and the owner still answers.

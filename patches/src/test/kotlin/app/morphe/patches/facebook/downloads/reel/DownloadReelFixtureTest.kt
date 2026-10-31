@@ -9,6 +9,7 @@ import app.morphe.Fixtures
 import app.morphe.PatchContexts
 import app.morphe.patches.facebook.feed.FixtureDex
 import app.morphe.patches.facebook.feed.holdsString
+import app.morphe.patches.facebook.feed.refresh.enumConstant
 import app.morphe.patches.facebook.media.resume.TRACK_START
 import app.morphe.patches.facebook.media.resume.paramsGetters
 import app.morphe.patches.facebook.media.resume.reportedValues
@@ -18,17 +19,20 @@ import app.morphe.patches.facebook.media.taptoplay.GROOT_PLAY
 import app.morphe.patches.facebook.media.taptoplay.grootPlays
 import app.morphe.patches.facebook.misc.extension.SETTINGS_STATUS
 import app.morphe.patches.shared.compat.AppCompatibilities
+import app.morphe.util.ControlFlow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.ClassDef
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.Instruction
+import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -41,7 +45,8 @@ import org.junit.Test
  * fixture loads the whole chain. The block goes in at the first instruction of the assembly call's
  * straight run where six consecutive locals are dead and every value it reads is what the call
  * gets (the player from its parked register), and it calls the helper over those six registers. The
- * helper builds the button and adds it and its marker to the two lists itself. The build's
+ * helper builds the button and adds it and its marker to the two lists itself, then the Cast button
+ * the same way from the build's GOOGLE_CAST icon (#182), each behind its own switch. The build's
  * one FbShortsSideBarComponent render, which the button can't go in, gets a counter as its first
  * instruction and nothing else (#18). And the More sheet's builder asks for a Download row first
  * thing, through a helper on its class, with the handler made to take the row's click interface
@@ -55,11 +60,14 @@ class DownloadReelFixtureTest {
     private val otherSidebarName = "FbShortsSideBarComponent"
     private val showsButton = "Lapp/morphe/extension/facebook/download/ReelDownload;->showsButton()Z"
     private val helperName = "hushfacebookDownloadButton"
+    private val reelDownload = "Lapp/morphe/extension/facebook/download/ReelDownload;"
 
-    /** What the block did on each ABI: how far in front of the assembly call it went, its first scratch register, and where it read the helper's six values (session, scoped context, player, story, buttons, markers). Both 585 ABIs lay the render out alike. */
+    private val verticalUfi = "Lapp/morphe/extension/facebook/download/ReelDownload;->verticalUfi(Z)Z"
+
+    /** What the block did on each ABI: how far in front of the assembly call it went, its first scratch register, and where it read the helper's six values (session, scoped context, player, story, buttons, markers); then where the render's layout flag is handed to the extension, and its register (#316). Both 585 ABIs lay the render out alike. */
     private val expected = mapOf(
-        "arm64-v8a" to "before=42 scratch=3 sources=[62, 2, 28, 15, 23, 21]",
-        "armeabi-v7a" to "before=42 scratch=3 sources=[62, 2, 28, 15, 23, 21]",
+        "arm64-v8a" to "before=42 scratch=3 sources=[62, 2, 28, 15, 23, 21] layout=217 v8",
+        "armeabi-v7a" to "before=42 scratch=3 sources=[62, 2, 28, 15, 23, 21] layout=217 v8",
     )
 
     /** A render of the same Litho method as [render]: its name, its one scoped parameter and its return type. */
@@ -167,6 +175,8 @@ class DownloadReelFixtureTest {
                 val getter = paramsGetters(player).single()
                 val flag = params.methods.filter { holdsString(it, FB_SHORTS) }
                     .mapNotNull { reportedValues(it)[FB_SHORTS] }.distinctBy(FieldReference::toString).single()
+                // The config dump that names the layout flag, which the reader is found by (#316).
+                FixtureDex.classesHolding(bundle, VERTICAL_UFI_FLAG).forEach { classes.putIfAbsent(it.type, it) }
                 val context = PatchContexts.of(classes.values)
                 val sheet = context.moreSheet("the fixture")
 
@@ -210,6 +220,14 @@ class DownloadReelFixtureTest {
                 }
                 val injectAt = body.indexOfFirst { it.called()?.toString() == showsButton }
                 assertEquals("${bundle.name}: the switch is asked once", 1, body.count { it.called()?.toString() == showsButton })
+                // On 585 the builder is the render, so the layout hook (#316) is in this method too.
+                val renderIsBuilder = component.type == builderClass.type && render.name == builder.name &&
+                    render.parameterTypes.map(CharSequence::toString) == builder.parameterTypes.map(CharSequence::toString)
+                fun withoutLayoutHook(code: List<Instruction>): List<Instruction> {
+                    val at = code.indexOfFirst { it.called()?.toString() == verticalUfi }
+                    return if (at < 0) code else code.take(at) + code.drop(at + 2)
+                }
+                val hookShift = body.indexOfFirst { it.called()?.toString() == verticalUfi }.let { if (it in 0 until injectAt) 2 else 0 }
                 assertTrue("${bundle.name}: the block goes in front of the assembly call", injectAt in 0 until assemblyAt)
                 // The block: the switch, its answer, the branch past it, six moves into six consecutive
                 // locals, the helper over those six, and the nop its branch lands on.
@@ -235,25 +253,78 @@ class DownloadReelFixtureTest {
                 assertEquals(
                     "${bundle.name}: the rest is Facebook's own code",
                     unpadded(original),
-                    unpadded(body.take(injectAt) + body.drop(injectAt + blockSize)),
+                    unpadded(withoutLayoutHook(body.take(injectAt) + body.drop(injectAt + blockSize))),
                 )
                 // The scratch registers are free at the block: nothing reads them again, and the
                 // sources aren't among them.
                 val sources = moves.map { (it as TwoRegisterInstruction).registerB }
                 assertTrue("${bundle.name}: the block reads none of the registers it writes", sources.none { it in scratch..scratch + 5 })
-                actual[abi] = "before=${assemblyAt - injectAt} scratch=$scratch sources=$sources"
+                // The older button layout (#316, #298): the render reads the layout flag once, 1 for
+                // yes and 0 for no, and where the two writes meet the extension gets Facebook's
+                // answer back into the same register, so the branch to the older strip goes by it.
+                val renderOriginal = render.body()
+                val renderBody = context.mutableClassDefBy(component.type).methods.single {
+                    it.name == render.name && it.parameterTypes.map(CharSequence::toString) == render.parameterTypes.map(CharSequence::toString)
+                }
+                val renderCode = renderBody.implementation!!.instructions.toList()
+                val layoutAt = renderCode.indexOfFirst { it.called()?.toString() == verticalUfi }
+                assertEquals("${bundle.name}: the layout is asked once", 1, renderCode.count { it.called()?.toString() == verticalUfi })
+                // Where the hook sits in Facebook's own code, past the button block when that's ahead of it.
+                val layoutOriginal = layoutAt - if (renderIsBuilder && injectAt < layoutAt) blockSize else 0
+                val asked = renderCode[layoutAt] as RegisterRangeInstruction
+                val flagRegister = asked.startRegister
+                assertEquals("${bundle.name}: with the flag alone", 1, asked.registerCount)
+                assertEquals("${bundle.name}: its answer goes back in the flag", Opcode.MOVE_RESULT, renderCode[layoutAt + 1].opcode)
+                assertEquals("${bundle.name}: the same register", flagRegister, (renderCode[layoutAt + 1] as OneRegisterInstruction).registerA)
+                assertEquals(
+                    "${bundle.name}: right after Facebook's own read of the flag",
+                    listOf(Opcode.INVOKE_INTERFACE, Opcode.MOVE_RESULT, Opcode.CONST_4, Opcode.IF_EQ, Opcode.CONST_4),
+                    renderOriginal.subList(layoutOriginal - 5, layoutOriginal).map { it.opcode },
+                )
+                assertEquals(
+                    "${bundle.name}: through the reader the config dump names the flag by",
+                    context.verticalUfiReader().toString(),
+                    renderOriginal[layoutOriginal - 5].called().toString(),
+                )
+                assertEquals(
+                    "${bundle.name}: yes and no both write the flag",
+                    listOf(flagRegister, flagRegister),
+                    listOf(renderOriginal[layoutOriginal - 3], renderOriginal[layoutOriginal - 1]).map { (it as OneRegisterInstruction).registerA },
+                )
+                val renderFlow = ControlFlow.of(renderBody)
+                assertEquals("${bundle.name}: a yes jumps to the hook", setOf(layoutAt - 1, layoutAt), renderFlow.normal[layoutAt - 2].toSet())
+                assertEquals("${bundle.name}: a no runs into it", listOf(layoutAt), renderFlow.normal[layoutAt - 1])
+                if (!renderIsBuilder) {
+                    assertEquals(
+                        "${bundle.name}: the rest of the render is Facebook's own",
+                        unpadded(renderOriginal),
+                        unpadded(withoutLayoutHook(renderCode)),
+                    )
+                }
+                actual[abi] = "before=${assemblyAt - (injectAt - hookShift)} scratch=$scratch sources=$sources layout=$layoutOriginal v$flagRegister"
 
-                // The helper builds the button and adds it and its marker itself.
+                // The helper builds the Download and Cast buttons (#182), each behind its own switch,
+                // and adds each and its marker itself.
                 val helperMethod = patchedClass.methods.single { it.name == helperName }
                 assertTrue("${bundle.name}: the helper is static", AccessFlags.STATIC.isSet(helperMethod.accessFlags))
                 assertEquals("${bundle.name}: the helper takes six values", 6, helperMethod.parameterTypes.size)
                 assertEquals("${bundle.name}: and answers nothing", "V", helperMethod.returnType)
                 val helperBody = helperMethod.implementation!!.instructions.toList()
                 assertEquals("${bundle.name}: the helper returns void", Opcode.RETURN_VOID, helperBody.last().opcode)
-                assertEquals("${bundle.name}: it makes one button", 1, helperBody.count { it.called()?.toString() == factory.toString() })
+                assertEquals("${bundle.name}: it makes two buttons", 2, helperBody.count { it.called()?.toString() == factory.toString() })
+                val gates = helperBody.mapNotNull { it.called()?.toString() }.filter { it.endsWith("Button()Z") }
                 assertEquals(
-                    "${bundle.name}: it adds the button and its marker",
-                    2,
+                    "${bundle.name}: each behind its own switch, Download first",
+                    listOf("$reelDownload->downloadButton()Z", "$reelDownload->castButton()Z"),
+                    gates,
+                )
+                val handlerFlags = helperBody.indices.filter { at ->
+                    helperBody[at].called()?.let { it.definingClass == reelDownload && it.name == "<init>" } == true
+                }.map { at -> (helperBody[at - 1] as NarrowLiteralInstruction).narrowLiteral }
+                assertEquals("${bundle.name}: seven handlers that save, then seven that cast", List(7) { 0 } + List(7) { 1 }, handlerFlags)
+                assertEquals(
+                    "${bundle.name}: it adds both buttons and their markers",
+                    4,
                     helperBody.count { instruction ->
                         instruction.opcode == Opcode.INVOKE_INTERFACE &&
                             instruction.called()?.let { it.definingClass == "Ljava/util/List;" && it.name == "add" } == true
@@ -266,12 +337,18 @@ class DownloadReelFixtureTest {
                     .filter { it.type == modeType }.map(FieldReference::toString).distinct().single()
                 assertTrue("${bundle.name}: the helper passes the mode every button of Facebook's gets", factoryMode in helperFields)
                 val marker = helperBody.filter { it.opcode == Opcode.INVOKE_STATIC }.mapNotNull { it.called() }
-                    .single { it.parameterTypes.size == 1 && it.returnType != "V" }
+                    .filter { it.parameterTypes.size == 1 && it.returnType != "V" }.distinctBy(MethodReference::toString).single()
                 val iconEnum = marker.parameterTypes.single().toString()
                 val rowIcon = rowHolders.flatMap { holder -> holder.methods.filter { holdsString(it, "fds_control_download_video") } }
                     .flatMap { it.body() }.filter { it.opcode == Opcode.SGET_OBJECT }.mapNotNull { it.field() }
                     .first { it.type == iconEnum }
                 assertTrue("${bundle.name}: the helper draws the icon Facebook's download row draws", rowIcon.toString() in helperFields)
+                val castIcon = enumConstant(context.classDefBy(iconEnum), CAST_ICON)
+                assertTrue("${bundle.name}: and Facebook's own cast icon for the Cast button, $castIcon", castIcon != null && castIcon in helperFields)
+                assertTrue(
+                    "${bundle.name}: the Cast button has its own slot name",
+                    helperBody.any { (it as? ReferenceInstruction)?.reference?.let { ref -> ref is StringReference && ref.string == "cast_button" } == true },
+                )
 
                 val otherRender = context.mutableClassDefBy(other.type).methods.single { rendersLike(it, render) }
                 val otherOriginal = other.methods.single { rendersLike(it, render) }

@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import app.morphe.extension.facebook.search.PictureSearch;
 import app.morphe.extension.facebook.settings.FamilyNames;
 import app.morphe.extension.facebook.settings.Settings;
 import app.morphe.extension.shared.Logger;
@@ -19,8 +20,8 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
 
 /**
  * The home top bar's optional hides: the Messenger button, the count on it and the Facebook logo
- * (#181), and the Create (+) button (#257). The patch calls each hook where Facebook builds the
- * thing it hides.
+ * (#181), the Create (+) button (#257) and the search button (#321). The patch calls each hook
+ * where Facebook builds the thing it hides.
  *
  * <ul>
  *   <li>{@link #messengerButton} runs right after the bar adds the Messenger button. With the
@@ -33,6 +34,9 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  *       spot still opens Hushfacebook settings on a long press.
  *   <li>{@link #createButton} runs right after the bar adds the Create button, and sets it GONE
  *       like the Messenger button.
+ *   <li>{@link #searchButton} runs right after the bar adds the search button (#321), and on the
+ *       newer bar right after the bar makes it, and sets it GONE the same way. A kept button gets
+ *       the Google Lens long press of {@link PictureSearch} while that switch is on (#245).
  * </ul>
  *
  * <p>Some accounts get the newer bar instead, where every button is a glyph the bar makes from a
@@ -51,6 +55,7 @@ public final class TopBarButtons {
     static final String COUNT_HIDDEN = "Messenger count hidden";
     static final String LOGO_HIDDEN = "Facebook logo hidden";
     static final String CREATE_HIDDEN = "Create button hidden";
+    static final String SEARCH_HIDDEN = "Search button hidden";
 
     /** The newer bar's spec name for the Messenger button. */
     static final String MESSENGER_SPEC = "messenger";
@@ -123,6 +128,27 @@ public final class TopBarButtons {
         HookStatus.bound(FAMILY, "Create button");
         HookStatus.counted(FAMILY, CREATE_HIDDEN);
         Logger.printDebug(() -> "Top bar: hid the Create button");
+    }
+
+    /**
+     * Injection point, after either bar makes or adds the search button. Hides it, or with Search
+     * with a picture on gives it the long press that opens Google Lens (#245). Never throws.
+     */
+    public static void searchButton(View button) {
+        try {
+            HookStatus.invoked(FAMILY);
+            if (button == null || !Utils.settingsReady()) return;
+            if (!Settings.HIDE_SEARCH_BUTTON.get()) {
+                if (Settings.SEARCH_WITH_PICTURE.get()) PictureSearch.attach(button);
+                return;
+            }
+            button.setVisibility(View.GONE);
+            HookStatus.bound(FAMILY, "Search button");
+            HookStatus.counted(FAMILY, SEARCH_HIDDEN);
+            Logger.printDebug(() -> "Top bar: hid the search button");
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "Search button", failure);
+        }
     }
 
     /**

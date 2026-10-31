@@ -6,10 +6,12 @@ package app.morphe.patches.facebook.feed.suggested
 
 import app.morphe.patcher.StringComparisonType
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patches.facebook.feed.BASE_MODEL_WITH_TREE
 import app.morphe.patches.facebook.feed.GRAPHQL_STORY
+import app.morphe.patches.facebook.feed.TREE_JNI
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
 import app.morphe.patches.facebook.feed.aidetected.GRAPHQL_STORY_ATTACHMENT
 import app.morphe.patches.facebook.feed.aidetected.isModelListAccessor
@@ -22,6 +24,7 @@ import app.morphe.patches.facebook.feed.modelAccessors
 import app.morphe.patches.facebook.feed.storyModelAccessors
 import app.morphe.patches.facebook.misc.extension.EXTENSION_PACKAGE
 import app.morphe.util.findMutableMethodOf
+import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.BuilderInstruction
 import com.android.tools.smali.dexlib2.iface.ClassDef
@@ -47,10 +50,17 @@ import com.android.tools.smali.dexlib2.iface.reference.StringReference
  * it reads the unset default and keeps every post. The S22's account read unset for most group posts
  * (2026-10-20), so the patch hands that MobileConfig answer to the extension too, which says yes
  * while the switch is on.
+ *
+ * The fourth report (2026-10-30, read from 585) showed group posts whose `to` is empty and whose
+ * shape names the group nowhere Debug logging looked. The story also carries `target_group`
+ * (GraphQLStory.A0R on 585, key 0xf38a9a51 as Group 0x03937134), read as the same model class as
+ * `to`, so the join state stub takes it as it is. A build that doesn't declare it keeps the `to` rule.
  */
 
 internal const val STORY_TARGET_FIELD = "to"
 internal const val STORY_TARGET_TYPE = "Profile"
+internal const val STORY_TARGET_GROUP_FIELD = "target_group"
+internal const val STORY_TARGET_GROUP_TYPE = "Group"
 internal const val VIEWER_JOIN_STATE_FIELD = "viewer_join_state"
 
 /**
@@ -59,14 +69,19 @@ internal const val VIEWER_JOIN_STATE_FIELD = "viewer_join_state"
  */
 internal val JOIN_STATE_NAMES = listOf("CAN_JOIN", "CAN_REQUEST", "MEMBER")
 
-/** The extension class that reads the join state, and the two accessors this patch fills in. */
+/** The extension class that reads the join state, and the three accessors this patch fills in. */
 internal const val GROUP_POSTS = "$EXTENSION_PACKAGE/feed/GroupPosts;"
 internal const val STORY_TARGET_STUB = "storyTarget"
+internal const val STORY_TARGET_GROUP_STUB = "storyTargetGroup"
 internal const val JOIN_STATE_STUB = "joinState"
 
 /** Every accessor [story] declares of its `to` as a Profile. The patch wants exactly one. */
 internal fun storyTargetAccessors(story: ClassDef): List<Method> =
     storyModelAccessors(story, STORY_TARGET_FIELD, STORY_TARGET_TYPE)
+
+/** Every accessor [story] declares of its `target_group` as a Group. The patch takes one, or none. */
+internal fun storyTargetGroupAccessors(story: ClassDef): List<Method> =
+    storyModelAccessors(story, STORY_TARGET_GROUP_FIELD, STORY_TARGET_GROUP_TYPE)
 
 /** Every accessor [profile] declares of its join state. The patch wants exactly one. */
 internal fun joinStateAccessors(profile: ClassDef): List<Method> =
@@ -79,20 +94,40 @@ internal fun isJoinStateEnum(classDef: ClassDef): Boolean {
     return JOIN_STATE_NAMES.all { holdsString(init, it) }
 }
 
-/** The story's accessor of its `to`, and that profile's accessor of its join state. */
-internal class GroupJoinAccessors(val target: Method, val joinState: Method)
+/**
+ * The story's accessor of its `to`, its accessor of its `target_group` (null when the build declares
+ * none), and the profile's accessor of its join state.
+ */
+internal class GroupJoinAccessors(val target: Method, val targetGroup: Method?, val joinState: Method)
 
 /**
- * The two accessors, held to the evidence the rule rests on: one `to` accessor on GraphQLStory, its
+ * The accessors, held to the evidence the rule rests on: one `to` accessor on GraphQLStory, its
  * profile a tree model the extension can ask for a type name, one join state accessor on that
- * profile, and an enum answering it that names the states. Throws a [PatchException] otherwise.
+ * profile, and an enum answering it that names the states. A `target_group` accessor is taken when
+ * the story declares one, and it has to answer the class `to` does, since the join state stub casts
+ * to it. Throws a [PatchException] otherwise.
  */
 internal fun BytecodePatchContext.groupJoinAccessors(): GroupJoinAccessors {
-    val targets = storyTargetAccessors(classDefBy(GRAPHQL_STORY))
+    val story = classDefBy(GRAPHQL_STORY)
+    val targets = storyTargetAccessors(story)
     val target = targets.singleOrNull() ?: throw PatchException(
         "GraphQLStory has ${targets.size} accessors of $STORY_TARGET_FIELD as $STORY_TARGET_TYPE, expected one: " +
             targets.joinToString { it.name },
     )
+    val groups = storyTargetGroupAccessors(story)
+    if (groups.size > 1) {
+        throw PatchException(
+            "GraphQLStory has ${groups.size} accessors of $STORY_TARGET_GROUP_FIELD as $STORY_TARGET_GROUP_TYPE, " +
+                "expected at most one: ${groups.joinToString { it.name }}",
+        )
+    }
+    val targetGroup = groups.singleOrNull()
+    if (targetGroup != null && targetGroup.returnType != target.returnType) {
+        throw PatchException(
+            "GraphQLStory->${targetGroup.name} answers its $STORY_TARGET_GROUP_FIELD as ${targetGroup.returnType}, " +
+                "not ${target.returnType} like its $STORY_TARGET_FIELD",
+        )
+    }
     val profile = classDefByOrNull(target.returnType)
         ?: throw PatchException("${target.returnType}, GraphQLStory's $STORY_TARGET_FIELD, isn't in this Facebook build")
     if (profile.superclass != BASE_MODEL_WITH_TREE) {
@@ -107,14 +142,20 @@ internal fun BytecodePatchContext.groupJoinAccessors(): GroupJoinAccessors {
     if (enum == null || !isJoinStateEnum(enum)) {
         throw PatchException("${state.returnType} isn't an enum naming ${JOIN_STATE_NAMES.joinToString()}")
     }
-    return GroupJoinAccessors(target, state)
+    return GroupJoinAccessors(target, targetGroup, state)
 }
 
-/** Fills in the extension's two GroupPosts stubs with the accessors [groupJoinAccessors] finds. */
-internal fun BytecodePatchContext.fillGroupJoinStubs() {
+/**
+ * Fills in the extension's GroupPosts stubs with the accessors [groupJoinAccessors] finds, the
+ * `target_group` one only when the build declares it. Answers what it found, so a caller can say
+ * when a build has no `target_group`.
+ */
+internal fun BytecodePatchContext.fillGroupJoinStubs(): GroupJoinAccessors {
     val found = groupJoinAccessors()
     fillStoryModelStub(GROUP_POSTS, STORY_TARGET_STUB, found.target)
+    found.targetGroup?.let { fillStoryModelStub(GROUP_POSTS, STORY_TARGET_GROUP_STUB, it) }
     fillStoryModelStub(GROUP_POSTS, JOIN_STATE_STUB, found.joinState)
+    return found
 }
 
 /*
@@ -205,6 +246,60 @@ internal fun BytecodePatchContext.fillStoryShapeStubs() {
     fillStoryModelStub(GROUP_POSTS, TITLE_RANGES_STUB, found.ranges)
     fillStoryModelStub(GROUP_POSTS, RANGE_ENTITY_STUB, found.entity)
     fillStoryModelStub(GROUP_POSTS, ATTACHMENT_TARGET_STUB, found.target)
+}
+
+/*
+ * A group a story's title names (#195). A title range's entity is a GraphQLEntity, which answers its
+ * type name and nothing more, so one typed Group is read again as the class the story's `to` is read
+ * as, the one the join state stub casts to. Facebook turns one model class into another the same way:
+ * its TreeConverter (LX/02d3 on 585) and the group header's Join button call TreeJNI's public native
+ * `reinterpret(Class, int)` with the class and the type tag wanted. The patch hands the extension that
+ * class with a `const-class` in place of the stub's own load, and the extension makes the call by
+ * reflection.
+ */
+internal const val TARGET_CLASS_STUB = "storyTargetClass"
+internal const val TREE_REINTERPRET = "reinterpret"
+
+/** Whether [tree] has the public `reinterpret(Class, int)` answering a tree that the extension calls. */
+internal fun hasPublicReinterpret(tree: ClassDef): Boolean = tree.methods.any {
+    it.name == TREE_REINTERPRET && it.returnType == TREE_JNI &&
+        it.parameterTypes.map { type -> type.toString() } == listOf("Ljava/lang/Class;", "I") &&
+        AccessFlags.PUBLIC.isSet(it.accessFlags) && !AccessFlags.STATIC.isSet(it.accessFlags)
+}
+
+/**
+ * Fills in the extension's `storyTargetClass` stub on GroupPosts with the class GraphQLStory's one
+ * `to` accessor answers. Throws a [PatchException] when TreeJNI has no public reinterpret, the story
+ * has no single `to` accessor, its class isn't in the build or the stub is missing.
+ */
+internal fun BytecodePatchContext.fillStoryTargetClassStub() {
+    val tree = classDefByOrNull(TREE_JNI) ?: throw PatchException("$TREE_JNI isn't in this Facebook build")
+    if (!hasPublicReinterpret(tree)) throw PatchException("TreeJNI has no public $TREE_REINTERPRET(Class, int)")
+    val targets = storyTargetAccessors(classDefBy(GRAPHQL_STORY))
+    val target = targets.singleOrNull() ?: throw PatchException(
+        "GraphQLStory has ${targets.size} accessors of $STORY_TARGET_FIELD as $STORY_TARGET_TYPE, expected one: " +
+            targets.joinToString { it.name },
+    )
+    classDefByOrNull(target.returnType)
+        ?: throw PatchException("${target.returnType}, GraphQLStory's $STORY_TARGET_FIELD, isn't in this Facebook build")
+    val stub = mutableClassDefBy(GROUP_POSTS).methods.singleOrNull {
+        it.name == TARGET_CLASS_STUB && AccessFlags.STATIC.isSet(it.accessFlags) &&
+            it.returnType == "Ljava/lang/Object;" &&
+            it.parameterTypes.map { type -> type.toString() } == listOf("Ljava/lang/Object;")
+    } ?: throw PatchException("$GROUP_POSTS has no static Object $TARGET_CLASS_STUB(Object)")
+    // The stub loads its NOT_PATCHED answer and returns it. The load becomes the class, in the
+    // register the stub's own return reads, so the frame and the return stay the stub's.
+    val register = notPatchedLoad(stub)
+        ?: throw PatchException("$GROUP_POSTS->$TARGET_CLASS_STUB isn't a load of its answer and its return")
+    stub.replaceInstruction(0, "const-class v$register, ${target.returnType}")
+}
+
+/** The register [stub]'s first instruction loads a static object into, when its second returns it. */
+internal fun notPatchedLoad(stub: Method): Int? {
+    val code = stub.implementation?.instructions?.toList() ?: return null
+    if (code.size != 2 || code[0].opcode != Opcode.SGET_OBJECT || code[1].opcode != Opcode.RETURN_OBJECT) return null
+    val register = (code[0] as OneRegisterInstruction).registerA
+    return if ((code[1] as OneRegisterInstruction).registerA == register && register < 256) register else null
 }
 
 /** The query parameter asking Home for each group's join state. */
