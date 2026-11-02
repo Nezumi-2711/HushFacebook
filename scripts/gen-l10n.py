@@ -57,7 +57,7 @@ PLACEHOLDER = re.compile(r"%(?:\d+\$)?[a-zA-Z]")
 COMMENT = "#"
 
 # A plural form English doesn't have: the other form's key, a bar and the CLDR category.
-PLURAL_VARIANT = re.compile(r"^(?P<base>.+)\|(?P<category>zero|one|two|few|many)$")
+PLURAL_VARIANT = re.compile(r"^(?P<base>.+)\|(?P<category>zero|one|two|few|many)$", re.DOTALL)
 
 
 def plural_base(english):
