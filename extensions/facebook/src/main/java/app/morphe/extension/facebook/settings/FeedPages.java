@@ -264,6 +264,9 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.HIDE_POST_FOLLOW_LINK,
                         L10n.t("Hides the \"Follow\" link next to the name on posts from Pages and people you don't follow. "
                                 + "Tapping the name still opens the profile. A change shows on the posts drawn after it.")));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_JOIN_BUTTON,
+                        L10n.t("Hides the Join button next to the group's name on posts from groups you haven't joined. "
+                                + "A change shows on the posts drawn after it.")));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_COUNTS,
                         L10n.t("Takes the numbers off the Like, Comment and Share buttons under posts, so each shows "
                                 + "just its word. The buttons stay where they are. A change shows on the posts drawn after it.")));
@@ -300,7 +303,8 @@ final class FeedPages {
             }
             if (build.contains(PatchFamily.FULL_POST_TEXT)) {
                 feed.addPreference(toggle(context, Settings.SHOW_FULL_POST_TEXT,
-                        L10n.t("Posts in the feed show all of their text, so there's no See more to tap.")));
+                        L10n.t("Posts in the feed show all of their text, so there's no See more to tap. "
+                                + "Tap a post's text to fold it back.")));
             }
             if (build.contains(PatchFamily.TRANSLATE_POSTS)) {
                 feed.addPreference(toggle(context, Settings.TRANSLATE_POST_LINK,
@@ -315,12 +319,18 @@ final class FeedPages {
             if (build.contains(PatchFamily.REEL_GESTURES)) {
                 // Read on each long press, so a change shows on the next one.
                 feed.addPreference(toggle(context, Settings.SELECT_POST_TEXT,
-                        L10n.t("Holding a post's text still copies all of it, and also opens the text in a box where you "
-                                + "can select just the part you want and copy that.")));
+                        L10n.t("Holding a post's text opens it in a box where you can select just the part you want "
+                                + "and copy that, or copy all of it. The hold itself copies nothing.")));
             }
             if (build.contains(PatchFamily.WHO_SHARED)) {
                 feed.addPreference(toggle(context, Settings.SEE_WHO_SHARED,
                         L10n.t("Adds See who shared to a post's menu. It opens Facebook's list of the people who shared it.")));
+            }
+            if (build.contains(PatchFamily.PHOTO_CAROUSEL)) {
+                // Asked as each post is drawn, so a change shows on the posts drawn after it.
+                feed.addPreference(toggle(context, Settings.PHOTO_CAROUSEL,
+                        L10n.t("A post with several photos or videos shows them in a row you swipe through, one at a "
+                                + "time, instead of a grid.")));
             }
             if (build.contains(PatchFamily.AUTO_TRANSLATION)) {
                 // Each post and reel reads the answer as it's drawn, so a change shows on the next ones.
@@ -605,6 +615,11 @@ final class FeedPages {
                 stories.addPreference(toggle(context, Settings.HIDE_SEEN_STORIES,
                         L10n.t("Stories you've already watched leave the Stories tray until there's a new one. Applies when "
                                 + "Facebook next loads the tray.")));
+                // The other way round, so the tray flips between the two with one switch (#340).
+                stories.addPreference(toggle(context, Settings.SHOW_ONLY_WATCHED_STORIES,
+                        L10n.t("The Stories tray keeps only the stories you've already watched, so you can find one again. "
+                                + "Turn it off to see the new ones. Hide seen stories waits while this is on. Applies when "
+                                + "Facebook next loads the tray.")));
             }
             if (build.contains(PatchFamily.STORY_AUTO_ADVANCE)) {
                 stories.addPreference(toggle(context, Settings.BLOCK_STORY_AUTO_ADVANCE,
@@ -703,6 +718,8 @@ final class FeedPages {
                     L10n.t("The comment box loses its GIF and sticker buttons. Typing, photos and posting work as before.")));
             comments.addPreference(toggle(context, Settings.HIDE_COMMENT_EMOJI_ROW,
                     L10n.t("The row of emoji over the comment box goes away. You can still type emoji from your keyboard.")));
+            comments.addPreference(toggle(context, Settings.HIDE_COMMENT_BOX_LINE,
+                    L10n.t("The thin line along the top of the comment box goes away.")));
             comments.addPreference(toggle(context, Settings.HIDE_VIDEO_COMMENT_COMPOSER,
                     L10n.t("The Add a comment box under a full-screen video goes away. Comment boxes on posts stay.")));
             comments.addPreference(toggle(context, Settings.OPEN_REPLY_THREADS,

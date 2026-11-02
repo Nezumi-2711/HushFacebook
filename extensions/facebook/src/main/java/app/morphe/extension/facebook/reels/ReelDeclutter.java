@@ -4,15 +4,26 @@
  */
 package app.morphe.extension.facebook.reels;
 
+import android.icu.text.DateFormat;
+
+import androidx.annotation.Nullable;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
+import app.morphe.extension.facebook.ads.MarketplaceListingAge;
+import app.morphe.extension.facebook.download.PostDetails;
 import app.morphe.extension.facebook.feed.FeedFilter;
 import app.morphe.extension.facebook.settings.FamilyNames;
 import app.morphe.extension.facebook.settings.Settings;
+import app.morphe.extension.shared.L10n;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.diagnostics.FeedFilterCounters;
@@ -154,6 +165,14 @@ public final class ReelDeclutter {
     /** Counted under its own name each time a reel's post date is drawn where the server left it out. */
     static final String DATE_ROUTE = "Reel post date";
     static final String DATE_HIDDEN = "date left out";
+    /** Counted under the date's name each time Hush words a reel's post date itself (#357). */
+    static final String DATE_WORDED = "date worded";
+    /** Counted under the date's name each time the date goes in front of a reel's song line (#357). */
+    static final String DATE_ON_SONG = "date on song line";
+    /** What goes between the date and the song, the dot Facebook joins the artist and title with. */
+    static final String DOT = " " + (char) 0xB7 + " ";
+    /** How far ahead of the phone's clock a post time can be and still read as just posted. */
+    static final long FUTURE_SLACK_SECONDS = 60;
 
     /** What the tile's player reads as no stop position: the default its settings builder starts with. */
     static final int NO_END = -1;
@@ -575,6 +594,92 @@ public final class ReelDeclutter {
             HookStatus.threw(FamilyNames.REEL_DECLUTTER, DATE_HIDDEN, failure);
             return shown;
         }
+    }
+
+    /**
+     * Injection point, in the same helper, handed Facebook's words for the post date and the time the
+     * reel was posted, in seconds, right before a null draws nothing (#357). Facebook words a date
+     * older than a few days only behind more server switches, so a reel past them showed no date even
+     * with the switch on. Never throws: anything going wrong answers what it was handed.
+     */
+    @Nullable
+    public static String postDateText(@Nullable String text, long seconds) {
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            if (!Utils.settingsReady()) return text;
+            String worded = postDate(text, seconds, System.currentTimeMillis(), Settings.REEL_POST_DATE_STYLE.get(),
+                    Settings.SHOW_REEL_POST_DATE.get(), L10n.locale(), TimeZone.getDefault());
+            if (worded == null || worded.equals(text)) return text;
+            FeedFilterCounters.removed(DATE_ROUTE, 1, DATE_WORDED);
+            logOnce(DATE_WORDED, () -> "Reel post date: worded as " + Settings.REEL_POST_DATE_STYLE.get());
+            return worded;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, DATE_WORDED, failure);
+            return text;
+        }
+    }
+
+    /**
+     * Injection point, in the Reels tab's audio line, handed the "artist · title" line it just joined
+     * and the reel's story (#357). Facebook draws one line under a reel's author, and on a reel with a
+     * song that line is the song's, so no date showed on most reels even with the switch on. With the
+     * switch on the date goes in front of the song, read from the story's creation time and worded the
+     * way the date style says. Never throws: anything going wrong answers what it was handed.
+     */
+    @Nullable
+    public static String audioLineText(@Nullable String line, @Nullable Object story) {
+        try {
+            HookStatus.invoked(FamilyNames.REEL_DECLUTTER);
+            if (line == null || !Utils.settingsReady() || !Settings.SHOW_REEL_POST_DATE.get()) return line;
+            Date posted = PostDetails.postedOf(story);
+            if (posted == null) return line;
+            String dated = audioLine(line, posted.getTime() / 1000, System.currentTimeMillis(),
+                    Settings.REEL_POST_DATE_STYLE.get(), L10n.locale(), TimeZone.getDefault());
+            if (dated.equals(line)) return line;
+            FeedFilterCounters.removed(DATE_ROUTE, 1, DATE_ON_SONG);
+            logOnce(DATE_ON_SONG, () -> "Reel post date: put in front of the song line");
+            return dated;
+        } catch (Throwable failure) {
+            HookStatus.threw(FamilyNames.REEL_DECLUTTER, DATE_ON_SONG, failure);
+            return line;
+        }
+    }
+
+    /**
+     * A reel's song [line] with the day it was posted, at [seconds], in front: "3 weeks ago · Artist ·
+     * Original audio", or the day itself with The date picked. A time that can't be a post's keeps the
+     * line as it was.
+     */
+    static String audioLine(String line, long seconds, long nowMillis, ReelDateStyle style, Locale locale, TimeZone zone) {
+        String date = postDate(null, seconds, nowMillis, style, true, locale, zone);
+        return date == null || date.isEmpty() ? line : date + DOT + line;
+    }
+
+    /**
+     * What the post date reads for a reel posted at [seconds], seen at [nowMillis]: the day it was
+     * posted with The date picked, otherwise Facebook's [text], or "3 weeks ago" in [locale] where
+     * Facebook left it blank and [always] (the switch) is on. A time that can't be a post's, none or
+     * one in the future, keeps [text].
+     */
+    @Nullable
+    static String postDate(@Nullable String text, long seconds, long nowMillis, ReelDateStyle style, boolean always,
+            Locale locale, TimeZone zone) {
+        if (seconds <= 0 || seconds > nowMillis / 1000 + FUTURE_SLACK_SECONDS) return text;
+        if (style == ReelDateStyle.DATE) return dayPosted(seconds * 1000, nowMillis, locale, zone);
+        if (text != null || !always) return text;
+        return MarketplaceListingAge.ago(Math.max(0, nowMillis / 1000 - seconds), locale);
+    }
+
+    /** "Oct 12" for a day this year and "Oct 12, 2025" for one before, in [locale]'s order. */
+    static String dayPosted(long millis, long nowMillis, Locale locale, TimeZone zone) {
+        Calendar posted = Calendar.getInstance(zone, locale);
+        posted.setTimeInMillis(millis);
+        Calendar now = Calendar.getInstance(zone, locale);
+        now.setTimeInMillis(nowMillis);
+        String skeleton = posted.get(Calendar.YEAR) == now.get(Calendar.YEAR) ? "MMMd" : "yMMMd";
+        DateFormat format = DateFormat.getInstanceForSkeleton(skeleton, locale);
+        format.setTimeZone(android.icu.util.TimeZone.getTimeZone(zone.getID()));
+        return format.format(new Date(millis));
     }
 
     /**

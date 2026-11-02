@@ -9,6 +9,7 @@ import android.app.Application;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
+import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
@@ -189,6 +190,17 @@ public final class TranslucentBars {
     }
 
     /**
+     * Keeps the frost [area] inside [bar]'s pill when Rounded tab bar made it one (#344), with
+     * [pill] scratch space: the radius its corners get, 0 for a bar that isn't a pill.
+     */
+    static float keepInPill(Rect area, View bar, Rect pill) {
+        float corner = RoundedTabBar.pillInWindow(bar, pill);
+        if (corner <= 0f) return 0f;
+        if (!area.intersect(pill)) area.setEmpty();
+        return Math.min(corner, area.height() / 2f);
+    }
+
+    /**
      * Whether [host] is a SurfaceView or shows one: a visible one somewhere inside its box. One that's
      * hidden, or laid out or scrolled outside the box, isn't on screen to be moved, the way Facebook
      * 583 keeps each opened tab's page beside the one shown in a pager (#188). [box] is scratch space.
@@ -344,8 +356,14 @@ public final class TranslucentBars {
     static final class Screens implements Application.ActivityLifecycleCallbacks {
         @Override
         public void onActivityResumed(Activity activity) {
+            if (!MAIN_SCREEN.equals(activity.getClass().getName()) || activity.getWindow() == null) return;
+            // The pill first, so the frost of a frame reads where the pill is that frame (#344).
             try {
-                if (!MAIN_SCREEN.equals(activity.getClass().getName()) || activity.getWindow() == null) return;
+                RoundedTabBar.attach(activity.getWindow().getDecorView());
+            } catch (Throwable failure) {
+                HookStatus.threw(FAMILY, "rounded tab bar", failure);
+            }
+            try {
                 attach(activity.getWindow().getDecorView());
             } catch (Throwable failure) {
                 HookStatus.threw(FAMILY, "see-through bars", failure);
@@ -403,6 +421,8 @@ public final class TranslucentBars {
         private final Rect seen = new Rect();
         private final Rect visible = new Rect();
         private final Rect rows = new Rect();
+        /** A rounded tab bar's pill on screen, in the window. */
+        private final Rect pill = new Rect();
         private final int[] origin = new int[2];
         /** The bars with no view holding their box, by the bar: whether one holds their rows. */
         private final Map<View, Boolean> shortOfBox = new IdentityHashMap<>();
@@ -470,8 +490,9 @@ public final class TranslucentBars {
                 float shown = keep(bar, bar, row, under != null, 1f, 0);
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     keepInside(seen, rows, height);
+                    float corner = keepInPill(seen, bar, pill);
                     if (shown > 0f && !seen.isEmpty()) {
-                        frost(bar, under, seen, shown);
+                        frost(bar, under, seen, shown, corner);
                     } else {
                         // Slid or faded out of sight: its frost waits, empty, for it to come back.
                         Frost waiting = (Frost) frosts.get(bar);
@@ -499,6 +520,8 @@ public final class TranslucentBars {
             Boolean found = holdingRows != null;
             if (!found.equals(shortOfBox.put(bar, found))) {
                 HookStatus.counted(FAMILY, found ? UNDER_ITS_ROWS : NOTHING_UNDER);
+                Logger.printDebug(() -> "See-through bars: " + (found ? "a view holds only the rows of bar " : "nothing under bar ")
+                        + box(bar) + " rows " + rows.toShortString());
                 if (!found && !describedNothingUnder && !rows.isEmpty()) {
                     describedNothingUnder = true;
                     HookStatus.counted(FAMILY, describe(bar, rows));
@@ -688,7 +711,7 @@ public final class TranslucentBars {
         }
 
         @RequiresApi(Build.VERSION_CODES.S)
-        private void frost(View bar, View under, Rect area, float shown) {
+        private void frost(View bar, View under, Rect area, float shown, float corner) {
             Frost frost = (Frost) frosts.get(bar);
             if (frost != null && frost.host != under) {
                 frost.remove();
@@ -700,7 +723,7 @@ public final class TranslucentBars {
                 frosts.put(bar, frost);
                 HookStatus.counted(FAMILY, FROSTED);
             }
-            frost.update(area, shown, frame);
+            frost.update(area, shown, frame, corner);
         }
 
         /** Takes away the frost of each bar that wasn't drawn this frame. */
@@ -733,7 +756,11 @@ public final class TranslucentBars {
         /** The recorded part of the host, in its coordinates, and record's scratch box. */
         private final Rect inside = new Rect();
         private final Rect box = new Rect();
+        /** The pill's corners, for a rounded tab bar (#344). */
+        private final Outline outline = new Outline();
         private boolean recording;
+        /** Whether it was drawn yet, for the debug log. */
+        private boolean drawn;
         int frame;
 
         Frost(View host, float radius) {
@@ -745,8 +772,11 @@ public final class TranslucentBars {
             host.getOverlay().add(this);
         }
 
-        /** Records what's under [area], the bar's fills on screen in the window, drawn as much as [shown]. */
-        void update(Rect area, float shown, int frame) {
+        /**
+         * Records what's under [area], the bar's fills on screen in the window, drawn as much as
+         * [shown], with [corner] the radius of its corners for a rounded tab bar's pill (0 is square).
+         */
+        void update(Rect area, float shown, int frame, float corner) {
             this.frame = frame;
             if (getBounds().width() != host.getWidth() || getBounds().height() != host.getHeight()) {
                 setBounds(0, 0, host.getWidth(), host.getHeight());
@@ -758,6 +788,13 @@ public final class TranslucentBars {
             int height = area.height();
             node.setPosition(left, top, left + width, top + height);
             node.setAlpha(shown);
+            if (corner > 0f) {
+                outline.setRoundRect(0, 0, width, height, corner);
+                node.setOutline(outline);
+            } else {
+                node.setOutline(null);
+            }
+            node.setClipToOutline(corner > 0f);
             blur.setPosition(0, 0, width, height);
             RecordingCanvas canvas = blur.beginRecording(width, height);
             recording = true;
@@ -791,7 +828,18 @@ public final class TranslucentBars {
         @Override
         public void draw(Canvas canvas) {
             if (recording || !canvas.isHardwareAccelerated()) return;
+            // An overlay draws in its host's scrolled content (View translates by -scroll first), so
+            // a scrolled host would put the frost off by its scroll. [node] sits where the host
+            // shows, the way record() copies it.
+            int saved = canvas.save();
+            canvas.translate(host.getScrollX(), host.getScrollY());
             canvas.drawRenderNode(node);
+            canvas.restoreToCount(saved);
+            if (!drawn) {
+                drawn = true;
+                Logger.printDebug(() -> "See-through bars: frost drawn in " + host.getClass().getSimpleName()
+                        + " scrolled " + host.getScrollX() + "," + host.getScrollY());
+            }
         }
 
         @Override

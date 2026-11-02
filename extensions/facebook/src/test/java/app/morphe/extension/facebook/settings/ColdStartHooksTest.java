@@ -373,6 +373,7 @@ public class ColdStartHooksTest {
                 MarketplaceSellerProfileForTests.givesSellersViewProfile());
         assertFalse("a tab bar built before the context lost the Reels tab", ReelsTabForTests.hidesTheTab());
         assertFalse("a tab bar built before the context lost the Friends tab", HiddenTabsForTests.hidesTheTab());
+        assertFalse("a tab bar built before the context was put in a new order", HiddenTabsForTests.reordersTheBar());
         assertFalse("a comment request built before the context was given an order",
                 DefaultCommentOrderForTests.asksForTheChosenOrder());
         assertFalse("a comment sort menu built before the context was picked in",
@@ -380,6 +381,10 @@ public class ColdStartHooksTest {
         assertFalse("a comment summary held before the context said yes",
                 MetaAiSummaries.holds(MetaAiSummaries.SHEET_SUMMARY));
         assertFalse("a Related posts list held before the context said yes", RelatedPosts.holds(RelatedPosts.PLUGIN));
+        assertFalse("a Related posts list after comments held before the context said yes",
+                RelatedPosts.holds(RelatedPosts.COMMENT_PLUGIN));
+        assertFalse("a post's request left Related posts out before the context said yes",
+                RelatedPosts.keepsOutOfRequest());
         assertFalse("a comment box drawn before the context lost its GIF button",
                 CommentSheetOptions.holdsButton(CommentSheetOptions.GIF_BUTTON));
         assertFalse("a long press on Like before the context kept the reaction picker closed",
