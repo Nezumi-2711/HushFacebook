@@ -259,6 +259,25 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/IconDensity.java"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 585 (#365): compares the density Facebook's fb_launch_logo bitmap resolves to with the screen's, and on a 64-bit phone whose install lacks images for its screen says once per install, and under the settings status card, which download has them."
+    },
+    {
+      "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/misc/OpenInFacebook.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/openinfacebook/**"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook from Facebook 585 (#111): an Open in Facebook share target declared in the manifest that takes the first Facebook link out of shared text and hands it to Facebook's own link handler, so a link Messenger keeps in its browser can be opened in Facebook."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/feed/GenAiLabel.java",
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/feed/AiCharacterPosts.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/feed/aidetected/**"
@@ -401,7 +420,16 @@
     },
     {
       "paths": [
-        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTranslations.java"
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTranslations.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableDe.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableEs.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableIn.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTablePt_rBR.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableRu.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableTr.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableVi.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableZh_rCN.java",
+        "extensions/shared/library/src/main/java/app/morphe/extension/shared/L10nTableZh_rTW.java"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
@@ -1544,7 +1572,7 @@
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: Turn off auto-translation. Posts: the one getter of the post translatability model's translation_type (a no-argument BaseModelWithTree method returning the enum whose static setup names AUTO_TRANSLATION and SEE_TRANSLATION, reading the field's key with getCachedEnum) hands its answer to the extension, which turns AUTO_TRANSLATION into SEE_TRANSLATION while the switch is on, so the feed picks its See translation plugin over its auto-translate one. Reels: the two reads of the caption's translatable flag in the class that records FbShortsViewerFooterComponent.updateAutoTranslateTriggered go through the extension, which answers false while the switch is on, so the footer never asks for a caption translation."
+      "changes": "Written for Hushfacebook: Turn off auto-translation. Posts: the one getter of the post translatability model's translation_type (a no-argument BaseModelWithTree method returning the enum whose static setup names AUTO_TRANSLATION and SEE_TRANSLATION, reading the field's key with getCachedEnum) hands its answer to the extension, which turns AUTO_TRANSLATION into SEE_TRANSLATION while the switch is on, so the feed picks its See translation plugin over its auto-translate one. Reels: the two reads of the caption's translatable flag in the class that records FbShortsViewerFooterComponent.updateAutoTranslateTriggered go through the extension, which answers false while the switch is on, so the footer never asks for a caption translation. Comments: the two reads of the comment's translation type (the enum whose static setup names AUTO_TRANSLATE, MACHINE_TRANSLATION and ORIGINAL) in the class that records CommentBodyComponent.updateIsTranslated, one for its starting state and one for its render, go through the extension, which answers ORIGINAL while the switch is on, so a comment starts in its own words and See translation fetches the translation on a tap."
     },
     {
       "paths": [

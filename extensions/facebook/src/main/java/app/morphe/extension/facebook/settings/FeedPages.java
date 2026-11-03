@@ -265,8 +265,8 @@ final class FeedPages {
                         L10n.t("Hides the \"Follow\" link next to the name on posts from Pages and people you don't follow. "
                                 + "Tapping the name still opens the profile. A change shows on the posts drawn after it.")));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_JOIN_BUTTON,
-                        L10n.t("Hides the Join button next to the group's name on posts from groups you haven't joined. "
-                                + "A change shows on the posts drawn after it.")));
+                        L10n.t("Hides the Join button next to the group's name on posts from groups you haven't joined, "
+                                + "and the Join group bar under their videos. A change shows on the posts drawn after it.")));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_COUNTS,
                         L10n.t("Takes the numbers off the Like, Comment and Share buttons under posts, so each shows "
                                 + "just its word. The buttons stay where they are. A change shows on the posts drawn after it.")));
@@ -333,10 +333,10 @@ final class FeedPages {
                                 + "time, instead of a grid.")));
             }
             if (build.contains(PatchFamily.AUTO_TRANSLATION)) {
-                // Each post and reel reads the answer as it's drawn, so a change shows on the next ones.
+                // Each post, comment and reel reads the answer as it's drawn, so a change shows on the next ones.
                 feed.addPreference(toggle(context, Settings.TURN_OFF_AUTO_TRANSLATION,
-                        L10n.t("Posts and reel captions stay in the language they were written in. Facebook's "
-                                + "See translation link stays under them.")));
+                        L10n.t("Posts, comments and reel captions stay in the language they were written in. "
+                                + "Facebook's See translation link stays under them.")));
             }
             if (build.contains(PatchFamily.FEEDS_HEADER)) {
                 // Facebook settles the Feeds tab's header as the tab is built, so a change waits for a restart.
@@ -550,14 +550,20 @@ final class FeedPages {
     }
 
     /**
-     * Hide posts you've already seen, with how long they stay hidden and a row that forgets them.
-     * The keep time is greyed out while the switch is off, Forget seen posts never is, and turning
-     * the switch off forgets the list.
+     * Hide posts you've already seen, with the switch that lets each post back once, how long they
+     * stay hidden and a row that forgets them. The two under the switch are greyed out while it's
+     * off, Forget seen posts never is, and turning the switch off forgets the list.
      */
     private static void seenPosts(PreferenceCategory feed, Context context) {
         SwitchPreference seen = toggle(context, Settings.HIDE_SEEN_POSTS,
                 L10n.t("Posts you've scrolled past stay out of the feed when it loads again. The list stays on this phone. "
                         + "Turning this off empties it."));
+        // #186: a post only flicked past isn't lost for good. It shows once more, and the next
+        // scroll past it hides it.
+        SwitchPreference onceMore = toggle(context, Settings.SEEN_POSTS_COME_BACK_ONCE,
+                L10n.t("A post you scrolled past shows up one more time, and scrolling past it again hides it. "
+                        + "Fewer posts go missing after a quick scroll."))
+                .needs(Settings.HIDE_SEEN_POSTS);
         Preference keep = seenKeepRow(context);
         Row forget = new Row(context);
         forget.setTitle(L10n.t("Forget seen posts"));
@@ -571,15 +577,18 @@ final class FeedPages {
         });
         // The keep time follows the switch and is greyed out until it's on. Forget seen posts
         // works either way, so a list is never out of reach.
+        onceMore.setEnabled(Settings.HIDE_SEEN_POSTS.savedValue());
         keep.setEnabled(Settings.HIDE_SEEN_POSTS.savedValue());
         seen.setOnPreferenceChangeListener((preference, value) -> {
             boolean now = Boolean.TRUE.equals(value);
+            onceMore.setEnabled(now);
             keep.setEnabled(now);
             // Off forgets the list. The file goes on a background thread.
             if (!now) SeenPosts.clear();
             return true;
         });
         feed.addPreference(seen);
+        feed.addPreference(onceMore);
         feed.addPreference(keep);
         feed.addPreference(forget);
     }

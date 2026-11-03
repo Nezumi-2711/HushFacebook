@@ -805,6 +805,16 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_slow_connection_message", FALSE);
 
     /**
+     * The UP NEXT bar under a video opened from the feed, naming the video Facebook lines up after
+     * it, gets no video to show: the lookup returns before it queries and what was found is handed
+     * out empty ({@link app.morphe.extension.facebook.reels.ReelDeclutter#skipUpNextFetch} and
+     * {@link app.morphe.extension.facebook.reels.ReelDeclutter#hideUpNextVideos}, #367). Off by
+     * default.
+     */
+    public static final BooleanSetting HIDE_UP_NEXT =
+            new BooleanSetting("hushfacebook_hide_up_next", FALSE);
+
+    /**
      * The tiles in the feed's Reels row play their reel from the start to its end instead of the
      * short clip Facebook picks, which is often one second played over and over
      * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#allowsPreviewClip} and
@@ -2521,6 +2531,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_seen_posts", FALSE);
 
     /**
+     * With {@link #HIDE_SEEN_POSTS} on, a post scrolled past shows up one more time and is hidden
+     * only once it's scrolled past again (#186). Off by default, so a seen post stays out from its
+     * first return.
+     */
+    public static final BooleanSetting SEEN_POSTS_COME_BACK_ONCE =
+            new BooleanSetting("hushfacebook_seen_posts_come_back_once", FALSE, Setting.parent(HIDE_SEEN_POSTS));
+
+    /**
      * How long a seen post stays hidden while {@link #HIDE_SEEN_POSTS} is on. It isn't a switch.
      * Its row is greyed out while the switch is off: the settings page enables each row by its
      * setting's availability after every change, which would otherwise undo the row's own greying.
@@ -2593,9 +2611,9 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_photo_carousel", FALSE);
 
     /**
-     * Posts and reel captions keep the language they were written in, with Facebook's See
+     * Posts, comments and reel captions keep the language they were written in, with Facebook's See
      * translation link under them ({@link app.morphe.extension.facebook.feed.AutoTranslation}). A
-     * change shows on the posts and reels drawn after it.
+     * change shows on the posts, comments and reels drawn after it.
      */
     public static final BooleanSetting TURN_OFF_AUTO_TRANSLATION =
             new BooleanSetting("hushfacebook_turn_off_auto_translation", FALSE);
