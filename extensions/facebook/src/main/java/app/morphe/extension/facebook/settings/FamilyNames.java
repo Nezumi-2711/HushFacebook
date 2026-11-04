@@ -48,6 +48,8 @@ public final class FamilyNames {
     public static final String STORY_UPLOAD_HD = "Upload Stories in HD";
     public static final String STORY_MUSIC_LENGTH = "Longer music on photo stories";
     public static final String STORIES_TRAY_CIRCLES = "Round stories tray";
+    public static final String STORY_TAPS = "Story viewer taps";
+    public static final String STORY_VIEWER_CLEANUP = "Clean up the story viewer";
     public static final String SPONSORED_REELS = "Hide sponsored reels";
     public static final String SPONSORED_SEARCH = "Hide sponsored search results";
     public static final String SPONSORED_PROFILE_POSTS = "Hide sponsored profile posts";
@@ -135,6 +137,7 @@ public final class FamilyNames {
     public static final String TRANSLATED_START = "Start on x86 devices";
     public static final String INSTALL_BESIDE_META_APPS = "Install beside Meta's apps";
     public static final String PLAY_STORE_UPDATES = "Disable Play Store updates";
+    public static final String GMS_CORE = "GmsCore support";
     public static final String OPEN_IN_FACEBOOK = "Open in Facebook from the share menu";
     public static final String MENU_SETTINGS_ROW = "Hushfacebook in the Menu";
 

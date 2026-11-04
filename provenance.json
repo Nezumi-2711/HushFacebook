@@ -480,6 +480,37 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/settings/SettingsHeader.java"
+      ],
+      "origin": "ported",
+      "upstream": "https://github.com/SysAdminDoc/HushGram",
+      "commit": "bb6775bf5f81ea821a078632305ece87bb328f30",
+      "via": [],
+      "license": "GPL-3.0-only",
+      "changes": "Ported from HushGram's settings header: the centred launcher icon, the name in the gradient title and the version line, at HushGram's sizes. HushGram's is a row of its list; here the three parts go straight into the settings screen's collapsing column over the list, the gradient is Facebook's blues lifted to 7:1 on the page, the icon is Hushfacebook's logo from the drawable SettingsLogo.kt adds (then the launcher icon, then the patched mark in the heading colour), and the version line names Facebook."
+    },
+    {
+      "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/settings/SettingsLogo.kt"
+      ],
+      "origin": "ported",
+      "upstream": "https://github.com/SysAdminDoc/HushGram",
+      "commit": "bb6775bf5f81ea821a078632305ece87bb328f30",
+      "via": [],
+      "license": "GPL-3.0-only",
+      "changes": "Ported from HushGram's app icon patch (AppIcons.kt: artFiles and the write loop of addAppIcons): pictures the patch carries in its own resources go into the decoded res folder's drawable-nodpi, after asking the decoder for the patch's names and refusing before any write when one is already there. Here it's one picture, Hushfacebook's logo for the settings header, added by a resource patch the settings patch depends on, with no aliases or adaptive icons."
+    },
+    {
+      "paths": [
+        "patches/src/main/resources/app/morphe/patches/facebook/misc/settings/settings_logo.png"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Hushfacebook's own logo (assets/icons/icon-256.png), 256 px with clear corners, bundled so the settings header shows it on every patched build."
+    },
+    {
+      "paths": [
         "patches/src/main/kotlin/app/morphe/patches/facebook/feed/hook/**",
         "patches/src/main/kotlin/app/morphe/patches/facebook/feed/FeedTypeNames.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/feed/DiscoverUnits.kt",
@@ -711,6 +742,28 @@
     },
     {
       "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/stories/StoryTaps.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/stories/taps/StoryTapsPatch.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: a play and pause button over a story and stories that change only on a double tap. Facebook 585's story tap controller is found by the string it writes into its trace, and its back and forward navigations by the enum constants they pass, so the extension is asked in front of each and can skip it. Facebook's gesture listener gets a double tap callback that hands the second tap's lift to its own single tap code. The pause is Facebook's own, made through the controller's pauser under the reason its play and pause toggle uses, and the button is a view the extension adds to the window."
+    },
+    {
+      "paths": [
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/stories/StoryProgressBar.java",
+        "extensions/facebook/src/main/java/app/morphe/extension/facebook/stories/StoryViewerCleanup.java",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/stories/cleanup/StoryProgressHook.kt",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/stories/cleanup/StoryViewerCleanupPatch.kt"
+      ],
+      "origin": "original",
+      "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
+      "license": "GPL-3.0-only",
+      "changes": "Written for Hushfacebook: switches that take the song and effect credits off a story's subtitle line and the suggested replies off its bottom. Facebook 585 draws each as a Litho component that names itself in its class initializer, so the patch finds the one-credit line, the turning credit line and the reply suggestions by those names and asks the extension at the top of each render. On a yes the one-credit line and the suggestions draw nothing, as Facebook's own render already does for a story without them, and the turning line answers the plain subtitle its constructor kept, unless the flag render tests before its Trending or Suggested label is set. A third switch draws a progress bar along the bottom of a story: each listener that writes \"StoryViewerProgressBar.onProgressUpdated\" hands the extension its segments and its own progress argument right after it moves them, and the extension draws the bar in the overlay of the story's card."
+    },
+    {
+      "paths": [
         "extensions/facebook/src/main/java/app/morphe/extension/facebook/profile/ProfileNotes.java",
         "patches/src/main/kotlin/app/morphe/patches/facebook/profile/HideProfileNotesPatch.kt"
       ],
@@ -890,12 +943,13 @@
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredmarketplace/HideSponsoredMarketplaceListingsPatch.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredmarketplace/MarketplaceRequestAnchors.kt",
         "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredmarketplace/MarketplaceResponseAnchors.kt",
-        "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredmarketplace/MarketplaceVideoAdAnchors.kt"
+        "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredmarketplace/MarketplaceVideoAdAnchors.kt",
+        "patches/src/main/kotlin/app/morphe/patches/facebook/ads/sponsoredmarketplace/MarketplacePriceLineAnchors.kt"
       ],
       "origin": "original",
       "upstream": "https://github.com/SysAdminDoc/Hushfacebook",
       "license": "GPL-3.0-only",
-      "changes": "Written for Hushfacebook: the ads in Marketplace's feed. Facebook 577 and 580 draw Marketplace with React Native, and its Relay queries go out through Facebook's own Networking module, whose sendRequest is the one method holding FBNetworkingModule_React_Native. It reads a POST body from the request data's string entry into a StringEntity, and the query's tracking name (RelayFBNetwork_ and the query's name) from the same data. The patch hands the body and the data to the extension right after that read. For a Marketplace query whose form-encoded variables name shouldSkipAdRequest or shouldSkipBoostedListingAdRequest at their top level as false or null, the extension sets them to true and changes nothing else. For the four ads-only queries Facebook's own Tigon callbacks list (MarketplaceHomeFeedAdsQueryRendererQuery, MarketplaceHomeFeedAdsPaginationQuery, MarketplaceHomeFeedBoostedListingAdsQuery and MarketplaceHomeFeedBoostedListingAdsPaginationQuery) it answers no body, which the module reports to JavaScript as a request it couldn't make. Marketplace search's results query names neither variable and has no ads-only query, so its ads come back among the listings. The module's answers reach JavaScript through the kept FBTigonRequest$FBTigonCallbacks: onBody hands each piece of text, a toString() result, to React Native's didReceiveNetworkIncrementalData emitter and onEOM hands a whole one to didReceiveNetworkData, each with the request's state at hand, which sendRequest builds with the tracking name in one String field. The patch reads that field and hands the text, the name and the state to the extension right where the text lands. For a Marketplace query with Search in its name, other than the typeahead and mutations, the extension reads each whole JSON payload and takes out a result whose node's type ends in AdStory or that carries a sponsored_data object with an ad id, moving later streamed and deferred indices of its list down past the ads taken out. A streamed ad gives way to a payload with null data that keeps its extensions. A payload that fails to be read goes on as it came, and after it nothing more is taken out while later indices still move. Right before onEOM reports an answer complete through didCompleteNetworkResponse, the patch asks the extension for text still waiting for a payload to finish and hands it to the incremental emitter as one last piece. A video ad that reaches Marketplace's feed anyway isn't drawn, an idea De-Vanced also has, written here from Facebook 577, 580 and 581: the two Litho components that draw one, found by the strings only each holds (its layout spec's own name, and MarketplaceVideoAdQuery with MarketplaceVideoAdComponent_), ask the extension first and return null on a yes, before the ad's video is fetched. For issue #303 a listing page's answer (MarketplacePDPSurfaceQuery on 585) goes through the same response hooks: each listing in it that carries creation_time gets how long ago and the date written after the text of its location_text, and a second copy of the listing under the same id gets the same."
+      "changes": "Written for Hushfacebook: the ads in Marketplace's feed. Facebook 577 and 580 draw Marketplace with React Native, and its Relay queries go out through Facebook's own Networking module, whose sendRequest is the one method holding FBNetworkingModule_React_Native. It reads a POST body from the request data's string entry into a StringEntity, and the query's tracking name (RelayFBNetwork_ and the query's name) from the same data. The patch hands the body and the data to the extension right after that read. For a Marketplace query whose form-encoded variables name shouldSkipAdRequest or shouldSkipBoostedListingAdRequest at their top level as false or null, the extension sets them to true and changes nothing else. For the four ads-only queries Facebook's own Tigon callbacks list (MarketplaceHomeFeedAdsQueryRendererQuery, MarketplaceHomeFeedAdsPaginationQuery, MarketplaceHomeFeedBoostedListingAdsQuery and MarketplaceHomeFeedBoostedListingAdsPaginationQuery) it answers no body, which the module reports to JavaScript as a request it couldn't make. Marketplace search's results query names neither variable and has no ads-only query, so its ads come back among the listings. The module's answers reach JavaScript through the kept FBTigonRequest$FBTigonCallbacks: onBody hands each piece of text, a toString() result, to React Native's didReceiveNetworkIncrementalData emitter and onEOM hands a whole one to didReceiveNetworkData, each with the request's state at hand, which sendRequest builds with the tracking name in one String field. The patch reads that field and hands the text, the name and the state to the extension right where the text lands. For a Marketplace query with Search in its name, other than the typeahead and mutations, the extension reads each whole JSON payload and takes out a result whose node's type ends in AdStory or that carries a sponsored_data object with an ad id, moving later streamed and deferred indices of its list down past the ads taken out. A streamed ad gives way to a payload with null data that keeps its extensions. A payload that fails to be read goes on as it came, and after it nothing more is taken out while later indices still move. Right before onEOM reports an answer complete through didCompleteNetworkResponse, the patch asks the extension for text still waiting for a payload to finish and hands it to the incremental emitter as one last piece. A video ad that reaches Marketplace's feed anyway isn't drawn, an idea De-Vanced also has, written here from Facebook 577, 580 and 581: the two Litho components that draw one, found by the strings only each holds (its layout spec's own name, and MarketplaceVideoAdQuery with MarketplaceVideoAdComponent_), ask the extension first and return null on a yes, before the ad's video is fetched. For issue #303 a listing page's answer (MarketplacePDPSurfaceQuery on 585) goes through the same response hooks: each listing in it that carries creation_time gets how long ago and the date written after the text of its location_text, and a second copy of the listing under the same id gets the same. The same date also goes under the price: on 585 the Fabric text builder that lays out the listing page's text runs is found by its strings, and the price line it builds is handed to the extension, which appends the date unless the listing is a vehicle (one with a vehicle_ field that holds something), since Facebook already writes one under a vehicle's price."
     },
     {
       "paths": [
@@ -1364,6 +1418,21 @@
       "via": [],
       "license": "GPL-3.0-only",
       "changes": "Rewritten for Facebook from HushMessenger's original photo and original video controls. Facebook's in-app chats use the same DefaultMediaTranscoder, so the photo hooks (transcodeImage and transcodeImageAsync, handed their arguments in one range call) and OriginalPhoto's JPEG copy are the same idea and nearly the same code. The video hook moved: Facebook asks extractMimeTypeAndCheckCanSkipVideoTranscoding, in a build with two trailing ints, whether a file may skip the re-encode, and the size check sits there (bitrate times duration over 8000, plus slack times 1000) instead of in the transcoder's private worker. The anchors are found by names Facebook keeps and by the shape of that check, before anything changes, on 577, 580 and 581. A settings switch in front of every hook, Pause and cold start answered with Facebook's own behavior, the diagnostic report counting what goes out, a send with Facebook's standard size treated like an HD one because the switch asks for originals, and failures recorded in the report instead of Messenger's private log."
+    },
+    {
+      "paths": [
+        "patches/src/main/kotlin/app/morphe/patches/facebook/misc/gmscore/GmsCoreSupportPatch.kt"
+      ],
+      "origin": "ported",
+      "upstream": "https://github.com/SysAdminDoc/HushMessenger",
+      "commit": "6761b36660b67092f5345479781c7bd9602f772b",
+      "via": [
+        "https://github.com/SysAdminDoc/HushPinterest",
+        "https://github.com/MorpheApp/morphe-patches",
+        "https://gitlab.com/ReVanced/revanced-patches"
+      ],
+      "license": "GPL-3.0-only with the Morphe section 7 notices",
+      "changes": "HushMessenger's GmsCore support moved to Facebook. Facebook 585 has the same Play services availability check and the same androidx Credential Manager framework provider, and Facebook's original certificate is the one Messenger's is. Hushfacebook's own classes under app/morphe keep Google's names, the preflight asks the extension for its gmsCore status method in place of Messenger's version code check, and the patch marks itself in SettingsStatus so the settings page and the diagnostic report know it's patched in."
     },
     {
       "paths": [

@@ -157,6 +157,15 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.BURN_IN_STAY_DIM,
                     L10n.t("Once Burn-in guard fades the buttons, they stay faded on Reels whatever you tap or swipe, "
                             + "the next reel too. They still work. Leaving Reels brings them back.")));
+            // The gray needs the reel's player on a TextureView, a Turn off HDR brightness hook that
+            // works as each player is built, and the screen stays in color over one that isn't, so
+            // it starts from the next reel.
+            if (build.contains(PatchFamily.HDR_BRIGHTNESS)) {
+                reels.addPreference(toggle(context, Settings.GRAY_REELS,
+                        L10n.t("Reels and their buttons show in black and white, which makes them easier to put down. "
+                                + "Your feed, stories, photos and chats keep their colors. It starts from the next reel, "
+                                + "and Reels use a little more battery.")));
+            }
             // The sidebar buttons are built as each reel is, so a change shows from the next reel.
             reels.addPreference(toggle(context, Settings.HIDE_REEL_COUNTS,
                     L10n.t("Takes the numbers away from under a reel's Like, Comment and Share icons. "
@@ -195,10 +204,12 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.HIDE_SLOW_CONNECTION_MESSAGE,
                     L10n.t("Stops the \"This is taking a while\" message about your network connection when a video "
                             + "or GIF is slow to load. It keeps loading as before.")));
-            // Asked as each video opened from the feed looks up the next one and as the bar is drawn.
+            // Asked as each video opened from the feed looks up the next one, as the bar is drawn and
+            // as the player measures the room it keeps for the bar.
             reels.addPreference(toggle(context, Settings.HIDE_UP_NEXT,
                     L10n.t("Takes the UP NEXT bar with the next video off the bottom of a video you open from the "
-                            + "feed. A change shows from the next video you open.")));
+                            + "feed, and the empty space kept for it, so the seek bar stays at the bottom. A change "
+                            + "shows from the next video you open.")));
             // Asked as a feed video's player asks for more, so a change shows from the next feed video.
             reels.addPreference(toggle(context, Settings.FEED_VIDEOS_ALONE,
                     L10n.t("A video you tap in the feed opens full screen by itself, with no reels to swipe to after it. "
@@ -327,8 +338,11 @@ final class VideoPages {
                         L10n.t("Videos in search results don't start by themselves. Tap one to play it. "
                                 + "Works with Tap to play on or off.")));
                 playback.addPreference(toggle(context, Settings.INLINE_FEED_VIDEO_CONTROLS,
-                        L10n.t("Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Live videos and ads keep their own controls. "
+                        L10n.t("Adds a play/pause button to feed videos. Tap the video itself to open it full screen. Ads keep their own controls. "
                                 + "With Tap to play on too, Facebook's own Autoplay setting stays as you set it so the button can show, and videos still wait for your tap.")));
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_FULL_PLAYER_BUTTON,
+                        L10n.t("Adds a button to feed videos that opens the video in Facebook's own full player, with all its controls. "
+                                + "Live videos get it too. With Tap to play on, it needs Inline feed video controls on too.")));
                 playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR,
                         L10n.t("Shows a bar along the bottom of a feed video. Drag it and let go to jump to that point. Live videos and ads keep their own controls. "
                     + "With Tap to play on, it needs Inline feed video controls on too.")));

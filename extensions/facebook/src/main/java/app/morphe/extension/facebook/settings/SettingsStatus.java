@@ -90,6 +90,14 @@ public final class SettingsStatus {
         return false;
     }
 
+    public static boolean storyTaps() {
+        return false;
+    }
+
+    public static boolean storyViewerCleanup() {
+        return false;
+    }
+
     public static boolean storiesTrayCircles() {
         return false;
     }
@@ -291,6 +299,10 @@ public final class SettingsStatus {
     }
 
     public static boolean playStoreUpdates() {
+        return false;
+    }
+
+    public static boolean gmsCore() {
         return false;
     }
 

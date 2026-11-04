@@ -323,6 +323,21 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_page_posts", FALSE);
 
     /**
+     * Feed posts whose words the phone is sure are in a language not on {@link #KEPT_LANGUAGES}
+     * (#382, {@link app.morphe.extension.facebook.feed.PostLanguages}). A post with no words, or
+     * none the phone is sure of, stays. Off by default.
+     */
+    public static final BooleanSetting HIDE_OTHER_LANGUAGES =
+            new BooleanSetting("hushfacebook_hide_other_languages", FALSE);
+
+    /**
+     * The languages {@link #HIDE_OTHER_LANGUAGES} keeps, as Google Translate codes separated by
+     * commas, like {@link #TRANSLATE_LEAVE_ALONE}. Empty keeps the phone's language. Not a switch.
+     */
+    public static final StringSetting KEPT_LANGUAGES =
+            new StringSetting("hushfacebook_kept_languages", "");
+
+    /**
      * The reaction count above which feed posts are hidden, read from the feed unit's own feedback
      * ({@link app.morphe.extension.facebook.feed.PostReactions}). Off hides nothing. Not a switch:
      * a list picks the count, and a paused Facebook reads Off.
@@ -435,6 +450,41 @@ public class Settings extends BaseSettings {
     /** The diameter of those pictures in dp, digits only, blank for the default. Not a switch. */
     public static final StringSetting STORIES_TRAY_SIZE =
             new StringSetting("hushfacebook_stories_tray_size", "");
+
+    /**
+     * A tap in the middle of a story shows a play and pause button, like Reels ({@link
+     * app.morphe.extension.facebook.stories.StoryTaps}, #380). Starts off. Read on each tap.
+     */
+    public static final BooleanSetting STORY_PLAY_BUTTON =
+            new BooleanSetting("hushfacebook_story_play_button", FALSE);
+
+    /**
+     * Stories change only on a double tap, and a single tap pauses ({@link
+     * app.morphe.extension.facebook.stories.StoryTaps}, #380). Starts off. Read on each tap.
+     */
+    public static final BooleanSetting STORY_DOUBLE_TAP =
+            new BooleanSetting("hushfacebook_story_double_tap", FALSE);
+
+    /**
+     * The song and effect credits leave the line under the poster's name on a story ({@link
+     * app.morphe.extension.facebook.stories.StoryViewerCleanup}, #380). Starts off. Read as the line draws.
+     */
+    public static final BooleanSetting HIDE_STORY_CREDITS =
+            new BooleanSetting("hushfacebook_hide_story_credits", FALSE);
+
+    /**
+     * The row of suggested replies leaves the bottom of a story ({@link
+     * app.morphe.extension.facebook.stories.StoryViewerCleanup}, #380). Starts off. Read as the row draws.
+     */
+    public static final BooleanSetting HIDE_STORY_REPLY_SUGGESTIONS =
+            new BooleanSetting("hushfacebook_hide_story_reply_suggestions", FALSE);
+
+    /**
+     * A thin bar along the bottom of a story fills as it plays ({@link
+     * app.morphe.extension.facebook.stories.StoryProgressBar}, #380). Starts off. Read as the story plays.
+     */
+    public static final BooleanSetting STORY_PROGRESS_BAR =
+            new BooleanSetting("hushfacebook_story_progress_bar", FALSE);
 
     /** The two page filters that take server-inlined ads out of Reels and Watch. */
     public static final BooleanSetting HIDE_SPONSORED_REELS =
@@ -713,6 +763,16 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_burn_in_stay_dim", FALSE);
 
     /**
+     * Show Reels in gray: the Reels screen shows in black and white, video and buttons alike, and
+     * every other screen keeps its colors ({@link app.morphe.extension.facebook.reels.GrayReels}).
+     * The reels viewer's players draw into a TextureView while it's on, so the gray reaches the
+     * video ({@link app.morphe.extension.facebook.media.TextureVideo}). Off by default. The screen
+     * is read on each look; the video from the next player Facebook sets up.
+     */
+    public static final BooleanSetting GRAY_REELS =
+            new BooleanSetting("hushfacebook_gray_reels", FALSE);
+
+    /**
      * The numbers under a reel's Like, Comment and Share icons go, and the icons stay where they are
      * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#countText}, #180). Off by default.
      * A change shows on the buttons drawn after it.
@@ -808,8 +868,11 @@ public class Settings extends BaseSettings {
      * The UP NEXT bar under a video opened from the feed, naming the video Facebook lines up after
      * it, gets no video to show: the lookup returns before it queries and what was found is handed
      * out empty ({@link app.morphe.extension.facebook.reels.ReelDeclutter#skipUpNextFetch} and
-     * {@link app.morphe.extension.facebook.reels.ReelDeclutter#hideUpNextVideos}, #367). Off by
-     * default.
+     * {@link app.morphe.extension.facebook.reels.ReelDeclutter#hideUpNextVideos}, #367), and the
+     * player keeps no empty room for it under the seek bar ({@link
+     * app.morphe.extension.facebook.reels.ReelDeclutter#skipUpNextRoom}, #375). In the Shorts
+     * viewer most feed videos open in, the UP NEXT pill isn't shown ({@link
+     * app.morphe.extension.facebook.reels.ReelDeclutter#hideUpNextPill}, #375). Off by default.
      */
     public static final BooleanSetting HIDE_UP_NEXT =
             new BooleanSetting("hushfacebook_hide_up_next", FALSE);
@@ -1153,6 +1216,9 @@ public class Settings extends BaseSettings {
     /**
      * The comment composer at the bottom of Facebook's full-screen video viewer is omitted from
      * the viewer's render method ({@link app.morphe.extension.facebook.comments.CommentSheetOptions}).
+     * In the Shorts viewer most feed videos open in, the band the bar sits in goes with it, the
+     * video takes its full height and the seek bar goes down with it ({@link
+     * app.morphe.extension.facebook.comments.CommentSheetOptions#dropsShortsCommentBar}, #375).
      * Comment boxes on ordinary posts are unchanged. Off by default.
      */
     public static final BooleanSetting HIDE_VIDEO_COMMENT_COMPOSER =
@@ -1231,6 +1297,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting COMMENT_BLOCK_BUTTON =
             new BooleanSetting("hushfacebook_comment_block_button", FALSE);
+
+    /**
+     * The button at the end of each row of a post's reaction list (Add friend, Message and the
+     * rest) becomes a Block button that opens Facebook's own block sheet for that person
+     * ({@link app.morphe.extension.facebook.comments.ReactorBlock}, #271). Off by default. A
+     * change shows on lists opened after it.
+     */
+    public static final BooleanSetting REACTOR_BLOCK_BUTTON =
+            new BooleanSetting("hushfacebook_reactor_block_button", FALSE);
 
     /**
      * Comments whose words link to an online shop, like the Shopee links pasted under reels, are
@@ -1371,6 +1446,19 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting FEED_VIDEO_SEEK_BAR =
             new BooleanSetting("hushfacebook_feed_video_seek_bar", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * A button on a feed video, beside the play/pause one, that opens the video in Facebook's own
+     * full player with all its controls, the way Recently watched opens one (#239). Live videos
+     * get it too. Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_FULL_PLAYER_BUTTON =
+            new BooleanSetting("hushfacebook_feed_video_full_player_button", FALSE) {
                 @Override
                 protected void onValueChanged() {
                     FeedVideoControls.settingsChanged();
@@ -2042,6 +2130,14 @@ public class Settings extends BaseSettings {
     public static final BooleanSetting TAKE_BREAKS =
             new BooleanSetting("hushfacebook_take_breaks", FALSE);
 
+    /**
+     * {@link #TAKE_BREAKS} also starts a break once 20 different reels have each played on for
+     * three seconds, whichever comes first (#248). Counted from Resume long videos' player hook, so
+     * it's in that family. Off by default.
+     */
+    public static final BooleanSetting BREAK_AFTER_REELS =
+            new BooleanSetting("hushfacebook_break_after_reels", FALSE, Setting.parent(TAKE_BREAKS));
+
     static {
         // The crash handler is the shared library's, which can't name this class.
         CrashFile.useSwitch(SAVE_CRASH_FILE);
@@ -2563,9 +2659,9 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_keep_post_dates", TRUE);
 
     /**
-     * Posts in the feed show their whole text instead of Facebook's cut with See more
-     * ({@link app.morphe.extension.facebook.feed.FullPostText}). A change shows on the posts drawn
-     * after it.
+     * Posts in the feed and reel captions show their whole text instead of Facebook's cut with See more
+     * ({@link app.morphe.extension.facebook.feed.FullPostText}). A change shows on the posts and reels
+     * drawn after it.
      */
     public static final BooleanSetting SHOW_FULL_POST_TEXT =
             new BooleanSetting("hushfacebook_show_full_post_text", FALSE);

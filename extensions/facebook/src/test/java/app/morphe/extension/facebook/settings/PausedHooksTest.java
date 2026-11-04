@@ -110,6 +110,7 @@ import app.morphe.extension.facebook.comments.CommentBlock;
 import app.morphe.extension.facebook.comments.CommentSheetOptions;
 import app.morphe.extension.facebook.comments.FullHeightComments;
 import app.morphe.extension.facebook.comments.MetaAiSummaries;
+import app.morphe.extension.facebook.comments.ReactorBlock;
 import app.morphe.extension.facebook.composer.TagSuggestionsForTests;
 import app.morphe.extension.facebook.media.HdrBrightnessForTests;
 import app.morphe.extension.facebook.media.PictureInPictureForTests;
@@ -529,10 +530,11 @@ public class PausedHooksTest {
         // A post header's yes to rotating its subtitle is answered as a no, so it keeps the one line.
         probes.put(PatchFamily.POST_DATES, Collections.singletonList(() -> !PostDates.cycling(true)));
         // A post's cut text is answered with null, so Facebook keeps the whole text with no See more,
-        // and a post starts whole, so the first tap folds it.
+        // and a post starts whole, so the first tap folds it. A reel caption starts whole too (#268).
         probes.put(PatchFamily.FULL_POST_TEXT, Arrays.asList(
                 () -> FullPostText.cut(new SpannableString("x"), "a story") == null,
-                () -> !FullPostText.allowTruncation(true)));
+                () -> !FullPostText.allowTruncation(true),
+                () -> FullPostText.reelCaptionExpanded(false)));
         probes.put(PatchFamily.TRANSLATE_POSTS, Collections.singletonList(() -> {
             PostTranslationForTests.noNetwork();
             Spannable post = new SpannableString("Una frase en otro idioma");
@@ -579,6 +581,15 @@ public class PausedHooksTest {
         // A tile in the stories row comes out round.
         probes.put(PatchFamily.STORIES_TRAY_CIRCLES,
                 Collections.singletonList(app.morphe.extension.facebook.stories.StoriesTrayCirclesForTests::rounds));
+        // A single tap in a story waits to see whether a second one comes.
+        probes.put(PatchFamily.STORY_TAPS,
+                Collections.singletonList(app.morphe.extension.facebook.stories.StoryTapsForTests::holdsATap));
+        // A story's credit line leaves its credits out, its suggested replies draw nothing and its card
+        // gets a progress bar.
+        probes.put(PatchFamily.STORY_VIEWER_CLEANUP, Arrays.asList(
+                app.morphe.extension.facebook.stories.StoryViewerCleanup::hideCredits,
+                app.morphe.extension.facebook.stories.StoryViewerCleanup::hideReplySuggestions,
+                app.morphe.extension.facebook.stories.StoryProgressBarForTests::drawsABar));
         // A photo's song gets the longer clip.
         probes.put(PatchFamily.STORY_MUSIC_LENGTH, Collections.singletonList(() -> StoryMusic.clipLength(15000) == 30000));
         probes.put(PatchFamily.SPONSORED_REELS, Arrays.asList(
@@ -642,9 +653,10 @@ public class PausedHooksTest {
                 ReelDeclutter::hideEditsLabel,
                 // A stalled video's slow connection message.
                 ReelDeclutter::hideSlowConnectionMessage,
-                // The UP NEXT bar's lookup and the videos it hands out (#367).
+                // The UP NEXT bar's lookup and the videos it hands out (#367), and its room (#375).
                 ReelDeclutter::skipUpNextFetch,
                 ReelDeclutter::hideUpNextVideos,
+                ReelDeclutter::skipUpNextRoom,
                 ReelDeclutter::hideFollowButton,
                 ReelDeclutter::hideFollowingButton,
                 ReelDeclutter::skipHotComment,
@@ -954,6 +966,8 @@ public class PausedHooksTest {
                     }
                 },
                 CommentBlock::blockIcon,
+                // A reaction list row drops Facebook's shared friending button for its own (#271).
+                () -> ReactorBlock.sharedButton(new Object()) == null,
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("https://s.shopee.vn/9zKs")),
                 () -> CommentSheetOptions.hidesComment(new GraphQLComment("Big SPOILER inside")),
                 () -> CommentSheetOptions.incomingTypers(3) == 0,
