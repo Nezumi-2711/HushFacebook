@@ -319,6 +319,7 @@ Hide Threads cards between reels	Скрывать карточки Threads ме�
 Hides the "Threads you might like" card between reels. Off by default, since it hasn't been tried on a real account yet.	Скрывает карточку «Возможно, вам понравится в Threads» между Reels. По умолчанию выключено, поскольку функция еще не проверялась на реальном аккаунте.
 Only reels from accounts I follow	Только Reels от аккаунтов, на которые я подписан
 The Reels tab only shows reels from people and Pages you follow, starting with the next batch Facebook loads. The tab can take longer to fill. Off by default.	На вкладке Reels остаются только ролики людей и Страниц, на которые вы подписаны, начиная со следующей порции, которую загрузит Facebook. Вкладка может заполняться дольше. По умолчанию выключено.
+Facebook has no more reels your filters would keep, so these reels aren't filtered for now.	У Facebook больше нет роликов, которые оставили бы ваши фильтры, поэтому пока эти ролики не фильтруются.
 Download quality	Качество скачивания
 Best	Наилучшее
 Smallest	Минимальный размер
@@ -1263,6 +1264,12 @@ With Stop Story auto-advance on, a finished story plays again from the start ins
 Save photo in post menus	Сохранять фото из меню публикаций
 # context: summary of the Save photo in post menus switch; "Save any photo" is the label of the switch above it and "Save photo" is the menu item, so use their translations
 With Save any photo on, a post with photos gets Save photo in its three-dot menu too. A post with several saves each one, one after another.	Если включена настройка «Сохранять любые фото», в меню публикации с фотографиями также появляется пункт «Сохранить фото». Если фото несколько, они сохраняются по одному.
+Search photo	Найти по фото
+Search photo with	Найти по фото с помощью
+Search photo in post menus	Поиск по фото в меню публикаций
+With Save any photo on, a post with one photo gets Search photo in its three-dot menu. It hands the photo to the app you pick, such as Google Lens, to look up what's in it or copy its text.	Когда включено «Сохранять любые фото», у публикации с одним фото в меню с тремя точками появляется «Найти по фото». Фото передаётся в выбранное приложение, например Google Lens, чтобы узнать, что на нём, или скопировать текст.
+No app on this phone can search with a photo	На этом телефоне нет приложения для поиска по фото
+Couldn't get this photo. Try again in a moment.	Не удалось получить это фото. Попробуйте ещё раз чуть позже.
 # context: menu item in a post's three-dot menu that saves the post's one photo to the phone
 Save photo	Сохранить фото
 # context: primary save row for a Story that reshares a Reel
@@ -1784,6 +1791,14 @@ With Pinch to zoom on, the photo or story stays zoomed when you let go, and a st
 Double tap to zoom	Увеличение двойным нажатием
 # context: summary of that switch; "Pinch to zoom" is the label of the switch two rows above it, so use its translation; a story is the full-screen picture or video someone shares for a day
 With Pinch to zoom on, double tap a photo on a profile to zoom in where you tapped, and double tap again to put it back. A single tap still opens the photo, a moment later.	Если включено масштабирование жестом, дважды нажмите на фото в профиле, чтобы увеличить область под пальцем, и нажмите дважды снова, чтобы вернуть исходный размер. Одиночное нажатие по-прежнему открывает фото с небольшой задержкой.
+# context: a switch under Pinch to zoom; with it on, the rest of the screen gets darker behind a zoomed photo or story
+Dim around a zoom	Затемнять вокруг увеличения
+# context: that switch's summary; "Pinch to zoom" is the label of the switch above it, so use its translation; a story is the full-screen picture or video someone shares for a day
+With Pinch to zoom on, the screen around a photo or story darkens as you zoom in. Turn it off to keep the rest of the screen as it is.	Если включено масштабирование жестом, экран вокруг фото или Истории темнеет, пока вы увеличиваете. Выключите, чтобы остальная часть экрана оставалась как есть.
+# context: a switch under Pinch to zoom; with it on, a video you zoom keeps moving instead of freezing on the frame it showed
+Keep videos playing while zoomed	Не останавливать видео при увеличении
+# context: that switch's summary; "Pinch to zoom" and "Stay zoomed" are the labels of switches above it, so use their translations; a Page is a business's or public figure's Facebook page; a story is the full-screen picture or video someone shares for a day
+With Pinch to zoom on, a video you zoom on a profile or Page keeps playing. With Stay zoomed on too, press and hold the zoom to pause the video, and again to play it. Stories hold still while you zoom.	Если включено масштабирование жестом, видео, которое вы увеличили в профиле или на Странице, продолжает играть. Если также включено «Сохранять масштаб», нажмите и удерживайте увеличенное изображение, чтобы поставить видео на паузу, и еще раз, чтобы воспроизвести его. Истории во время увеличения не двигаются.
 No ads downloaded in advance	Не загружать рекламу заранее
 No ad tracking	Не отслеживать рекламу
 No Facebook ads in other apps	Не показывать рекламу Facebook в других приложениях
@@ -2180,6 +2195,10 @@ Adds a cast button to feed videos. It hands the video to a casting app you have,
 Cast this video	Транслировать это видео
 Full player button on feed videos	Кнопка полного плеера для видео в Ленте
 Adds a button to feed videos that opens the video in Facebook's own full player, with all its controls. Live videos get it too. With Tap to play on, it needs Inline feed video controls on too.	Добавляет к видео в Ленте кнопку, которая открывает видео в полном плеере Facebook со всеми его элементами управления. Прямые эфиры тоже ее получают. Если включено воспроизведение по нажатию, необходимо также включить встроенные элементы управления видео в Ленте.
+# context: a switch under Video and audio; with it on, a video opened full screen starts with its details and comments panel closed, so the video is in the middle of the screen
+Open full screen videos centered	Открывать полноэкранные видео по центру
+# context: that switch's summary; the arrow is the small button under the video that opens and closes the details and comments panel
+Videos you open full screen, from a comment or a link, start with their details and comments folded away, so the video sits in the middle of the screen. The arrow under it still brings them back.	Видео, которые вы открываете на весь экран из комментария или по ссылке, начинаются со свёрнутыми подробностями и комментариями, поэтому видео оказывается посередине экрана. Стрелка под ним по-прежнему возвращает их.
 Open in the full player	Открыть в полном плеере
 Seek bar on feed videos	Полоса перемотки для видео в Ленте
 Shows a bar along the bottom of a feed video. Drag it and let go to jump to that point. Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.	Показывает внизу видео в Ленте полосу перемотки. Перетащите ползунок и отпустите, чтобы перейти к нужному моменту. Для прямых эфиров и рекламы остаются собственные элементы управления. Если включено воспроизведение по нажатию, необходимо также включить встроенные элементы управления видео в Ленте.
@@ -2513,8 +2532,12 @@ Restore feed sound after opened videos	Возвращать звук Ленты 
 A video you open plays with its sound as usual. Back in the feed, the sound is what it was before you opened it, even after a long watch.	Открытое видео воспроизводится со звуком как обычно. После возврата в Ленту звук будет таким же, как до открытия видео, даже после долгого просмотра.
 Hide the Join button on posts	Скрывать кнопку «Вступить» в публикациях
 Hides the Join button next to the group's name on posts from groups you haven't joined, and the Join group bar under their videos. A change shows on the posts drawn after it.	Скрывает кнопку «Вступить» рядом с названием группы в публикациях из групп, в которые вы не вступили, а также панель «Вступить в группу» под их видео. Изменение видно в публикациях, загруженных после него.
+Hide the X on posts	Скрывать крестик в публикациях
+Takes the X off the top corner of posts in your feed. The three-dot menu next to it stays. A change shows on the posts drawn after it.	Убирает крестик из верхнего угла публикаций в ленте. Меню с тремя точками рядом остаётся. Изменение видно в публикациях, загруженных после него.
 Hide the Reels title	Скрывать заголовок Reels
 Takes the word Reels off the top of the Reels tab. The buttons beside it stay.	Убирает слово Reels в верхней части вкладки Reels. Кнопки рядом остаются.
+Hide Back on opened videos	Скрывать «Назад» у открытых видео
+Takes the Back arrow off the top of a video or reel you open, and Menu off the top of the Reels tab. Your phone's back gesture or button still goes back.	Убирает стрелку «Назад» в верхней части открытого видео или Reels и кнопку «Меню» вверху вкладки Reels. Жест или кнопка «Назад» на телефоне по-прежнему работает.
 Videos in search results wait for a tap	Видео в результатах поиска ждут нажатия
 Videos in search results don't start by themselves. Tap one to play it. Works with Tap to play on or off.	Видео в результатах поиска не запускаются сами. Нажмите на видео, чтобы его включить. Работает при включенной и выключенной функции «Нажать для воспроизведения».
 Custom color	Свой цвет
@@ -2562,9 +2585,15 @@ A tap in the middle of a story shows a play and pause button, like Reels. Taps o
 Stories change only on a double tap, the left side for the one before and anywhere else for the next. A single tap pauses or plays the story, or shows the play button when that's on.	Истории переключаются только двойным нажатием, слева на предыдущую, в любом другом месте на следующую. Одиночное нажатие ставит Историю на паузу или продолжает её, либо показывает кнопку воспроизведения, если она включена.
 Pause story	Приостановить Историю
 Play story	Воспроизвести Историю
+Replay story	Воспроизвести Историю снова
 Hide song and effect credits	Скрыть подписи песни и эффекта
 Hide reply suggestions	Скрыть варианты ответа
 Takes the song and effect credits off the line under the poster's name on a story. Applies from the next story you open.	Убирает подписи песни и эффекта из строки под именем автора Истории. Действует со следующей открытой Истории.
 Takes the row of suggested replies off the bottom of a story. The reply box stays. Applies from the next story you open.	Убирает ряд предложенных ответов внизу Истории. Поле ответа остаётся. Действует со следующей открытой Истории.
+Hide the Subscribe button	Скрыть кнопку «Подписаться»
+Takes the Subscribe button off the top of a story. Applies from the next story you open.	Убирает кнопку «Подписаться» вверху Истории. Действует со следующей открытой Истории.
 Progress bar at the bottom	Полоса прогресса внизу
 Shows a thin bar along the bottom of a story that fills as it plays, like the one on Reels.	Показывает внизу Истории тонкую полосу, которая заполняется по мере воспроизведения, как в Reels.
+Clean mode	Чистый режим
+Clean mode button on reels	Кнопка чистого режима в Reels
+Adds a Clean mode button to the buttons down the side of a reel. Tap it to hide them, and Clean mode stays on as you swipe. Facebook's own Clean mode button brings them back.	Добавляет кнопку чистого режима к кнопкам сбоку от Reels. Нажмите ее, чтобы скрыть их, и чистый режим останется включенным при пролистывании. Собственная кнопка чистого режима Facebook возвращает их.

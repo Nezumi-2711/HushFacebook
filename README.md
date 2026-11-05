@@ -1,11 +1,11 @@
 ![Hushfacebook. Keep the people. Cut the noise.](assets/readme-hero.png)
 
 <p align="center">
-  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.20.0-0866FF" alt="Version 0.20.0"></a>
+  <a href="https://github.com/SysAdminDoc/Hushfacebook/releases"><img src="https://img.shields.io/badge/version-0.21.0-0866FF" alt="Version 0.21.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License GPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Android%2011%2B-3DDC84" alt="Platform Android 11+">
   <img src="https://img.shields.io/badge/Facebook-585.0.0.47.54-0866FF" alt="Facebook 585.0.0.47.54">
-  <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.3.0%2B-8A2BE2" alt="For Morphe Manager 2.3.0 or newer">
+  <img src="https://img.shields.io/badge/for-Morphe%20Manager%202.4.0%2B-8A2BE2" alt="For Morphe Manager 2.4.0 or newer">
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@ Each row in the [patch table](#patches) says how its switch starts. The ad filte
 
 This project has no connection to Meta or to the Morphe project. Neither endorses it, and neither wrote it.
 
-The latest release is [v0.20.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.20.0), with 109 patches. It includes all changes since v0.19.0, among them a move to Facebook 585.0.0.47.54, a burn-in guard for videos, reels that can show when they were posted, and switches for the search button, Like under comments, the Subscribe button and the stories you've already watched, as the [changelog](CHANGELOG.md) describes.
+The latest release is [v0.21.0](https://github.com/SysAdminDoc/Hushfacebook/releases/tag/v0.21.0), with 117 patches. It includes all changes since v0.20.0, among them a new look for the Hush settings with a list of the switches that are on, settings in Russian, photo carousels in the feed, gray Reels with a break after 20 of them, and a seek bar on feed videos, as the [changelog](CHANGELOG.md) describes.
 
 [Add to Morphe](https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook) | [Download a release](https://github.com/SysAdminDoc/Hushfacebook/releases/latest) | [Browse the patches](#patches)
 
@@ -31,7 +31,7 @@ The latest release is [v0.20.0](https://github.com/SysAdminDoc/Hushfacebook/rele
 
 ## Install
 
-1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.3.0 or newer.
+1. Install [Morphe Manager](https://github.com/MorpheApp/morphe-manager) 2.4.0 or newer.
 2. Add Hushfacebook as a patch source: https://morphe.software/add-source?github=SysAdminDoc%2FHushfacebook
 3. Download Facebook 585.0.0.47.54 from [APKMirror](https://www.apkmirror.com/apk/facebook-2/facebook/). Take the bundle labelled (arm64-v8a) (120-640dpi) (Android 11+), build 476015655, or on a phone with only a 32-bit processor the one labelled (arm-v7a) (320dpi) (Android 11+), build 476015543. Both are .apkm files. Take the 64-bit one whenever your phone can run it. The 32-bit one only has images for 320 dpi screens, so on a sharper screen some icons look soft.
 4. In Morphe Manager, tap **Select other apps**, then **Open APK file**, and pick that file. Android may ask for file access the first time.
@@ -41,7 +41,7 @@ The default selection is every patch but four, so you don't need Expert mode. To
 
 ### Keep your signing key
 
-Morphe Manager signs the patched Facebook with a key it makes on your phone, and every update has to carry that same key. Back it up right after your first patch, under **Settings → System → Import & export → Signing key** in Manager, then tap **Export**. The button only shows up once you've patched something. Keep the `Morphe.keystore` file somewhere private, because anyone who has it can sign an APK your phone will take as an update.
+Morphe Manager signs the patched Facebook with a key it makes on your phone, and every update has to carry that same key. Back it up right after your first patch, under **Settings → Backup → Signing key** in Manager, then tap **Export**. The button only shows up once you've patched something. Manager 2.4.0 saves it as `Morphe.p12` (older versions saved `Morphe.keystore`). Keep that file somewhere private, because anyone who has it can sign an APK your phone will take as an update. The file opens with the key's own password. A key Manager made itself uses Manager's usual password, which it tries on its own when you import. If you once imported a key with a password of your own, keep that password with the file.
 
 On a new phone, import the key in the same place before you patch anything. Reinstalling Manager or clearing its storage makes a new key, and Morphe's settings backup doesn't include it. With a different key, the only way forward is to uninstall the patched Facebook, which deletes its data. A Root Mount install sits over Meta's own Facebook and doesn't have this problem. Morphe's own guide is [Backup and keystore](https://github.com/MorpheApp/morphe-manager/blob/main/docs/backup-and-keystore.md).
 
@@ -67,6 +67,8 @@ To keep Reel downloads in More without the sidebar button, leave **Download** on
 
 **Cast button on reels**, on the same page, adds a cast button under Download on a reel's sidebar. Like the feed one below, it hands the reel to a casting app you have, and it works with Download off too. It starts off.
 
+**Clean mode button on reels** puts a Clean mode button on that sidebar as well. Tap it and the buttons down the side go away, and they stay away on the next reels until you tap Facebook's own Clean mode button. It starts off.
+
 **Hide WhatsApp on reels**, also under **Reels and Watch**, removes the direct WhatsApp button beside a reel or video. It starts off. WhatsApp stays available in the Share menu.
 
 **Inline feed video controls**, under **Video and audio**, adds a separate play/pause button to feed videos, on Home and in Pages, groups and profiles. It starts off. With **Tap to play** on as well, Facebook's own Autoplay setting stays as you set it so the button can show, and videos still wait for you. Tap the video itself for full screen. Live videos get the button too, though not the seek bar or cast button below, since a live stream has no end to jump around in and no file to hand over. Ads keep their own controls.
@@ -76,6 +78,8 @@ To keep Reel downloads in More without the sidebar button, leave **Download** on
 **Seek bar on feed videos**, right below that, runs a thin bar along the bottom of a feed video. Drag it and let go to jump to that point, and the time shows while you drag. It starts off. You won't see it while the video's bottom edge is off screen or covered by the tab bar, and the same goes for the strip at the very bottom of the screen that Android keeps for its home swipe. Scroll a little and it comes back. With Tap to play on, it needs Inline feed video controls on too.
 
 **Cast button on feed videos**, the last of these, puts a cast button in a feed video's top right corner. Facebook has no casting of its own anymore, so the button hands the video to a casting app you have, like Web Video Caster. It starts off.
+
+**Open full screen videos centered** is for videos that open in Facebook's full screen player, say from a comment or a link. Facebook opens them with the details and comments under the video, which pushes a wide video up to the top of the screen. With this on they start with that panel folded away, so the video sits in the middle. The arrow under the video still brings the panel back. It starts off and applies to the next video you open.
 
 ### Blocking Reels
 
@@ -128,7 +132,7 @@ Each row says what the patch does, how its switch starts and which settings sect
 | `Hide carrier data banners` | On carriers with Facebook Flex, hides the Data mode bar with its buy mobile data button, or the purple Free mode bar, so the feed gets that space back. Both switches start off. Turn them on in Hushfacebook settings > Appearance. |
 | `Hide sponsored Marketplace listings` | Removes ads and boosted listings from Marketplace's feed and search results, so you see more of what people are selling. Listings people post stay. It also reads rules typed into Marketplace search: "word" keeps titles with the word, -word hides titles with it and in:place keeps listings in that place, and an Adv. Filters button writes them for you. The search rules and the button are off until you turn them on in Hushfacebook settings > Marketplace. |
 | `Hide posts by words` | Hides feed posts with words you list, or from people, Pages or sites you list, so you skip topics you're tired of. Photo, video, link and colored background posts, every post a Page wrote, or posts in languages you don't read can go too. Starts off. Turn it on in Hushfacebook settings > News feed. |
-| `Hide post prompts` | Removes the strip Facebook adds to some posts, like "Are you interested in this post?", "Show less" or follow suggestions, so posts look less cluttered. No gap is left. On by default. Turn it off in Hushfacebook settings > News feed. Four more switches there, Hide the Follow link on posts, Hide the Join button on posts, Hide counts on posts and Hide the reaction preview on posts, start off. |
+| `Hide post prompts` | Removes the strip Facebook adds to some posts, like "Are you interested in this post?", "Show less" or follow suggestions, so posts look less cluttered. No gap is left. On by default. Turn it off in Hushfacebook settings > News feed. Five more switches there, Hide the Follow link on posts, Hide the Join button on posts, Hide the X on posts, Hide counts on posts and Hide the reaction preview on posts, start off. |
 | `Hide seen posts` | Keeps posts you've already scrolled past out of the feed when it loads again, for 1, 3, 7, 30 or 90 days, so you see something new. The list stays on your phone. Starts off. Turn it on in Hushfacebook settings > News feed. |
 | `Hide Meta AI questions under posts` | Removes the row of Meta AI questions Facebook adds under some posts, for a cleaner feed. The post and its buttons stay. On by default. Turn it off in Hushfacebook settings > News feed. |
 | `Hide Meta AI comment summaries` | Removes Meta AI's summary of the comments from the top of the comment sheet and from under posts, so you read what people actually wrote. Starts off. Turn it on in Hushfacebook settings > Comments and writing. |
@@ -147,7 +151,7 @@ Each row says what the patch does, how its switch starts and which settings sect
 | `Local profile counts` | Shows friends, followers and following counts you type yourself on your own profile, on this phone only. Other profiles and Facebook's real numbers aren't touched. Starts off. Turn it on in Hushfacebook settings > News feed. |
 | `Round stories tray` | Draws the stories row on Home as round pictures at a size you pick, like Instagram. Starts off. Turn it on in Hushfacebook settings > Stories. |
 | `Story viewer taps` | A tap in the middle of a story shows a play and pause button, like Reels, and a second switch makes stories change only on a double tap, so a single tap pauses or plays instead. Both start off. Turn them on in Hushfacebook settings > Stories. |
-| `Clean up the story viewer` | Switches that take the song and effect credits off the line under the poster's name on a story, and the suggested replies off the bottom while the reply box stays, plus one that adds a thin progress bar along the bottom like the one on Reels. All start off. Turn them on in Hushfacebook settings > Stories. |
+| `Clean up the story viewer` | Switches that take the song and effect credits and the Subscribe button off a story, and the suggested replies off the bottom while the reply box stays, plus one that adds a thin progress bar along the bottom like the one on Reels. All start off. Turn them on in Hushfacebook settings > Stories. |
 | `Post action buttons` | Adds Facebook's own Save button next to Like, Comment and Share under posts, and a Download button on posts with a video or photos that saves them the way the post's menu does. It can also take Like, Comment, Share or Send out of that row. Each has its own switch, and they all start off. Find them in Hushfacebook settings > News feed. |
 | `Hide sponsored reels` | Removes ads from Reels and Watch, including product banners over reels and ads in the middle of videos, so you can watch without interruptions. On by default. Turn it off in Hushfacebook settings > Reels and Watch. |
 | `Hide sponsored search results` | Removes the ads from Facebook's search results, so you see the people, Pages and posts you searched for. On by default. Turn it off in Hushfacebook settings > Search. |
@@ -185,7 +189,7 @@ Each row says what the patch does, how its switch starts and which settings sect
 | `Open Messenger from the top bar` | Makes the Messenger icon at the top of Facebook open the Messenger app instead of Facebook's own Chats, if you'd rather chat in Messenger. Without Messenger installed, Chats opens as before. Starts off. Turn it on in Hushfacebook settings > Chats and Messenger. Also carries Leave calls and chats to Messenger, a separate switch that starts off and leaves calls and chat notifications to Messenger while it's installed and enabled. Restart Facebook after changing the switch or whether Messenger is installed or enabled, so call routing updates. |
 | `Open on a chosen tab` | Opens Facebook on the tab you pick when you start it from its icon, so you can skip the feed. It's Marketplace unless you change it. Starts off. Turn it on in Hushfacebook settings > Opening Facebook. |
 | `Picture-in-picture` | Keeps reels and videos from the Reels and Video tabs, or full screen, playing in a small window when you leave Facebook, so you can watch while using another app. Needs Android 12 or later. Starts off. Turn it on in Hushfacebook settings > Video and audio. |
-| `Pinch to zoom` | Pinch a story or a photo on someone's profile to zoom in, like you can on photos in the feed. It goes back when you let go, unless you turn on Stay zoomed under it, which keeps the zoom until you tap or press Back. Starts off. Turn it on in Hushfacebook settings > Stories. |
+| `Pinch to zoom` | Pinch a story or a photo on someone's profile to zoom in, like you can on photos in the feed. It goes back when you let go, unless you turn on Stay zoomed under it, which keeps the zoom until you tap or press Back. Keep videos playing while zoomed, another switch under it, lets a video on a profile or Page play on while you zoom, and with Stay zoomed you press and hold to pause it. Starts off. Turn it on in Hushfacebook settings > Stories. |
 | `Remove the gap above Marketplace listings` | Takes out the empty band some phones show between the status bar and a Marketplace listing's close and share buttons, like Pixels on Android 17. Phones without the gap look the same as before. On by default. Turn it off in Hushfacebook settings > Marketplace. |
 | `Restore screens on re-signed builds` | Fixes profiles, photos, posts and some Settings pages that won't open on a patched Facebook, lets a Messenger or Facebook Lite patched in the same Manager sign in through it, and opens Instagram and Threads links in a patched Instagram or Threads. Root Mount installs don't need it. Works as soon as you patch it in, with no switch. |
 | `Resume long videos` | A video longer than two minutes picks up where you left off the next time it plays, in the feed or full screen, so you don't lose your place. Reels, live videos and ads start as usual. Remember what you watch, a second switch, keeps a list on your phone of the reels, videos and stories you watched, under Recently watched. Both start off. Turn them on in Hushfacebook settings > Video and audio. It also lets Take breaks count reels for its Also after 20 reels switch. |

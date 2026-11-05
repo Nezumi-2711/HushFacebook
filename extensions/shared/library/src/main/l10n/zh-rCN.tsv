@@ -313,6 +313,7 @@ Hide Threads cards between reels	隐藏 Reels 之间的 Threads 卡片
 Hides the "Threads you might like" card between reels. Off by default, since it hasn't been tried on a real account yet.	隐藏 Reels 之间的“你可能喜欢的 Threads”卡片。默认关闭，因为尚未在真实账号上试过。
 Only reels from accounts I follow	只看我关注的账号的 Reels
 The Reels tab only shows reels from people and Pages you follow, starting with the next batch Facebook loads. The tab can take longer to fill. Off by default.	Reels 标签页只显示你关注的人和公共主页的 Reels，从 Facebook 加载的下一批开始。标签页可能需要更久才能填满。默认关闭。
+Facebook has no more reels your filters would keep, so these reels aren't filtered for now.	Facebook 没有更多能通过你的筛选的 Reels 了，所以这些 Reels 暂时不筛选。
 Download quality	下载画质
 Best	最佳
 Smallest	最小
@@ -1233,6 +1234,12 @@ With Stop Story auto-advance on, a finished story plays again from the start ins
 Save photo in post menus	帖子菜单中的保存照片
 # context: summary of the Save photo in post menus switch; "Save any photo" is the label of the switch above it and "Save photo" is the menu item, so use their translations
 With Save any photo on, a post with photos gets Save photo in its three-dot menu too. A post with several saves each one, one after another.	开启“保存任意照片”后，带照片的帖子在其三点菜单中也会有“保存照片”。包含多张照片的帖子会逐张依次保存。
+Search photo	以图搜索
+Search photo with	以图搜索方式
+Search photo in post menus	在帖子菜单中以图搜索
+With Save any photo on, a post with one photo gets Search photo in its three-dot menu. It hands the photo to the app you pick, such as Google Lens, to look up what's in it or copy its text.	开启“保存任意照片”后，只有一张照片的帖子会在三点菜单中显示“以图搜索”。照片会交给你选择的应用（例如 Google 智能镜头），用来查找图中内容或复制其中的文字。
+No app on this phone can search with a photo	这部手机上没有可以用照片搜索的应用
+Couldn't get this photo. Try again in a moment.	无法获取这张照片。请稍后再试。
 # context: menu item in a post's three-dot menu that saves the post's one photo to the phone
 Save photo	保存照片
 # context: primary save row for a Story that reshares a Reel
@@ -1739,6 +1746,14 @@ With Pinch to zoom on, the photo or story stays zoomed when you let go, and a st
 Double tap to zoom	双击缩放
 # context: summary of that switch; "Pinch to zoom" is the label of the switch two rows above it, so use its translation; a story is the full-screen picture or video someone shares for a day
 With Pinch to zoom on, double tap a photo on a profile to zoom in where you tapped, and double tap again to put it back. A single tap still opens the photo, a moment later.	开启双指缩放后，双击个人主页上的照片会以点按处为中心放大，再双击一次恢复。单击照片仍会打开它，只是稍晚一点。
+# context: a switch under Pinch to zoom; with it on, the rest of the screen gets darker behind a zoomed photo or story
+Dim around a zoom	缩放时调暗周围
+# context: that switch's summary; "Pinch to zoom" is the label of the switch above it, so use its translation; a story is the full-screen picture or video someone shares for a day
+With Pinch to zoom on, the screen around a photo or story darkens as you zoom in. Turn it off to keep the rest of the screen as it is.	开启双指缩放后，放大照片或快拍时，周围的屏幕会随之变暗。关闭后，屏幕其余部分保持原样。
+# context: a switch under Pinch to zoom; with it on, a video you zoom keeps moving instead of freezing on the frame it showed
+Keep videos playing while zoomed	缩放时视频继续播放
+# context: that switch's summary; "Pinch to zoom" and "Stay zoomed" are the labels of switches above it, so use their translations; a Page is a business's or public figure's Facebook page; a story is the full-screen picture or video someone shares for a day
+With Pinch to zoom on, a video you zoom on a profile or Page keeps playing. With Stay zoomed on too, press and hold the zoom to pause the video, and again to play it. Stories hold still while you zoom.	开启双指缩放后，在个人主页或公共主页上缩放的视频会继续播放。同时开启保持放大时，长按放大的画面可暂停视频，再次长按继续播放。缩放时快拍会保持静止。
 No ads downloaded in advance	不提前下载广告
 No ad tracking	不进行广告跟踪
 No Facebook ads in other apps	其他应用中没有 Facebook 广告
@@ -2131,6 +2146,10 @@ Adds a cast button to feed videos. It hands the video to a casting app you have,
 Cast this video	投屏此视频
 Full player button on feed videos	动态视频上的完整播放器按钮
 Adds a button to feed videos that opens the video in Facebook's own full player, with all its controls. Live videos get it too. With Tap to play on, it needs Inline feed video controls on too.	为动态中的视频添加一个按钮，在 Facebook 自己的完整播放器中打开视频，附带全部控件。直播视频也有。开启“点按播放”时，还需要开启“动态消息视频控件”。
+# context: a switch under Video and audio; with it on, a video opened full screen starts with its details and comments panel closed, so the video is in the middle of the screen
+Open full screen videos centered	全屏视频居中打开
+# context: that switch's summary; the arrow is the small button under the video that opens and closes the details and comments panel
+Videos you open full screen, from a comment or a link, start with their details and comments folded away, so the video sits in the middle of the screen. The arrow under it still brings them back.	从评论或链接全屏打开的视频会先收起详情和评论，让视频位于屏幕中间。下方的箭头仍可重新展开。
 Open in the full player	在完整播放器中打开
 Seek bar on feed videos	动态视频上的进度条
 Shows a bar along the bottom of a feed video. Drag it and let go to jump to that point. Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.	在动态视频底部显示一条进度条。拖动后松开即可跳到该位置。直播视频和广告仍使用它们自己的控件。开启“点按播放”时，还需要开启“动态消息视频控件”。
@@ -2454,8 +2473,12 @@ Restore feed sound after opened videos	打开视频后恢复动态的声音
 A video you open plays with its sound as usual. Back in the feed, the sound is what it was before you opened it, even after a long watch.	你打开的视频照常带声音播放。回到动态后，声音会恢复到打开视频之前的状态，即使看了很久也一样。
 Hide the Join button on posts	隐藏帖子上的加入按钮
 Hides the Join button next to the group's name on posts from groups you haven't joined, and the Join group bar under their videos. A change shows on the posts drawn after it.	隐藏来自你未加入的小组的帖子中，小组名称旁边的加入按钮，以及这些小组视频下方的“加入小组”栏。更改会在之后加载的帖子上生效。
+Hide the X on posts	隐藏帖子上的 X
+Takes the X off the top corner of posts in your feed. The three-dot menu next to it stays. A change shows on the posts drawn after it.	去掉动态中帖子右上角的 X，旁边的三点菜单保留。更改会在之后加载的帖子上生效。
 Hide the Reels title	隐藏 Reels 标题
 Takes the word Reels off the top of the Reels tab. The buttons beside it stay.	去掉 Reels 标签页顶部的 Reels 字样。旁边的按钮保留。
+Hide Back on opened videos	隐藏已打开视频的返回按钮
+Takes the Back arrow off the top of a video or reel you open, and Menu off the top of the Reels tab. Your phone's back gesture or button still goes back.	去掉你打开的视频或 Reels 顶部的返回箭头，以及 Reels 标签页顶部的菜单按钮。手机的返回手势或返回键仍然可以返回。
 Videos in search results wait for a tap	搜索结果中的视频等你点按
 Videos in search results don't start by themselves. Tap one to play it. Works with Tap to play on or off.	搜索结果中的视频不会自动播放。点按某个视频即可播放。无论“点按播放”开启还是关闭都有效。
 Custom color	自定义颜色
@@ -2503,9 +2526,15 @@ A tap in the middle of a story shows a play and pause button, like Reels. Taps o
 Stories change only on a double tap, the left side for the one before and anywhere else for the next. A single tap pauses or plays the story, or shows the play button when that's on.	快拍只在双击时切换，左侧切到上一条，其他位置切到下一条。单击会暂停或播放快拍，开启播放按钮时则显示该按钮。
 Pause story	暂停快拍
 Play story	播放快拍
+Replay story	重新播放快拍
 Hide song and effect credits	隐藏歌曲和特效署名
 Hide reply suggestions	隐藏回复建议
 Takes the song and effect credits off the line under the poster's name on a story. Applies from the next story you open.	去掉快拍中发布者名字下方那行的歌曲和特效署名。从你打开的下一个快拍开始生效。
 Takes the row of suggested replies off the bottom of a story. The reply box stays. Applies from the next story you open.	去掉快拍底部那一排建议回复。回复框会保留。从你打开的下一个快拍开始生效。
+Hide the Subscribe button	隐藏订阅按钮
+Takes the Subscribe button off the top of a story. Applies from the next story you open.	去掉快拍顶部的订阅按钮。从你打开的下一个快拍开始生效。
 Progress bar at the bottom	底部进度条
 Shows a thin bar along the bottom of a story that fills as it plays, like the one on Reels.	在快拍底部显示一条随播放逐渐填满的细条，和 Reels 上的一样。
+Clean mode	简洁模式
+Clean mode button on reels	短视频上的简洁模式按钮
+Adds a Clean mode button to the buttons down the side of a reel. Tap it to hide them, and Clean mode stays on as you swipe. Facebook's own Clean mode button brings them back.	在短视频侧边的按钮中添加简洁模式按钮。点按它即可隐藏这些按钮，滑动时简洁模式会保持开启。Facebook 自带的简洁模式按钮可让它们重新显示。

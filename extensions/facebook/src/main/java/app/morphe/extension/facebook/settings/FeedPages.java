@@ -275,6 +275,9 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.HIDE_POST_JOIN_BUTTON,
                         L10n.t("Hides the Join button next to the group's name on posts from groups you haven't joined, "
                                 + "and the Join group bar under their videos. A change shows on the posts drawn after it.")));
+                feed.addPreference(toggle(context, Settings.HIDE_POST_X,
+                        L10n.t("Takes the X off the top corner of posts in your feed. The three-dot menu next to it stays. "
+                                + "A change shows on the posts drawn after it.")));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_COUNTS,
                         L10n.t("Takes the numbers off the Like, Comment and Share buttons under posts, so each shows "
                                 + "just its word. The buttons stay where they are. A change shows on the posts drawn after it.")));
@@ -741,6 +744,8 @@ final class FeedPages {
                 stories.addPreference(toggle(context, Settings.HIDE_STORY_REPLY_SUGGESTIONS,
                         L10n.t("Takes the row of suggested replies off the bottom of a story. The reply box stays. "
                                 + "Applies from the next story you open.")));
+                stories.addPreference(toggle(context, Settings.HIDE_STORY_SUBSCRIBE,
+                        L10n.t("Takes the Subscribe button off the top of a story. Applies from the next story you open.")));
                 stories.addPreference(toggle(context, Settings.STORY_PROGRESS_BAR,
                         L10n.t("Shows a thin bar along the bottom of a story that fills as it plays, like the one on Reels.")));
             }
@@ -755,6 +760,15 @@ final class FeedPages {
                 stories.addPreference(toggle(context, Settings.PINCH_TO_ZOOM_DOUBLE_TAP,
                         L10n.t("With Pinch to zoom on, double tap a photo on a profile to zoom in where you tapped, "
                                 + "and double tap again to put it back. A single tap still opens the photo, a moment later."))
+                        .needs(Settings.PINCH_TO_ZOOM));
+                stories.addPreference(toggle(context, Settings.PINCH_TO_ZOOM_DIM,
+                        L10n.t("With Pinch to zoom on, the screen around a photo or story darkens as you zoom in. "
+                                + "Turn it off to keep the rest of the screen as it is."))
+                        .needs(Settings.PINCH_TO_ZOOM));
+                stories.addPreference(toggle(context, Settings.PINCH_TO_ZOOM_LIVE,
+                        L10n.t("With Pinch to zoom on, a video you zoom on a profile or Page keeps playing. "
+                                + "With Stay zoomed on too, press and hold the zoom to pause the video, and again to play it. "
+                                + "Stories hold still while you zoom."))
                         .needs(Settings.PINCH_TO_ZOOM));
             }
         }

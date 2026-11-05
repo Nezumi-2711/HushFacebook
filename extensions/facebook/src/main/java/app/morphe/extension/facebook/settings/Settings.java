@@ -480,6 +480,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_story_reply_suggestions", FALSE);
 
     /**
+     * The Subscribe pill leaves the top of a story ({@link
+     * app.morphe.extension.facebook.stories.StoryViewerCleanup}, #380). Starts off. Read as the pill draws.
+     */
+    public static final BooleanSetting HIDE_STORY_SUBSCRIBE =
+            new BooleanSetting("hushfacebook_hide_story_subscribe", FALSE);
+
+    /**
      * A thin bar along the bottom of a story fills as it plays ({@link
      * app.morphe.extension.facebook.stories.StoryProgressBar}, #380). Starts off. Read as the story plays.
      */
@@ -692,6 +699,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_reel_clean_mode", FALSE);
 
     /**
+     * A Clean mode button on a reel's sidebar, under the other buttons (#391). Its tap puts the
+     * viewer in Facebook's own Clean mode, which then stays on from reel to reel until Facebook's
+     * Clean mode button over a clean reel turns it off. It goes through Clean up Reels' store hooks
+     * and Download any reel's sidebar, so a build without either shows no button. Starts off.
+     */
+    public static final BooleanSetting REEL_CLEAN_BUTTON =
+            new BooleanSetting("hushfacebook_reel_clean_button", FALSE);
+
+    /**
      * A reel stops on its last frame instead of starting over, so a tap plays it again and a swipe
      * moves on. Feed videos, stories and every other video play as Facebook has them. Off until
      * it's turned on, since nobody has seen it on a phone yet.
@@ -737,6 +753,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_REELS_TAB_TITLE =
             new BooleanSetting("hushfacebook_hide_reels_tab_title", FALSE);
+
+    /**
+     * Back at the start of the top bar of a video or reel opened full screen goes, and Menu in the
+     * same spot on the Reels tab's header ({@link app.morphe.extension.facebook.reels.ViewerTopBar},
+     * #388, #390). The phone's own back still goes back. Asked after each layout of the screen.
+     */
+    public static final BooleanSetting HIDE_VIEWER_BACK_BUTTON =
+            new BooleanSetting("hushfacebook_hide_viewer_back_button", FALSE);
 
     /**
      * Burn-in guard on the Reels screen ({@link app.morphe.extension.facebook.reels.BurnInGuard},
@@ -1466,6 +1490,14 @@ public class Settings extends BaseSettings {
             };
 
     /**
+     * A video opened in Facebook's full screen player, from a comment or a link, starts with its
+     * details and comments folded away, so it sits in the middle of the screen the way the
+     * player's own chevron leaves it (#242). Asked as each video is set up. Starts off.
+     */
+    public static final BooleanSetting CENTER_FULL_SCREEN_VIDEOS =
+            new BooleanSetting("hushfacebook_center_full_screen_videos", FALSE);
+
+    /**
      * A video longer than two minutes that was left partway picks up where it was left, once, the
      * next time a player starts it ({@link app.morphe.extension.facebook.media.ResumePlayback}).
      * Starts off. Off or paused, nothing is saved or looked up and videos start as Facebook starts
@@ -1530,11 +1562,29 @@ public class Settings extends BaseSettings {
     /**
      * Pinch to zoom's third switch (#220): two quick taps on a profile photo zoom it to twice its size
      * about the tap, and two more put it back. The first tap waits the double tap time, so a lone tap
-     * still opens the photo, just that much later. Never in the story viewer. Starts off. Asked on
+     * still opens the photo, just that much later. A finger that lands while the profile is still
+     * scrolling stops it at once and never waits. Never in the story viewer. Starts off. Asked on
      * each tap, so a change shows from the next one.
      */
     public static final BooleanSetting PINCH_TO_ZOOM_DOUBLE_TAP =
             new BooleanSetting("hushfacebook_pinch_to_zoom_double_tap", FALSE, Setting.parent(PINCH_TO_ZOOM));
+
+    /**
+     * Pinch to zoom's fourth switch (#220): the screen around a zoomed photo or story darkens as the
+     * zoom grows. Off, the zoom grows over the screen as it is. Starts on, the way zooms always
+     * looked. Asked as each zoom starts.
+     */
+    public static final BooleanSetting PINCH_TO_ZOOM_DIM =
+            new BooleanSetting("hushfacebook_pinch_to_zoom_dim", TRUE, Setting.parent(PINCH_TO_ZOOM));
+
+    /**
+     * Pinch to zoom's fifth switch (#220): a video zoomed on a profile or Page keeps playing in the
+     * zoom, its copy redrawn from the video's own surface, and a press and hold on a kept zoom pauses
+     * the video and plays it again. A story stays one frame, held as before. Off, a video zooms on
+     * the frame it showed. Asked as each zoom starts.
+     */
+    public static final BooleanSetting PINCH_TO_ZOOM_LIVE =
+            new BooleanSetting("hushfacebook_pinch_to_zoom_live", FALSE, Setting.parent(PINCH_TO_ZOOM));
 
     /**
      * Videos, reels and video stories start at the quality in {@link #PLAYBACK_QUALITY}, through
@@ -2214,6 +2264,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_post_menu_photo_save", FALSE);
 
     /**
+     * Download any photo's third switch (#245, #248): Search photo in the three-dot menu of a post
+     * holding one photo, handing that photo to the app picked in Android's chooser, such as Google
+     * Lens, to look up what's in it or copy its text. Off until you turn it on, and it needs
+     * {@link #DOWNLOAD_PHOTOS} on too.
+     */
+    public static final BooleanSetting POST_MENU_PHOTO_SEARCH =
+            new BooleanSetting("hushfacebook_post_menu_photo_search", FALSE);
+
+    /**
      * Moves Download to phone and Save photo from the end of a post's three-dot menu to the start of
      * its options list (issue #151). Facebook's sheet keeps the rows it tags itself above them, and
      * on photo posts that list is the More options page. The row under a post has no room for a
@@ -2590,6 +2649,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_POST_JOIN_BUTTON =
             new BooleanSetting("hushfacebook_hide_post_join_button", FALSE);
+
+    /**
+     * The X at the top of a feed post, next to its ⋯ menu, goes, and the header is drawn as for a
+     * post Facebook gives no X ({@link app.morphe.extension.facebook.feed.PostPrompts#showPostX},
+     * #389). Off by default. A change shows on the posts drawn after it.
+     */
+    public static final BooleanSetting HIDE_POST_X =
+            new BooleanSetting("hushfacebook_hide_post_x", FALSE);
 
     /**
      * The numbers on a post's Like, Comment and Share buttons go and each button shows its word, as

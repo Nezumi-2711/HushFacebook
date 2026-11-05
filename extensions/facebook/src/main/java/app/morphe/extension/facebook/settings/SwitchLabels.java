@@ -53,6 +53,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_POST_PROMPTS) return L10n.t("Hide post prompts");
         if (setting == Settings.HIDE_POST_FOLLOW_LINK) return L10n.t("Hide the Follow link on posts");
         if (setting == Settings.HIDE_POST_JOIN_BUTTON) return L10n.t("Hide the Join button on posts");
+        if (setting == Settings.HIDE_POST_X) return L10n.t("Hide the X on posts");
         if (setting == Settings.HIDE_POST_COUNTS) return L10n.t("Hide counts on posts");
         if (setting == Settings.HIDE_POST_REACTIONS) return L10n.t("Hide the reaction preview on posts");
         if (setting == Settings.HIDE_COMMENT_REACTIONS) return L10n.t("Hide the reaction preview on comments");
@@ -103,10 +104,13 @@ final class SwitchLabels {
         if (setting == Settings.STORY_DOUBLE_TAP) return L10n.t("Double tap for next story");
         if (setting == Settings.HIDE_STORY_CREDITS) return L10n.t("Hide song and effect credits");
         if (setting == Settings.HIDE_STORY_REPLY_SUGGESTIONS) return L10n.t("Hide reply suggestions");
+        if (setting == Settings.HIDE_STORY_SUBSCRIBE) return L10n.t("Hide the Subscribe button");
         if (setting == Settings.STORY_PROGRESS_BAR) return L10n.t("Progress bar at the bottom");
         if (setting == Settings.PINCH_TO_ZOOM) return L10n.t("Pinch to zoom");
         if (setting == Settings.PINCH_TO_ZOOM_KEEP) return L10n.t("Stay zoomed");
         if (setting == Settings.PINCH_TO_ZOOM_DOUBLE_TAP) return L10n.t("Double tap to zoom");
+        if (setting == Settings.PINCH_TO_ZOOM_DIM) return L10n.t("Dim around a zoom");
+        if (setting == Settings.PINCH_TO_ZOOM_LIVE) return L10n.t("Keep videos playing while zoomed");
         if (setting == Settings.DOWNLOAD_STORIES) return L10n.t("Save any story");
         if (setting == Settings.SAVE_STORY_PHOTOS) return L10n.t("Save photo on more stories");
         if (setting == Settings.DEFAULT_COMMENT_ORDER) return L10n.t("Default comment order");
@@ -167,11 +171,13 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_REEL_THREADS_CARDS) return L10n.t("Hide Threads cards between reels");
         if (setting == Settings.FOLLOWED_REELS_ONLY) return L10n.t("Only reels from accounts I follow");
         if (setting == Settings.REEL_CLEAN_MODE) return L10n.t("Always use Clean mode");
+        if (setting == Settings.REEL_CLEAN_BUTTON) return L10n.t("Clean mode button on reels");
         if (setting == Settings.PLAY_REELS_ONCE) return L10n.t("Play reels once");
         if (setting == Settings.ORIGINAL_AUDIO) return L10n.t("Keep the original audio");
         if (setting == Settings.HIDE_REEL_SEARCH_PILL) return L10n.t("Hide the search pill on reels");
         if (setting == Settings.HIDE_VIEWER_TOP_BUTTONS) return L10n.t("Hide the top right buttons on opened videos");
         if (setting == Settings.HIDE_REELS_TAB_TITLE) return L10n.t("Hide the Reels title");
+        if (setting == Settings.HIDE_VIEWER_BACK_BUTTON) return L10n.t("Hide Back on opened videos");
         if (setting == Settings.BURN_IN_STAY_DIM) return L10n.t("Stay dim when I tap");
         if (setting == Settings.GRAY_REELS) return L10n.t("Show Reels in gray");
         if (setting == Settings.HIDE_REEL_COUNTS) return L10n.t("Hide counts on reels");
@@ -233,6 +239,7 @@ final class SwitchLabels {
         if (setting == Settings.FEED_VIDEO_CAST_BUTTON) return L10n.t("Cast button on feed videos");
         if (setting == Settings.FEED_VIDEO_SEEK_BAR) return L10n.t("Seek bar on feed videos");
         if (setting == Settings.FEED_VIDEO_FULL_PLAYER_BUTTON) return L10n.t("Full player button on feed videos");
+        if (setting == Settings.CENTER_FULL_SCREEN_VIDEOS) return L10n.t("Open full screen videos centered");
         if (setting == Settings.RESUME_LONG_VIDEOS) return L10n.t("Resume long videos");
         if (setting == Settings.RECENTLY_WATCHED) return L10n.t("Remember what you watch");
         if (setting == Settings.FRAME_STEP) return L10n.t("Frame step");
@@ -255,6 +262,7 @@ final class SwitchLabels {
         if (setting == Settings.CLIPBOARD_DOWNLOAD) return L10n.t("Offer to download copied links");
         if (setting == Settings.DOWNLOAD_PHOTOS) return L10n.t("Save any photo");
         if (setting == Settings.POST_MENU_PHOTO_SAVE) return L10n.t("Save photo in post menus");
+        if (setting == Settings.POST_MENU_PHOTO_SEARCH) return L10n.t("Search photo in post menus");
         if (setting == Settings.OPEN_IN_ANOTHER_APP) return L10n.t("Open videos in another app");
         if (setting == Settings.POST_MENU_DOWNLOAD_FIRST) return L10n.t("Download first in post menus");
         if (setting == Settings.DOWNLOAD_COMPATIBLE) return L10n.t("Save videos other apps can open");

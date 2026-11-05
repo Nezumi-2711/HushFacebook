@@ -131,6 +131,12 @@ final class VideoPages {
                     L10n.t("Opens reels and videos in Facebook's Clean mode, which hides the buttons down the side. You can "
                             + "still leave Clean mode as usual. Off by default, since it hasn't been tried on a real "
                             + "account yet.")));
+            // The button goes in the sidebar the reel Download patch builds into.
+            if (build.contains(PatchFamily.REEL_DOWNLOAD)) {
+                reels.addPreference(toggle(context, Settings.REEL_CLEAN_BUTTON,
+                        L10n.t("Adds a Clean mode button to the buttons down the side of a reel. Tap it to hide them, "
+                                + "and Clean mode stays on as you swipe. Facebook's own Clean mode button brings them back.")));
+            }
             reels.addPreference(toggle(context, Settings.PLAY_REELS_ONCE,
                     L10n.t("A reel stops on its last frame instead of starting over. Tap it to watch again, or swipe to "
                             + "the next one. Feed videos and stories aren't changed. Off by default, since it hasn't "
@@ -147,6 +153,9 @@ final class VideoPages {
             // Asked after each layout of the full-screen player, so a change shows right away.
             reels.addPreference(toggle(context, Settings.HIDE_REELS_TAB_TITLE,
                     L10n.t("Takes the word Reels off the top of the Reels tab. The buttons beside it stay.")));
+            reels.addPreference(toggle(context, Settings.HIDE_VIEWER_BACK_BUTTON,
+                    L10n.t("Takes the Back arrow off the top of a video or reel you open, and Menu off the top of the "
+                            + "Reels tab. Your phone's back gesture or button still goes back.")));
             reels.addPreference(toggle(context, Settings.HIDE_VIEWER_TOP_BUTTONS,
                     L10n.t("Takes Search and the button next to it off the top of a video or reel you open, and off the "
                             + "Reels tab. Back and Menu stay, and so does More at the bottom of the side buttons, where "
@@ -351,6 +360,10 @@ final class VideoPages {
                     playback.addPreference(toggle(context, Settings.FEED_VIDEO_CAST_BUTTON,
                             L10n.t("Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.")));
                 }
+                // Asked as the full screen player sets each video up, so it applies to the next one you open.
+                playback.addPreference(toggle(context, Settings.CENTER_FULL_SCREEN_VIDEOS,
+                        L10n.t("Videos you open full screen, from a comment or a link, start with their details and comments folded away, "
+                                + "so the video sits in the middle of the screen. The arrow under it still brings them back.")));
             }
             if (build.contains(PatchFamily.RESUME_LONG_VIDEOS)) {
                 playback.addPreference(toggle(context, Settings.RESUME_LONG_VIDEOS,
@@ -478,6 +491,8 @@ final class VideoPages {
                                 + " " + L10n.t("A GIF comment gets Save GIF when you long-press it.")));
                 downloads.addPreference(toggle(context, Settings.POST_MENU_PHOTO_SAVE,
                         L10n.t("With Save any photo on, a post with photos gets Save photo in its three-dot menu too. A post with several saves each one, one after another.")));
+                downloads.addPreference(toggle(context, Settings.POST_MENU_PHOTO_SEARCH,
+                        L10n.t("With Save any photo on, a post with one photo gets Search photo in its three-dot menu. It hands the photo to the app you pick, such as Google Lens, to look up what's in it or copy its text.")));
             }
             // Every save reads these, a story's and a reel's as much as a feed video's, so they're here
             // whichever download patch is in, the compatible ones above the quality they keep within.

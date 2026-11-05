@@ -114,6 +114,7 @@ import app.morphe.extension.facebook.comments.ReactorBlock;
 import app.morphe.extension.facebook.composer.TagSuggestionsForTests;
 import app.morphe.extension.facebook.media.HdrBrightnessForTests;
 import app.morphe.extension.facebook.media.PictureInPictureForTests;
+import app.morphe.extension.facebook.media.CenteredFullscreenForTests;
 import app.morphe.extension.facebook.media.FeedSound;
 import app.morphe.extension.facebook.media.FrameStepForTests;
 import app.morphe.extension.facebook.media.PinchZoomForTests;
@@ -303,6 +304,9 @@ public class PausedHooksTest {
 
     /** Stands in for FDS's colour token enum: the theme goes by the constant's name. */
     private enum Surface { CARD_BACKGROUND }
+
+    /** Stands in for Facebook's story navigation reasons, which the last-card tap goes by. */
+    private enum NavigationReason { TAP_FORWARD }
 
     @After
     public void restore() {
@@ -511,6 +515,8 @@ public class PausedHooksTest {
         probes.put(PatchFamily.POST_PROMPTS, Arrays.asList(
                 () -> !PostPrompts.keep(true),
                 () -> !PostPrompts.showFollowLink(true),
+                // A header the X check says yes to is drawn as one without the X.
+                () -> !PostPrompts.showPostX(true),
                 PostPrompts::hidePostCounts,
                 // The reaction preview is left undrawn only while the patch runs.
                 PostPrompts::hideReactionPreview,
@@ -568,7 +574,9 @@ public class PausedHooksTest {
         probes.put(PatchFamily.SUGGESTED_STORIES, Arrays.asList(allStories(SuggestedStoriesForTests::hidesSuggestions),
                 allStories(SuggestedStoriesForTests::hidesPageStories), allStories(SuggestedStoriesForTests::hidesSeenStories),
                 SuggestedStoriesForTests::keepsOnlyWatchedStories));
-        probes.put(PatchFamily.STORY_AUTO_ADVANCE, Arrays.asList(StoryAdvance::waitForTap, StoryAdvance::loop));
+        // A forward tap on a bucket's last card gets the completion's reason (#380).
+        probes.put(PatchFamily.STORY_AUTO_ADVANCE, Arrays.asList(StoryAdvance::waitForTap, StoryAdvance::loop,
+                () -> StoryAdvance.lastCardTap(NavigationReason.TAP_FORWARD)));
         // The story viewer's report of the stories you viewed goes out whole, and with Mark as seen
         // on a marked card goes alone and the button follows the card on screen.
         probes.put(PatchFamily.STORY_SEEN, Arrays.asList(
@@ -667,6 +675,9 @@ public class PausedHooksTest {
                 // Its button takes the sticky way, and a reel taken out keeps it (#304).
                 () -> ReelCleanMode.stickyClean(false),
                 () -> ReelCleanMode.cleanButtonState(ReelCleanMode.markLeftClean(new Object[] {Boolean.FALSE})[0]) == Boolean.TRUE,
+                // And that kept button is laid over the details, not under them (#329).
+                () -> ReelCleanMode.cleanButtonState(ReelCleanMode.markLeftClean(new Object[] {Boolean.FALSE})[0]) == Boolean.TRUE
+                        && ReelCleanMode.floatCleanButton(),
                 ReelLoopForTests::stopsAReel,
                 // A video whose audio Facebook would pick in Spanish is asked for no language.
                 () -> !"es".equals(OriginalAudio.language("es")),
@@ -693,6 +704,8 @@ public class PausedHooksTest {
                     ReelDeclutter.noteAuthorPill(true);
                     return ReelDeclutter.authorPillSlot(new Object()) == null;
                 },
+                // And the fan-subscription pill some Pages get in that row's slots.
+                () -> ReelDeclutter.fanPillSlot(new Object()) == null,
                 // So is the speaker button under it.
                 () -> !ReelDeclutter.showsSoundButton(true),
                 // And the footer's speaker, when the footer builds it.
@@ -800,7 +813,9 @@ public class PausedHooksTest {
                         Settings.INLINE_FEED_VIDEO_CONTROLS.save(true);
                     }
                 },
-                () -> TapToPlay.showReelPlayButton(false)));
+                () -> TapToPlay.showReelPlayButton(false),
+                // A full screen video starts with its details and comments folded away (#242).
+                CenteredFullscreenForTests::centersAVideo));
         // A long video left at 5:00 is saved, and its next start seeks back there.
         // A long video picks up where it was left, and a reel played on and a story viewed go on the
         // Recently watched list (#183).
