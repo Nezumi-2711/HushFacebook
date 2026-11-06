@@ -426,9 +426,9 @@ public class PatchFamilyTest {
                 "Block background ad prefetch: no switch, stays in while paused: No ads downloaded in advance",
                 "not in this build: Hide suggested and promoted posts, Hide Stories tray, Hide Reels in the feed, "
                         + "Block background-return feed refresh, Hide AI-detected posts, Hide posts by words, Hide "
-                        + "post prompts, Hide seen posts, Hide Meta AI questions under posts, Keep post dates, Show full post text, Translate posts, See who shared, Photo carousel, Turn "
+                        + "post prompts, Hide profile pictures, Hide seen posts, Hide Meta AI questions under posts, Keep post dates, Show full post text, Translate posts, See who shared, Photo carousel, Turn "
                         + "off auto-translation, Hide the Feeds header, Hide sponsored stories, Hide suggested "
-                        + "stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Longer music on photo stories, Round stories tray, Story viewer taps, Clean up the story viewer, Pinch to zoom, Hide sponsored search results, "
+                        + "stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Longer music on photo stories, Round stories tray, Story viewer taps, Clean up the story viewer, Hide story rings, Pinch to zoom, Hide sponsored search results, "
                         + "Hide sponsored profile posts, Hide profile notes, Local profile counts, Post action buttons, Hide sponsored Marketplace listings, Block Instant Games "
                         + "ads, Hide affiliate product links, Clean up Reels, Hide reel interest prompts, Don't send "
                         + "reel watch history, Newest reels first, Turn off double tap to like, Double tap to skip, Tap shows the controls, Open comments with a gesture, Keep the reel speed, Hold a reel for 2x, "
@@ -450,9 +450,9 @@ public class PatchFamilyTest {
                         + "the share menu, Hushfacebook in the Menu",
                 "left out of Manager's default selection: Hide suggested and promoted posts, Hide Stories tray, Hide "
                         + "Reels in the feed, Block background-return feed refresh, Hide AI-detected posts, Hide "
-                        + "posts by words, Hide post prompts, Hide seen posts, Hide Meta AI questions under posts, "
+                        + "posts by words, Hide post prompts, Hide profile pictures, Hide seen posts, Hide Meta AI questions under posts, "
                         + "Keep post dates, Show full post text, Translate posts, See who shared, Photo carousel, Turn off auto-translation, Hide the Feeds header, Hide sponsored stories, "
-                        + "Hide suggested stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Longer music on photo stories, Round stories tray, Story viewer taps, Clean up the story viewer, Pinch to zoom, Hide sponsored "
+                        + "Hide suggested stories, Stop Story auto-advance, View stories anonymously, Upload Stories in HD, Longer music on photo stories, Round stories tray, Story viewer taps, Clean up the story viewer, Hide story rings, Pinch to zoom, Hide sponsored "
                         + "search results, Hide sponsored profile posts, Hide profile notes, Local profile counts, Post action buttons, Hide sponsored Marketplace listings, Block "
                         + "Instant Games ads, Hide affiliate product links, Clean up Reels, Hide reel interest "
                         + "prompts, Don't send reel watch history, Newest reels first, Turn off double tap to like, Double tap to skip, Tap shows the controls, Open comments with a gesture, Keep the reel speed, "
@@ -490,7 +490,7 @@ public class PatchFamilyTest {
                         + "hushfacebook_hide_reel_audio_line=off, "
                         + "hushfacebook_hide_slow_connection_message=off, hushfacebook_hide_up_next=off, "
                         + "hushfacebook_hide_reel_fullscreen_pill=off, hushfacebook_feed_videos_alone=off, "
-                        + "hushfacebook_play_feed_reels_whole=off)",
+                        + "hushfacebook_watch_again_in_place=off, hushfacebook_play_feed_reels_whole=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);
