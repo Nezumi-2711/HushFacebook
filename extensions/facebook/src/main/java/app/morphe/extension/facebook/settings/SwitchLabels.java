@@ -193,6 +193,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_REEL_AUDIO_LINE) return L10n.t("Hide the audio line on reels");
         if (setting == Settings.HIDE_SLOW_CONNECTION_MESSAGE) return L10n.t("Hide the slow connection message");
         if (setting == Settings.HIDE_UP_NEXT) return L10n.t("Hide Up next on videos");
+        if (setting == Settings.HIDE_REEL_FULLSCREEN_PILL) return L10n.t("Hide the Fullscreen button");
         if (setting == Settings.FEED_VIDEOS_ALONE) return L10n.t("Open feed videos on their own");
         if (setting == Settings.PLAY_FEED_REELS_WHOLE) return L10n.t("Play whole reels in the feed's Reels row");
         if (setting == Settings.DONT_SEND_REEL_WATCH_HISTORY) return L10n.t("Don't send reel watch history");
@@ -238,8 +239,15 @@ final class SwitchLabels {
         if (setting == Settings.INLINE_FEED_VIDEO_CONTROLS) return L10n.t("Inline feed video controls");
         if (setting == Settings.FEED_VIDEO_CAST_BUTTON) return L10n.t("Cast button on feed videos");
         if (setting == Settings.FEED_VIDEO_SEEK_BAR) return L10n.t("Seek bar on feed videos");
+        if (setting == Settings.FEED_VIDEO_SEEK_BAR_FADE) return L10n.t("Fade the seek bar and speaker");
+        if (setting == Settings.FEED_VIDEO_SEEK_BAR_LOWER) return L10n.t("Lower the seek bar and speaker");
         if (setting == Settings.FEED_VIDEO_FULL_PLAYER_BUTTON) return L10n.t("Full player button on feed videos");
+        if (setting == Settings.FEED_VIDEO_SKIP_BUTTONS) return L10n.t("Skip buttons on feed videos");
+        if (setting == Settings.FEED_VIDEO_SPEED_BUTTON) return L10n.t("Speed button on feed videos");
+        if (setting == Settings.FEED_VIDEO_SEEK_BAR_TIMES) return L10n.t("Times on the seek bar");
         if (setting == Settings.CENTER_FULL_SCREEN_VIDEOS) return L10n.t("Open full screen videos centered");
+        if (setting == Settings.STORY_SEEK_BAR) return L10n.t("Seek bar on stories");
+        if (setting == Settings.STORY_SEEK_BAR_FADE) return L10n.t("Fade the story seek bar");
         if (setting == Settings.RESUME_LONG_VIDEOS) return L10n.t("Resume long videos");
         if (setting == Settings.RECENTLY_WATCHED) return L10n.t("Remember what you watch");
         if (setting == Settings.FRAME_STEP) return L10n.t("Frame step");
@@ -274,6 +282,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_CHAT_META_AI_BUTTON) return L10n.t("Hide the Meta AI button in Chats");
         if (setting == Settings.OPEN_MESSENGER_APP) return L10n.t("Open the Messenger app");
         if (setting == Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER) return L10n.t("Leave calls and chats to Messenger");
+        if (setting == Settings.OPEN_CHATS_IN_MESSENGER) return L10n.t("Open chats in Messenger");
         if (setting == Settings.SAVED_SHORTCUT) return L10n.t("Saved shortcut");
         if (setting == Settings.WATCH_HISTORY_SHORTCUT) return L10n.t("Watch history shortcut");
         if (setting == Settings.FREE_STUFF_SHORTCUT) return L10n.t("Free stuff shortcut");

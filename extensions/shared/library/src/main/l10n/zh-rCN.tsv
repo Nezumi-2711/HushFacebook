@@ -314,6 +314,7 @@ Hides the "Threads you might like" card between reels. Off by default, since it 
 Only reels from accounts I follow	只看我关注的账号的 Reels
 The Reels tab only shows reels from people and Pages you follow, starting with the next batch Facebook loads. The tab can take longer to fill. Off by default.	Reels 标签页只显示你关注的人和公共主页的 Reels，从 Facebook 加载的下一批开始。标签页可能需要更久才能填满。默认关闭。
 Facebook has no more reels your filters would keep, so these reels aren't filtered for now.	Facebook 没有更多能通过你的筛选的 Reels 了，所以这些 Reels 暂时不筛选。
+Hush hid the suggested posts after this, so Home ends here.	Hush 隐藏了之后的推荐帖子，所以主页到这里就结束了。
 Download quality	下载画质
 Best	最佳
 Smallest	最小
@@ -857,7 +858,7 @@ Holding a video in the feed or in Watch plays it at double speed until you let g
 Locked at 2x. Tap the video to go back.	已锁定 2x。点按视频即可恢复。
 Hide the pull down to lock hint	隐藏“下拉锁定”提示
 Hide the 2x popups	隐藏 2x 弹出提示
-Holding a video for 2x shows no pill at all, so no "Speed: 2x", "Release to lock" or "Locked at 2x speed". The hold and the lock still work.	按住视频以 2x 播放时不显示任何提示，包括“速度：2x”、“松开以锁定”和“已锁定 2x 速度”。按住和锁定仍然可用。
+Holding a video for 2x shows no pill at all, so no "Speed: 2x", "Release to lock" or "Locked at 2x speed", and feed videos drop the "2x speed" tip. The hold and the lock still work.	按住视频以 2x 播放时不显示任何提示，包括“速度：2x”、“松开以锁定”和“已锁定 2x 速度”，动态中的视频也不再显示“2x 速度”提示。按住和锁定仍然可用。
 # context: summary of that switch; the quoted hint is Facebook's own text on the pill over a video held for 2x, translate it the way Facebook would; the switches above are Hold a reel for 2x's
 Holding a video for 2x shows the plain 2x pill, without the "Pull down to lock 2x speed" hint. Pulling down still locks it. It works without the switches above.	按住视频以 2 倍速播放时只显示普通的 2x 标签，不显示“下拉锁定 2 倍速”提示。下拉仍可锁定。无需开启上面的开关。
 Default playback quality	默认播放画质
@@ -2145,6 +2146,15 @@ Cast button on feed videos	动态视频上的投屏按钮
 Adds a cast button to feed videos. It hands the video to a casting app you have, such as Web Video Caster, which sends it to your TV. Facebook has no casting of its own anymore.	为动态中的视频添加投屏按钮。它会把视频交给你已安装的投屏应用（如 Web Video Caster），由它发送到电视。Facebook 已不再自带投屏功能。
 Cast this video	投屏此视频
 Full player button on feed videos	动态视频上的完整播放器按钮
+Skip buttons on feed videos	动态视频上的快进快退按钮
+Speed button on feed videos	动态视频上的倍速按钮
+Times on the seek bar	进度条上的时间
+Back 10 seconds	后退 10 秒
+Ahead 10 seconds	前进 10 秒
+Playback speed	播放速度
+Adds buttons to feed videos that jump back or ahead 10 seconds, like Facebook's own player has. Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.	为动态视频添加后退或前进 10 秒的按钮，和 Facebook 自己的播放器一样。直播视频和广告仍使用它们自己的控件。开启“点按播放”时，还需要开启“动态消息视频控件”。
+Adds a button to feed videos that shows their speed. Each tap moves to the next one: 1x, 1.25x, 1.5x, 2x, then 0.5x. Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.	为动态视频添加一个显示播放速度的按钮。每点一次切换到下一档：1x、1.25x、1.5x、2x，然后是 0.5x。直播视频和广告仍使用它们自己的控件。开启“点按播放”时，还需要开启“动态消息视频控件”。
+Shows how far into a feed video you are at the left end of its seek bar, and how much is left at the right end. Needs Seek bar on feed videos on.	在动态视频进度条的左端显示已播放的时间，右端显示剩余时间。需要开启“动态视频上的进度条”。
 Adds a button to feed videos that opens the video in Facebook's own full player, with all its controls. Live videos get it too. With Tap to play on, it needs Inline feed video controls on too.	为动态中的视频添加一个按钮，在 Facebook 自己的完整播放器中打开视频，附带全部控件。直播视频也有。开启“点按播放”时，还需要开启“动态消息视频控件”。
 # context: a switch under Video and audio; with it on, a video opened full screen starts with its details and comments panel closed, so the video is in the middle of the screen
 Open full screen videos centered	全屏视频居中打开
@@ -2153,6 +2163,10 @@ Videos you open full screen, from a comment or a link, start with their details 
 Open in the full player	在完整播放器中打开
 Seek bar on feed videos	动态视频上的进度条
 Shows a bar along the bottom of a feed video. Drag it and let go to jump to that point. Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.	在动态视频底部显示一条进度条。拖动后松开即可跳到该位置。直播视频和广告仍使用它们自己的控件。开启“点按播放”时，还需要开启“动态消息视频控件”。
+Fade the seek bar and speaker	淡化进度条和扬声器按钮
+Lower the seek bar and speaker	降低进度条和扬声器按钮
+While a feed video plays, its seek bar and Facebook's speaker button fade a few seconds after it starts or you last touch them. Touch the bar or pause the video and they come back. Needs Seek bar on feed videos on.	动态视频播放时，它的进度条和 Facebook 的扬声器按钮会在视频开始或你最后一次触碰几秒后变淡。触碰进度条或暂停视频，它们就会恢复。需要开启“动态视频上的进度条”。
+Moves a feed video's seek bar closer to the bottom edge, along with Facebook's speaker and tagged people buttons. Needs Seek bar on feed videos on.	把动态视频的进度条移得更靠近底边，Facebook 的扬声器和标记的人按钮也一起下移。需要开启“动态视频上的进度条”。
 Feed video position	动态视频播放位置
 # context: title of the row that holds a color code for the count badges on the tabs
 Badge color	徽章颜色
@@ -2535,6 +2549,15 @@ Hide the Subscribe button	隐藏订阅按钮
 Takes the Subscribe button off the top of a story. Applies from the next story you open.	去掉快拍顶部的订阅按钮。从你打开的下一个快拍开始生效。
 Progress bar at the bottom	底部进度条
 Shows a thin bar along the bottom of a story that fills as it plays, like the one on Reels.	在快拍底部显示一条随播放逐渐填满的细条，和 Reels 上的一样。
+Seek bar on stories	快拍上的进度条
+Fade the story seek bar	淡化快拍进度条
+Story position	快拍播放位置
+Shows a bar along the bottom of a video story that you drag to move through it. The story waits while you drag. Progress bar at the bottom makes way for it on video stories.	在视频快拍底部显示一条可以拖动的进度条，用来在快拍里前后移动。拖动时快拍会等你松手。在视频快拍上，“底部进度条”会给它让位。
+With Seek bar on stories on, the bar fades a few seconds after the story starts or you last touched it. A touch or a pause brings it back.	开启“快拍上的进度条”后，进度条会在快拍开始或你最后一次触碰几秒后变淡。触碰或暂停就会恢复。
 Clean mode	简洁模式
 Clean mode button on reels	短视频上的简洁模式按钮
 Adds a Clean mode button to the buttons down the side of a reel. Tap it to hide them, and Clean mode stays on as you swipe. Facebook's own Clean mode button brings them back.	在短视频侧边的按钮中添加简洁模式按钮。点按它即可隐藏这些按钮，滑动时简洁模式会保持开启。Facebook 自带的简洁模式按钮可让它们重新显示。
+Open chats in Messenger	在 Messenger 中打开聊天
+Opens chats in the Messenger app instead of inside Facebook, the Message button on a profile included, while Messenger is installed and enabled. Without Messenger, chats stay in Facebook. Restart Facebook after changing it.	在 Messenger 应用中打开聊天，而不是在 Facebook 内打开，包括个人主页上的“发消息”按钮，前提是 Messenger 已安装并启用。没有 Messenger 时，聊天仍在 Facebook 中打开。更改后请重新启动 Facebook。
+Hide the Fullscreen button	隐藏“全屏”按钮
+Takes the Fullscreen button off the space under a wide video in Reels. A change shows from the next video.	去掉 Reels 中宽屏视频下方空白处的“全屏”按钮。更改从下一个视频起生效。

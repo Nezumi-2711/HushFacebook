@@ -902,6 +902,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_up_next", FALSE);
 
     /**
+     * The Fullscreen pill under a wide video in the Reels viewer isn't drawn ({@link
+     * app.morphe.extension.facebook.reels.ReelDeclutter#hideFullscreenPill}, #394). Off by default.
+     * A change shows as the next video draws.
+     */
+    public static final BooleanSetting HIDE_REEL_FULLSCREEN_PILL =
+            new BooleanSetting("hushfacebook_hide_reel_fullscreen_pill", FALSE);
+
+    /**
      * The tiles in the feed's Reels row play their reel from the start to its end instead of the
      * short clip Facebook picks, which is often one second played over and over
      * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#allowsPreviewClip} and
@@ -1477,12 +1485,99 @@ public class Settings extends BaseSettings {
             };
 
     /**
+     * With {@link #FEED_VIDEO_SEEK_BAR} on, a playing video's bar and Facebook's speaker fade a few
+     * seconds after the video starts, a touch on the bar or speaker, or a pause (#386). Its own
+     * switch, since not everyone wants it. Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_SEEK_BAR_FADE =
+            new BooleanSetting("hushfacebook_feed_video_seek_bar_fade", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * With {@link #FEED_VIDEO_SEEK_BAR} on, the bar and Facebook's buttons in the video's bottom
+     * corners, the speaker and the tagged people, sit closer to the video's bottom edge (#386).
+     * Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_SEEK_BAR_LOWER =
+            new BooleanSetting("hushfacebook_feed_video_seek_bar_lower", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * A seek bar along the bottom of a video story, where {@link #STORY_PROGRESS_BAR} draws, which
+     * makes way for it. A drag holds the story and the let go moves it there (#386). Starts off.
+     */
+    public static final BooleanSetting STORY_SEEK_BAR =
+            new BooleanSetting("hushfacebook_story_seek_bar", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * With {@link #STORY_SEEK_BAR} on, the bar fades a few seconds after the story starts or was
+     * last touched. Its own switch, apart from the feed's (#386). Starts off.
+     */
+    public static final BooleanSetting STORY_SEEK_BAR_FADE =
+            new BooleanSetting("hushfacebook_story_seek_bar_fade", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
      * A button on a feed video, beside the play/pause one, that opens the video in Facebook's own
      * full player with all its controls, the way Recently watched opens one (#239). Live videos
      * get it too. Starts off.
      */
     public static final BooleanSetting FEED_VIDEO_FULL_PLAYER_BUTTON =
             new BooleanSetting("hushfacebook_feed_video_full_player_button", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * Two buttons on a feed video, beside the play/pause one, that jump back or ahead 10 seconds,
+     * as in Facebook's own player (#239). Live videos don't get them. Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_SKIP_BUTTONS =
+            new BooleanSetting("hushfacebook_feed_video_skip_buttons", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * A button on a feed video that shows its speed and steps it on a tap: 1x, 1.25x, 1.5x, 2x,
+     * then 0.5x (#239). Needs Hold a reel for 2x in the build, whose patch reaches the player's
+     * speed. Live videos don't get it. Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_SPEED_BUTTON =
+            new BooleanSetting("hushfacebook_feed_video_speed_button", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * With {@link #FEED_VIDEO_SEEK_BAR} on, the time so far shows at the bar's left end and the
+     * time left at its right, as in Facebook's own player (#239). Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_SEEK_BAR_TIMES =
+            new BooleanSetting("hushfacebook_feed_video_seek_bar_times", FALSE) {
                 @Override
                 protected void onValueChanged() {
                     FeedVideoControls.settingsChanged();
@@ -1812,6 +1907,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting LEAVE_CALLS_AND_CHATS_TO_MESSENGER =
             new BooleanSetting("hushfacebook_leave_calls_and_chats_to_messenger", FALSE, true);
+
+    /**
+     * While Meta's Messenger is installed and enabled, chats open in Messenger instead of inside
+     * Facebook, the Message button on a profile included (#392). Starts off. Facebook keeps its
+     * Messenger lookup for the process, so the switch restarts it. Without Messenger, chats stay in
+     * Facebook.
+     */
+    public static final BooleanSetting OPEN_CHATS_IN_MESSENGER =
+            new BooleanSetting("hushfacebook_open_chats_in_messenger", FALSE, true);
 
     /**
      * The Upgrades section of Facebook's Menu, the group Facebook types UPSELL, with its offers.

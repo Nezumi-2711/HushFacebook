@@ -140,7 +140,8 @@ public enum PatchFamily {
             Settings.HIDE_REEL_COMMENT_BUTTON, Settings.HIDE_REEL_SHARE_BUTTON, Settings.SHOW_REEL_COMMENT_BUTTON,
             Settings.SHOW_REEL_POST_DATE,
             Settings.HIDE_REEL_SOUND_BUTTON, Settings.REEL_SPEAKER_ABOVE_MENU, Settings.HIDE_REEL_AUDIO_LINE,
-            Settings.HIDE_SLOW_CONNECTION_MESSAGE, Settings.HIDE_UP_NEXT, Settings.FEED_VIDEOS_ALONE, Settings.PLAY_FEED_REELS_WHOLE),
+            Settings.HIDE_SLOW_CONNECTION_MESSAGE, Settings.HIDE_UP_NEXT, Settings.HIDE_REEL_FULLSCREEN_PILL,
+            Settings.FEED_VIDEOS_ALONE, Settings.PLAY_FEED_REELS_WHOLE),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
@@ -181,8 +182,10 @@ public enum PatchFamily {
     TAP_TO_PLAY(FamilyNames.TAP_TO_PLAY, "tapToPlay", null,
             Settings.TAP_TO_PLAY, Settings.TAP_TO_PLAY_REELS_AFTER_FIRST, Settings.TAP_TO_PLAY_STORIES, Settings.TAP_TO_PLAY_SEARCH,
             Settings.INLINE_FEED_VIDEO_CONTROLS,
-            Settings.FEED_VIDEO_CAST_BUTTON, Settings.FEED_VIDEO_SEEK_BAR, Settings.FEED_VIDEO_FULL_PLAYER_BUTTON,
-            Settings.CENTER_FULL_SCREEN_VIDEOS),
+            Settings.FEED_VIDEO_CAST_BUTTON, Settings.FEED_VIDEO_SEEK_BAR, Settings.FEED_VIDEO_SEEK_BAR_FADE,
+            Settings.FEED_VIDEO_SEEK_BAR_LOWER, Settings.FEED_VIDEO_SEEK_BAR_TIMES, Settings.FEED_VIDEO_FULL_PLAYER_BUTTON,
+            Settings.FEED_VIDEO_SKIP_BUTTONS, Settings.FEED_VIDEO_SPEED_BUTTON,
+            Settings.CENTER_FULL_SCREEN_VIDEOS, Settings.STORY_SEEK_BAR, Settings.STORY_SEEK_BAR_FADE),
     RESUME_LONG_VIDEOS(FamilyNames.RESUME_LONG_VIDEOS, "resumeLongVideos", null,
             Settings.RESUME_LONG_VIDEOS, Settings.RECENTLY_WATCHED, Settings.BREAK_AFTER_REELS),
     FRAME_STEP(FamilyNames.FRAME_STEP, "frameStep", null,
@@ -266,7 +269,7 @@ public enum PatchFamily {
     CHAT_LIST(FamilyNames.CHAT_LIST, "chatListCleanup", null,
             Settings.HIDE_CHAT_NOTES_TRAY, Settings.HIDE_CHAT_PROMOTIONS, Settings.HIDE_CHAT_META_AI_BUTTON),
     MESSENGER_ICON(FamilyNames.MESSENGER_ICON, "messengerIcon", null,
-            Settings.OPEN_MESSENGER_APP, Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER),
+            Settings.OPEN_MESSENGER_APP, Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER, Settings.OPEN_CHATS_IN_MESSENGER),
     MENU_PROMOTIONS(FamilyNames.MENU_PROMOTIONS, "menuPromotions", null,
             Settings.HIDE_MENU_UPGRADES, Settings.HIDE_MENU_ALSO_FROM_META, Settings.HIDE_MENU_HELP,
             Settings.KEEP_MENU_SETTINGS_EXPANDED, Settings.HIDE_MENU_MUSE, Settings.HIDE_MENU_META_AI),
@@ -563,7 +566,8 @@ public enum PatchFamily {
         if (this == VIDEO_DOWNLOAD) anyOn = Settings.DOWNLOAD_VIDEOS.savedValue() || Settings.OPEN_IN_ANOTHER_APP.savedValue();
         if (this == TAP_TO_PLAY) anyOn = Settings.TAP_TO_PLAY.savedValue() || Settings.INLINE_FEED_VIDEO_CONTROLS.savedValue()
                 || Settings.FEED_VIDEO_CAST_BUTTON.savedValue() || Settings.FEED_VIDEO_SEEK_BAR.savedValue()
-                || Settings.FEED_VIDEO_FULL_PLAYER_BUTTON.savedValue() || Settings.CENTER_FULL_SCREEN_VIDEOS.savedValue();
+                || Settings.FEED_VIDEO_FULL_PLAYER_BUTTON.savedValue() || Settings.FEED_VIDEO_SKIP_BUTTONS.savedValue()
+                || Settings.FEED_VIDEO_SPEED_BUTTON.savedValue() || Settings.CENTER_FULL_SCREEN_VIDEOS.savedValue();
         // The time switch starts on, and does nothing without the bar kept; Tap the bar to seek works alone.
         if (this == PROGRESS_BAR) anyOn = Settings.KEEP_PROGRESS_BAR.savedValue() || Settings.TAP_TO_SEEK.savedValue();
         if (this == PROMO_NOTIFICATIONS) {

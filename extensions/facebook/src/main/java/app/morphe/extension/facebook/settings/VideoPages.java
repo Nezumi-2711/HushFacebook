@@ -219,6 +219,10 @@ final class VideoPages {
                     L10n.t("Takes the UP NEXT bar with the next video off the bottom of a video you open from the "
                             + "feed, and the empty space kept for it, so the seek bar stays at the bottom. A change "
                             + "shows from the next video you open.")));
+            // Asked as the pill draws, so a change shows from the next video (#394).
+            reels.addPreference(toggle(context, Settings.HIDE_REEL_FULLSCREEN_PILL,
+                    L10n.t("Takes the Fullscreen button off the space under a wide video in Reels. "
+                            + "A change shows from the next video.")));
             // Asked as a feed video's player asks for more, so a change shows from the next feed video.
             reels.addPreference(toggle(context, Settings.FEED_VIDEOS_ALONE,
                     L10n.t("A video you tap in the feed opens full screen by itself, with no reels to swipe to after it. "
@@ -306,7 +310,7 @@ final class VideoPages {
                             + "hint. Pulling down still locks it. It works without the switches above.")));
             reels.addPreference(toggle(context, Settings.HIDE_2X_POPUPS,
                     L10n.t("Holding a video for 2x shows no pill at all, so no \"Speed: 2x\", \"Release to lock\" or "
-                            + "\"Locked at 2x speed\". The hold and the lock still work.")));
+                            + "\"Locked at 2x speed\", and feed videos drop the \"2x speed\" tip. The hold and the lock still work.")));
         }
         if (build.contains(PatchFamily.REEL_DOWNLOAD)) {
             subheading(reels, L10n.t("Saving reels"));
@@ -352,9 +356,27 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.FEED_VIDEO_FULL_PLAYER_BUTTON,
                         L10n.t("Adds a button to feed videos that opens the video in Facebook's own full player, with all its controls. "
                                 + "Live videos get it too. With Tap to play on, it needs Inline feed video controls on too.")));
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_SKIP_BUTTONS,
+                        L10n.t("Adds buttons to feed videos that jump back or ahead 10 seconds, like Facebook's own player has. "
+                                + "Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.")));
+                // Hold a reel for 2x's patch reaches the player's speed, which the button reads and sets.
+                if (build.contains(PatchFamily.REEL_HOLD)) {
+                    playback.addPreference(toggle(context, Settings.FEED_VIDEO_SPEED_BUTTON,
+                            L10n.t("Adds a button to feed videos that shows their speed. Each tap moves to the next one: 1x, 1.25x, 1.5x, 2x, then 0.5x. "
+                                    + "Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.")));
+                }
                 playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR,
                         L10n.t("Shows a bar along the bottom of a feed video. Drag it and let go to jump to that point. Live videos and ads keep their own controls. "
                     + "With Tap to play on, it needs Inline feed video controls on too.")));
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR_FADE,
+                        L10n.t("While a feed video plays, its seek bar and Facebook's speaker button fade a few seconds after it starts or you last touch them. "
+                                + "Touch the bar or pause the video and they come back. Needs Seek bar on feed videos on.")));
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR_LOWER,
+                        L10n.t("Moves a feed video's seek bar closer to the bottom edge, along with Facebook's speaker and tagged people buttons. "
+                                + "Needs Seek bar on feed videos on.")));
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR_TIMES,
+                        L10n.t("Shows how far into a feed video you are at the left end of its seek bar, and how much is left at the right end. "
+                                + "Needs Seek bar on feed videos on.")));
                 // The tap hands over the file the video patch's player record found.
                 if (build.contains(PatchFamily.VIDEO_DOWNLOAD)) {
                     playback.addPreference(toggle(context, Settings.FEED_VIDEO_CAST_BUTTON,
