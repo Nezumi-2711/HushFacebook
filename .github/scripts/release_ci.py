@@ -69,9 +69,11 @@ def summary_of(version: str) -> str:
         release_text.fail(f"CHANGELOG has no dated {version} heading")
     start, end = release_text.section_bounds(text, heading.group(0)[3:])
     loose, _ = release_text.parse_section(text[start:end], version)
-    if len(loose) != 1 or not loose[0].startswith("* **Facebook:** "):
+    # Upstream dropped the "**Facebook:** " label from 0.21.0 on, so the one summary bullet is taken with or without it.
+    if len(loose) != 1:
         release_text.fail(f"the {version} section has to open with the one Facebook summary bullet cut writes")
-    return release_text.plain(release_text.BULLET.match(loose[0]).group("text")).replace("`", "")
+    summary = release_text.plain(release_text.BULLET.match(loose[0]).group("text")).replace("`", "")
+    return summary.removeprefix("Facebook: ")
 
 
 def index(args) -> None:
