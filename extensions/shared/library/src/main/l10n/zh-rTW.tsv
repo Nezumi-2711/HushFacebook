@@ -368,7 +368,7 @@ People looking at a post don't see that you're writing a comment.	查看貼文�
 Hide read receipts	隱藏已讀標記
 People you chat with in Facebook's own chats can't see that you've read their messages. The chat can stay unread on this phone.	在 Facebook 內建聊天室中，對方無法看到你已讀訊息。聊天室在這支手機上可能仍顯示為未讀。
 Facebook can't tell when you take a screenshot or record your screen, so it can't react.	Facebook 無法得知你何時截圖或錄製螢幕，因此無法作出相應處理。
-Stops sending Facebook your list of watched reels. It uses the list to rank your feed, so reels you've watched may come back.	停止向 Facebook 傳送已觀看的 Reels 清單。Facebook 會用此清單排序動態消息，因此你看過的 Reels 可能再次出現。
+Stops sending Facebook your list of watched reels, and where you stopped in each video and how long you watched it. Facebook ranks your feed with these, so videos you've watched may come back.	停止向 Facebook 傳送已觀看的 Reels 清單，以及每部影片看到哪裡、看了多久。Facebook 會用這些資料排序動態消息，因此你看過的影片可能再次出現。
 # context: switch title under Reels and Watch; the Reels tab shows the most recently posted reels before older ones
 Newest reels first	優先播放最新 Reels
 # context: summary of that switch; "loaded" means the reels the app has already downloaded in the background, "placed" means reels already lined up as the next ones
@@ -1375,6 +1375,10 @@ Hide reposts	隱藏轉發貼文
 Hides posts that share another post, with or without a caption. Original posts stay. Off by default, since it hasn't been tried on a real feed yet.	隱藏分享其他貼文的貼文，無論是否附上說明。原創貼文仍會保留。預設停用，因為尚未在實際動態消息中測試。
 Hide posts from Pages	隱藏粉絲專頁的貼文
 Hides posts written by Pages, the ones you follow too. Posts from friends and groups stay, and so does a friend's share of a Page's post.	隱藏粉絲專頁發布的貼文，包括你追蹤的專頁。朋友和社團的貼文會保留，朋友分享的粉絲專頁貼文也會保留。
+# context: switch title under News feed; the feed keeps only posts written by the user's Facebook friends
+Only friends' posts	只顯示朋友的貼文
+# context: summary of that switch; %1$s is the name of the Following feed on Home switch, which puts the newest posts first
+Shows only posts your friends wrote and hides Pages, groups, ads, suggested posts and feed reels. A post whose author it can't tell stays. Turn on %1$s too for the newest posts first.	只顯示朋友發布的貼文，隱藏粉絲專頁、社團、廣告、推薦貼文和動態消息中的 Reels。無法判斷作者的貼文會保留。同時啟用 %1$s 可以先看到最新的貼文。
 Hide posts in other languages	隱藏其他語言的貼文
 Hides posts and Reels tab reels in a language you don't keep, going by the phone's own guess at each post's words or reel's caption. Ones it isn't sure about stay, and nothing leaves the phone.	根據手機自己對每則貼文文字或每支 Reels 短片說明的判斷，隱藏以你未保留的語言撰寫的貼文和 Reels 分頁中的短片。手機不確定的內容會保留，所有內容都不會離開手機。
 Languages to keep	要保留的語言
@@ -1957,6 +1961,10 @@ Skipping silent parts again	已恢復略過無聲片段
 Hide posts from groups you're not in	隱藏未加入社團的貼文
 # context: summary of that switch; a group post a friend commented on or shared reaches the feed wrapped in the friend's activity, and the switch hides it too
 Hides posts from groups you haven't joined, like a friend's post in a public group, and a group post a friend commented on or shared. Posts from your groups stay.	隱藏你尚未加入社團的貼文，例如朋友在公開社團中的貼文，以及朋友留言或分享過的社團貼文。你已加入社團的貼文仍會保留。
+# context: switch title under News feed; hides every post that comes from a group, including groups the user is a member of
+Hide all group posts	隱藏所有社團貼文
+# context: summary of that switch; the Groups tab is Facebook's own tab of group posts, which this switch leaves alone
+Hides every post from a group in your feed, your own groups' too, and a group post a friend commented on or shared. The Groups tab keeps its feed.	隱藏動態消息中所有來自社團的貼文，包括你已加入社團的貼文，以及朋友留言或分享過的社團貼文。社團分頁的動態仍會保留。
 # context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
 Hide For you in search	隱藏搜尋中的為你推薦
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing

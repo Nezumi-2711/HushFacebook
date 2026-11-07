@@ -370,7 +370,7 @@ People looking at a post don't see that you're writing a comment.	Другие �
 Hide read receipts	Скрывать уведомления о прочтении
 People you chat with in Facebook's own chats can't see that you've read their messages. The chat can stay unread on this phone.	Собеседники во встроенных чатах Facebook не видят, что вы прочитали их сообщения. На этом телефоне чат может оставаться непрочитанным.
 Facebook can't tell when you take a screenshot or record your screen, so it can't react.	Facebook не может определить, когда вы делаете снимок или запись экрана, и поэтому не может на это реагировать.
-Stops sending Facebook your list of watched reels. It uses the list to rank your feed, so reels you've watched may come back.	Не позволяет Facebook получать список просмотренных вами Reels. Facebook использует его для формирования Ленты, поэтому просмотренные Reels могут появляться снова.
+Stops sending Facebook your list of watched reels, and where you stopped in each video and how long you watched it. Facebook ranks your feed with these, so videos you've watched may come back.	Не позволяет Facebook получать список просмотренных вами Reels, а также место, где вы остановились в каждом видео, и время просмотра. Facebook использует их для формирования Ленты, поэтому просмотренные видео могут появляться снова.
 # context: switch title under Reels and Watch; the Reels tab shows the most recently posted reels before older ones
 Newest reels first	Сначала новые Reels
 # context: summary of that switch; "loaded" means the reels the app has already downloaded in the background, "placed" means reels already lined up as the next ones
@@ -1399,6 +1399,10 @@ Hide reposts	Скрывать репосты
 Hides posts that share another post, with or without a caption. Original posts stay. Off by default, since it hasn't been tried on a real feed yet.	Скрывает публикации, которыми делятся другие публикации, с подписью или без нее. Исходные публикации остаются. По умолчанию выключено, поскольку функция еще не проверялась на реальной Ленте.
 Hide posts from Pages	Скрывать публикации Страниц
 Hides posts written by Pages, the ones you follow too. Posts from friends and groups stay, and so does a friend's share of a Page's post.	Скрывает публикации Страниц, в том числе тех, на которые вы подписаны. Публикации друзей и групп остаются, как и репосты публикаций Страниц, которыми поделились друзья.
+# context: switch title under News feed; the feed keeps only posts written by the user's Facebook friends
+Only friends' posts	Только публикации друзей
+# context: summary of that switch; %1$s is the name of the Following feed on Home switch, which puts the newest posts first
+Shows only posts your friends wrote and hides Pages, groups, ads, suggested posts and feed reels. A post whose author it can't tell stays. Turn on %1$s too for the newest posts first.	Показывает только публикации ваших друзей и скрывает Страницы, группы, рекламу, рекомендованные публикации и Reels в ленте. Публикация, автора которой не удалось определить, остаётся. Включите также %1$s, чтобы сначала видеть самые новые публикации.
 Hide posts in other languages	Скрывать публикации на других языках
 Hides posts and Reels tab reels in a language you don't keep, going by the phone's own guess at each post's words or reel's caption. Ones it isn't sure about stay, and nothing leaves the phone.	Скрывает публикации и ролики во вкладке Reels на языке, которого нет в вашем списке, по собственной оценке телефона для текста каждой публикации или подписи к ролику. То, в чём он не уверен, остаётся, и ничего не покидает телефон.
 Languages to keep	Оставляемые языки
@@ -1999,6 +2003,10 @@ Skipping silent parts again	Снова пропускать тихие фраг�
 Hide posts from groups you're not in	Скрывать публикации из групп, в которых вы не состоите
 # context: summary of that switch; a group post a friend commented on or shared reaches the feed wrapped in the friend's activity, and the switch hides it too
 Hides posts from groups you haven't joined, like a friend's post in a public group, and a group post a friend commented on or shared. Posts from your groups stay.	Скрывает публикации из групп, в которых вы не состоите, например публикацию друга в открытой группе или публикацию группы, которую прокомментировал или которой поделился друг. Публикации из ваших групп остаются.
+# context: switch title under News feed; hides every post that comes from a group, including groups the user is a member of
+Hide all group posts	Скрывать все публикации из групп
+# context: summary of that switch; the Groups tab is Facebook's own tab of group posts, which this switch leaves alone
+Hides every post from a group in your feed, your own groups' too, and a group post a friend commented on or shared. The Groups tab keeps its feed.	Скрывает в ленте все публикации из групп, в том числе из ваших, и публикации групп, которые друг прокомментировал или которыми поделился. Лента во вкладке «Группы» остаётся.
 # context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
 Hide For you in search	Скрывать «Для вас» в поиске
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing

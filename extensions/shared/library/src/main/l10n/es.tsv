@@ -364,7 +364,7 @@ People looking at a post don't see that you're writing a comment.	Las personas q
 Hide read receipts	Ocultar confirmaciones de lectura
 People you chat with in Facebook's own chats can't see that you've read their messages. The chat can stay unread on this phone.	Quienes chatean contigo en los chats de Facebook no ven que has leído sus mensajes. El chat puede seguir sin leer en este teléfono.
 Facebook can't tell when you take a screenshot or record your screen, so it can't react.	Facebook no se entera cuando haces una captura o grabas la pantalla, así que no puede reaccionar.
-Stops sending Facebook your list of watched reels. It uses the list to rank your feed, so reels you've watched may come back.	Deja de enviar a Facebook tu lista de reels vistos. Facebook la usa para ordenar tu feed, así que los reels que ya viste pueden volver.
+Stops sending Facebook your list of watched reels, and where you stopped in each video and how long you watched it. Facebook ranks your feed with these, so videos you've watched may come back.	Deja de enviar a Facebook tu lista de reels vistos, y dónde te quedaste en cada video y cuánto tiempo lo viste. Facebook los usa para ordenar tu feed, así que los videos que ya viste pueden volver.
 # context: switch title under Reels and Watch; the Reels tab shows the most recently posted reels before older ones
 Newest reels first	Reels más recientes primero
 # context: summary of that switch; "loaded" means the reels the app has already downloaded in the background, "placed" means reels already lined up as the next ones
@@ -1373,6 +1373,10 @@ Hide reposts	Ocultar publicaciones compartidas
 Hides posts that share another post, with or without a caption. Original posts stay. Off by default, since it hasn't been tried on a real feed yet.	Oculta las publicaciones que comparten otra publicación, con o sin texto propio. Las publicaciones originales se quedan. Apagado por defecto, porque aún no se ha probado en un feed real.
 Hide posts from Pages	Ocultar publicaciones de páginas
 Hides posts written by Pages, the ones you follow too. Posts from friends and groups stay, and so does a friend's share of a Page's post.	Oculta las publicaciones escritas por páginas, también las que sigues. Las publicaciones de amigos y grupos se quedan, y también la publicación de una página que comparte un amigo.
+# context: switch title under News feed; the feed keeps only posts written by the user's Facebook friends
+Only friends' posts	Solo publicaciones de amigos
+# context: summary of that switch; %1$s is the name of the Following feed on Home switch, which puts the newest posts first
+Shows only posts your friends wrote and hides Pages, groups, ads, suggested posts and feed reels. A post whose author it can't tell stays. Turn on %1$s too for the newest posts first.	Muestra solo las publicaciones que escribieron tus amigos y oculta páginas, grupos, anuncios, publicaciones sugeridas y reels del feed. Una publicación cuyo autor no se puede saber se queda. Activa también %1$s para ver primero las publicaciones más recientes.
 Hide posts in other languages	Ocultar publicaciones en otros idiomas
 Hides posts and Reels tab reels in a language you don't keep, going by the phone's own guess at each post's words or reel's caption. Ones it isn't sure about stay, and nothing leaves the phone.	Oculta las publicaciones y los reels de la pestaña Reels en un idioma que no conservas, según lo que el propio teléfono calcula del texto de cada publicación o de la descripción de cada reel. Lo que no tiene claro se queda, y nada sale del teléfono.
 Languages to keep	Idiomas que se quedan
@@ -1955,6 +1959,10 @@ Skipping silent parts again	Se vuelven a saltar las partes en silencio
 Hide posts from groups you're not in	Ocultar publicaciones de grupos en los que no estás
 # context: summary of that switch; a group post a friend commented on or shared reaches the feed wrapped in the friend's activity, and the switch hides it too
 Hides posts from groups you haven't joined, like a friend's post in a public group, and a group post a friend commented on or shared. Posts from your groups stay.	Oculta las publicaciones de grupos a los que no te has unido, como la publicación de un amigo en un grupo público, y las publicaciones de grupo que un amigo comentó o compartió. Las publicaciones de tus grupos se mantienen.
+# context: switch title under News feed; hides every post that comes from a group, including groups the user is a member of
+Hide all group posts	Ocultar todas las publicaciones de grupos
+# context: summary of that switch; the Groups tab is Facebook's own tab of group posts, which this switch leaves alone
+Hides every post from a group in your feed, your own groups' too, and a group post a friend commented on or shared. The Groups tab keeps its feed.	Oculta todas las publicaciones de grupos en tu feed, también las de tus propios grupos, y las publicaciones de grupo que un amigo comentó o compartió. La pestaña Grupos mantiene su feed.
 # context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
 Hide For you in search	Ocultar Para ti en la búsqueda
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing

@@ -364,7 +364,7 @@ People looking at a post don't see that you're writing a comment.	Người đang
 Hide read receipts	Ẩn trạng thái đã xem
 People you chat with in Facebook's own chats can't see that you've read their messages. The chat can stay unread on this phone.	Người bạn chat cùng trong phần chat của Facebook không thấy bạn đã đọc tin nhắn của họ. Đoạn chat có thể vẫn hiện là chưa đọc trên điện thoại này.
 Facebook can't tell when you take a screenshot or record your screen, so it can't react.	Facebook không biết khi bạn chụp hoặc quay màn hình nên không thể phản ứng.
-Stops sending Facebook your list of watched reels. It uses the list to rank your feed, so reels you've watched may come back.	Ngừng gửi cho Facebook danh sách reel bạn đã xem. Facebook dùng danh sách này để sắp xếp bảng tin, nên reel bạn đã xem có thể xuất hiện lại.
+Stops sending Facebook your list of watched reels, and where you stopped in each video and how long you watched it. Facebook ranks your feed with these, so videos you've watched may come back.	Ngừng gửi cho Facebook danh sách reel bạn đã xem, cùng vị trí bạn dừng ở mỗi video và thời gian bạn đã xem. Facebook dùng những thông tin này để sắp xếp bảng tin, nên video bạn đã xem có thể xuất hiện lại.
 # context: switch title under Reels and Watch; the Reels tab shows the most recently posted reels before older ones
 Newest reels first	Reel mới nhất trước
 # context: summary of that switch; "loaded" means the reels the app has already downloaded in the background, "placed" means reels already lined up as the next ones
@@ -1373,6 +1373,10 @@ Hide reposts	Ẩn bài viết được chia sẻ lại
 Hides posts that share another post, with or without a caption. Original posts stay. Off by default, since it hasn't been tried on a real feed yet.	Ẩn bài viết chia sẻ lại bài viết khác, dù có lời bình hay không. Bài viết gốc vẫn giữ nguyên. Mặc định tắt vì chưa được thử trên bảng tin thật.
 Hide posts from Pages	Ẩn bài viết từ Trang
 Hides posts written by Pages, the ones you follow too. Posts from friends and groups stay, and so does a friend's share of a Page's post.	Ẩn bài viết do Trang đăng, kể cả Trang bạn theo dõi. Bài viết của bạn bè và nhóm vẫn còn, bài viết của Trang do bạn bè chia sẻ cũng vậy.
+# context: switch title under News feed; the feed keeps only posts written by the user's Facebook friends
+Only friends' posts	Chỉ bài viết của bạn bè
+# context: summary of that switch; %1$s is the name of the Following feed on Home switch, which puts the newest posts first
+Shows only posts your friends wrote and hides Pages, groups, ads, suggested posts and feed reels. A post whose author it can't tell stays. Turn on %1$s too for the newest posts first.	Chỉ hiện bài viết do bạn bè của bạn đăng và ẩn Trang, nhóm, quảng cáo, bài viết được gợi ý và thước phim trong bảng tin. Bài viết không xác định được tác giả vẫn còn. Bật thêm %1$s để xem bài mới nhất trước.
 Hide posts in other languages	Ẩn bài viết bằng ngôn ngữ khác
 Hides posts and Reels tab reels in a language you don't keep, going by the phone's own guess at each post's words or reel's caption. Ones it isn't sure about stay, and nothing leaves the phone.	Ẩn bài viết và thước phim trên tab Reels bằng ngôn ngữ bạn không giữ lại, dựa trên phán đoán của chính điện thoại về chữ trong mỗi bài viết hoặc chú thích của mỗi thước phim. Những gì nó không chắc thì vẫn còn, và không có gì rời khỏi điện thoại.
 Languages to keep	Ngôn ngữ giữ lại
@@ -1955,6 +1959,10 @@ Skipping silent parts again	Lại bỏ qua đoạn im lặng
 Hide posts from groups you're not in	Ẩn bài viết từ nhóm bạn chưa tham gia
 # context: summary of that switch; a group post a friend commented on or shared reaches the feed wrapped in the friend's activity, and the switch hides it too
 Hides posts from groups you haven't joined, like a friend's post in a public group, and a group post a friend commented on or shared. Posts from your groups stay.	Ẩn bài viết từ các nhóm bạn chưa tham gia, như bài viết của bạn bè trong một nhóm công khai, và bài viết nhóm mà bạn bè đã bình luận hoặc chia sẻ. Bài viết từ nhóm của bạn vẫn giữ nguyên.
+# context: switch title under News feed; hides every post that comes from a group, including groups the user is a member of
+Hide all group posts	Ẩn tất cả bài viết nhóm
+# context: summary of that switch; the Groups tab is Facebook's own tab of group posts, which this switch leaves alone
+Hides every post from a group in your feed, your own groups' too, and a group post a friend commented on or shared. The Groups tab keeps its feed.	Ẩn mọi bài viết từ nhóm trong bảng tin của bạn, kể cả nhóm của bạn, và bài viết nhóm mà bạn bè đã bình luận hoặc chia sẻ. Tab Nhóm vẫn giữ bảng tin của nó.
 # context: switch title under Search; For you is the section of searches Facebook suggests on the search screen before anything is typed, under a header that reads For you
 Hide For you in search	Ẩn Dành cho bạn trong tìm kiếm
 # context: summary of that switch; recent searches are the user's own past searches, and the suggestions as you type are the ones under the search box while typing
