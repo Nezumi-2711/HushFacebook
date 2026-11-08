@@ -65,6 +65,8 @@ public class RoundedTabBarTest {
         PauseForTests.resume();
         Settings.ROUNDED_TAB_BAR.resetToDefault();
         Settings.TAB_COLOR.resetToDefault();
+        Settings.TAB_BAR_WIDTH.resetToDefault();
+        Settings.TAB_BAR_HEIGHT.resetToDefault();
         HookStatus.clear();
     }
 
@@ -141,6 +143,48 @@ public class RoundedTabBarTest {
         assertTrue("on again, it's a pill again", screen.holder.getClipToOutline());
     }
 
+    /** #425: Tab bar width scales the whole pill evenly, and Tab bar height trims it around the icons. */
+    @Test
+    public void widthScalesThePillEvenlyAndHeightTrimsIt() {
+        RoundedTabBarForTests screen = new RoundedTabBarForTests();
+        Settings.TAB_BAR_WIDTH.save("80");
+        Settings.TAB_BAR_HEIGHT.save("70");
+        screen.shaper.update();
+
+        assertEquals(0.8f, screen.holder.getScaleX(), 0f);
+        assertEquals("both ways, so the icons keep their shape", 0.8f, screen.holder.getScaleY(), 0f);
+        float[] radius = new float[1];
+        // 30% of the row's 112 pixels, 17 off its top and 17 off its bottom.
+        assertEquals(new Rect(0, 19, 720, 97), outlineOf(screen, radius));
+        assertEquals("its ends are still half its height", 39f, radius[0], 0.01f);
+        float rowBottom = screen.holder.getPivotY() + 0.8f * (114 - screen.holder.getPivotY());
+        assertEquals("the row's bottom still lands 8 dp over it", 106f, rowBottom, 0.01f);
+        assertEquals("the row of tabs itself keeps its size", 1f, screen.tabBar.getScaleX(), 0f);
+        Rect pill = new Rect();
+        RoundedTabBar.pillInWindow(screen.holder, pill);
+        Rect expected = new Rect(72, 1454, 648, 1516);
+        expected.offset(0, screen.windowTop());
+        assertEquals("the frost follows the trimmed pill, 576 of 720 pixels wide", expected, pill);
+
+        // Full width: nothing scaled, so nothing lifted, and the whole row.
+        Settings.TAB_BAR_WIDTH.save("100");
+        Settings.TAB_BAR_HEIGHT.save("");
+        screen.shaper.update();
+        assertEquals(1f, screen.holder.getScaleX(), 0f);
+        assertEquals(1f, screen.holder.getScaleY(), 0f);
+        assertEquals(new Rect(0, 2, 720, 114), outlineOf(screen, radius));
+
+        // A number past either end is held to it, and blank is the stock pill again.
+        assertEquals(RoundedTabBar.MIN_WIDTH, RoundedTabBar.widthPercent("20"));
+        assertEquals(RoundedTabBar.MAX_HEIGHT, RoundedTabBar.heightPercent("150"));
+        assertEquals(RoundedTabBar.MIN_HEIGHT, RoundedTabBar.heightPercent("0"));
+        assertEquals(RoundedTabBar.DEFAULT_WIDTH, RoundedTabBar.widthPercent("x"));
+        Settings.TAB_BAR_WIDTH.save("");
+        screen.shaper.update();
+        assertEquals(RoundedTabBar.SCALE, screen.holder.getScaleX(), 0f);
+        assertEquals(34f, screen.holder.getPivotY(), 0.01f);
+    }
+
     /** #383: the selected tab gets a spot behind it that follows the selection and goes with the pill. */
     @Test
     public void theSelectedTabGetsASpotThatFollowsItAndGoesWithThePill() {
@@ -165,18 +209,81 @@ public class RoundedTabBarTest {
         RoundedTabBar.Spot spot = (RoundedTabBar.Spot) layers.getDrawable(1);
         assertEquals("4 px in at each side, 7 px in above and below, at mdpi", new Rect(4, 7, 116, 105), spot.area);
         assertNull("the icon keeps its own", tabs[0].getChildAt(0).getBackground());
-        assertNull("the other tabs keep theirs", tabs[1].getBackground());
+        assertTrue("the other tabs wear a spot too", tabs[1].getBackground() instanceof RoundedTabBar.Spot);
+        assertTrue("an empty one", ((RoundedTabBar.Spot) tabs[1].getBackground()).area.isEmpty());
 
         tabs[0].setSelected(false);
         tabs[3].setSelected(true);
         screen.shaper.update();
-        assertSame("the tab left behind gets its background back", ripple, tabs[0].getBackground());
+        assertSame("the tab left behind keeps its layers", layers, tabs[0].getBackground());
+        assertTrue("with its spot emptied", spot.area.isEmpty());
         assertTrue("a tab with none gets the spot alone", tabs[3].getBackground() instanceof RoundedTabBar.Spot);
+        assertFalse(((RoundedTabBar.Spot) tabs[3].getBackground()).area.isEmpty());
+
+        tabs[3].setSelected(false);
+        screen.shaper.update();
+        assertTrue("nothing selected, no spot", ((RoundedTabBar.Spot) tabs[3].getBackground()).area.isEmpty());
 
         Settings.ROUNDED_TAB_BAR.save(false);
         screen.shaper.update();
-        assertNull("off, the tab is Facebook's again", tabs[3].getBackground());
+        assertSame("off, each tab is Facebook's again", ripple, tabs[0].getBackground());
+        assertNull(tabs[3].getBackground());
         assertFalse(screen.holder.getClipToOutline());
+    }
+
+    /**
+     * #412: the tab's own background is Facebook's press ripple. Putting the layers on the tab makes
+     * the view let go of the background they replace, which is that same ripple, so it has to be
+     * hooked back into the layers or its fade can't redraw the tab and it freezes as a grey square.
+     */
+    @Test
+    public void theTabsOwnRippleStillRedrawsTheTabUnderTheSpot() {
+        RoundedTabBarForTests screen = new RoundedTabBarForTests();
+        screen.tabBar.removeAllViews();
+        FrameLayout[] tabs = new FrameLayout[5];
+        Drawable[] ripples = new Drawable[tabs.length];
+        for (int i = 0; i < tabs.length; i++) {
+            tabs[i] = new FrameLayout(screen.activity);
+            ripples[i] = new ColorDrawable(0x22000000);
+            tabs[i].setBackground(ripples[i]);
+            screen.tabBar.addView(tabs[i], new LinearLayout.LayoutParams(144, 112));
+        }
+        tabs[1].setSelected(true);
+        screen.layOut();
+        screen.shaper.update();
+
+        LayerDrawable layers = (LayerDrawable) tabs[1].getBackground();
+        assertSame(ripples[1], layers.getDrawable(0));
+        assertSame("the ripple under the spot redraws through the layers", layers, ripples[1].getCallback());
+        assertSame("and the layers through the tab", tabs[1], layers.getCallback());
+        assertEquals("the ripple shows whenever the layers holding it do", layers.isVisible(), ripples[1].isVisible());
+
+        // Every tab got its layers at once. Going along the row and back swaps none of them, since a
+        // swap as a tap selects a tab left its press highlight behind as a grey square.
+        Drawable[] worn = new Drawable[tabs.length];
+        for (int i = 0; i < tabs.length; i++) {
+            worn[i] = tabs[i].getBackground();
+            assertTrue("tab " + i + " wears the layers", worn[i] instanceof LayerDrawable);
+            assertSame("tab " + i + "'s ripple redraws through them", worn[i], ripples[i].getCallback());
+        }
+        for (int next : new int[]{2, 3, 4, 0, 1}) {
+            for (FrameLayout tab : tabs) tab.setSelected(false);
+            tabs[next].setSelected(true);
+            screen.shaper.update();
+            for (int i = 0; i < tabs.length; i++) {
+                assertSame("after selecting tab " + next + ", tab " + i + " keeps its layers", worn[i], tabs[i].getBackground());
+                assertSame("and its ripple redraws through them", worn[i], ripples[i].getCallback());
+                RoundedTabBar.Spot spot = (RoundedTabBar.Spot) ((LayerDrawable) worn[i]).getDrawable(1);
+                assertEquals("tab " + i + "'s spot shows only while it's selected", i == next, !spot.area.isEmpty());
+            }
+        }
+
+        Settings.ROUNDED_TAB_BAR.save(false);
+        screen.shaper.update();
+        for (int i = 0; i < tabs.length; i++) {
+            assertSame("off, tab " + i + " has its ripple back", ripples[i], tabs[i].getBackground());
+            assertSame("and it redraws the tab", tabs[i], ripples[i].getCallback());
+        }
     }
 
     /**

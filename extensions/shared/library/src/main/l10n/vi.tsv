@@ -1003,6 +1003,10 @@ Left alone: %s	Không dịch: %s
 Posts in the feed show all of their text, so there's no See more to tap. Tap the text to fold it back. Reel captions have their own switch under Reels and Watch.	Bài viết trong bảng feed hiện toàn bộ nội dung, nên không cần nhấn Xem thêm. Nhấn vào nội dung để thu gọn lại. Chú thích của thước phim có công tắc riêng trong Reels và Watch.
 Show full reel captions	Hiện toàn bộ chú thích thước phim
 Long captions on reels show all of their text right away. Tap the caption to fold it back. A change shows from the next reel.	Chú thích dài của thước phim hiện toàn bộ nội dung ngay từ đầu. Nhấn vào chú thích để thu gọn lại. Thay đổi áp dụng từ thước phim tiếp theo.
+# context: switch title under Reels and Watch, below Show full reel captions; once a reel's caption is opened, a dark see-through box sits behind its text, like movie subtitles
+Dark box behind open captions	Nền tối sau chú thích đang mở
+# context: summary of that switch
+An open reel caption sits on a dark box, like subtitles, so it's easy to read over a bright video. A change shows from the next reel.	Chú thích thước phim đang mở nằm trên một khung tối, giống phụ đề, để dễ đọc trên video sáng. Thay đổi áp dụng từ thước phim tiếp theo.
 # context: switch title under News feed and the row it adds to a post's three-dot menu; it opens the list of people who shared the post
 See who shared	Xem ai đã chia sẻ
 Adds See who shared to a post's menu. It opens Facebook's list of the people who shared it.	Thêm Xem ai đã chia sẻ vào menu của bài viết. Mục này mở danh sách của Facebook gồm những người đã chia sẻ bài viết.
@@ -1734,7 +1738,7 @@ On carriers with Facebook Flex, hides the purple Free mode bar. That bar is also
 # context: switch title under Picture-in-picture on the Playback page: the small window opens only from the Picture-in-picture row this adds to a reel's three-dot More menu, not when you leave Facebook
 Only from a reel's More menu	Chỉ từ menu Thêm của reel
 # context: summary of that switch; Picture-in-picture is the name of the row in the reel's menu, translated as the row is; the three dots are the reel's own menu button
-Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu (the three dots) when you want one. That row shows on upright reels, not wide ones.	Rời khỏi Facebook sẽ không mở cửa sổ. Khi muốn, hãy nhấn Hình trong hình trong menu Thêm của reel (dấu ba chấm). Dòng đó có ở thước phim dọc, không có ở thước phim ngang.
+Leaving Facebook doesn't open the window. Tap Picture-in-picture in a reel's More menu (the three dots) when you want one.	Rời khỏi Facebook sẽ không mở cửa sổ. Khi muốn, hãy nhấn Hình trong hình trong menu Thêm của reel (dấu ba chấm).
 # context: switch title under Picture-in-picture on the Playback page; the button floats over a reel or video and opens the small window when tapped
 Picture-in-picture button	Nút hình trong hình
 # context: summary of that switch; "the window" is the small picture-in-picture window
@@ -1938,6 +1942,18 @@ A video you tap in the feed opens full screen by itself, with no reels to swipe 
 Replay feed videos in place	Phát lại video trong bảng tin ngay tại chỗ
 # context: summary of that switch; Watch again is Facebook's own button shown when a feed video ends, so use Facebook's wording in your language if you know it
 Watch again at the end of a feed video plays it again right there, instead of opening it in Reels.	"Xem lại" ở cuối video trong bảng tin sẽ phát lại video ngay tại đó, thay vì mở nó trong Reels.
+# context: switch title under Reels and Watch; on, a video tapped in Facebook's Saved list plays in the regular video player instead of the Reels viewer
+Open saved videos in the video player	Mở video đã lưu trong trình phát video
+# context: summary of that switch; Saved is Facebook's own list of things you saved, so use Facebook's name for it in your language if you know it
+A video you tap in Saved plays in the video player instead of Reels, where the next swipe is a suggested reel.	Video bạn nhấn trong mục Đã lưu sẽ phát trong trình phát video thay vì Reels, nơi lần vuốt tiếp theo là một thước phim được đề xuất.
+# context: switch title under Reels and Watch; on, a reel opened from Facebook's Saved list goes on to the next saved video when it ends or is swiped past, instead of Facebook's suggested reels
+Play saved videos in a row	Phát liên tiếp các video đã lưu
+# context: summary of that switch; Saved is Facebook's own list of things you saved, so use Facebook's name for it in your language if you know it
+A video you open from Saved goes on to the next one in Saved when it ends or when you swipe up, instead of a suggested reel.	Video bạn mở từ mục Đã lưu sẽ chuyển sang video tiếp theo trong Đã lưu khi kết thúc hoặc khi bạn vuốt lên, thay vì một thước phim được đề xuất.
+# context: switch title under Reels and Watch; on, Facebook stops pausing reels and videos to ask "Are you still watching?", which is Facebook's own prompt, so use the wording Facebook shows in this language
+Skip "Are you still watching?"	Bỏ qua "Bạn vẫn đang xem chứ?"
+# context: summary of that switch; reels and videos go on to the next one by themselves
+Reels and videos keep going to the next one without pausing to ask if you're still watching.	Reels và video tiếp tục chuyển sang cái tiếp theo mà không dừng lại để hỏi bạn có còn đang xem không.
 Hide the new comments pop-up	Ẩn bong bóng bình luận mới
 # context: the bubble Facebook shows over an open comment list when new comments arrive, like "3 new comments"
 The "new comments" bubble no longer pops up while you read comments. New comments still show in the list.	Bong bóng "bình luận mới" không còn bật lên khi bạn đọc bình luận. Bình luận mới vẫn hiện trong danh sách.
@@ -2551,6 +2567,7 @@ There's no Facebook link in what you shared.	Nội dung bạn chia sẻ không c
 Open in Facebook from the share menu	Open in Facebook trong menu chia sẻ
 Share a Facebook link from Messenger's browser or any other app and pick Open in Facebook, and it opens here.	Chia sẻ một liên kết Facebook từ trình duyệt của Messenger hoặc ứng dụng khác rồi chọn Open in Facebook để mở tại đây.
 GmsCore support	Hỗ trợ GmsCore
+Clone install under another package name	Cài bản sao với tên gói khác
 Version %1$s for Facebook %2$s	Phiên bản %1$s cho Facebook %2$s
 Show all settings as a list	Hiện tất cả cài đặt dạng danh sách
 Show settings by category	Hiện cài đặt theo danh mục
@@ -2591,3 +2608,25 @@ Hide profile pictures on posts	Ẩn ảnh đại diện trên bài viết
 Hide profile pictures in comments	Ẩn ảnh đại diện trong bình luận
 Takes the profile picture off the top of posts, so the name starts where the picture was. A change shows on the posts drawn after it.	Bỏ ảnh đại diện ở đầu bài viết, để tên bắt đầu ở chỗ của ảnh. Thay đổi hiển thị trên các bài viết hiện ra sau đó.
 Takes the profile picture off comments, so the name and text start where the picture was. A change shows on the comments drawn after it.	Bỏ ảnh đại diện khỏi bình luận, để tên và nội dung bắt đầu ở chỗ của ảnh. Thay đổi hiển thị trên các bình luận hiện ra sau đó.
+Search comments	Tìm bình luận
+Previous match	Kết quả trước
+Next match	Kết quả tiếp theo
+Close search	Đóng tìm kiếm
+No matches	Không có kết quả
+No more matches	Không còn kết quả nào
+Not found yet	Chưa tìm thấy
+A magnifier at the top of the comments opens a search box that finds the comments with your words.	Biểu tượng kính lúp ở đầu phần bình luận mở ô tìm kiếm để tìm các bình luận có từ của bạn.
+Open shared reels on their own	Mở reel được chia sẻ riêng lẻ
+A reel you open from a link in another app or from a chat plays by itself, with no reels to swipe to after it.	Reel bạn mở từ liên kết trong ứng dụng khác hoặc từ cuộc trò chuyện sẽ phát riêng, không có reel nào khác để vuốt sau nó.
+Light bars on the Reels tab	Thanh sáng trên tab Reels
+In light mode, the Reels tab keeps the same light status bar, top bar and tab bar as the other tabs, instead of turning them dark.	Ở chế độ sáng, tab Reels giữ thanh trạng thái, thanh trên cùng và thanh tab sáng giống các tab khác, thay vì chuyển chúng sang tối.
+Bar opacity	Độ mờ đục của thanh
+How much of their color the see-through bars keep, in percent, from %1$s to %2$s. Lower lets more of the feed and its blur show. Leave it blank for %3$s, or %4$s over the blur.	Thanh trong suốt giữ lại bao nhiêu màu của nó, tính theo phần trăm, từ %1$s đến %2$s. Số nhỏ hơn cho thấy rõ hơn bảng tin và lớp làm mờ của nó. Để trống để dùng %3$s, hoặc %4$s trên lớp làm mờ.
+The bars keep %1$s percent of their color, or %2$s percent over the blur. Type a number to change it.	Thanh giữ lại %1$s phần trăm màu của nó, hoặc %2$s phần trăm trên lớp làm mờ. Nhập một số để thay đổi.
+The see-through bars keep %1$s percent of their color.	Thanh trong suốt giữ lại %1$s phần trăm màu của nó.
+Tab bar width	Chiều rộng thanh tab
+Percent of the screen's width, from %1$s to %2$s. The icons grow and shrink with it. Leave it blank for %3$s.	Phần trăm chiều rộng màn hình, từ %1$s đến %2$s. Các biểu tượng to lên và nhỏ đi theo nó. Để trống để dùng %3$s.
+The rounded tab bar is %1$s percent of the screen wide.	Thanh tab bo tròn rộng %1$s phần trăm màn hình.
+Tab bar height	Chiều cao thanh tab
+Percent of its full height the rounded tab bar keeps, from %1$s to %2$s, trimmed above and below the icons. Leave it blank for %3$s.	Phần trăm chiều cao đầy đủ mà thanh tab bo tròn giữ lại, từ %1$s đến %2$s, được cắt bớt phía trên và phía dưới các biểu tượng. Để trống để dùng %3$s.
+The rounded tab bar keeps %1$s percent of its height.	Thanh tab bo tròn giữ lại %1$s phần trăm chiều cao.

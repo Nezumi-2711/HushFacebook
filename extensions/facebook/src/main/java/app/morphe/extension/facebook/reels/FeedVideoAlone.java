@@ -53,6 +53,19 @@ import app.morphe.extension.shared.diagnostics.HookStatus;
  * where both spun for good). A reels viewer whose params say it opened from a feed also shows no
  * loading page after its video. Off, paused, before the settings are ready, or when anything here
  * fails, everything gets Facebook's own answer.
+ *
+ * <p>Open shared reels on their own (#421) does the same for a reels viewer whose origin says it
+ * opened from a link in another app or from a chat ({@link #shared}): its entry starts the window a
+ * feed video's tap would. Each switch only covers its own origins, and a feed video tap never counts
+ * for the shared switch. A link's viewer opens with no video in it ("Start new transition for vid[..]
+ * failed"): its reels feed's fetch and the burst of seed checks its data source asks as it starts are
+ * what bring the linked reel in (S22 2026-11-08, where holding the fetch, and then the seed checks
+ * after the first, each left the viewer black). So a shared viewer gets Facebook's answers until a
+ * reel takes the screen ({@link #reelOnScreen}, about 150 ms in, with a Reels player or with none
+ * for a live link whose reel loads by itself), and is held from then on, before the ask a second
+ * later that brings Facebook's "Up next" reel. The page that fetch brings holds the reels after the
+ * linked one too, so while its viewer gets Facebook's answers each page its loader hands the viewer
+ * keeps its first reel only ({@link #vending}).
  */
 public final class FeedVideoAlone {
     /** Counted once for each player a feed video opened that this kept to that video. */
@@ -63,6 +76,9 @@ public final class FeedVideoAlone {
 
     /** Counted once for each reels viewer from a feed whose list was told no more reels are coming. */
     static final String NO_LOADING_PAGE = "Reels loading page left out";
+
+    /** Counted for each reel left out of a page handed to a shared reel's viewer while it loads that reel. */
+    static final String LEFT_OUT = "Reels after a shared reel left out";
 
     /** How long after a feed video tap its player's first ask for more is still taken as that player's. */
     static final long WINDOW_MS = 5000;
@@ -79,6 +95,17 @@ public final class FeedVideoAlone {
      */
     static final Set<String> FEED_SURFACES = Set.of("newsfeed", "group", "user_timeline", "profile",
             "page_timeline", "permalink", "following_np_subtab", "friendly_feed");
+
+    /**
+     * The surfaces of a reel opened from outside the feeds, for Open shared reels on their own
+     * (#421): a link from another app ("external_deeplink", S22 2026-11-07 with a facebook.com/reel
+     * link) and the chats in Facebook ("messaging", the surface 585's PlayerOrigin table files its
+     * thread video and shared video subsurfaces under).
+     */
+    static final Set<String> SHARED_SURFACES = Set.of("external_deeplink", "messaging");
+
+    /** The subsurfaces of an "unknown" origin that are a reel link opened inside the app (#421). */
+    static final Set<String> SHARED_SUBSURFACES = Set.of("fb_shorts_viewer");
 
     /** The screen created or resumed last, or an empty reference. */
     private static volatile WeakReference<Activity> front = new WeakReference<>(null);
@@ -115,15 +142,33 @@ public final class FeedVideoAlone {
         final boolean player;
         /** The Warion viewer open when it first asked, whose closing ends the hold, or null. */
         @Nullable final Viewer viewer;
+        /** The opening a player's first ask came after, or null for one that isn't a player. */
+        @Nullable final Opening opening;
         /** Whether it already asked {@link #seedCheck} once. Guarded by FEEDS. */
         boolean asked;
 
-        Feed(Object feed, boolean player, @Nullable Viewer viewer) {
+        Feed(Object feed, boolean player, @Nullable Viewer viewer, @Nullable Opening opening) {
             this.feed = new WeakReference<>(feed);
             this.player = player;
             this.viewer = viewer;
+            this.opening = opening;
         }
     }
+
+    /** A video opening its player: whether a link or a chat opened it, and whether a reel took the screen since. */
+    private static final class Opening {
+        final boolean shared;
+        volatile boolean reelShown;
+        /** Whether the asks it lets through were logged. */
+        volatile boolean passLogged;
+
+        Opening(boolean shared) {
+            this.shared = shared;
+        }
+    }
+
+    /** The last video opening, a feed video's, a shared reel's, or none (not shared). */
+    private static volatile Opening lastOpening = new Opening(false);
 
     /** A Warion viewer, Facebook's fragment showing a feed reel and what comes after it. */
     private static final class Viewer {
@@ -146,10 +191,32 @@ public final class FeedVideoAlone {
     private FeedVideoAlone() {
     }
 
-    /** Whether the switch is on and the patch is running. */
+    /** Whether either switch is on and the patch is running. */
     static boolean on() {
         // Settings mustn't load before the extension has its context.
-        return Utils.settingsReady() && Settings.FEED_VIDEOS_ALONE.get();
+        return Utils.settingsReady() && (Settings.FEED_VIDEOS_ALONE.get() || Settings.SHARED_REELS_ALONE.get());
+    }
+
+    /**
+     * Whether a video opening from [origin], a player origin as text, is kept to itself: a feed's
+     * with Open feed videos on their own, a link's or a chat's with Open shared reels on their own
+     * (#421). Called with {@link #on} true.
+     */
+    static boolean aloneFrom(String origin) {
+        if (fromFeed(origin)) return Settings.FEED_VIDEOS_ALONE.get();
+        return shared(origin) && Settings.SHARED_REELS_ALONE.get();
+    }
+
+    /**
+     * Whether [origin], a player origin as text, is a reel opened from a link or a chat (#421): its
+     * surface is one of {@link #SHARED_SURFACES}, or it's the reels viewer a Facebook link inside the
+     * app opens, "unknown::fb_shorts_viewer" (S22 2026-11-07, a fb://fb_shorts/viewer link).
+     */
+    static boolean shared(String origin) {
+        int cut = origin.indexOf("::");
+        String surface = cut < 0 ? origin : origin.substring(0, cut);
+        if (SHARED_SURFACES.contains(surface)) return true;
+        return cut >= 0 && "unknown".equals(surface) && SHARED_SUBSURFACES.contains(origin.substring(cut + 2));
     }
 
     /**
@@ -228,7 +295,7 @@ public final class FeedVideoAlone {
         try {
             HookStatus.invoked(FAMILY);
             TapToPlay.feedVideoOpening();
-            if (!on()) {
+            if (!on() || !Settings.FEED_VIDEOS_ALONE.get()) {
                 feedOpened(false);
                 return;
             }
@@ -243,13 +310,15 @@ public final class FeedVideoAlone {
     /**
      * Injection point, in Facebook's reels viewer entry as it reads where the video opens from, before
      * the viewer's data source first asks. A feed reel goes this way on some accounts with no Warion
-     * step (S25 2026-10-18), so a video opening from a feed surface counts as a feed video tap. One
-     * opening from anywhere else, a link among them, is left to Facebook along with the viewer and
-     * player screen it opens. Never throws.
+     * step (S25 2026-10-18), so a video opening from a feed surface counts as a feed video tap, and
+     * with Open shared reels on their own so does one opening from a link or a chat (#421). One
+     * opening from anywhere else is left to Facebook along with the viewer and player screen it
+     * opens. Never throws.
      *
      * @param origin Facebook's player origin, "surface::subsurface" as text.
      */
     public static void reelsViewerOpening(@Nullable Object origin) {
+        SavedChain.viewerOpening(origin == null ? null : origin.toString());
         try {
             HookStatus.invoked(FAMILY);
             if (origin != null && fromFeed(origin.toString())) TapToPlay.feedVideoOpening();
@@ -260,11 +329,11 @@ public final class FeedVideoAlone {
             if (origin == null) return;
             HookStatus.bound(FAMILY, "reels viewer entry");
             String where = origin.toString();
-            boolean feed = fromFeed(where);
-            feedOpened(feed);
-            Logger.printDebug(() -> feed
-                    ? "Feed videos on their own: a feed video is opening the reels viewer from " + where
-                    : "Feed videos on their own: the reels viewer is opening from " + where + ", not a feed");
+            boolean alone = aloneFrom(where);
+            feedOpened(alone, !fromFeed(where));
+            Logger.printDebug(() -> alone
+                    ? "Feed videos on their own: the reels viewer opening from " + where + " shows that video alone"
+                    : "Feed videos on their own: the reels viewer is opening from " + where + " and keeps Facebook's reels");
         } catch (Throwable failure) {
             HookStatus.threw(FAMILY, "reels viewer entry", failure);
         }
@@ -272,9 +341,15 @@ public final class FeedVideoAlone {
 
     /** Records a feed video opening now, or, for false, that what opened last wasn't one. */
     private static void feedOpened(boolean feed) {
+        feedOpened(feed, false);
+    }
+
+    /** As {@link #feedOpened(boolean)}, with [shared] true for a reel a link or a chat opened. */
+    private static void feedOpened(boolean feed, boolean shared) {
         long at = feed ? now() : NONE;
         TAPPED_AT.set(at);
         FEED_OPENED_AT.set(at);
+        lastOpening = new Opening(feed && shared);
     }
 
     /** Whether [origin], a player origin as text, names a feed's surface. */
@@ -333,7 +408,7 @@ public final class FeedVideoAlone {
      * @param feed the reels feed asking, Facebook's own object behind the fetch.
      */
     public static boolean holdsBack(@Nullable Object feed) {
-        return alone(feed, "reels fetch more", "reels feed");
+        return alone(feed, "reels fetch more", "reels feed", true);
     }
 
     /**
@@ -381,7 +456,7 @@ public final class FeedVideoAlone {
      * @param source the data source asking.
      */
     public static boolean seedOnly(@Nullable Object source) {
-        return alone(source, "seed video only", "reels data source");
+        return alone(source, "seed video only", "reels data source", false);
     }
 
     /**
@@ -403,7 +478,7 @@ public final class FeedVideoAlone {
             if (origin == null) return more;
             HookStatus.bound(FAMILY, "reels loading page");
             String where = origin.toString();
-            if (!fromFeed(where)) return more;
+            if (!aloneFrom(where)) return more;
             if (loadingPageLogged.get() != params) {
                 loadingPageLogged = new WeakReference<>(params);
                 HookStatus.counted(FAMILY, NO_LOADING_PAGE);
@@ -432,8 +507,71 @@ public final class FeedVideoAlone {
     @Nullable
     static volatile Function<Object, Object> originForTests;
 
-    /** Whether [asker] is a tapped feed video's player, deciding on its first ask. */
-    private static boolean alone(@Nullable Object asker, String road, String what) {
+    /**
+     * Injection point, in the reels loader as it hands its viewer a page of reels, right after its
+     * data source's seed check answered and before the loader goes by that answer. A shared reel's
+     * viewer gets Facebook's answers while it loads its reel, and the page its fetch brings has the
+     * linked reel first and Facebook's next reels after it (S22 2026-11-08: "Up next" under the reel,
+     * and a swipe went on to it). So while that viewer's data source passes, its page keeps the first
+     * reel only. Every other page, and any page held back anyway, is left as it is. Never throws.
+     *
+     * @param source the data source the loader just asked.
+     * @param reels  the reels the loader is about to hand over, a list Facebook made for this page.
+     */
+    public static void vending(@Nullable Object source, @Nullable Object reels) {
+        try {
+            HookStatus.invoked(FAMILY);
+            if (source == null || !(reels instanceof List) || !on()) return;
+            Opening from = null;
+            synchronized (FEEDS) {
+                for (Feed seen : FEEDS) {
+                    if (seen.feed.get() == source) {
+                        if (seen.player) from = seen.opening;
+                        break;
+                    }
+                }
+            }
+            if (from == null || !from.shared || from.reelShown) return;
+            HookStatus.bound(FAMILY, "reels page");
+            List<?> page = (List<?>) reels;
+            int size = page.size();
+            if (size <= 1) {
+                Logger.printDebug(() -> "Shared reels on their own: a page of " + size + " reel(s) for the shared reel's viewer, nothing to leave out");
+                return;
+            }
+            page.subList(1, size).clear();
+            for (int left = 1; left < size; left++) HookStatus.counted(FAMILY, LEFT_OUT);
+            Logger.printDebug(() -> "Shared reels on their own: a page of " + size + " reels for the shared reel's viewer keeps its first, the linked reel");
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "reels page", failure);
+        }
+    }
+
+    /**
+     * Called as Facebook's Reels controller is handed the player of the reel taking the screen, or
+     * none for a reel Facebook plays with a player of its own ({@link ReelBinding#bound}). The first
+     * after a shared reel's opening is that reel: its viewer's asks are held from here on. A link
+     * that loads its reel by itself goes the second way (S22 2026-11-08, a NASA reel: the controller
+     * was handed no player 0.4 s in and never a player after, and the pages a second later held
+     * only Facebook's next reels), so a hold that waited for a player never started. Never throws.
+     */
+    static void reelOnScreen() {
+        try {
+            Opening opening = lastOpening;
+            if (!opening.shared || opening.reelShown) return;
+            opening.reelShown = true;
+            Logger.printDebug(() -> "Shared reels on their own: the shared reel is on screen, so nothing more comes after it");
+        } catch (Throwable failure) {
+            HookStatus.threw(FAMILY, "reel on screen", failure);
+        }
+    }
+
+    /**
+     * Whether [asker] is a tapped feed video's player, deciding on its first ask. A shared reel's
+     * player gets Facebook's answers, [fetch] or seed check, until that reel is on screen: they're
+     * what load the reel itself.
+     */
+    private static boolean alone(@Nullable Object asker, String road, String what, boolean fetch) {
         try {
             HookStatus.invoked(FAMILY);
             if (asker == null || !on()) return false;
@@ -443,7 +581,10 @@ public final class FeedVideoAlone {
             boolean opened = false;
             Viewer open = null;
             Viewer bound = null;
+            Opening from;
+            boolean passing;
             synchronized (FEEDS) {
+                Feed record;
                 Feed known = null;
                 for (Iterator<Feed> each = FEEDS.iterator(); each.hasNext(); ) {
                     Feed seen = each.next();
@@ -465,7 +606,9 @@ public final class FeedVideoAlone {
                     // A viewer no feed video opened, a link's or the Reels tab's, is left to Facebook.
                     bound = open != null && open.fromFeed ? open : null;
                     alone = fromTap || feedPlayerInFront() || bound != null;
-                    FEEDS.add(new Feed(asker, alone, alone ? bound : null));
+                    from = alone ? lastOpening : null;
+                    record = new Feed(asker, alone, alone ? bound : null, from);
+                    FEEDS.add(record);
                     if (bound != null && !bound.counted) {
                         // A viewer's feed and data source both ask; it's one video opened.
                         bound.counted = true;
@@ -474,8 +617,13 @@ public final class FeedVideoAlone {
                         opened = true;
                     }
                 } else {
+                    record = known;
                     alone = known.player;
+                    from = known.opening;
                 }
+                passing = alone && from != null && from.shared && !from.reelShown;
+                // Its seed check's one ask with Facebook's answer is spent on the asks let through.
+                if (passing && !fetch) record.asked = true;
             }
             if (first) {
                 if (opened) HookStatus.counted(FAMILY, OPENED);
@@ -487,6 +635,13 @@ public final class FeedVideoAlone {
                 Logger.printDebug(() -> player
                         ? "Feed videos on their own: " + what + " " + id + " is a tapped feed video's player (" + where + "), nothing comes after the video"
                         : "Feed videos on their own: " + what + " " + id + " asked from " + where + " and keeps Facebook's answer");
+            }
+            if (passing) {
+                if (!from.passLogged) {
+                    from.passLogged = true;
+                    Logger.printDebug(() -> "Shared reels on their own: " + what + " keeps Facebook's answers until the shared reel is on screen, so the reel itself loads");
+                }
+                return false;
             }
             if (alone) HookStatus.counted(FAMILY, HELD_BACK);
             return alone;
@@ -519,6 +674,7 @@ public final class FeedVideoAlone {
         }
         TAPPED_AT.set(NONE);
         FEED_OPENED_AT.set(NONE);
+        lastOpening = new Opening(false);
         feedPlayer = new WeakReference<>(null);
         clockForTests = null;
         loadingPageLogged = new WeakReference<>(null);

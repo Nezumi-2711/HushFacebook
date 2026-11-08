@@ -81,6 +81,13 @@ internal const val REFUSED = "$PICTURE_IN_PICTURE->refused()Z"
 
 internal const val SURFACE_ALLOWED = "$PICTURE_IN_PICTURE->surfaceAllowed()Z"
 
+internal const val WIDE_FITS = "$PICTURE_IN_PICTURE->wideFits(I)Z"
+
+internal const val WINDOW_SHAPE = "$PICTURE_IN_PICTURE->window($RATIONAL)$RATIONAL"
+
+/** The float bits of 1000f, which ReelsPipUtil's shape check divides a reel's thousandths by. */
+internal const val THOUSAND_FLOAT_BITS = 0x447a0000
+
 internal const val ARMED = "$PICTURE_IN_PICTURE->armed(${ACTIVITY}Ljava/lang/Object;[Ljava/lang/Object;)V"
 
 /** The extension's stub the patch fills with a call of [REARM_HELPER]. */
@@ -156,8 +163,17 @@ internal const val SHOWN_AGAIN = "$PICTURE_IN_PICTURE->shownAgain(${VIEW}I)V"
  * again, through a helper the patch adds to ReelsPipUtil, with Facebook's own arguments and that
  * reel's player, so the window plays the reel on screen. Its shape is that reel's own, from the
  * aspect its video params carry (581 `LX/5AT;`, their one double), checked the way the arming step
- * checks the aspect it reads: Facebook arms no window for a reel wider than square, so neither does
- * the helper, and the extension keeps that reel out of the window (#126).
+ * checks the aspect it reads, from 1 by 2.39 up to 2.39 by 1; the extension keeps a reel of another
+ * shape out of the window (#126). Facebook's own check of that shape (585 `LX/09OS;->A0B`, the
+ * util's static (int) -> boolean dividing the thousandths it gets by 1000f) stops at square, so a
+ * landscape reel opened no window at all. The extension goes first in it and says yes up to
+ * Android's widest window, 2.39 to one (#418). Every arming and change of auto-enter builds the
+ * window's params in one static method of the util (585 `LX/09OS;->A00`, (Rect, Rational, List,
+ * boolean) -> PictureInPictureParams), which widened any shape past square to 2.39. A window wider
+ * than tall also turns Facebook's screen landscape, and Facebook then opened its video modal (the
+ * Watch topic feed, `target_fragment` 562, entry point FEED_INLINE_VIDEO_TAPPED) over the window,
+ * a spinner where the reel should be and a black page back full screen. The extension goes first
+ * in that builder and hands it a square shape for anything wider, which it keeps.
  *
  * In the window, Facebook's viewer (581 `LX/g7h;`) gives its container a new view id, and its
  * fragment finds the container by that id from the top of the screen. A React Native view can
@@ -241,6 +257,15 @@ val pictureInPicturePatch = bytecodePatch(
         val home = findHome(check, gate, disarms)
         applyPipCheck(check)
         applySurfaceGate(gate)
+        // Landscape reels in a square window (#418); without both hooks they open none, as Facebook
+        // has them, since a wide window brings Facebook's video modal up over it.
+        try {
+            val shape = findShapeCheck(check, step)
+            applyWindowShape(findParamsBuilder(check))
+            applyShapeCheck(shape)
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so landscape reels open no window.")
+        }
         applyArming(arming, player.play.definingClass, videoParams)
         disarms.forEach { applyDisarm(it) }
         applyPlayer(player)
@@ -385,6 +410,81 @@ internal fun BytecodePatchContext.applySurfaceGate(gate: Method) {
             return v0
         """,
         ExternalLabel("facebook", method.getInstruction(0)),
+    )
+}
+
+/** Whether [method] is ReelsPipUtil's shape check: static (int) -> boolean, dividing by 1000f. */
+internal fun isShapeCheck(method: Method): Boolean =
+    AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == "Z" &&
+        method.parameterTypes.map(CharSequence::toString) == listOf("I") &&
+        method.implementation?.instructions?.any { (it as? NarrowLiteralInstruction)?.narrowLiteral == THOUSAND_FLOAT_BITS } == true
+
+/**
+ * ReelsPipUtil's shape check, the one [isShapeCheck] of [check]'s class, which the arming [step]
+ * asks with the reel's thousandths before it arms. Changes nothing.
+ */
+internal fun BytecodePatchContext.findShapeCheck(check: Method, step: Method): Method {
+    val util = classDefBy(check.definingClass)
+    val shapes = util.methods.filter(::isShapeCheck)
+    val shape = shapes.singleOrNull()
+        ?: refuse("${util.type} has ${shapes.size} static (int) -> boolean checks dividing by a thousand, expected 1")
+    val asked = step.calls().any {
+        it.definingClass == shape.definingClass && it.name == shape.name && it.parameterList() == listOf("I") && it.returnType == "Z"
+    }
+    if (!asked) refuse("${step.definingClass}->${step.name} doesn't ask ${shape.definingClass}->${shape.name} for the reel's shape")
+    return shape
+}
+
+/**
+ * The extension goes first in the shape check, handed the reel's thousandths. Its yes, for a reel
+ * wider than square that Android's window still takes, returns true from v0, free at the method's
+ * start. Anything else runs Facebook's check as it was (#418).
+ */
+internal fun BytecodePatchContext.applyShapeCheck(shape: Method) {
+    val method = mutableClassDefBy(shape.definingClass).findMutableMethodOf(shape)
+    method.requireLocals(PATCH, 1)
+    method.addInstructionsWithLabels(
+        0,
+        """
+            invoke-static/range { p0 .. p0 }, $WIDE_FITS
+            move-result v0
+            if-eqz v0, :facebook
+            const/4 v0, 0x1
+            return v0
+        """,
+        ExternalLabel("facebook", method.getInstruction(0)),
+    )
+}
+
+/**
+ * Whether [method] is ReelsPipUtil's builder of the window's params: static (Rect, Rational, List,
+ * boolean) -> PictureInPictureParams, setting the builder's aspect ratio.
+ */
+internal fun isParamsBuilder(method: Method): Boolean =
+    AccessFlags.STATIC.isSet(method.accessFlags) && method.returnType == PIP_PARAMS &&
+        method.shape() == listOf(RECT, RATIONAL, "Ljava/util/List;", "Z") &&
+        method.calls().any { it.definingClass == PIP_PARAMS_BUILDER && it.name == "setAspectRatio" }
+
+/** ReelsPipUtil's one params builder, in [check]'s class. Changes nothing. */
+internal fun BytecodePatchContext.findParamsBuilder(check: Method): Method {
+    val util = classDefBy(check.definingClass)
+    val builders = util.methods.filter(::isParamsBuilder)
+    return builders.singleOrNull()
+        ?: refuse("${util.type} has ${builders.size} static (Rect, Rational, List, boolean) params builders, expected 1")
+}
+
+/**
+ * The extension goes first in the params builder, handed the window's shape, and the builder goes
+ * on with the shape it hands back: square for anything wider (#418).
+ */
+internal fun BytecodePatchContext.applyWindowShape(builder: Method) {
+    val method = mutableClassDefBy(builder.definingClass).findMutableMethodOf(builder)
+    method.addInstructions(
+        0,
+        """
+            invoke-static/range { p1 .. p1 }, $WINDOW_SHAPE
+            move-result-object p1
+        """,
     )
 }
 

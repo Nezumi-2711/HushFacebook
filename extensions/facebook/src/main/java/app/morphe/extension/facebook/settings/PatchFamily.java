@@ -78,7 +78,7 @@ public enum PatchFamily {
     POST_DATES(FamilyNames.POST_DATES, "postDates", null,
             Settings.KEEP_POST_DATES),
     FULL_POST_TEXT(FamilyNames.FULL_POST_TEXT, "fullPostText", null,
-            Settings.SHOW_FULL_POST_TEXT, Settings.SHOW_FULL_REEL_CAPTIONS),
+            Settings.SHOW_FULL_POST_TEXT, Settings.SHOW_FULL_REEL_CAPTIONS, Settings.DIM_OPEN_REEL_CAPTIONS),
     TRANSLATE_POSTS(FamilyNames.TRANSLATE_POSTS, "translatePosts", null,
             Settings.TRANSLATE_POST_LINK, Settings.TRANSLATE_POSTS_BY_THEMSELVES),
     WHO_SHARED(FamilyNames.WHO_SHARED, "whoShared", null,
@@ -146,7 +146,9 @@ public enum PatchFamily {
             Settings.SHOW_REEL_POST_DATE,
             Settings.HIDE_REEL_SOUND_BUTTON, Settings.REEL_SPEAKER_ABOVE_MENU, Settings.HIDE_REEL_AUDIO_LINE,
             Settings.HIDE_SLOW_CONNECTION_MESSAGE, Settings.HIDE_UP_NEXT, Settings.HIDE_REEL_FULLSCREEN_PILL,
-            Settings.FEED_VIDEOS_ALONE, Settings.WATCH_AGAIN_IN_PLACE, Settings.PLAY_FEED_REELS_WHOLE),
+            Settings.FEED_VIDEOS_ALONE, Settings.SHARED_REELS_ALONE, Settings.WATCH_AGAIN_IN_PLACE,
+            Settings.SAVED_VIDEOS_IN_PLAYER, Settings.SAVED_VIDEOS_IN_ORDER, Settings.SKIP_STILL_WATCHING,
+            Settings.PLAY_FEED_REELS_WHOLE),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
@@ -181,7 +183,8 @@ public enum PatchFamily {
             Settings.HIDE_COMMENT_LIKE_BUTTON, Settings.HIDE_COMMENT_EMOJI_ROW, Settings.HIDE_COMMENT_BOX_LINE,
             Settings.COMMENT_BLOCK_BUTTON, Settings.REACTOR_BLOCK_BUTTON),
     FULL_HEIGHT_COMMENTS(FamilyNames.FULL_HEIGHT_COMMENTS, "fullHeightComments", null,
-            Settings.OPEN_COMMENTS_FULL_HEIGHT, Settings.PAUSE_REELS_UNDER_COMMENTS, Settings.TAP_REELS_ABOVE_COMMENTS),
+            Settings.OPEN_COMMENTS_FULL_HEIGHT, Settings.PAUSE_REELS_UNDER_COMMENTS, Settings.TAP_REELS_ABOVE_COMMENTS,
+            Settings.SEARCH_COMMENTS),
     TAG_SUGGESTIONS(FamilyNames.TAG_SUGGESTIONS, "tagSuggestions", null,
             Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT),
     TAP_TO_PLAY(FamilyNames.TAP_TO_PLAY, "tapToPlay", null,
@@ -265,6 +268,7 @@ public enum PatchFamily {
             Settings.BOTTOM_TAB_BAR, Settings.TOP_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR,
             Settings.KEEP_TOP_BAR,
             Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS, Settings.ROUNDED_TAB_BAR, Settings.HIDE_STATUS_BAR,
+            Settings.LIGHT_REELS_TAB_BARS,
             Settings.HIDE_MESSENGER_BUTTON, Settings.HIDE_MESSENGER_COUNT, Settings.HIDE_FACEBOOK_LOGO,
             Settings.HIDE_CREATE_BUTTON, Settings.HIDE_SEARCH_BUTTON, Settings.SEARCH_WITH_PICTURE),
     FORCE_DARK_MODE(FamilyNames.FORCE_DARK_MODE, "forceDarkMode", null,
@@ -335,6 +339,8 @@ public enum PatchFamily {
     // The manifest and Facebook's own code name microG-RE in place of Play services, so push keeps
     // coming through it whether or not Hushfacebook is paused.
     GMS_CORE(FamilyNames.GMS_CORE, "gmsCore", FamilyNames.GMS_CORE),
+    // The package name is in the manifest, so the copy stays a copy whether or not Hushfacebook is paused.
+    CLONE_INSTALL(FamilyNames.CLONE_INSTALL, "cloneInstall", FamilyNames.CLONE_INSTALL),
     // The share target is declared in the manifest, so it stays in Android's share menu while paused (#111).
     OPEN_IN_FACEBOOK(FamilyNames.OPEN_IN_FACEBOOK, "openInFacebook", FamilyNames.OPEN_IN_FACEBOOK),
     // The settings entry's own way in, like the logo long press and the launcher shortcut, which
@@ -405,10 +411,12 @@ public enum PatchFamily {
      * patch with no switch to leave Facebook as it ships: the two themes rewrite dark mode's colours,
      * and Disable Play Store updates raises the version number, which a Root Mount install can't
      * take and every later build has to keep. GmsCore support stops Facebook asking Google Play
-     * services, so it's only for phones with microG-RE. Everything else is in the default selection,
-     * with any switch a patch brought in from this list starting off.
+     * services, so it's only for phones with microG-RE. Clone install makes a second Facebook under
+     * another package name, which only someone who wants two needs. Everything else is in the default
+     * selection, with any switch a patch brought in from this list starting off.
      */
-    private static final EnumSet<PatchFamily> OPT_IN = EnumSet.of(AMOLED_THEME, MATERIAL_YOU_THEME, PLAY_STORE_UPDATES, GMS_CORE);
+    private static final EnumSet<PatchFamily> OPT_IN =
+            EnumSet.of(AMOLED_THEME, MATERIAL_YOU_THEME, PLAY_STORE_UPDATES, GMS_CORE, CLONE_INSTALL);
 
     /**
      * The patches Morphe Manager selects by default. One of them left out is the usual answer to a

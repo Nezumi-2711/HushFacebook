@@ -446,8 +446,8 @@ public class PatchFamilyTest {
                         + "Hide read receipts, Send chat photos and videos at original quality, Block promotional "
                         + "notifications, Block ad telemetry, Disable Audience Network, AMOLED black theme, Material "
                         + "You theme, Accent color, Badge and logo colors, Restore screens on re-signed builds, Start on x86 devices, "
-                        + "Install beside Meta's apps, Disable Play Store updates, GmsCore support, Open in Facebook from "
-                        + "the share menu, Hushfacebook in the Menu",
+                        + "Install beside Meta's apps, Disable Play Store updates, GmsCore support, Clone install under "
+                        + "another package name, Open in Facebook from the share menu, Hushfacebook in the Menu",
                 "left out of Manager's default selection: Hide suggested and promoted posts, Hide Stories tray, Hide "
                         + "Reels in the feed, Block background-return feed refresh, Hide AI-detected posts, Hide "
                         + "posts by words, Hide post prompts, Hide profile pictures, Hide seen posts, Hide Meta AI questions under posts, "
@@ -490,7 +490,10 @@ public class PatchFamilyTest {
                         + "hushfacebook_hide_reel_audio_line=off, "
                         + "hushfacebook_hide_slow_connection_message=off, hushfacebook_hide_up_next=off, "
                         + "hushfacebook_hide_reel_fullscreen_pill=off, hushfacebook_feed_videos_alone=off, "
-                        + "hushfacebook_watch_again_in_place=off, hushfacebook_play_feed_reels_whole=off)",
+                        + "hushfacebook_shared_reels_alone=off, hushfacebook_watch_again_in_place=off, "
+                        + "hushfacebook_saved_videos_in_player=off, hushfacebook_saved_videos_in_order=off, "
+                        + "hushfacebook_skip_still_watching=off, "
+                        + "hushfacebook_play_feed_reels_whole=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.
         Settings.HIDE_SHARE_GROUP_BUTTONS.save(true);
