@@ -74,7 +74,7 @@ public final class FeedVideoAlone {
     /** Counted each time that player asked for more reels and got none. */
     static final String HELD_BACK = "More reels held back";
 
-    /** Counted once for each reels viewer from a feed whose list was told no more reels are coming. */
+    /** Counted once for each reels viewer from a feed, or a shared reel's, whose list was told no more reels are coming. */
     static final String NO_LOADING_PAGE = "Reels loading page left out";
 
     /** Counted for each reel left out of a page handed to a shared reel's viewer while it loads that reel. */
@@ -158,17 +158,34 @@ public final class FeedVideoAlone {
     /** A video opening its player: whether a link or a chat opened it, and whether a reel took the screen since. */
     private static final class Opening {
         final boolean shared;
+        /** When it opened on the uptime clock, or NONE. */
+        final long at;
         volatile boolean reelShown;
         /** Whether the asks it lets through were logged. */
         volatile boolean passLogged;
+        /** Whether {@link #sharedViewerList} has taken a list as its viewer's. Guarded by SHARED_LISTS. */
+        boolean listTaken;
 
-        Opening(boolean shared) {
+        Opening(boolean shared, long at) {
             this.shared = shared;
+            this.at = at;
         }
     }
 
     /** The last video opening, a feed video's, a shared reel's, or none (not shared). */
-    private static volatile Opening lastOpening = new Opening(false);
+    private static volatile Opening lastOpening = new Opening(false, NONE);
+
+    /** The origin a shared reel's viewer list reads, which names no surface (#421). */
+    static final String NO_ORIGIN = "unknown::unknown";
+
+    /** The list params taken as shared reels' viewers', by identity, kept while those viewers live (#421). */
+    private static final List<WeakReference<Object>> SHARED_LISTS = new ArrayList<>();
+
+    /** The newest lists with no origin read when no shared opening could take them, so none takes them later. */
+    private static final List<WeakReference<Object>> SEEN_LISTS = new ArrayList<>();
+
+    /** How many such lists {@link #SEEN_LISTS} keeps. */
+    private static final int SEEN_KEPT = 16;
 
     /** A Warion viewer, Facebook's fragment showing a feed reel and what comes after it. */
     private static final class Viewer {
@@ -349,7 +366,7 @@ public final class FeedVideoAlone {
         long at = feed ? now() : NONE;
         TAPPED_AT.set(at);
         FEED_OPENED_AT.set(at);
-        lastOpening = new Opening(feed && shared);
+        lastOpening = new Opening(feed && shared, at);
     }
 
     /** Whether [origin], a player origin as text, names a feed's surface. */
@@ -463,8 +480,9 @@ public final class FeedVideoAlone {
      * Injection point, in the reels viewer's list as it reads whether more reels are coming, and
      * again as it reads whether to add its pagination page. Either puts a loading page after the last
      * reel. A viewer opened from a feed gets no more reels with the switch on, so that page would spin
-     * for good after its video (S25 2026-10-18): the list is told no. Every other viewer, the Reels
-     * tab's among them, keeps Facebook's answer. Never throws.
+     * for good after its video (S25 2026-10-18): the list is told no. So is a shared reel's viewer with
+     * Open shared reels on their own, found by its origin or by {@link #sharedViewerList}. Every other
+     * viewer, the Reels tab's among them, keeps Facebook's answer. Never throws.
      *
      * @param more   Facebook's answer.
      * @param params the viewer's params, or null.
@@ -478,7 +496,7 @@ public final class FeedVideoAlone {
             if (origin == null) return more;
             HookStatus.bound(FAMILY, "reels loading page");
             String where = origin.toString();
-            if (!aloneFrom(where)) return more;
+            if (!aloneFrom(where) && !sharedViewerList(where, params)) return more;
             if (loadingPageLogged.get() != params) {
                 loadingPageLogged = new WeakReference<>(params);
                 HookStatus.counted(FAMILY, NO_LOADING_PAGE);
@@ -489,6 +507,46 @@ public final class FeedVideoAlone {
             HookStatus.threw(FAMILY, "reels loading page", failure);
             return more;
         }
+    }
+
+    /**
+     * Whether [params], whose origin [where] names no surface, are a shared reel's viewer's list params
+     * (#421). That viewer's entry reads the link's origin, but its list reads none (S22 2026-11-08:
+     * "unknown::fb_shorts_viewer" at the entry, "unknown::unknown" on every list read after it), so it
+     * kept Facebook's loading page after the reel, and with the viewer's fetch held that page never
+     * filled. A shared opening takes one list: the first such list read within WINDOW_MS of it that
+     * wasn't read before it, so a list already on screen, the Reels tab's say, is never taken. A taken
+     * list stays taken, by identity, for as long as its viewer lives, since its fetch stays held after
+     * another viewer opens over it and closes again. Every other list keeps Facebook's answer.
+     */
+    private static boolean sharedViewerList(String where, Object params) {
+        if (!NO_ORIGIN.equals(where) || !Settings.SHARED_REELS_ALONE.get()) return false;
+        synchronized (SHARED_LISTS) {
+            if (holds(SHARED_LISTS, params)) return true;
+            Opening opening = lastOpening;
+            if (opening.shared && !opening.listTaken && now() - opening.at <= WINDOW_MS
+                    && !holds(SEEN_LISTS, params)) {
+                opening.listTaken = true;
+                SHARED_LISTS.add(new WeakReference<>(params));
+                return true;
+            }
+            if (!holds(SEEN_LISTS, params)) {
+                SEEN_LISTS.add(new WeakReference<>(params));
+                if (SEEN_LISTS.size() > SEEN_KEPT) SEEN_LISTS.remove(0);
+            }
+            return false;
+        }
+    }
+
+    /** Whether [refs] hold [target] itself, dropping the references whose objects are gone. */
+    private static boolean holds(List<WeakReference<Object>> refs, Object target) {
+        boolean found = false;
+        for (Iterator<WeakReference<Object>> it = refs.iterator(); it.hasNext(); ) {
+            Object held = it.next().get();
+            if (held == null) it.remove();
+            else if (held == target) found = true;
+        }
+        return found;
     }
 
     /** The viewer whose loading page was last logged as left out, so a list drawn again isn't logged again. */
@@ -674,7 +732,11 @@ public final class FeedVideoAlone {
         }
         TAPPED_AT.set(NONE);
         FEED_OPENED_AT.set(NONE);
-        lastOpening = new Opening(false);
+        lastOpening = new Opening(false, NONE);
+        synchronized (SHARED_LISTS) {
+            SHARED_LISTS.clear();
+            SEEN_LISTS.clear();
+        }
         feedPlayer = new WeakReference<>(null);
         clockForTests = null;
         loadingPageLogged = new WeakReference<>(null);
