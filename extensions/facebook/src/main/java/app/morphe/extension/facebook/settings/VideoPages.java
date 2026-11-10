@@ -336,12 +336,20 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.KEEP_VIDEO_SPEED,
                     L10n.t("The speed you pick in a feed or Watch video's menu carries over to the next videos. Reels keep "
                             + "their own speed. Off by default, since it hasn't been tried on a real account yet.")));
+            reels.addPreference(toggle(context, Settings.FASTER_REEL_SPEEDS,
+                    L10n.t("Adds 2.5x and 3x to the speed menu of reels and of feed and Watch videos, for watching "
+                            + "faster.")));
             reels.addPreference(toggle(context, Settings.SLOWER_REEL_SPEEDS,
                     L10n.t("Adds 0.1x and 0.25x to the speed menu of reels and of feed and Watch videos, for slowing down a "
                             + "fast moment.")));
             reels.addPreference(toggle(context, Settings.SPEED_ON_REPLAYS,
                     L10n.t("A live video that has ended gets Playback speed in its gear menu, like other videos. "
                             + "Videos that are still live, and ads, keep Facebook's menu.")));
+            if (build.contains(PatchFamily.VIDEO_DOWNLOAD)) {
+                reels.addPreference(toggle(context, Settings.POST_MENU_SPEED,
+                        L10n.t("A feed or Watch video's 3-dot menu gets Playback speed, from 0.5x to 3x, live videos "
+                                + "too. Off by default, since it hasn't been tried on a real account yet.")));
+            }
         }
         if (build.contains(PatchFamily.REEL_HOLD)) {
             reels.addPreference(toggle(context, Settings.HOLD_REEL_FOR_2X,
@@ -423,6 +431,10 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR_LOWER,
                         L10n.t("Moves a feed video's seek bar closer to the bottom edge, along with Facebook's speaker and tagged people buttons. "
                                 + "Needs Seek bar on feed videos on.")));
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR_EDGE,
+                        L10n.t("Puts a feed video's seek bar right on its bottom edge, so it's out of the way while you scroll. "
+                                + "Facebook's speaker and tagged people buttons move up to sit above it. "
+                                + "Wins over Lower the seek bar and speaker. Needs Seek bar on feed videos on.")));
                 playback.addPreference(toggle(context, Settings.FEED_VIDEO_SEEK_BAR_TIMES,
                         L10n.t("Shows how far into a feed video you are at the left end of its seek bar, and how much is left at the right end. "
                                 + "Needs Seek bar on feed videos on.")));

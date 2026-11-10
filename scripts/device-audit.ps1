@@ -61,9 +61,9 @@ param(
     # or on Android's app chooser.
     [string[]]$Visit = @('fb://feed', 'tap:Comment', 'back', 'fb://watch', 'fb://fb_shorts/viewer', 'longpress',
         'fb://notifications', 'fb://marketplace', 'fb://profile', 'fb://search', 'query',
-        'fb://bookmarks', 'tap:Settings and privacy', 'tap:Settings', 'tap:Notifications', 'fb://bookmarks', 'tap:Feeds', 'fb://feed'),
+        'fb://bookmarks', 'tap:Settings and privacy', 'tap:Settings', 'tap:Notifications', 'fb://feed'),
     # Only these explicitly optional steps may be absent without failing the requested scope.
-    [string[]]$OptionalVisit = @('tap:Comment', 'tap:Settings', 'tap:Notifications', 'tap:Feeds'),
+    [string[]]$OptionalVisit = @('tap:Comment', 'tap:Settings', 'tap:Notifications'),
     [int]$Swipes = 4,
     [int]$SettleSeconds = 4,
     # Setting keys to turn on or off on top of the all-on profile, besides the few the walk itself
@@ -1211,7 +1211,16 @@ try {
             } elseif ($step -eq 'back') {
                 if ($skipBack) { $skipBack = $false; continue }
                 $inputReel = $routeReel
-                try { Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null }
+                try {
+                    # A post with no comments opens its sheet with the composer focused and the keyboard
+                    # up, where a Back only drops the keyboard and leaves the sheet over the next links
+                    # (third S22 walk, 2026-11-09, failed the reel hold under it). So that Back goes first.
+                    if (-not $routeReel -and (Test-AuditKeyboard)) {
+                        Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
+                        Start-Sleep -Seconds 1
+                    }
+                    Invoke-Adb shell input keyevent KEYCODE_BACK | Out-Null
+                }
                 finally { $inputReel = $false }
                 $routeReel = $false
                 $routeStep = $null

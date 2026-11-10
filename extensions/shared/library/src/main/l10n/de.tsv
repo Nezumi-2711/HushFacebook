@@ -579,6 +579,7 @@ Hushfacebook settings can't open here. Long-press the Facebook logo instead.	Die
 Hide suggested groups	Gruppenvorschläge ausblenden
 # context: summary of that switch; Discover more groups is the label of Facebook's own button under that row
 Hides the row of groups to join between posts. Posts from groups you're in stay.	Blendet die Reihe mit Gruppen zum Beitreten zwischen Beiträgen aus. Beiträge aus deinen Gruppen bleiben.
+Hides the row of groups to join between posts and the groups card between reels. Posts from groups you're in stay.	Blendet die Reihe mit Gruppen zum Beitreten zwischen Beiträgen und die Gruppenkarte zwischen Reels aus. Beiträge aus deinen Gruppen bleiben.
 # context: switch title under News feed; Facebook's own header of a row of Stories from people you don't know, shown between posts
 Hide "Stories you might like"	„Stories, die dir gefallen könnten“ ausblenden
 Hide Memories in the feed	Erinnerungen im Feed ausblenden
@@ -972,9 +973,9 @@ Hide post prompts	Nachfragen unter Beiträgen ausblenden
 # context: description of that switch; the quoted texts are Facebook's own prompts, so use Facebook's wording in your language if you know it
 Hides the strip on some posts, like "Are you interested in this post?" or who recently commented, plus follow and chat suggestions there. The post stays.	Blendet den Streifen auf manchen Beiträgen aus, etwa „Interessiert dich dieser Beitrag?“ oder wer zuletzt kommentiert hat, dazu Folgen- und Chat-Vorschläge dort. Der Beitrag bleibt.
 # context: switch title under News feed; the Follow link is the small "Follow" text after a poster's name in a post's header
-Hide the Follow link on posts	Folgen-Link bei Beiträgen ausblenden
+Hide the Follow and Subscribe links on posts	Folgen- und Abonnieren-Links bei Beiträgen ausblenden
 # context: description of that switch; "Follow" is Facebook's own word for the link, so use Facebook's wording in your language if you know it
-Hides the "Follow" link next to the name on posts from Pages and people you don't follow. Tapping the name still opens the profile. A change shows on the posts drawn after it.	Blendet den Link „Folgen“ neben dem Namen bei Beiträgen von Seiten und Personen aus, denen du nicht folgst. Ein Tipp auf den Namen öffnet weiterhin das Profil. Eine Änderung gilt für Beiträge, die danach geladen werden.
+Hides the "Follow" or "Subscribe" link next to the name on posts and videos from Pages and people you don't follow. Tapping the name still opens the profile. A change shows on the posts drawn after it.	Blendet den Link „Folgen“ oder „Abonnieren“ neben dem Namen bei Beiträgen und Videos von Seiten und Personen aus, denen du nicht folgst. Ein Tipp auf den Namen öffnet weiterhin das Profil. Eine Änderung gilt für Beiträge, die danach geladen werden.
 # context: switch title under News feed; Meta AI is the name of Meta's assistant, and the questions are the row of suggested questions for it that Facebook puts under some posts
 Hide Meta AI questions under posts	Meta-AI-Fragen unter Beiträgen ausblenden
 # context: description of that switch; a link card is the preview of a shared link inside a post
@@ -1559,6 +1560,8 @@ Only the first reel waits	Nur das erste Reel wartet
 With the switch above on, after you play one reel, the reels you swipe to play on their own. The feed, Watch and stories always wait.	Ist der Schalter oben an, spielen nach einem gestarteten Reel die Reels, zu denen du wischst, von selbst. Feed, Watch und Stories warten immer.
 Slower speeds	Langsamere Geschwindigkeiten
 Adds 0.1x and 0.25x to the speed menu of reels and of feed and Watch videos, for slowing down a fast moment.	Fügt 0,1x und 0,25x zum Geschwindigkeitsmenü von Reels sowie von Feed- und Watch-Videos hinzu, um eine schnelle Stelle zu verlangsamen.
+Faster speeds	Schnellere Geschwindigkeiten
+Adds 2.5x and 3x to the speed menu of reels and of feed and Watch videos, for watching faster.	Fügt 2,5x und 3x zum Geschwindigkeitsmenü von Reels sowie von Feed- und Watch-Videos hinzu, um schneller zu schauen.
 Speed on finished live videos	Geschwindigkeit bei beendeten Live-Videos
 A live video that has ended gets Playback speed in its gear menu, like other videos. Videos that are still live, and ads, keep Facebook's menu.	Ein beendetes Live-Video bekommt im Zahnradmenü die Wiedergabegeschwindigkeit, wie andere Videos. Videos, die noch live sind, und Werbung behalten Facebooks Menü.
 Share now	Jetzt teilen
@@ -2213,6 +2216,8 @@ Fade the seek bar and speaker	Suchleiste und Lautsprecher verblassen lassen
 Lower the seek bar and speaker	Suchleiste und Lautsprecher tiefer setzen
 While a feed video plays, its seek bar and Facebook's speaker button fade a few seconds after it starts or you last touch them. Touch the bar or pause the video and they come back. Needs Seek bar on feed videos on.	Während ein Feed-Video läuft, verblassen seine Suchleiste und Facebooks Lautsprecher-Taste ein paar Sekunden nach dem Start oder deiner letzten Berührung. Berühre die Leiste oder pausiere das Video, dann sind sie wieder da. Dafür muss „Suchleiste bei Feed-Videos“ an sein.
 Moves a feed video's seek bar closer to the bottom edge, along with Facebook's speaker and tagged people buttons. Needs Seek bar on feed videos on.	Setzt die Suchleiste eines Feed-Videos näher an den unteren Rand, zusammen mit Facebooks Tasten für Lautsprecher und markierte Personen. Dafür muss „Suchleiste bei Feed-Videos“ an sein.
+Seek bar on the bottom edge	Suchleiste am unteren Rand
+Puts a feed video's seek bar right on its bottom edge, so it's out of the way while you scroll. Facebook's speaker and tagged people buttons move up to sit above it. Wins over Lower the seek bar and speaker. Needs Seek bar on feed videos on.	Setzt die Suchleiste eines Feed-Videos direkt an den unteren Rand, damit sie beim Scrollen nicht im Weg ist. Facebooks Tasten für Lautsprecher und markierte Personen rücken nach oben über sie. Hat Vorrang vor „Suchleiste und Lautsprecher tiefer setzen“. Dafür muss „Suchleiste bei Feed-Videos“ an sein.
 Feed video position	Position im Feed-Video
 # context: title of the row that holds a color code for the count badges on the tabs
 Badge color	Badge-Farbe
@@ -2594,6 +2599,8 @@ Takes the song and effect credits off the line under the poster's name on a stor
 Takes the row of suggested replies off the bottom of a story. The reply box stays. Applies from the next story you open.	Entfernt die Reihe mit Antwortvorschlägen unten in einer Story. Das Antwortfeld bleibt. Gilt ab der nächsten Story, die du öffnest.
 Hide the Subscribe button	Abonnieren-Button ausblenden
 Takes the Subscribe button off the top of a story. Applies from the next story you open.	Entfernt den Abonnieren-Button oben in einer Story. Gilt ab der nächsten Story, die du öffnest.
+Hide create story cards	Story-erstellen-Karten ausblenden
+Takes out the card between stories that asks you to make one, including the ones built from photos in your gallery. Applies the next time you open stories.	Entfernt die Karte zwischen Storys, die dich auffordert, selbst eine zu erstellen, auch die aus Fotos in deiner Galerie. Gilt ab dem nächsten Öffnen der Storys.
 Progress bar at the bottom	Fortschrittsbalken unten
 Shows a thin bar along the bottom of a story that fills as it plays, like the one on Reels.	Zeigt unten in einer Story einen dünnen Balken, der sich beim Abspielen füllt, wie bei Reels.
 Seek bar on stories	Suchleiste bei Storys
@@ -2667,3 +2674,7 @@ Show time in Reels	Zeit in Reels anzeigen
 A small label at the top of Reels shows the minutes you've watched. Time on other tabs doesn't count, and 15 minutes away starts it over.	Eine kleine Anzeige oben in Reels zeigt, wie viele Minuten du geschaut hast. Zeit auf anderen Tabs zählt nicht, und nach 15 Minuten Pause beginnt sie wieder bei null.
 # context: a short label on the Reels screen; %1$d is a number of minutes
 %1$d min	%1$d Min
+Hide the tab bar on the Reels tab	Tab-Leiste im Reels-Tab ausblenden
+The tab bar goes away while the Reels tab is open, and the reel gets the whole screen. The other tabs keep the bar. Restart Facebook to see the change.	Die Tab-Leiste verschwindet, solange der Reels-Tab offen ist, und das Reel bekommt den ganzen Bildschirm. Die anderen Tabs behalten die Leiste. Starte Facebook neu, um die Änderung zu sehen.
+Playback speed in the post menu	Wiedergabegeschwindigkeit im Beitragsmenü
+A feed or Watch video's 3-dot menu gets Playback speed, from 0.5x to 3x, live videos too. Off by default, since it hasn't been tried on a real account yet.	Das Drei-Punkte-Menü eines Feed- oder Watch-Videos bekommt Wiedergabegeschwindigkeit, von 0,5x bis 3x, auch bei Live-Videos. Standardmäßig aus, weil es auf einem echten Konto noch nicht ausprobiert wurde.

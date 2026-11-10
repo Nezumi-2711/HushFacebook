@@ -90,8 +90,10 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_people_you_may_know", TRUE);
 
     /**
-     * The row of groups to join that Facebook puts between posts, found by its GraphQL type name.
-     * Posts from groups you're in are stories of their own and stay.
+     * The row of groups to join that Facebook puts between posts, found by its GraphQL type name,
+     * and, when Clean up Reels or Hide reel interest prompts is in too, the "Suggested for you"
+     * groups card between reels, found by its mid-card type (GYSJ_MIDCARD, #441). Posts from groups
+     * you're in are stories of their own and stay.
      */
     public static final BooleanSetting HIDE_SUGGESTED_GROUPS =
             new BooleanSetting("hushfacebook_hide_suggested_groups", TRUE);
@@ -506,6 +508,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_STORY_SUBSCRIBE =
             new BooleanSetting("hushfacebook_hide_story_subscribe", FALSE);
+
+    /**
+     * The "Add to story" card Facebook puts between other people's stories, the plain one and the
+     * ones built from photos in the phone's gallery, stays out of the viewer ({@link
+     * app.morphe.extension.facebook.stories.StoryViewerCleanup}, #439). Starts off. Read as the
+     * viewer lays out its stories.
+     */
+    public static final BooleanSetting HIDE_STORY_CREATE_CARDS =
+            new BooleanSetting("hushfacebook_hide_story_create_cards", FALSE);
 
     /**
      * A thin bar along the bottom of a story fills as it plays ({@link
@@ -1240,6 +1251,23 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_slower_reel_speeds", FALSE);
 
     /**
+     * The Reels menu's two speed pickers and the gear menu's speed sheet also offer 2.5x and 3x,
+     * faster than the 2x Facebook stops at (#430). It rides on Keep the reel speed's patch like
+     * {@link #SLOWER_REEL_SPEEDS}. Starts off. Off or paused, the pickers offer Facebook's speeds.
+     */
+    public static final BooleanSetting FASTER_REEL_SPEEDS =
+            new BooleanSetting("hushfacebook_faster_reel_speeds", FALSE);
+
+    /**
+     * A feed or Watch video's 3-dot menu gets Playback speed, which offers 0.5x to 3x for that
+     * video, a live one too (#429). It rides on Keep the reel speed's patch for the player and on
+     * Download any video's for the menu ({@link app.morphe.extension.facebook.media.ReelSpeed}).
+     * Starts off. Off or paused, the menu is Facebook's.
+     */
+    public static final BooleanSetting POST_MENU_SPEED =
+            new BooleanSetting("hushfacebook_post_menu_speed", FALSE);
+
+    /**
      * The gear menu offers Playback speed on a full-screen video that isn't live, a finished live
      * video among them, where Facebook's full-screen player leaves it out behind a server flag
      * (#238). It rides on Keep the reel speed's patch
@@ -1613,6 +1641,19 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting FEED_VIDEO_SEEK_BAR_LOWER =
             new BooleanSetting("hushfacebook_feed_video_seek_bar_lower", FALSE) {
+                @Override
+                protected void onValueChanged() {
+                    FeedVideoControls.settingsChanged();
+                }
+            };
+
+    /**
+     * With {@link #FEED_VIDEO_SEEK_BAR} on, the bar runs along the video's bottom edge, and Facebook's
+     * buttons in the video's bottom corners move up to sit above it. Wins over
+     * {@link #FEED_VIDEO_SEEK_BAR_LOWER} (#431). Starts off.
+     */
+    public static final BooleanSetting FEED_VIDEO_SEEK_BAR_EDGE =
+            new BooleanSetting("hushfacebook_feed_video_seek_bar_edge", FALSE) {
                 @Override
                 protected void onValueChanged() {
                     FeedVideoControls.settingsChanged();
@@ -2703,6 +2744,14 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting PHONE_LAYOUT_ON_BIG_SCREENS =
             new BooleanSetting("hushfacebook_phone_layout_big_screens", FALSE, true);
+
+    /**
+     * The tab bar goes away while the Reels tab is open, and the reel runs down to the bottom of the
+     * screen ({@link app.morphe.extension.facebook.navigation.ReelsTabBarHidden}). Facebook pads the
+     * Reels page for the bar as the page is set up, so a change waits for a restart.
+     */
+    public static final BooleanSetting HIDE_REELS_TAB_BAR =
+            new BooleanSetting("hushfacebook_hide_reels_tab_bar", FALSE, true);
 
     /**
      * The top bar and the tab bar let the feed show through, with a blur of it behind them on

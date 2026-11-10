@@ -304,6 +304,12 @@ public class SettingsNavigationTest {
         assertTrue(BaseSettings.PAUSED.savedValue());
         assertTrue(((Preference) list().getItemAtPosition(0)).getSummary().toString()
                 .contains("pauses when Facebook restarts"));
+        // The card showed "Hushfacebook pauses when Facebook restarts." twice, as its title and its line.
+        View card = list().getAdapter().getView(0, null, list());
+        TextView title = card.findViewById(android.R.id.title);
+        TextView line = card.findViewById(android.R.id.summary);
+        assertEquals("Hushfacebook is on", title.getText().toString());
+        assertTrue(line.getText().toString(), line.getText().toString().contains("pauses when Facebook restarts"));
         action = statusAction();
         assertEquals("Undo", action.getText().toString());
         action.performClick();
@@ -1820,6 +1826,7 @@ public class SettingsNavigationTest {
         assertTrue(contains(Settings.FEED_VIDEO_SEEK_BAR.key));
         assertTrue(contains(Settings.FEED_VIDEO_SEEK_BAR_FADE.key));
         assertTrue(contains(Settings.FEED_VIDEO_SEEK_BAR_LOWER.key));
+        assertTrue(contains(Settings.FEED_VIDEO_SEEK_BAR_EDGE.key));
         assertEquals(before, list().getCount());
         assertEquals(anchor, ((Preference) list().getItemAtPosition(list().getFirstVisiblePosition())).getKey());
         assertEquals(offset, list().getChildAt(0).getTop());

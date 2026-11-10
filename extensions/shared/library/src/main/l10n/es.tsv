@@ -579,6 +579,7 @@ Hushfacebook settings can't open here. Long-press the Facebook logo instead.	La 
 Hide suggested groups	Ocultar grupos sugeridos
 # context: summary of that switch; Discover more groups is the label of Facebook's own button under that row
 Hides the row of groups to join between posts. Posts from groups you're in stay.	Oculta la fila de grupos a los que unirte entre publicaciones. Las publicaciones de tus grupos se quedan.
+Hides the row of groups to join between posts and the groups card between reels. Posts from groups you're in stay.	Oculta la fila de grupos a los que unirte entre publicaciones y la tarjeta de grupos entre reels. Las publicaciones de tus grupos se quedan.
 # context: switch title under News feed; Facebook's own header of a row of Stories from people you don't know, shown between posts
 Hide "Stories you might like"	Ocultar “Historias que te pueden gustar”
 Hide Memories in the feed	Ocultar recuerdos en el feed
@@ -972,9 +973,9 @@ Hide post prompts	Ocultar las preguntas bajo las publicaciones
 # context: description of that switch; the quoted texts are Facebook's own prompts, so use Facebook's wording in your language if you know it
 Hides the strip on some posts, like "Are you interested in this post?" or who recently commented, plus follow and chat suggestions there. The post stays.	Oculta la franja de algunas publicaciones, como «¿Te interesa esta publicación?» o quién comentó hace poco, además de las sugerencias de seguir y de chatear. La publicación se queda.
 # context: switch title under News feed; the Follow link is the small "Follow" text after a poster's name in a post's header
-Hide the Follow link on posts	Ocultar el enlace Seguir en las publicaciones
+Hide the Follow and Subscribe links on posts	Ocultar los enlaces Seguir y Suscribirse en las publicaciones
 # context: description of that switch; "Follow" is Facebook's own word for the link, so use Facebook's wording in your language if you know it
-Hides the "Follow" link next to the name on posts from Pages and people you don't follow. Tapping the name still opens the profile. A change shows on the posts drawn after it.	Oculta el enlace «Seguir» junto al nombre en las publicaciones de páginas y personas a las que no sigues. Al tocar el nombre se sigue abriendo el perfil. Un cambio se ve en las publicaciones que se carguen después.
+Hides the "Follow" or "Subscribe" link next to the name on posts and videos from Pages and people you don't follow. Tapping the name still opens the profile. A change shows on the posts drawn after it.	Oculta el enlace «Seguir» o «Suscribirse» junto al nombre en las publicaciones y vídeos de páginas y personas a las que no sigues. Al tocar el nombre se sigue abriendo el perfil. Un cambio se ve en las publicaciones que se carguen después.
 # context: switch title under News feed; Meta AI is the name of Meta's assistant, and the questions are the row of suggested questions for it that Facebook puts under some posts
 Hide Meta AI questions under posts	Ocultar las preguntas de Meta AI bajo las publicaciones
 # context: description of that switch; a link card is the preview of a shared link inside a post
@@ -1559,6 +1560,8 @@ Only the first reel waits	Solo espera el primer reel
 With the switch above on, after you play one reel, the reels you swipe to play on their own. The feed, Watch and stories always wait.	Con el interruptor de arriba activado, después de reproducir un reel, los reels a los que deslizas se reproducen solos. El feed, Watch y las historias siempre esperan.
 Slower speeds	Velocidades más lentas
 Adds 0.1x and 0.25x to the speed menu of reels and of feed and Watch videos, for slowing down a fast moment.	Añade 0,1x y 0,25x al menú de velocidad de los reels y de los vídeos del feed y de Watch, para ralentizar un momento rápido.
+Faster speeds	Velocidades más rápidas
+Adds 2.5x and 3x to the speed menu of reels and of feed and Watch videos, for watching faster.	Añade 2,5x y 3x al menú de velocidad de los reels y de los vídeos del feed y de Watch, para verlos más rápido.
 Speed on finished live videos	Velocidad en vídeos en directo terminados
 A live video that has ended gets Playback speed in its gear menu, like other videos. Videos that are still live, and ads, keep Facebook's menu.	Un vídeo en directo que ya terminó tiene Velocidad de reproducción en su menú de engranaje, como los demás vídeos. Los vídeos que siguen en directo y los anuncios mantienen el menú de Facebook.
 Share now	Compartir ahora
@@ -2213,6 +2216,8 @@ Fade the seek bar and speaker	Atenuar la barra de progreso y el altavoz
 Lower the seek bar and speaker	Bajar la barra de progreso y el altavoz
 While a feed video plays, its seek bar and Facebook's speaker button fade a few seconds after it starts or you last touch them. Touch the bar or pause the video and they come back. Needs Seek bar on feed videos on.	Mientras se reproduce un video del feed, su barra de progreso y el botón de altavoz de Facebook se atenúan unos segundos después de que empieza o de que los tocas por última vez. Toca la barra o pausa el video y vuelven. Necesita “Barra de progreso en videos del feed” activado.
 Moves a feed video's seek bar closer to the bottom edge, along with Facebook's speaker and tagged people buttons. Needs Seek bar on feed videos on.	Acerca la barra de progreso de un video del feed al borde inferior, junto con los botones de altavoz y de personas etiquetadas de Facebook. Necesita “Barra de progreso en videos del feed” activado.
+Seek bar on the bottom edge	Barra de progreso en el borde inferior
+Puts a feed video's seek bar right on its bottom edge, so it's out of the way while you scroll. Facebook's speaker and tagged people buttons move up to sit above it. Wins over Lower the seek bar and speaker. Needs Seek bar on feed videos on.	Pone la barra de progreso de un video del feed justo en su borde inferior, para que no estorbe al desplazarte. Los botones de altavoz y de personas etiquetadas de Facebook suben para quedar encima de ella. Tiene prioridad sobre “Bajar la barra de progreso y el altavoz”. Necesita “Barra de progreso en videos del feed” activado.
 Feed video position	Posición del video del feed
 # context: title of the row that holds a color code for the count badges on the tabs
 Badge color	Color de insignias
@@ -2594,6 +2599,8 @@ Takes the song and effect credits off the line under the poster's name on a stor
 Takes the row of suggested replies off the bottom of a story. The reply box stays. Applies from the next story you open.	Quita la fila de respuestas sugeridas de la parte inferior de una historia. El cuadro de respuesta se queda. Se aplica desde la próxima historia que abras.
 Hide the Subscribe button	Ocultar el botón Suscribirse
 Takes the Subscribe button off the top of a story. Applies from the next story you open.	Quita el botón Suscribirse de la parte superior de una historia. Se aplica desde la próxima historia que abras.
+Hide create story cards	Ocultar tarjetas para crear historias
+Takes out the card between stories that asks you to make one, including the ones built from photos in your gallery. Applies the next time you open stories.	Quita la tarjeta entre historias que te pide crear una, incluidas las hechas con fotos de tu galería. Se aplica la próxima vez que abras las historias.
 Progress bar at the bottom	Barra de progreso abajo
 Shows a thin bar along the bottom of a story that fills as it plays, like the one on Reels.	Muestra una barra fina en la parte inferior de una historia que se llena mientras se reproduce, como la de Reels.
 Seek bar on stories	Barra de progreso en historias
@@ -2667,3 +2674,7 @@ Show time in Reels	Mostrar el tiempo en Reels
 A small label at the top of Reels shows the minutes you've watched. Time on other tabs doesn't count, and 15 minutes away starts it over.	Una pequeña etiqueta arriba en Reels muestra los minutos que has visto. El tiempo en otras pestañas no cuenta, y 15 minutos fuera la ponen de nuevo a cero.
 # context: a short label on the Reels screen; %1$d is a number of minutes
 %1$d min	%1$d min
+Hide the tab bar on the Reels tab	Ocultar la barra de pestañas en la pestaña Reels
+The tab bar goes away while the Reels tab is open, and the reel gets the whole screen. The other tabs keep the bar. Restart Facebook to see the change.	La barra de pestañas desaparece mientras la pestaña Reels está abierta y el reel ocupa toda la pantalla. Las demás pestañas mantienen la barra. Reinicia Facebook para ver el cambio.
+Playback speed in the post menu	Velocidad de reproducción en el menú de la publicación
+A feed or Watch video's 3-dot menu gets Playback speed, from 0.5x to 3x, live videos too. Off by default, since it hasn't been tried on a real account yet.	El menú de tres puntos de un vídeo del feed o de Watch incluye Velocidad de reproducción, de 0,5x a 3x, también en vídeos en directo. Apagado por defecto, porque aún no se ha probado en una cuenta real.

@@ -293,7 +293,11 @@ public final class FeedVideoControls {
     }
 
     private static boolean lowerOn() {
-        return seekOn() && Settings.FEED_VIDEO_SEEK_BAR_LOWER.get();
+        return seekOn() && !edgeOn() && Settings.FEED_VIDEO_SEEK_BAR_LOWER.get();
+    }
+
+    private static boolean edgeOn() {
+        return seekOn() && Settings.FEED_VIDEO_SEEK_BAR_EDGE.get();
     }
 
     private static boolean openOn() {
@@ -341,8 +345,13 @@ public final class FeedVideoControls {
             boolean open = !story && openOn();
             boolean skip = !story && skipOn();
             boolean speed = !story && speedOn();
-            if ((!play && !cast && !seek && !open && !skip && !speed) || control.released || player == null
+            boolean any = play || cast || seek || open || skip || speed;
+            if (!any || control.released || player == null
                     || container == null || access.view(player) != container) {
+                // The listeners go too, so nothing refreshes this video until Facebook attaches it again (#239).
+                if (any && player != null && container != null) {
+                    miss(control, control.released ? "its player was released" : "its player moved to another view");
+                }
                 control.remove(true);
                 return;
             }
@@ -520,7 +529,10 @@ public final class FeedVideoControls {
         if (!(content instanceof FrameLayout) || !descendant(container, content)) return miss(control, "outside the screen's content");
         Rect visible = new Rect();
         Rect clip = new Rect();
-        if (!surface.getGlobalVisibleRect(visible) || !list.getGlobalVisibleRect(clip) || !visible.intersect(clip)
+        // The container crops a taller surface, but a row that doesn't clip its children still counts the cropped
+        // part as showing, so an upright video in a shorter slot put the buttons over the post's text (#239).
+        if (!surface.getGlobalVisibleRect(visible) || !container.getGlobalVisibleRect(clip) || !visible.intersect(clip)
+                || !list.getGlobalVisibleRect(clip) || !visible.intersect(clip)
                 || !content.getGlobalVisibleRect(clip) || !visible.intersect(clip)) {
             return miss(control, "scrolled out of view");
         }
@@ -533,10 +545,11 @@ public final class FeedVideoControls {
         int across = size * buttons + margin * (buttons + 1);
         if (visible.width() < across || visible.height() < down + size + margin) return miss(control, "too little of it shows");
         int[] at = new int[2];
-        // A surface can be taller than its container, which crops it, so the video ends at the higher edge of the two.
+        // A surface can be taller than its container, which crops it, so the video runs between the inner edges of the two.
         surface.getLocationInWindow(at);
         Rect video = new Rect(at[0], at[1], at[0] + surface.getWidth(), at[1] + surface.getHeight());
         container.getLocationInWindow(at);
+        video.top = Math.max(video.top, at[1]);
         video.bottom = Math.min(video.bottom, at[1] + container.getHeight());
         corners(control, row, video, density, live);
         Rect bar = !seekOn() ? null : live ? noBar(control, "a live video has no end to seek to", null)
@@ -632,12 +645,13 @@ public final class FeedVideoControls {
 
     /**
      * Where the seek bar goes in the window, {@link #BAR_LIFT_DP} above [video]'s bottom, less what
-     * Lower the seek bar moved Facebook's corner buttons down, or null when that spot isn't showing
-     * in [visible], or something on top of the feed lies across it. The buttons keep [room] of the height.
+     * Lower the seek bar moved Facebook's corner buttons down, or on the bottom edge itself with Seek
+     * bar on the bottom edge (#431), or null when that spot isn't showing in [visible], or something on
+     * top of the feed lies across it. The buttons keep [room] of the height.
      */
     @Nullable
     private static Rect barArea(Control control, Rect video, View list, View content, Rect visible, int room, float density) {
-        int bottom = video.bottom - Math.round(BAR_LIFT_DP * density) + control.lowered;
+        int bottom = edgeOn() ? video.bottom : video.bottom - Math.round(BAR_LIFT_DP * density) + control.lowered;
         int height = Math.round(BAR_DP * density);
         if (visible.bottom < bottom || visible.height() < room + height) return noBar(control, "its bottom edge doesn't show", null);
         if (inGestureStrip(content, bottom)) return noBar(control, "its bottom edge is in the system's gesture strip", null);
@@ -665,12 +679,14 @@ public final class FeedVideoControls {
     /**
      * Finds Facebook's own buttons in [video]'s bottom corners inside [row], the speaker and the
      * tagged people, at most once a tick, and moves them down for Lower the seek bar (#386). They all
-     * move by the same amount, which the bar takes too, so it stays just clear of them. With both
+     * move by the same amount, which the bar takes too, so it stays just clear of them. Seek bar on
+     * the bottom edge moves them up instead, just clear of the bar along that edge (#431). With the
      * switches off, or on a live video, they're put back as they were.
      */
     private static void corners(Control control, View row, Rect video, float density, boolean live) {
         boolean lower = lowerOn();
-        if (live || (!lower && !fadeOn())) {
+        boolean edge = edgeOn();
+        if (live || (!lower && !edge && !fadeOn())) {
             control.restoreCorners();
             return;
         }
@@ -688,6 +704,9 @@ public final class FeedVideoControls {
         }
         int room = Math.round(LOWER_DP * density);
         int gap = Math.round(MARGIN_DP * density);
+        // On the bottom edge the bar takes its own height there, and the lowest button ends a gap above it.
+        int clear = video.bottom - Math.round(BAR_DP * density) - gap;
+        int lift = 0;
         int side = Math.round(CORNER_DP * density);
         boolean rtl = row.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
         StringBuilder seen = new StringBuilder();
@@ -700,19 +719,21 @@ public final class FeedVideoControls {
             Rect base = base(control, view);
             corner.speakerSide = rtl ? base.left - video.left <= side : video.right - base.right <= side;
             room = Math.min(room, Math.max(0, video.bottom - base.bottom - gap));
+            lift = Math.max(lift, base.bottom - clear);
             seen.append(seen.length() == 0 ? "" : ", ").append(view.getClass().getName())
                     .append(corner.speakerSide ? " speaker side " : " ").append(view.getContentDescription());
         }
-        int shift = lower ? room : 0;
+        int shift = edge ? -lift : lower ? room : 0;
         for (Corner corner : control.corners.values()) corner.shift(shift);
-        control.lowered = shift;
+        control.lowered = lower ? shift : 0;
         String summary = seen.length() == 0 ? "none" : seen.toString();
         if (!summary.equals(control.cornersSaid)) {
             control.cornersSaid = summary;
             if (!found.isEmpty()) HookStatus.bound(FAMILY, "feed video corner buttons");
             if (BaseSettings.DEBUG.get()) {
                 Logger.diagnosticDebug(DiagnosticCategory.OTHER, SOURCE,
-                        () -> "Feed video corner buttons: " + summary + ", moved down " + shift + " px");
+                        () -> "Feed video corner buttons: " + summary
+                                + (shift < 0 ? ", moved up " + -shift : ", moved down " + shift) + " px");
             }
         }
     }
@@ -741,7 +762,7 @@ public final class FeedVideoControls {
         for (int i = 0; i < group.getChildCount(); i++) findCorners(control, group.getChildAt(i), video, strip, small, side, found);
     }
 
-    /** [view]'s spot in the window as Facebook placed it, before Lower the seek bar moved it. */
+    /** [view]'s spot in the window as Facebook placed it, before a seek bar switch moved it. */
     private static Rect base(Control control, View view) {
         int[] at = new int[2];
         view.getLocationInWindow(at);
@@ -1033,7 +1054,7 @@ public final class FeedVideoControls {
     }
 
     private static final class Control implements ViewTreeObserver.OnPreDrawListener,
-            View.OnAttachStateChangeListener {
+            ViewTreeObserver.OnWindowFocusChangeListener, View.OnAttachStateChangeListener {
         final WeakReference<Object> player;
         volatile WeakReference<ViewGroup> expected = new WeakReference<>(null);
         volatile long generation;
@@ -1105,6 +1126,7 @@ public final class FeedVideoControls {
             observer = new WeakReference<>(next);
             view.addOnAttachStateChangeListener(this);
             next.addOnPreDrawListener(this);
+            next.addOnWindowFocusChangeListener(this);
         }
         void remove(boolean listeners) {
             restoreCorners();
@@ -1131,11 +1153,16 @@ public final class FeedVideoControls {
             ViewGroup view = observed.get();
             if (view != null) view.removeOnAttachStateChangeListener(this);
             ViewTreeObserver tree = observer.get();
-            if (tree != null && tree.isAlive()) tree.removeOnPreDrawListener(this);
+            if (tree != null && tree.isAlive()) {
+                tree.removeOnPreDrawListener(this);
+                tree.removeOnWindowFocusChangeListener(this);
+            }
             observed.clear();
             observer.clear();
         }
         public boolean onPreDraw() { refresh(this); return true; }
+        /** A sheet over the feed takes the focus, and handing it back draws nothing on a paused video (#239). */
+        public void onWindowFocusChanged(boolean focused) { if (focused) post(this); }
         public void onViewAttachedToWindow(View view) { post(this); }
         public void onViewDetachedFromWindow(View view) {
             generation++;
