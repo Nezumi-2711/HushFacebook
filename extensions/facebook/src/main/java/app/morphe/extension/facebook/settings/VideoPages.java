@@ -307,6 +307,11 @@ final class VideoPages {
                     L10n.t("A double tap on a reel, a video or a photo in the feed no longer likes it or shows a heart. "
                             + "A single tap and the Like button work as before.")));
         }
+        if (build.contains(PatchFamily.ASK_BEFORE_LIKE)) {
+            // Read on each tap, so a change shows on the next one.
+            reels.addPreference(toggle(context, Settings.ASK_BEFORE_LIKING_REELS,
+                    L10n.t("A tap on Like beside a reel asks first, and only Continue likes or unlikes it.")));
+        }
         if (build.contains(PatchFamily.DOUBLE_TAP_SKIP)) {
             // Read as each player is set up, so a change shows on the next reel or video.
             reels.addPreference(toggle(context, Settings.DOUBLE_TAP_SKIP,
@@ -375,6 +380,11 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.SHOW_REEL_DOWNLOAD_BUTTON,
                     L10n.t("Add a Download button to reels, using your download quality. Off or paused, Facebook's own buttons return."))
                     .needs(Settings.DOWNLOAD_REELS));
+            reels.addPreference(toggle(context, Settings.QUEUE_REEL_SAVES,
+                    L10n.t("Each reel you tap Download on joins a queue that saves one reel at a time in the background. "
+                            + "Pause or cancel it from its notification or from Downloads here. A reel already in the queue is "
+                            + "skipped, and one that fails gets one more try. The queue lasts until Facebook closes."))
+                    .needs(Settings.DOWNLOAD_REELS));
             reels.addPreference(toggle(context, Settings.REEL_CAST_BUTTON,
                     L10n.t("Adds a cast button to reels, under Download. It hands the reel to a casting app you have, such as Web Video Caster, which sends it to your TV.")));
             reels.addPreference(toggle(context, Settings.COPY_REEL_CAPTION,
@@ -416,6 +426,12 @@ final class VideoPages {
                 playback.addPreference(toggle(context, Settings.FEED_VIDEO_SKIP_BUTTONS,
                         L10n.t("Adds buttons to feed videos that jump back or ahead 10 seconds, like Facebook's own player has. "
                                 + "Live videos and ads keep their own controls. With Tap to play on, it needs Inline feed video controls on too.")));
+                // Asked at each press, so it applies to the next tap.
+                playback.addPreference(toggle(context, Settings.FEED_VIDEO_DOUBLE_TAP_SKIP,
+                        L10n.t("Double tap the right side of a playing feed video to jump ahead 10 seconds, or the left side to go back 10. "
+                                + "Keep tapping to go further. Live videos work too when they can be rewound. "
+                                + "One tap on a side still opens the video, a moment later than usual. "
+                                + "With Tap to play on, it needs Inline feed video controls on too.")));
                 // Hold a reel for 2x's patch reaches the player's speed, which the button reads and sets.
                 if (build.contains(PatchFamily.REEL_HOLD)) {
                     playback.addPreference(toggle(context, Settings.FEED_VIDEO_SPEED_BUTTON,
@@ -588,6 +604,9 @@ final class VideoPages {
                     L10n.t("With Save videos other apps can open on, a full size video Facebook only has as VP9 or AV1 is "
                             + "converted to H.264 on your phone instead of saved smaller. Slower, and videos over 10 minutes "
                             + "stay smaller.")));
+            downloads.addPreference(toggle(context, Settings.DOWNLOAD_QUALITY_ASK,
+                    L10n.t("A reel's Download button and a video's Download to phone show the qualities first, and the save "
+                            + "takes the one you pick. Download quality stays as it is.")));
             downloads.addPreference(qualityRow(context));
             downloads.addPreference(saveStorageRow(context));
             downloads.addPreference(saveToRow(context));

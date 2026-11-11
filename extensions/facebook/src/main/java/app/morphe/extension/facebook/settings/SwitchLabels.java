@@ -96,6 +96,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_SUGGESTED_STORIES) return L10n.t("Hide suggested stories");
         if (setting == Settings.HIDE_CONTACT_IMPORT_CARD) return L10n.t("Hide \"Find friends from contacts\"");
         if (setting == Settings.HIDE_STORY_PROMPTS) return L10n.t("Hide story prompts");
+        if (setting == Settings.HIDE_CREATE_STORY) return L10n.t("Hide Create story");
         if (setting == Settings.HIDE_PAGE_STORIES) return L10n.t("Hide stories from Pages");
         if (setting == Settings.HIDE_SEEN_STORIES) return L10n.t("Hide seen stories");
         if (setting == Settings.SHOW_ONLY_WATCHED_STORIES) return L10n.t("Show only watched stories");
@@ -137,6 +138,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_POST_COMMENT_PREVIEWS) return L10n.t("Hide comments under posts");
         if (setting == Settings.HIDE_COMMENT_DOWNVOTE_BUTTON) return L10n.t("Hide dislike on comments");
         if (setting == Settings.HIDE_COMMENT_LIKE_BUTTON) return L10n.t("Hide Like on comments");
+        if (setting == Settings.HIDE_COMMENT_REPLY_BUTTON) return L10n.t("Hide Reply on comments");
         if (setting == Settings.COMMENT_BLOCK_BUTTON) return L10n.t("Block button on comments");
         if (setting == Settings.REACTOR_BLOCK_BUTTON) return L10n.t("Block button on reaction lists");
         if (setting == Settings.HIDE_RELATED_GROUPS_UNDER_COMMENTS) return L10n.t("Hide related groups");
@@ -147,6 +149,7 @@ final class SwitchLabels {
         if (setting == Settings.PAUSE_REELS_UNDER_COMMENTS) return L10n.t("Pause reels while comments are open");
         if (setting == Settings.TAP_REELS_ABOVE_COMMENTS) return L10n.t("Tap a reel above its comments");
         if (setting == Settings.SEARCH_COMMENTS) return L10n.t("Search comments");
+        if (setting == Settings.FILTER_COMMENT_SEARCH) return L10n.t("Show only comments that match");
         if (setting == Settings.TAG_SUGGESTIONS_ONLY_AFTER_AT) return L10n.t("Tag suggestions only after @");
         if (setting == Settings.HIDE_REELS_TAB) return L10n.t("Hide the Reels tab");
         if (setting == Settings.HIDE_REELS_TAB_DOT) return L10n.t("Hide the Reels tab dot");
@@ -230,6 +233,9 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_READ_RECEIPTS) return L10n.t("Hide read receipts");
         if (setting == Settings.ORIGINAL_CHAT_MEDIA) return L10n.t("Send photos and videos at original quality");
         if (setting == Settings.TURN_OFF_DOUBLE_TAP_LIKE) return L10n.t("Turn off double tap to like");
+        if (setting == Settings.ASK_BEFORE_LIKING_POSTS) return L10n.t("Ask before liking a post");
+        if (setting == Settings.ASK_BEFORE_LIKING_REELS) return L10n.t("Ask before liking a reel");
+        if (setting == Settings.ASK_BEFORE_LIKING_COMMENTS) return L10n.t("Ask before liking a comment");
         if (setting == Settings.DOUBLE_TAP_SKIP) return L10n.t("Double tap to skip");
         if (setting == Settings.TAP_SHOWS_CONTROLS) return L10n.t("Tap shows the controls");
         if (setting == Settings.DOUBLE_TAP_OPENS_COMMENTS) return L10n.t("Double tap opens comments");
@@ -248,6 +254,7 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_2X_POPUPS) return L10n.t("Hide the 2x popups");
         if (setting == Settings.DOWNLOAD_REELS) return L10n.t("Download");
         if (setting == Settings.SHOW_REEL_DOWNLOAD_BUTTON) return L10n.t("Download button on reels");
+        if (setting == Settings.QUEUE_REEL_SAVES) return L10n.t("Queue reel saves");
         if (setting == Settings.REEL_CAST_BUTTON) return L10n.t("Cast button on reels");
         if (setting == Settings.COPY_REEL_CAPTION) return L10n.t("Copy reel captions");
         if (setting == Settings.TAP_TO_PLAY) return L10n.t("Tap to play");
@@ -262,6 +269,7 @@ final class SwitchLabels {
         if (setting == Settings.FEED_VIDEO_SEEK_BAR_EDGE) return L10n.t("Seek bar on the bottom edge");
         if (setting == Settings.FEED_VIDEO_FULL_PLAYER_BUTTON) return L10n.t("Full player button on feed videos");
         if (setting == Settings.FEED_VIDEO_SKIP_BUTTONS) return L10n.t("Skip buttons on feed videos");
+        if (setting == Settings.FEED_VIDEO_DOUBLE_TAP_SKIP) return L10n.t("Double tap to skip on feed videos");
         if (setting == Settings.FEED_VIDEO_SPEED_BUTTON) return L10n.t("Speed button on feed videos");
         if (setting == Settings.FEED_VIDEO_SEEK_BAR_TIMES) return L10n.t("Times on the seek bar");
         if (setting == Settings.CENTER_FULL_SCREEN_VIDEOS) return L10n.t("Open full screen videos centered");
@@ -295,6 +303,7 @@ final class SwitchLabels {
         if (setting == Settings.DOWNLOAD_COMPATIBLE) return L10n.t("Save videos other apps can open");
         if (setting == Settings.DOWNLOAD_CONVERT) return L10n.t("Convert to keep the full size");
         if (setting == Settings.DOWNLOAD_QUIET) return L10n.t("Quiet saves");
+        if (setting == Settings.DOWNLOAD_QUALITY_ASK) return L10n.t("Choose quality on each save");
         if (setting == Settings.HIDE_GET_MESSENGER_CARD) return L10n.t("Hide the Get Messenger card");
         if (setting == Settings.HIDE_CHAT_NOTES_TRAY) return L10n.t("Hide the notes and active now row");
         if (setting == Settings.HIDE_CHAT_PROMOTIONS) return L10n.t("Hide chat list promotions");
@@ -318,6 +327,8 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_MENU_UPGRADES) return L10n.t("Hide Upgrades");
         if (setting == Settings.HIDE_MENU_ALSO_FROM_META) return L10n.t("Hide Also from Meta");
         if (setting == Settings.HIDE_MENU_HELP) return L10n.t("Hide Help and support");
+        if (setting == Settings.HIDE_MENU_SHORTCUTS) return L10n.t("Hide Your shortcuts");
+        if (setting == Settings.HIDE_MENU_CREATE_PAGE) return L10n.t("Hide Create Facebook Page");
         if (setting == Settings.KEEP_MENU_SETTINGS_EXPANDED) return L10n.t("Keep Settings and privacy expanded");
         if (setting == Settings.HIDE_MENU_MUSE) return L10n.t("Hide the Muse card");
         if (setting == Settings.HIDE_MENU_META_AI) return L10n.t("Hide the Meta AI shortcut");
@@ -333,6 +344,7 @@ final class SwitchLabels {
         if (setting == Settings.DONT_SAVE_SEARCH_HISTORY) return L10n.t("Don't save search history");
         if (setting == Settings.SEARCH_DATE_RANGE) return L10n.t("Search date range");
         if (setting == Settings.SEARCH_POSTS_TAB) return L10n.t("Show Posts in search");
+        if (setting == Settings.SEARCH_SAVED_BUTTON) return L10n.t("Saved button in search");
         if (setting == Settings.HIDE_SPONSORED_SEARCH_RESULTS) return L10n.t("Hide sponsored search results");
         if (setting == Settings.HIDE_SPONSORED_MARKETPLACE_LISTINGS) return L10n.t("Hide sponsored Marketplace listings");
         if (setting == Settings.MARKETPLACE_ADVANCED_SEARCH) return L10n.t("Advanced Marketplace search");

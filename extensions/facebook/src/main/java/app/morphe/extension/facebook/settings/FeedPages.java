@@ -178,6 +178,7 @@ final class FeedPages {
                 || build.contains(PatchFamily.META_AI_QUESTIONS)
                 || build.contains(PatchFamily.POST_DATES)
                 || build.contains(PatchFamily.AUTO_TRANSLATION)
+                || build.contains(PatchFamily.ASK_BEFORE_LIKE)
                 || build.contains(PatchFamily.FEEDS_HEADER)) {
             PreferenceCategory feed = category(screen, L10n.t("News feed"));
             // The families whose rules run in the feed guard, which keeps the tally.
@@ -322,6 +323,11 @@ final class FeedPages {
                 feed.addPreference(toggle(context, Settings.HIDE_POST_COMMENT_BUTTON, hides));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_SHARE_BUTTON, hides));
                 feed.addPreference(toggle(context, Settings.HIDE_POST_SEND_BUTTON, hides));
+            }
+            if (build.contains(PatchFamily.ASK_BEFORE_LIKE)) {
+                // Read on each tap, so a change shows on the next one.
+                feed.addPreference(toggle(context, Settings.ASK_BEFORE_LIKING_POSTS,
+                        L10n.t("A tap on Like under a post asks first, and only Continue likes or unlikes it.")));
             }
             if (build.contains(PatchFamily.POST_DATES)) {
                 feed.addPreference(toggle(context, Settings.KEEP_POST_DATES,
@@ -689,6 +695,9 @@ final class FeedPages {
                 stories.addPreference(toggle(context, Settings.HIDE_STORY_PROMPTS,
                         L10n.t("Hides cards beside Create story that suggest a story to make, like Share music you love. Applies "
                                 + "when Facebook next loads the tray.")));
+                stories.addPreference(toggle(context, Settings.HIDE_CREATE_STORY,
+                        L10n.t("Takes the Create story tile off the start of the Stories tray. The stories stay. "
+                                + "Applies when Facebook next loads the tray.")));
                 stories.addPreference(toggle(context, Settings.HIDE_PAGE_STORIES,
                         L10n.t("Shows only people's stories in the Stories tray, without the Pages you follow. Applies when "
                                 + "Facebook next loads the tray.")));
@@ -833,7 +842,8 @@ final class FeedPages {
         boolean fullHeight = build.contains(PatchFamily.FULL_HEIGHT_COMMENTS);
         boolean tags = build.contains(PatchFamily.TAG_SUGGESTIONS);
         boolean pictures = build.contains(PatchFamily.PROFILE_PICTURES);
-        if (!order && !summaries && !options && !reactions && !fullHeight && !tags && !pictures) return;
+        boolean ask = build.contains(PatchFamily.ASK_BEFORE_LIKE);
+        if (!order && !summaries && !options && !reactions && !fullHeight && !tags && !pictures && !ask) return;
         PreferenceCategory comments = category(screen, L10n.t("Comments and writing"));
         if (order) {
             comments.addPreference(toggle(context, Settings.DEFAULT_COMMENT_ORDER,
@@ -855,6 +865,11 @@ final class FeedPages {
             comments.addPreference(toggle(context, Settings.HIDE_COMMENT_PROFILE_PICTURES,
                     L10n.t("Takes the profile picture off comments, so the name and text start where the picture "
                             + "was. A change shows on the comments drawn after it.")));
+        }
+        if (ask) {
+            // Read on each tap, so a change shows on the next one.
+            comments.addPreference(toggle(context, Settings.ASK_BEFORE_LIKING_COMMENTS,
+                    L10n.t("A tap on Like under a comment asks first, and only Continue likes or unlikes it.")));
         }
         if (options) {
             comments.addPreference(toggle(context, Settings.LIKE_ONLY,
@@ -881,6 +896,8 @@ final class FeedPages {
                     L10n.t("Takes the thumbs-down off comments. Like and Reply stay.")));
             comments.addPreference(toggle(context, Settings.HIDE_COMMENT_LIKE_BUTTON,
                     L10n.t("Takes Like off the row under comments. Reply and the reaction count stay.")));
+            comments.addPreference(toggle(context, Settings.HIDE_COMMENT_REPLY_BUTTON,
+                    L10n.t("Takes Reply off the row under comments. View replies, Like and the reaction count stay.")));
             comments.addPreference(toggle(context, Settings.COMMENT_BLOCK_BUTTON,
                     L10n.t("The thumbs-down on a comment becomes Block. One tap opens Facebook's own block screen for that person.")));
             comments.addPreference(toggle(context, Settings.REACTOR_BLOCK_BUTTON,
@@ -917,6 +934,12 @@ final class FeedPages {
             comments.addPreference(toggle(context, Settings.SEARCH_COMMENTS,
                     L10n.t("A magnifier at the top of the comments opens a search box that finds the comments with "
                             + "your words.")));
+            // The comments leave the list through Comment sheet options' hooks on the comment and the list.
+            if (options) {
+                comments.addPreference(toggle(context, Settings.FILTER_COMMENT_SEARCH,
+                        L10n.t("While the search box holds words, comments without them are hidden. Clearing the "
+                                + "box brings them back.")));
+            }
         }
         // Writing had a section of its own for this one switch.
         if (tags) {

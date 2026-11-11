@@ -189,6 +189,12 @@ final class AppPages {
             menu.addPreference(toggle(context, Settings.HIDE_MENU_HELP,
                     L10n.t("The Help and support section leaves Facebook's Menu, header and all. Settings and privacy "
                             + "stays.")));
+            menu.addPreference(toggle(context, Settings.HIDE_MENU_SHORTCUTS,
+                    L10n.t("The Your shortcuts row leaves Facebook's Menu, with the groups and Pages Facebook keeps "
+                            + "putting back in it. The Menu tiles under it stay.")));
+            menu.addPreference(toggle(context, Settings.HIDE_MENU_CREATE_PAGE,
+                    L10n.t("The Create Facebook Page row leaves the top of Facebook's Menu. Your profile above it "
+                            + "stays.")));
             menu.addPreference(toggle(context, Settings.KEEP_MENU_SETTINGS_EXPANDED,
                     L10n.t("Settings and privacy in Facebook's Menu stays open, so its rows show without a tap.")));
             menu.addPreference(toggle(context, Settings.HIDE_MENU_MUSE,
@@ -240,7 +246,8 @@ final class AppPages {
             Set<PatchFamily> build) {
         if (build.contains(PatchFamily.META_AI_SEARCH) || build.contains(PatchFamily.SPONSORED_SEARCH)
                 || build.contains(PatchFamily.SUGGESTED_POSTS) || build.contains(PatchFamily.SEARCH_HISTORY)
-                || build.contains(PatchFamily.SEARCH_DATE_RANGE) || build.contains(PatchFamily.SEARCH_POSTS_TAB)) {
+                || build.contains(PatchFamily.SEARCH_DATE_RANGE) || build.contains(PatchFamily.SEARCH_POSTS_TAB)
+                || build.contains(PatchFamily.SEARCH_SAVED_BUTTON)) {
             PreferenceCategory search = category(screen, L10n.t("Search"));
             if (build.contains(PatchFamily.META_AI_SEARCH)) {
                 search.addPreference(toggle(context, Settings.HIDE_META_AI_IN_SEARCH,
@@ -273,6 +280,11 @@ final class AppPages {
                 search.addPreference(toggle(context, Settings.SEARCH_POSTS_TAB,
                         L10n.t("Puts Posts back in the row over search results, after Reels, so you can see only posts "
                                 + "for what you searched.")));
+            }
+            if (build.contains(PatchFamily.SEARCH_SAVED_BUTTON)) {
+                search.addPreference(toggle(context, Settings.SEARCH_SAVED_BUTTON,
+                        L10n.t("Puts a Saved button at the end of the search bar, so your saved posts and videos are one "
+                                + "tap away. Restart Facebook to see the change.")));
             }
         }
     }

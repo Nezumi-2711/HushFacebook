@@ -68,6 +68,7 @@ import app.morphe.extension.facebook.chats.ReadReceipts;
 import app.morphe.extension.facebook.chats.TypingIndicator;
 import app.morphe.extension.facebook.download.ClipboardLinkForTests;
 import app.morphe.extension.facebook.download.CommentGifForTests;
+import app.morphe.extension.facebook.download.CommentPhotoForTests;
 import app.morphe.extension.facebook.download.CommentVideoForTests;
 import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
@@ -99,6 +100,7 @@ import app.morphe.extension.facebook.feed.MetaAiQuestions;
 import app.morphe.extension.facebook.feed.NotificationFooter;
 import app.morphe.extension.facebook.feed.PostDates;
 import app.morphe.extension.facebook.feed.PostPrompts;
+import app.morphe.extension.facebook.feed.AskBeforeLike;
 import app.morphe.extension.facebook.feed.ProfilePictures;
 import app.morphe.extension.facebook.feed.ProfileSuggestionsForTests;
 import app.morphe.extension.facebook.feed.RelatedPosts;
@@ -186,6 +188,7 @@ import app.morphe.extension.facebook.search.SearchDateRangeForTests;
 import app.morphe.extension.facebook.search.SearchDateRangeTest;
 import app.morphe.extension.facebook.search.SearchHistory;
 import app.morphe.extension.facebook.search.SearchPostsTabForTests;
+import app.morphe.extension.facebook.search.SearchSavedButtonTest;
 import app.morphe.extension.facebook.stories.StoryAdvance;
 import app.morphe.extension.facebook.stories.StorySeenForTests;
 import app.morphe.extension.facebook.stories.StoryMusic;
@@ -370,6 +373,8 @@ public class PausedHooksTest {
         probes.put(Settings.DOWNLOAD_CONVERT, SaveRulesForTests::convertsTheFullSize);
         // A finished save goes without its Saved to toast.
         probes.put(Settings.DOWNLOAD_QUIET, SaveRulesForTests::finishesQuietly);
+        // A reel's or a video's save asks for the quality before it starts.
+        probes.put(Settings.DOWNLOAD_QUALITY_ASK, SaveRulesForTests::asksForTheQuality);
         return probes;
     }
 
@@ -588,9 +593,10 @@ public class PausedHooksTest {
         // A tray of a friend's bucket, a suggested one and one labelled SUGGESTED keeps only the friend's,
         // a Page's bucket leaves it, and so does a bucket you've watched.
         // With Show only watched stories on, the tray keeps only what you've watched (#340).
+        // The Create story tile leaves the tray's tile list (#445).
         probes.put(PatchFamily.SUGGESTED_STORIES, Arrays.asList(allStories(SuggestedStoriesForTests::hidesSuggestions),
                 allStories(SuggestedStoriesForTests::hidesPageStories), allStories(SuggestedStoriesForTests::hidesSeenStories),
-                SuggestedStoriesForTests::keepsOnlyWatchedStories));
+                SuggestedStoriesForTests::keepsOnlyWatchedStories, SuggestedStoriesForTests::hidesCreateStory));
         // A forward tap on a bucket's last card gets the completion's reason (#380).
         probes.put(PatchFamily.STORY_AUTO_ADVANCE, Arrays.asList(StoryAdvance::waitForTap, StoryAdvance::loop,
                 () -> StoryAdvance.lastCardTap(NavigationReason.TAP_FORWARD)));
@@ -781,6 +787,12 @@ public class PausedHooksTest {
                 DoubleTapLike::holdBackTap,
                 () -> DoubleTapLike.holdBackFeedTap(null),
                 DoubleTapLike::holdBackFeedLike));
+        // A tap on Like under a post, beside a reel or under a comment is held while a question goes up.
+        probes.put(PatchFamily.ASK_BEFORE_LIKE, Arrays.asList(
+                () -> asksBeforeALike(AskBeforeLike.POST_FOOTER),
+                () -> asksBeforeALike(AskBeforeLike.REEL),
+                () -> asksBeforeALike(AskBeforeLike.COMMENT),
+                () -> asksBeforeALike(AskBeforeLike.POST_TOUCH)));
         // Facebook's double-tap skip test, read as off, is answered on.
         probes.put(PatchFamily.DOUBLE_TAP_SKIP, Collections.singletonList(() -> DoubleTapSkip.flag(false)));
         // A reel tap gets the controls in place of the pause, they stay up longer, and the unified player hides them.
@@ -904,12 +916,13 @@ public class PausedHooksTest {
                 CommentVideoForTests::addsARow,
                 PlayerSourcesForTests::recordsAVideoPlayer,
                 ClipboardLinkForTests::readsTheClipboard));
-        // Every photo the viewer opens offers Save photo, a photo post's menu gets Save photo, and a
-        // GIF comment's sheet gets Save GIF.
+        // Every photo the viewer opens offers Save photo, a photo post's menu gets Save photo, a GIF
+        // comment's sheet gets Save GIF, and a photo comment's sheet gets Save photo.
         probes.put(PatchFamily.PHOTO_DOWNLOAD, Arrays.asList(
                 () -> PhotoSave.offersSave(false),
                 PhotoMenuItemForTests::addsAnItem,
-                CommentGifForTests::addsARow));
+                CommentGifForTests::addsARow,
+                CommentPhotoForTests::addsARow));
         // A start from the launcher icon asks Facebook for the chosen tab.
         probes.put(PatchFamily.START_TAB, Collections.singletonList(StartTabRouteForTests::routes));
         // Home's request for its feed goes out for the most recent feed.
@@ -1000,6 +1013,7 @@ public class PausedHooksTest {
                 () -> !CommentSheetOptions.viewMoreRepliesTextOnly(true),
                 () -> CommentSheetOptions.holdsBottomContent(CommentSheetOptions.RELATED_GROUPS),
                 () -> CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS),
+                () -> CommentSheetOptions.holdsCommentReply(CommentSheetOptions.REPLY_PLUGIN),
                 () -> {
                     // Block button on comments keeps the dislike it redraws (#271).
                     Settings.COMMENT_BLOCK_BUTTON.save(false);
@@ -1141,6 +1155,8 @@ public class PausedHooksTest {
                 SearchDateRangeForTests::keepsTheRange));
         // Search results get a Posts chip after Reels.
         probes.put(PatchFamily.SEARCH_POSTS_TAB, Collections.singletonList(SearchPostsTabForTests::addsPosts));
+        // The search bar ends in a Saved button.
+        probes.put(PatchFamily.SEARCH_SAVED_BUTTON, Collections.singletonList(SearchSavedButtonTest::aBarGetsTheButton));
         // XAnalytics' upload and uploader resume are skipped, and the Papaya job finishes unrun.
         probes.put(PatchFamily.ANALYTICS_UPLOADS, Arrays.asList(
                 AnalyticsUploads::holdXAnalyticsUpload,
@@ -1282,6 +1298,16 @@ public class PausedHooksTest {
         sheet.addView(header);
         FullHeightComments.watchHeader(sheet, 0x7f0a0612, true);
         return header.getVisibility() == View.GONE;
+    }
+
+    /** A tap on Like of [kind] from a view on its own screen, with the question it put up taken down again. */
+    private static boolean asksBeforeALike(int kind) {
+        Activity screen = Robolectric.buildActivity(Activity.class).setup().get();
+        boolean held = AskBeforeLike.hold(kind, "Lnone;->like(Landroid/view/View;)V", new Object[] {null, new View(screen)});
+        android.app.Dialog question = org.robolectric.shadows.ShadowDialog.getLatestDialog();
+        if (held && question != null) question.dismiss();
+        shadowOf(android.os.Looper.getMainLooper()).idle();
+        return held;
     }
 
     /** A part-height comment sheet opened from the Reels tab, surface 20, handed over by Facebook. */

@@ -316,6 +316,8 @@ The Reels tab only shows reels from people and Pages you follow, starting with t
 Facebook has no more reels your filters would keep, so these reels aren't filtered for now.	Facebook không còn reel nào mà bộ lọc của bạn giữ lại, nên tạm thời các reel này không được lọc.
 Hush hid the suggested posts after this, so Home ends here.	Hush đã ẩn các bài viết gợi ý phía sau, nên Trang chủ kết thúc ở đây.
 Download quality	Chất lượng tải xuống
+Choose quality on each save	Chọn chất lượng mỗi lần lưu
+A reel's Download button and a video's Download to phone show the qualities first, and the save takes the one you pick. Download quality stays as it is.	Nút Tải xuống của reel và mục Tải về điện thoại của video sẽ hiện các mức chất lượng trước, rồi lưu mức bạn chọn. Chất lượng tải xuống vẫn giữ nguyên.
 Best	Tốt nhất
 Smallest	Nhỏ nhất
 Each video saves at the best quality the player streams.	Mỗi video được lưu ở chất lượng tốt nhất mà trình phát truyền về.
@@ -463,6 +465,10 @@ The Also from Meta section leaves Facebook's Menu, with its links to Meta's othe
 Hide Help and support	Ẩn "Trợ giúp & hỗ trợ"
 # context: summary of that switch; Settings and privacy is Facebook's own Menu section
 The Help and support section leaves Facebook's Menu, header and all. Settings and privacy stays.	Mục Trợ giúp & hỗ trợ biến mất khỏi Menu của Facebook, cả tiêu đề. Cài đặt & quyền riêng tư vẫn giữ nguyên.
+Hide Your shortcuts	Ẩn "Lối tắt của bạn"
+The Your shortcuts row leaves Facebook's Menu, with the groups and Pages Facebook keeps putting back in it. The Menu tiles under it stay.	Hàng Lối tắt của bạn biến mất khỏi Menu của Facebook, cùng các nhóm và Trang mà Facebook cứ đưa lại vào đó. Các ô Menu bên dưới vẫn giữ nguyên.
+Hide Create Facebook Page	Ẩn "Tạo Trang Facebook"
+The Create Facebook Page row leaves the top of Facebook's Menu. Your profile above it stays.	Hàng Tạo Trang Facebook biến mất khỏi phần đầu Menu của Facebook. Hồ sơ của bạn ở trên vẫn giữ nguyên.
 # context: switch title under Menu; Settings and privacy is a section of Facebook's own Menu that folds and unfolds when its header is tapped
 Keep Settings and privacy expanded	Luôn mở rộng Cài đặt & quyền riêng tư
 # context: summary of that switch
@@ -490,6 +496,8 @@ Hide dislike on comments	Ẩn nút không thích ở bình luận
 Takes the thumbs-down off comments. Like and Reply stay.	Bỏ nút ngón cái hướng xuống khỏi bình luận. Thích và Trả lời vẫn giữ nguyên.
 Hide Like on comments	Ẩn Thích ở bình luận
 Takes Like off the row under comments. Reply and the reaction count stay.	Bỏ nút Thích khỏi hàng dưới bình luận. Trả lời và số lượt bày tỏ cảm xúc vẫn giữ nguyên.
+Hide Reply on comments	Ẩn Trả lời ở bình luận
+Takes Reply off the row under comments. View replies, Like and the reaction count stay.	Bỏ nút Trả lời khỏi hàng dưới bình luận. Xem phản hồi, Thích và số lượt bày tỏ cảm xúc vẫn giữ nguyên.
 # context: switch title under Comments; Like is the button under a post or a comment
 Like only	Chỉ Thích
 # context: summary of that switch; the reactions are the row of Love, Haha, Wow and the rest that a long press on Like opens
@@ -837,6 +845,26 @@ Saving... To cancel, open Downloads in Hushfacebook settings.	Đang lưu... Đ�
 Turn off double tap to like	Tắt nhấn đúp để thích
 # context: summary of that switch; Like is the name of Facebook's own button, as Facebook shows it in this language
 A double tap on a reel, a video or a photo in the feed no longer likes it or shows a heart. A single tap and the Like button work as before.	Nhấn đúp vào reel, video hoặc ảnh trên bảng tin không còn thích hay hiện trái tim. Nhấn một lần và nút Thích vẫn hoạt động như trước.
+# context: switch title on the News feed page; on, a tap on Like under a post asks first
+Ask before liking a post	Hỏi trước khi thích bài viết
+# context: summary of that switch; Like is Facebook's own button as Facebook shows it in this language; Continue is the question's button, as translated below
+A tap on Like under a post asks first, and only Continue likes or unlikes it.	Nhấn nút Thích dưới bài viết sẽ hỏi trước, và chỉ Tiếp tục mới thích hoặc bỏ thích.
+# context: switch title under Reels and Watch; on, a tap on Like beside a reel asks first
+Ask before liking a reel	Hỏi trước khi thích reel
+# context: summary of that switch
+A tap on Like beside a reel asks first, and only Continue likes or unlikes it.	Nhấn nút Thích cạnh reel sẽ hỏi trước, và chỉ Tiếp tục mới thích hoặc bỏ thích.
+# context: switch title under Comments and writing; on, a tap on Like under a comment asks first
+Ask before liking a comment	Hỏi trước khi thích bình luận
+# context: summary of that switch
+A tap on Like under a comment asks first, and only Continue likes or unlikes it.	Nhấn nút Thích dưới bình luận sẽ hỏi trước, và chỉ Tiếp tục mới thích hoặc bỏ thích.
+# context: the question shown after a tap on Like under a post; Continue goes ahead with the like or unlike, Cancel leaves it
+Like or unlike this post?	Thích hoặc bỏ thích bài viết này?
+# context: the same question for a reel
+Like or unlike this reel?	Thích hoặc bỏ thích reel này?
+# context: the same question for a comment
+Like or unlike this comment?	Thích hoặc bỏ thích bình luận này?
+# context: the question's button that goes ahead
+Continue	Tiếp tục
 # context: switch title under Reels and Watch; on, a double tap on the left or right edge of a reel or a video skips back or forward in it
 Double tap to skip	Nhấn đúp để tua
 # context: summary of that switch; the edge is about a fifth of the player's width, and 30 seconds is the whole length of the reel or video
@@ -1084,6 +1112,10 @@ Hides the Stories tray card that asks to upload your contacts. Applies when Face
 Hide story prompts	Ẩn gợi ý tạo tin
 # context: summary of that switch; Share music you love is the name of one such card
 Hides cards beside Create story that suggest a story to make, like Share music you love. Applies when Facebook next loads the tray.	Ẩn các thẻ cạnh Tạo tin gợi ý tin để tạo, như Chia sẻ bản nhạc bạn yêu thích. Áp dụng khi Facebook tải lại khay tin lần sau.
+# context: switch title under Stories; Create story is the first tile of the Stories tray, the one that starts a new story of your own
+Hide Create story	Ẩn Tạo tin
+# context: summary of that switch
+Takes the Create story tile off the start of the Stories tray. The stories stay. Applies when Facebook next loads the tray.	Bỏ ô Tạo tin khỏi đầu khay tin. Các tin vẫn còn. Áp dụng khi Facebook tải lại khay tin lần sau.
 # context: summary of Hide "People you may know" when the build also hides tray cards; Add is the card's button
 Hides friend suggestions between posts, on your own profile, and as cards with an Add button in the Stories tray.	Ẩn gợi ý kết bạn giữa các bài viết, trên trang cá nhân của bạn và dưới dạng thẻ có nút Thêm trong khay tin.
 Feeds opens on	Bảng feed mở ở
@@ -1264,6 +1296,7 @@ Couldn't save this post's photos. Try again in a moment.	Không thể lưu ảnh
 Save GIF	Lưu GIF
 # context: message after a tap on Save GIF when the save didn't start
 Couldn't save this GIF. Try again in a moment.	Không thể lưu GIF này. Hãy thử lại sau giây lát.
+Couldn't save this photo. Try again in a moment.	Không thể lưu ảnh này. Hãy thử lại sau giây lát.
 # context: sentence added after the summary of the Save any photo switch; Save GIF is the row's name, keep it as translated for that row
 A GIF comment gets Save GIF when you long-press it.	Nhấn giữ một bình luận GIF để hiện Lưu GIF.
 Couldn't save this story's photo. Try again in a moment.	Không thể lưu ảnh của tin này. Hãy thử lại sau giây lát.
@@ -2534,6 +2567,8 @@ Show only watched stories	Chỉ hiện tin đã xem
 The Stories tray keeps only the stories you've already watched, so you can find one again. Turn it off to see the new ones. Hide seen stories waits while this is on. Applies when Facebook next loads the tray.	Khay Tin chỉ giữ những tin bạn đã xem, để bạn tìm lại được. Tắt đi để xem tin mới. Ẩn tin đã xem tạm dừng khi mục này bật. Áp dụng khi Facebook tải lại khay.
 Show Posts in search	Hiện Bài viết trong tìm kiếm
 Puts Posts back in the row over search results, after Reels, so you can see only posts for what you searched.	Đưa Bài viết trở lại hàng phía trên kết quả tìm kiếm, sau Reels, để bạn chỉ xem bài viết cho nội dung đã tìm.
+Saved button in search	Nút Đã lưu trong tìm kiếm
+Puts a Saved button at the end of the search bar, so your saved posts and videos are one tap away. Restart Facebook to see the change.	Đặt nút Đã lưu ở cuối thanh tìm kiếm, để bài viết và video bạn đã lưu chỉ cách một lần chạm. Hãy khởi động lại Facebook để thấy thay đổi.
 Restore feed sound after opened videos	Khôi phục âm thanh bảng tin sau khi mở video
 A video you open plays with its sound as usual. Back in the feed, the sound is what it was before you opened it, even after a long watch.	Video bạn mở vẫn phát kèm âm thanh như bình thường. Khi quay lại bảng tin, âm thanh sẽ giống như trước khi bạn mở video, kể cả khi bạn xem lâu.
 Hide the Join button on posts	Ẩn nút Tham gia trên bài viết
@@ -2678,3 +2713,20 @@ Hide the tab bar on the Reels tab	Ẩn thanh tab ở tab Reels
 The tab bar goes away while the Reels tab is open, and the reel gets the whole screen. The other tabs keep the bar. Restart Facebook to see the change.	Thanh tab biến mất khi tab Reels đang mở, và reel chiếm toàn bộ màn hình. Các tab khác vẫn giữ thanh tab. Khởi động lại Facebook để thấy thay đổi.
 Playback speed in the post menu	Tốc độ phát trong menu bài viết
 A feed or Watch video's 3-dot menu gets Playback speed, from 0.5x to 3x, live videos too. Off by default, since it hasn't been tried on a real account yet.	Menu ba chấm của video trên bảng tin hoặc Watch có thêm Tốc độ phát, từ 0,5x đến 3x, cả với video trực tiếp. Mặc định tắt vì chưa được thử trên tài khoản thật.
+Double tap to skip on feed videos	Nhấn đúp để tua trên video bảng tin
+Double tap the right side of a playing feed video to jump ahead 10 seconds, or the left side to go back 10. Keep tapping to go further. Live videos work too when they can be rewound. One tap on a side still opens the video, a moment later than usual. With Tap to play on, it needs Inline feed video controls on too.	Nhấn đúp vào bên phải video bảng tin đang phát để tua tới 10 giây, hoặc bên trái để lùi 10 giây. Tiếp tục nhấn để tua xa hơn. Video trực tiếp cũng dùng được khi có thể tua lại. Nhấn một lần vào một bên vẫn mở video, chỉ chậm hơn bình thường một chút. Khi Nhấn để phát bật, Nút điều khiển video trong bảng tin cũng phải bật.
+Show only comments that match	Chỉ hiện bình luận khớp
+While the search box holds words, comments without them are hidden. Clearing the box brings them back.	Khi ô tìm kiếm có chữ, các bình luận không chứa chữ đó sẽ bị ẩn. Xóa ô tìm kiếm để hiện lại.
+Queue reel saves	Xếp hàng lưu reel
+Each reel you tap Download on joins a queue that saves one reel at a time in the background. Pause or cancel it from its notification or from Downloads here. A reel already in the queue is skipped, and one that fails gets one more try. The queue lasts until Facebook closes.	Mỗi reel bạn nhấn Tải xuống sẽ vào một hàng đợi lưu từng reel một ở chế độ nền. Bạn có thể tạm dừng hoặc hủy hàng đợi từ thông báo của nó hoặc từ mục Tải xuống tại đây. Reel đã có trong hàng đợi sẽ được bỏ qua, và reel bị lỗi sẽ được thử lại một lần nữa. Hàng đợi tồn tại cho đến khi Facebook đóng.
+Added to the reel queue	Đã thêm vào hàng đợi reel
+Added to the reel queue. To pause or cancel it, open Downloads in Hushfacebook settings.	Đã thêm vào hàng đợi reel. Để tạm dừng hoặc hủy, hãy mở Tải xuống trong cài đặt Hushfacebook.
+Already in the reel queue	Đã có trong hàng đợi reel
+That reel is already saved	Reel đó đã được lưu
+The reel queue is full. Try again when it's shorter.	Hàng đợi reel đã đầy. Hãy thử lại khi hàng đợi ngắn hơn.
+Saving queued reels	Đang lưu các reel trong hàng đợi
+Reel queue paused	Hàng đợi reel đã tạm dừng
+Reel queue done	Hàng đợi reel đã xong
+%1$d saved, %2$d waiting, %3$d failed	Đã lưu %1$d, đang chờ %2$d, lỗi %3$d
+Reel queue canceled	Đã hủy hàng đợi reel
+Cancel the reel queue	Hủy hàng đợi reel

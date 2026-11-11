@@ -50,6 +50,7 @@ import app.morphe.extension.facebook.chats.OriginalChatMediaForTests;
 import app.morphe.extension.facebook.composer.TagSuggestionsForTests;
 import app.morphe.extension.facebook.download.ClipboardLinkForTests;
 import app.morphe.extension.facebook.download.CommentGifForTests;
+import app.morphe.extension.facebook.download.CommentPhotoForTests;
 import app.morphe.extension.facebook.download.CommentVideoForTests;
 import app.morphe.extension.facebook.download.MediaDownload;
 import app.morphe.extension.facebook.download.PhotoMenuItemForTests;
@@ -60,6 +61,7 @@ import app.morphe.extension.facebook.download.ReelDownload;
 import app.morphe.extension.facebook.download.VideoMenuItemForTests;
 import app.morphe.extension.facebook.emoji.SystemEmoji;
 import app.morphe.extension.facebook.feed.FeedFilter;
+import app.morphe.extension.facebook.feed.AskBeforeLike;
 import app.morphe.extension.facebook.feed.SeenPostsForTests;
 import app.morphe.extension.facebook.feed.FeedGuardForTests;
 import app.morphe.extension.facebook.feed.HomeBack;
@@ -245,6 +247,8 @@ public class ColdStartHooksTest {
         assertFalse(FeedFilter.hideSponsoredStories());
         assertFalse("a Stories tray fetched before the context lost its suggestions",
                 SuggestedStoriesForTests.hidesSuggestions());
+        assertFalse("a Stories tray built before the context lost its Create story tile",
+                SuggestedStoriesForTests.hidesCreateStory());
         VideoAd reelAd = new VideoAd();
         assertTrue(ReelsAdFilter.withoutAds(Arrays.asList(new Reel(), reelAd), ad).contains(reelAd));
         VideoAd sectionAd = new VideoAd();
@@ -349,6 +353,8 @@ public class ColdStartHooksTest {
         assertFalse("an attachment's double tap before the context was left unhandled", DoubleTapLike.holdBackTap());
         assertFalse("a photo's double tap on Home before the context went unreported", DoubleTapLike.holdBackFeedTap(null));
         assertFalse("the feed's double-tap like before the context was held back", DoubleTapLike.holdBackFeedLike());
+        assertFalse("a tap on Like before the context was held for a question",
+                AskBeforeLike.hold(AskBeforeLike.POST_FOOTER, "Lnone;->like()V", new Object[] {null}));
         // In a build with Hold a reel for 2x, so each answer is the context check's.
         ReelHoldForTests.withHold(() -> {
             assertFalse("a long press on a reel before the context went to the speed-up", ReelHold.longPress(false));
@@ -391,6 +397,7 @@ public class ColdStartHooksTest {
         assertFalse("a post menu built before the context got the video item", VideoMenuItemForTests.addsAnItem());
         assertFalse("a post menu built before the context got the photo item", PhotoMenuItemForTests.addsAnItem());
         assertFalse("a comment sheet built before the context got Save GIF", CommentGifForTests.addsARow());
+        assertFalse("a comment sheet built before the context got Save photo", CommentPhotoForTests.addsARow());
         assertFalse("a comment sheet built before the context got Save video", CommentVideoForTests.addsARow());
         assertFalse(PlayerSourcesForTests.recordsAVideoPlayer());
         assertFalse("a screen resumed before the context read the clipboard", ClipboardLinkForTests.readsTheClipboard());
@@ -432,6 +439,8 @@ public class ColdStartHooksTest {
                 CommentSheetOptions.holdsPostComments(CommentSheetOptions.INLINE_COMMENTS));
         assertFalse("a comment drawn before the context lost its dislike",
                 CommentSheetOptions.holdsCommentDislike());
+        assertFalse("a comment drawn before the context lost Reply",
+                CommentSheetOptions.holdsCommentReply(CommentSheetOptions.REPLY_PLUGIN));
         assertFalse("a comment with a shop link drawn before the context was left out",
                 CommentSheetOptions.hidesComment(new GraphQLComment("https://s.shopee.vn/9zKs")));
         assertFalse("a comment sheet built before the context opened at full height",
