@@ -453,11 +453,18 @@ public final class MaterialYouTheme {
      * the palette's neutral at the same lightness, as a React card's does ({@link #darkBackground}).
      * Before that answer the colour goes the way {@link #parseColor} sends it, and in light mode, where
      * Bloks parses the light string, so does any colour but a light surface grey
-     * ({@link #lightSurface}). With AMOLED in the build its near black stays.
+     * ({@link #lightSurface}). With AMOLED in the build its near black stays, and a secondary text
+     * grey gets AMOLED's lift on a lighter Background colour after the palette's ({@link AmoledTheme#bloksText}).
      */
     public static int parseBloks(String text) {
+        return parseBloks(text, SettingsStatus.amoledTheme());
+    }
+
+    static int parseBloks(String text, boolean amoled) {
         HookStatus.invoked(FamilyNames.MATERIAL_YOU_THEME);
-        return darkBackground(SettingsStatus.amoledTheme() ? AmoledTheme.parseColor(text) : Color.parseColor(text));
+        if (!amoled) return darkBackground(Color.parseColor(text));
+        int parsed = AmoledTheme.parseColor(text);
+        return AmoledTheme.bloksText(parsed, darkBackground(parsed));
     }
 
     /**
@@ -501,13 +508,21 @@ public final class MaterialYouTheme {
     }
 
     /**
-     * The fill of a Bloks box, such as the Settings search field (issue #141). Bloks parses the
-     * server's hex string through route four, which leaves a light grey since text can be one, then
-     * hands the int to the box builder, which paints the box's background with it. A box's fill is
-     * always a background, so in light mode one of the {@link #LIGHT_SURFACE_VALUES} takes the
-     * palette's neutral at the same lightness ({@link #lightSurface}). Dark mode, where route four
-     * has answered already, and every other colour keep theirs, as does a grey AMOLED's Light
-     * background color row moves (#214): AMOLED's hook on the same builder answers for that one.
+     * The fill of a Bloks box, such as the Settings search field (issue #141) or the place box under
+     * a check-in post (issue #37). Bloks parses the server's hex string through route four, which
+     * leaves a light grey since text can be one, then hands the int to the box builder, which paints
+     * the box's background with it. A box's fill is always a background, so in light mode one of the
+     * {@link #LIGHT_SURFACE_VALUES} takes the palette's neutral at the same lightness
+     * ({@link #lightSurface}). In dark mode route four only moves the {@link #SURFACES}, and on 584
+     * the place box's #333334 reached the builder unchanged. So in dark mode a grey
+     * {@link #FDS_DARK} lists and one of the {@link #SURFACES} take the palette's neutral at the same
+     * lightness here too, as a React card's do ({@link #darkBackground}). Feed units render on a
+     * background thread at a cold start, before Facebook's first answer ({@link #parseLinkBox}), so
+     * a dark grey up to a popover's doesn't wait for it, while a lighter one, which light mode can
+     * fill a box with, waits until Facebook has said dark. Every other colour stays. So does a grey
+     * AMOLED's Light background color row moves (#214), since AMOLED's hook on the same builder
+     * answers for that one, and with AMOLED in the build a grey up to a card's in dark mode, which
+     * AMOLED's rule takes as its own.
      */
     public static int bloksFill(int color) {
         return bloksFill(color, SettingsStatus.amoledTheme());
@@ -515,8 +530,11 @@ public final class MaterialYouTheme {
 
     static int bloksFill(int color, boolean amoled) {
         HookStatus.invoked(FamilyNames.MATERIAL_YOU_THEME);
-        if (amoled && AmoledTheme.bloksFill(color) != color) return color;
-        return lightSurface(color);
+        if (amoled && (AmoledTheme.bloksFill(color) != color || AmoledTheme.ownsWithoutToken(color))) return color;
+        if (!DarkMode.on()) return lightSurface(color);
+        if (!isSurface(color) && Arrays.binarySearch(DARK_GREYS, color) < 0) return color;
+        if (!DarkMode.saidOn() && !AmoledTheme.isDarkNeutral(color, AmoledTheme.MAX_RAISED_CHANNEL)) return color;
+        return palette().sameLightness(TonePalette.NEUTRAL, color);
     }
 
     /**
