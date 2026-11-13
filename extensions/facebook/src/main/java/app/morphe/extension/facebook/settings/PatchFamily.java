@@ -126,7 +126,8 @@ public enum PatchFamily {
             Settings.LOCAL_PROFILE_COUNTS),
     POST_ACTION_BUTTONS(FamilyNames.POST_ACTION_BUTTONS, "postActionButtons", null,
             Settings.POST_SAVE_BUTTON, Settings.POST_DOWNLOAD_BUTTON, Settings.HIDE_POST_LIKE_BUTTON,
-            Settings.HIDE_POST_COMMENT_BUTTON, Settings.HIDE_POST_SHARE_BUTTON, Settings.HIDE_POST_SEND_BUTTON),
+            Settings.HIDE_POST_COMMENT_BUTTON, Settings.HIDE_POST_REPOST_BUTTON, Settings.HIDE_POST_SHARE_BUTTON,
+            Settings.HIDE_POST_SEND_BUTTON),
     SPONSORED_MARKETPLACE(FamilyNames.SPONSORED_MARKETPLACE, "sponsoredMarketplace", null,
             Settings.HIDE_SPONSORED_MARKETPLACE_LISTINGS, Settings.MARKETPLACE_ADVANCED_SEARCH,
             Settings.MARKETPLACE_FILTERS_BUTTON, Settings.MARKETPLACE_LISTING_DATE),
@@ -142,13 +143,14 @@ public enum PatchFamily {
             Settings.HIDE_VIEWER_BACK_BUTTON, Settings.BURN_IN_STAY_DIM,
             Settings.GRAY_REELS, Settings.REELS_MINUTES, Settings.HIDE_REEL_COUNTS,
             Settings.HIDE_REEL_SAVE_BUTTON, Settings.HIDE_REEL_WHATSAPP_BUTTON, Settings.HIDE_REEL_LIKE_BUTTON,
-            Settings.HIDE_REEL_COMMENT_BUTTON, Settings.HIDE_REEL_SHARE_BUTTON, Settings.SHOW_REEL_COMMENT_BUTTON,
+            Settings.HIDE_REEL_COMMENT_BUTTON, Settings.HIDE_REEL_REPOST_BUTTON, Settings.HIDE_REEL_SHARE_BUTTON,
+            Settings.SHOW_REEL_COMMENT_BUTTON,
             Settings.SHOW_REEL_POST_DATE,
             Settings.HIDE_REEL_SOUND_BUTTON, Settings.REEL_SPEAKER_ABOVE_MENU, Settings.HIDE_REEL_AUDIO_LINE,
             Settings.HIDE_SLOW_CONNECTION_MESSAGE, Settings.HIDE_UP_NEXT, Settings.HIDE_REEL_FULLSCREEN_PILL,
             Settings.FEED_VIDEOS_ALONE, Settings.SHARED_REELS_ALONE, Settings.WATCH_AGAIN_IN_PLACE,
             Settings.SAVED_VIDEOS_IN_PLAYER, Settings.SAVED_VIDEOS_IN_ORDER, Settings.SKIP_STILL_WATCHING,
-            Settings.PLAY_FEED_REELS_WHOLE),
+            Settings.FILL_REELS, Settings.PLAY_FEED_REELS_WHOLE),
     REEL_PROMPTS(FamilyNames.REEL_PROMPTS, "reelPrompts", null,
             Settings.HIDE_REEL_PROMPTS),
     REEL_WATCH_HISTORY(FamilyNames.REEL_WATCH_HISTORY, "reelWatchHistory", null,
@@ -164,7 +166,8 @@ public enum PatchFamily {
     TAP_SHOWS_CONTROLS(FamilyNames.TAP_SHOWS_CONTROLS, "tapShowsControls", null,
             Settings.TAP_SHOWS_CONTROLS),
     REEL_GESTURES(FamilyNames.REEL_GESTURES, "reelGestures", null,
-            Settings.DOUBLE_TAP_OPENS_COMMENTS, Settings.LONG_PRESS_OPENS_COMMENTS, Settings.SELECT_POST_TEXT),
+            Settings.DOUBLE_TAP_OPENS_COMMENTS, Settings.LONG_PRESS_OPENS_COMMENTS, Settings.SELECT_POST_TEXT,
+            Settings.HOLD_POST_TO_REACT),
     KEEP_REEL_SPEED(FamilyNames.KEEP_REEL_SPEED, "keepReelSpeed", null,
             Settings.KEEP_REEL_SPEED, Settings.KEEP_VIDEO_SPEED, Settings.SLOWER_REEL_SPEEDS,
             Settings.FASTER_REEL_SPEEDS, Settings.SPEED_ON_REPLAYS, Settings.POST_MENU_SPEED),
@@ -195,7 +198,7 @@ public enum PatchFamily {
             Settings.INLINE_FEED_VIDEO_CONTROLS,
             Settings.FEED_VIDEO_CAST_BUTTON, Settings.FEED_VIDEO_SEEK_BAR, Settings.FEED_VIDEO_SEEK_BAR_FADE,
             Settings.FEED_VIDEO_SEEK_BAR_LOWER, Settings.FEED_VIDEO_SEEK_BAR_EDGE, Settings.FEED_VIDEO_SEEK_BAR_TIMES,
-            Settings.FEED_VIDEO_FULL_PLAYER_BUTTON,
+            Settings.FEED_VIDEO_FULL_PLAYER_BUTTON, Settings.FEED_VIDEO_FULL_PLAYER_CORNER,
             Settings.FEED_VIDEO_SKIP_BUTTONS, Settings.FEED_VIDEO_DOUBLE_TAP_SKIP, Settings.FEED_VIDEO_SPEED_BUTTON,
             Settings.CENTER_FULL_SCREEN_VIDEOS, Settings.STORY_SEEK_BAR, Settings.STORY_SEEK_BAR_FADE),
     RESUME_LONG_VIDEOS(FamilyNames.RESUME_LONG_VIDEOS, "resumeLongVideos", null,
@@ -206,6 +209,8 @@ public enum PatchFamily {
             Settings.DEFAULT_PLAYBACK_QUALITY),
     PICTURE_IN_PICTURE(FamilyNames.PICTURE_IN_PICTURE, "pictureInPicture", null,
             Settings.PICTURE_IN_PICTURE, Settings.PICTURE_IN_PICTURE_FROM_MENU, Settings.PICTURE_IN_PICTURE_BUTTON),
+    BACKGROUND_PLAY(FamilyNames.BACKGROUND_PLAY, "backgroundPlay", null,
+            Settings.KEEP_PLAYING_IN_BACKGROUND, Settings.BACKGROUND_PLAY_BUTTON),
     HDR_BRIGHTNESS(FamilyNames.HDR_BRIGHTNESS, "turnOffHdrBrightness", null,
             Settings.TURN_OFF_HDR_BRIGHTNESS, Settings.PREFER_SDR_RENDITIONS, Settings.DRAW_VIDEOS_WITH_THE_SCREEN),
     SKIP_SILENCE(FamilyNames.SKIP_SILENCE, "skipSilentParts", null,
@@ -631,6 +636,11 @@ public enum PatchFamily {
             if (setting == Settings.SHOW_REEL_POST_DATE) {
                 line.append(", ").append(Settings.REEL_POST_DATE_STYLE.key).append('=')
                         .append(Settings.REEL_POST_DATE_STYLE.savedValue());
+            }
+            // What a hold gives follows its switch (#454).
+            if (setting == Settings.HOLD_POST_TO_REACT) {
+                line.append(", ").append(Settings.HOLD_REACTION.key).append('=')
+                        .append(Settings.HOLD_REACTION.savedValue());
             }
         }
         line.append(')');

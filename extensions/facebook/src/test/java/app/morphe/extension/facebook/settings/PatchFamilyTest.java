@@ -435,7 +435,7 @@ public class PatchFamilyTest {
                         + "reel watch history, Newest reels first, Turn off double tap to like, Ask before a like, Double tap to skip, Tap shows the controls, Open comments with a gesture, Keep the reel speed, Hold a reel for 2x, "
                         + "Default comment order, Hide Meta AI comment summaries, Comment sheet options, Open comments "
                         + "at full height, Tag suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback quality, "
-                        + "Picture-in-picture, Turn off HDR brightness, Skip silent parts, Keep feed videos muted, Keep the progress bar, Use the system font, "
+                        + "Picture-in-picture, Keep playing in the background, Turn off HDR brightness, Skip silent parts, Keep feed videos muted, Keep the progress bar, Use the system font, "
                         + "Use the phone's emoji, Turn off haptics, Hide carrier data banners, Turn off screen transitions, Unlock app icons, Home header text, Open links in "
                         + "external browser, Sanitize sharing links, Stop update prompts, Download any story, "
                         + "Download any reel, Download any video, Download any photo, Open on a chosen tab, Following "
@@ -459,7 +459,7 @@ public class PatchFamilyTest {
                         + "prompts, Don't send reel watch history, Newest reels first, Turn off double tap to like, Ask before a like, Double tap to skip, Tap shows the controls, Open comments with a gesture, Keep the reel speed, "
                         + "Hold a reel for 2x, Default comment order, Hide Meta AI comment summaries, Comment sheet "
                         + "options, Open comments at full height, Tag suggestions only after @, Tap to play, Resume long videos, Frame step, Default playback "
-                        + "quality, Picture-in-picture, Turn off HDR brightness, Skip silent parts, Keep feed videos muted, Keep the progress bar, Use the "
+                        + "quality, Picture-in-picture, Keep playing in the background, Turn off HDR brightness, Skip silent parts, Keep feed videos muted, Keep the progress bar, Use the "
                         + "system font, Use the phone's emoji, Turn off haptics, Hide carrier data banners, Turn off screen transitions, Unlock app icons, Home header text, Open "
                         + "links in external browser, Sanitize sharing links, Stop update prompts, Download any "
                         + "story, Download any reel, Download any video, Download any photo, Open on a chosen tab, "
@@ -485,7 +485,8 @@ public class PatchFamilyTest {
                         + "hushfacebook_burn_in_wait=FIVE_SECONDS, hushfacebook_burn_in_stay_dim=off, "
                         + "hushfacebook_gray_reels=off, hushfacebook_reels_minutes=off, hushfacebook_hide_reel_counts=off, hushfacebook_hide_reel_save_button=off, "
                         + "hushfacebook_hide_reel_whatsapp_button=off, hushfacebook_hide_reel_like_button=off, "
-                        + "hushfacebook_hide_reel_comment_button=off, hushfacebook_hide_reel_share_button=off, "
+                        + "hushfacebook_hide_reel_comment_button=off, hushfacebook_hide_reel_repost_button=off, "
+                        + "hushfacebook_hide_reel_share_button=off, "
                         + "hushfacebook_show_reel_comment_button=off, hushfacebook_show_reel_post_date=off, "
                         + "hushfacebook_reel_post_date_style=AGO, hushfacebook_hide_reel_sound_button=off, hushfacebook_reel_speaker_above_menu=off, "
                         + "hushfacebook_hide_reel_audio_line=off, "
@@ -493,7 +494,7 @@ public class PatchFamilyTest {
                         + "hushfacebook_hide_reel_fullscreen_pill=off, hushfacebook_feed_videos_alone=off, "
                         + "hushfacebook_shared_reels_alone=off, hushfacebook_watch_again_in_place=off, "
                         + "hushfacebook_saved_videos_in_player=off, hushfacebook_saved_videos_in_order=off, "
-                        + "hushfacebook_skip_still_watching=off, "
+                        + "hushfacebook_skip_still_watching=off, hushfacebook_fill_reels=off, "
                         + "hushfacebook_play_feed_reels_whole=off)",
                 PatchFamily.reportLines(EnumSet.of(PatchFamily.REEL_DECLUTTER), false).get(0));
         // Share sheet items is set by its list, and its group switch is saved beside it.

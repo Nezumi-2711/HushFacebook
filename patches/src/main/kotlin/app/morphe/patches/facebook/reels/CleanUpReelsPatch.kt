@@ -84,7 +84,8 @@ private const val PATCH = "Clean up Reels"
  * see SavedVideos.kt). A twenty-sixth, also off, keeps reels going without the "Are you still
  * watching?" stop (#427, see StillWatching.kt). A twenty-seventh, also off, plays the reels in Saved
  * one after another, going back to Saved for the next card when one ends or is swiped past (#404,
- * see SavedChain.kt). With Debug
+ * see SavedChain.kt). A twenty-eighth, also off, fills a tall screen with a reel instead of fitting
+ * it between black bars (#453, see ReelFill.kt). With Debug
  * logging on, it also reports whether a reel that ends
  * is on the player the Reels auto-advance controller holds (see ReelBinding.kt), with no switch.
  *
@@ -101,7 +102,7 @@ val cleanUpReelsPatch = bytecodePatch(
     name = "Clean up Reels",
     description = "Hides clutter on reels, such as the Follow button, comment previews, Remix and Use template " +
         "buttons and Threads cards between reels, so more of the video shows, and can play each reel once " +
-        "instead of over and over, keep its original audio instead of a Meta AI dub, drop the search suggestions under the caption, over the comments and at the top of a profile's reels, or hide the like, comment and share counts, the Like, Comment, Share, Save or speaker button, or the line naming the reel's sound. It can also keep the Reels tab to accounts you follow, open a video you tap in the feed on its own, with no reels after it, do the same for a reel you open from a link or a chat, play a feed video again right there when you tap Watch again instead of opening Reels, play a video you tap in Saved in the video player instead of Reels, go on to the next reel in Saved instead of a suggested one, keep reels playing without stopping to ask \"Are you still watching?\", take the UP NEXT bar off the bottom of a video you open from the feed, hide the Fullscreen button under a wide video, stop the \"This is taking a while\" message when a video is slow to load, and play whole reels in the feed's Reels row instead of the same second over and over, or keep the Comment button on reels with comments turned off so you can read them, and hide the one-tap Subscribe button some authors get instead of Follow, or Search and the button beside it at the top of a video you open and of the Reels tab, and show when a reel or video was posted. Its Burn-in guard can fade a reel's buttons, caption and bars when you leave them alone, so they don't burn into the screen. With Turn off HDR brightness patched too, it can show Reels in gray, video and all. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
+        "instead of over and over, keep its original audio instead of a Meta AI dub, drop the search suggestions under the caption, over the comments and at the top of a profile's reels, or hide the like, comment and share counts, the Like, Comment, Repost, Share, Save or speaker button, or the line naming the reel's sound. It can also keep the Reels tab to accounts you follow, open a video you tap in the feed on its own, with no reels after it, do the same for a reel you open from a link or a chat, play a feed video again right there when you tap Watch again instead of opening Reels, play a video you tap in Saved in the video player instead of Reels, go on to the next reel in Saved instead of a suggested one, keep reels playing without stopping to ask \"Are you still watching?\", fill a tall screen with a reel instead of leaving black bars around it, take the UP NEXT bar off the bottom of a video you open from the feed, hide the Fullscreen button under a wide video, stop the \"This is taking a while\" message when a video is slow to load, and play whole reels in the feed's Reels row instead of the same second over and over, or keep the Comment button on reels with comments turned off so you can read them, and hide the one-tap Subscribe button some authors get instead of Follow, or Search and the button beside it at the top of a video you open and of the Reels tab, and show when a reel or video was posted. Its Burn-in guard can fade a reel's buttons, caption and bars when you leave them alone, so they don't burn into the screen. With Turn off HDR brightness patched too, it can show Reels in gray, video and all. Starts off. Turn on the parts you want in Hushfacebook settings > Reels and Watch.",
 ) {
     category("Reels")
     dependsOn(settingsPatch)
@@ -190,6 +191,12 @@ val cleanUpReelsPatch = bytecodePatch(
             observeSavedTouches()
         } catch (exception: PatchException) {
             patchLog.warning("$PATCH: ${exception.message}, so Play saved videos in a row leaves Facebook's suggestions after a saved reel.")
+        }
+        // #453: the helper that works out a player view's size, asked to fill instead of fit.
+        try {
+            fillReels()
+        } catch (exception: PatchException) {
+            patchLog.warning("${exception.message}, so Fill the screen with reels leaves reels sized as Facebook fits them.")
         }
         enableStatus("reelDeclutter")
     }
@@ -383,10 +390,12 @@ private fun MutableMethod.answerWhen(hook: String, answer: Boolean) {
 
 /**
  * The footer runnables return before they query when the switch is on. 586 builds one of two hot
- * comment runnables as a MobileConfig flag says, the plain query's or the MFC one's, so the MFC one
- * is skipped too wherever a build has it.
+ * comment runnables as a MobileConfig flag says, the plain query's or the MFC one's, and 587 keeps
+ * only the MFC one (arm64 `LX/0WKq;`), so each is skipped wherever a build has it and at least one
+ * has to be there.
  */
 private fun BytecodePatchContext.skipFooterQueries() {
+    var hotComments = 0
     listOf(
         Triple(HOT_COMMENT_RUNNABLE, INLINE_COMMENTS_QUERY, SKIP_HOT_COMMENT),
         Triple(SOCIAL_BUBBLES_RUNNABLE, VIDEO_ID, SKIP_SOCIAL_BUBBLES),
@@ -394,12 +403,16 @@ private fun BytecodePatchContext.skipFooterQueries() {
     ).forEach { (redexName, holding, hook) ->
         val runs = classDefByStrings(holding, StringComparisonType.EQUALS)
             .mapNotNull { owner -> footerRunnable(owner, redexName, holding)?.let { owner to it } }
-        if (runs.isEmpty() && holding == MFC_INLINE_COMMENTS_QUERY) return@forEach
+        if (runs.isEmpty() && redexName == HOT_COMMENT_RUNNABLE) return@forEach
         val (owner, run) = runs.singleOrNull() ?: throw PatchException(
             "$PATCH: expected one Runnable named $redexName whose run() holds \"$holding\", found ${runs.size}",
         )
+        if (redexName == HOT_COMMENT_RUNNABLE) hotComments++
         mutableClassDefBy(owner).methods.first { it.sameSignatureAs(run) }.returnVoidWhen(hook)
     }
+    if (hotComments == 0) throw PatchException(
+        "$PATCH: expected a Runnable named $HOT_COMMENT_RUNNABLE whose run() holds \"$INLINE_COMMENTS_QUERY\" or \"$MFC_INLINE_COMMENTS_QUERY\", found none",
+    )
 }
 
 /**
